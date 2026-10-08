@@ -208,6 +208,7 @@ class ApplicationPackItem(PackModel):
     revision_count: int
     max_revisions: int
     verification: ArtifactVerification | None
+    regeneration_feedback: str | None = None
     requires_manual_answer: bool = False
     created_at: datetime
     updated_at: datetime

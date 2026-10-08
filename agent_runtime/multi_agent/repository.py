@@ -299,6 +299,64 @@ class AgentTaskRepository:
             self._event(db, row, TaskEventType.TASK_STARTED, attempt_id=attempt_id)
             return self._task(row)
 
+    def reserve_model_call(self, task_id: str, attempt_id: str, *, input_tokens: int) -> dict:
+        """Reserve before external I/O; the plan row serializes sibling spend."""
+        with self.sessions.begin() as db:
+            task = self._owned(db, task_id, attempt_id, {TaskStatus.RUNNING})
+            db.execute(update(AgentPlanRow).where(AgentPlanRow.root_task_id == task.root_task_id)
+                       .values(usage_json=AgentPlanRow.usage_json))
+            plan = db.scalar(select(AgentPlanRow).where(AgentPlanRow.root_task_id == task.root_task_id))
+            budget, usage = json.loads(plan.budget_json), json.loads(plan.usage_json)
+            if budget.get("max_estimated_cost") is not None:
+                raise BudgetExceededError("Model pricing is required to enforce a cost budget.")
+            remaining_output = budget["max_output_tokens"] - usage.get("output_tokens", 0)
+            if (usage.get("model_calls", 0) >= budget["max_model_calls"]
+                    or usage.get("input_tokens", 0) + input_tokens > budget["max_input_tokens"]
+                    or remaining_output <= 0):
+                raise BudgetExceededError("The model budget is exhausted.")
+            reservation = {"input_tokens": input_tokens, "output_tokens": min(4096, remaining_output)}
+            attempt = db.get(AgentTaskAttemptRow, attempt_id)
+            attempt_usage = json.loads(attempt.usage_json or "{}")
+            for key, value in {"model_calls": 1, **reservation}.items():
+                usage[key] = usage.get(key, 0) + value
+                attempt_usage[key] = attempt_usage.get(key, 0) + value
+            plan.usage_json, attempt.usage_json = canonical_json(usage), canonical_json(attempt_usage)
+            return reservation
+
+    def finish_model_call(self, task_id: str, attempt_id: str, reservation: dict,
+                          *, input_tokens: int, output_tokens: int) -> None:
+        exceeded = False
+        with self.sessions.begin() as db:
+            task = db.get(AgentTaskRow, task_id)
+            db.execute(update(AgentPlanRow).where(AgentPlanRow.root_task_id == task.root_task_id)
+                       .values(usage_json=AgentPlanRow.usage_json))
+            plan = db.scalar(select(AgentPlanRow).where(AgentPlanRow.root_task_id == task.root_task_id))
+            budget, usage = json.loads(plan.budget_json), json.loads(plan.usage_json)
+            attempt = db.get(AgentTaskAttemptRow, attempt_id)
+            attempt_usage = json.loads(attempt.usage_json or "{}")
+            for key, actual in {"input_tokens": input_tokens, "output_tokens": output_tokens}.items():
+                actual = max(0, int(actual))
+                delta = actual - reservation[key]
+                usage[key] = usage.get(key, 0) + delta
+                attempt_usage[key] = attempt_usage.get(key, 0) + delta
+                exceeded |= usage[key] > budget[f"max_{key}"]
+            plan.usage_json, attempt.usage_json = canonical_json(usage), canonical_json(attempt_usage)
+        if exceeded:
+            raise BudgetExceededError("The provider exceeded the reserved token budget.")
+
+    def model_usage(self, attempt_id: str) -> dict:
+        with self.sessions() as db:
+            attempt = db.get(AgentTaskAttemptRow, attempt_id)
+            return json.loads(attempt.usage_json or "{}")
+
+    def plan_usage(self, root_task_id: str) -> dict:
+        """Include reservations and failed attempts, not just successful outputs."""
+        with self.sessions() as db:
+            plan = db.scalar(select(AgentPlanRow).where(AgentPlanRow.root_task_id == root_task_id))
+            if plan is None:
+                raise TaskNotFoundError("Task plan does not exist.")
+            return json.loads(plan.usage_json)
+
     def complete(self, task_id: str, attempt_id: str, result: AgentTaskResult) -> AgentTask:
         now = self.clock.now()
         with self.sessions.begin() as db:

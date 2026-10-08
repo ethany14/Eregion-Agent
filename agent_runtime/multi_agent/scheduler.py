@@ -8,7 +8,8 @@ from threading import Event, Lock, Thread
 from uuid import NAMESPACE_URL, uuid4, uuid5
 
 from agent_runtime.multi_agent.context import AgentContextPolicy
-from agent_runtime.multi_agent.errors import ContextBudgetExceededError, LeaseConflictError, TaskConflictError, WorkerStepError
+from agent_runtime.multi_agent.errors import BudgetExceededError, ContextBudgetExceededError, LeaseConflictError, TaskConflictError, WorkerStepError
+from agent_runtime.multi_agent.model_usage import model_usage_scope
 from agent_runtime.multi_agent.registry import AgentWorkerRegistry
 from agent_runtime.multi_agent.repository import AgentTaskRepository
 from agent_runtime.multi_agent.types import AgentTask, TaskStatus
@@ -174,7 +175,11 @@ class AgentTaskScheduler:
             context = context.model_copy(update={"context_snapshot_id": snapshot_id})
             self.tasks.start(task.task_id, attempt_id, child_session_id=child_id,
                 context_snapshot_id=snapshot_id, context_hash=context.context_hash, manifest=manifest)
-            result = self.workers.get(task.task_type).execute(task, context)
+            with model_usage_scope(self.tasks, task.task_id, attempt_id):
+                result = self.workers.get(task.task_type).execute(task, context)
+            usage = self.tasks.model_usage(attempt_id)
+            if usage:
+                result = result.model_copy(update={"usage": {**result.usage, **usage}})
             latest = self.tasks.require(task.task_id)
             if latest.status == TaskStatus.CANCEL_REQUESTED:
                 return self.tasks.finish_cancel(task.task_id, attempt_id)
@@ -194,7 +199,7 @@ class AgentTaskScheduler:
                 return self.tasks.finish_cancel(task.task_id, attempt_id)
             if latest.deadline_at and latest.deadline_at <= self.tasks.clock.now():
                 return self.tasks.timeout(task.task_id, attempt_id)
-            error_code = (exc.code if isinstance(exc, WorkerStepError)
+            error_code = (exc.code if isinstance(exc, (WorkerStepError, BudgetExceededError))
                           else ContextBudgetExceededError.code
                           if isinstance(exc, ContextBudgetExceededError) else "worker_failed")
             return self.tasks.fail(task.task_id, attempt_id, error_code=error_code)

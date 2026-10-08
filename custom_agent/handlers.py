@@ -1,4 +1,4 @@
-"""LangGraph-independent handlers for the Job Agent computation steps."""
+"""Framework-independent handlers for the Job Agent computation steps."""
 
 from __future__ import annotations
 
@@ -10,12 +10,14 @@ from pydantic import BaseModel
 
 from custom_agent.state import AgentState, Step
 from custom_agent.steps import StepOutcome
+from agent_runtime.multi_agent.model_usage import invoke_model
 from job_agent.domain import (
     normalize_job_analysis,
     normalize_resume_analysis,
     normalize_skill_match,
     normalize_tailored_resume_claim_ids,
     normalize_text,
+    validate_resume_source_metadata,
 )
 from job_agent.quality import (
     clean_tailored_resume,
@@ -62,10 +64,11 @@ class SharedModelAnalyzer:
 
 
 class JobAgentStepHandler:
-    """Execute the same business steps and prompts as the LangGraph nodes."""
+    """Execute the validated business steps of the custom agent loop."""
 
     def __init__(self, analyzer: Analyzer | None = None) -> None:
-        self._analyze = analyzer or SharedModelAnalyzer()
+        model_analyzer = analyzer or SharedModelAnalyzer()
+        self._analyze = lambda *args, **kwargs: invoke_model(model_analyzer, *args, **kwargs)
 
     def execute(self, step: Step, state: AgentState) -> StepOutcome:
         handlers = {
@@ -115,6 +118,7 @@ class JobAgentStepHandler:
         ]
         if invalid:
             raise ValueError(f"Evidence is not present in the original resume: {invalid}")
+        validate_resume_source_metadata(state.resume_analysis, state.resume_text)
         return {}
 
     def _analyze_job(self, state: AgentState) -> dict:

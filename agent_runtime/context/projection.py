@@ -119,6 +119,11 @@ class SessionContextProjector:
         persisted = self._sessions.messages(state.session_id)
         latest_user = next((m for m in reversed(persisted) if m.message.role == "user"), None)
         active_task = latest_user.message.content if latest_user else "Continue the active session task."
+        # Retrieval needs conversational intent, including short follow-ups such as
+        # 'continue'. Keep a bounded recent user history rather than a stale first goal.
+        recent_user_intent = [m.message.content[-1500:] for m in persisted
+                              if m.message.role == "user"][-4:]
+        retrieval_task = "\n".join(recent_user_intent) or active_task
         blocks = [
             self._block("system-policy", ContextBlockKind.SYSTEM_POLICY,
                         ContextTrustLevel.TRUSTED_POLICY, self._system_policy),
@@ -189,7 +194,7 @@ class SessionContextProjector:
             application_id = (self._application_for_session(state.session_id)
                               if self._application_for_session else None)
             evidence_candidates = self._evidence_retriever.retrieve(
-                query=active_task, application_id=application_id,
+                query=retrieval_task, application_id=application_id,
             )
         evidence_intro = (
             "CONFIRMED CAREER EVIDENCE\nThese items may support candidate claims. "
@@ -215,7 +220,7 @@ class SessionContextProjector:
         if self._memory_retriever:
             result = self._memory_retriever.retrieve(MemoryQuery(
                 owner_id=state.user_id or "local-user",
-                text=active_task,
+                text=retrieval_task,
                 session_id=state.session_id,
                 token_budget=self._memory_token_budget,
             ))

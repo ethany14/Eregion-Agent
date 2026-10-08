@@ -46,6 +46,23 @@ def make_source_entry_id(
     )
 
 
+def validate_resume_source_metadata(analysis: ResumeAnalysis, original_resume: str) -> None:
+    """Extracted entry metadata is evidence too; it must occur in the source."""
+    original = normalize_text(original_resume)
+    section_labels = {"summary", "experience", "work experience", "education", "projects",
+                      "skills", "technical skills", "other", "professional summary"}
+    for entry in analysis.source_entries:
+        for field in ("heading", "organization", "location", "start_date", "end_date"):
+            value = getattr(entry, field)
+            if not value:
+                continue
+            normalized = normalize_text(value)
+            if field == "heading" and normalized in section_labels:
+                continue
+            if normalized not in original:
+                raise ValueError(f"Resume source entry has unsupported {field} metadata.")
+
+
 def normalize_resume_analysis(analysis: ResumeAnalysis) -> ResumeAnalysis:
     """Replace model IDs with stable evidence/source identities and bind ownership."""
     source_signature_by_evidence: dict[str, tuple[str, ...]] = {}

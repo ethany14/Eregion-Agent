@@ -27,7 +27,7 @@ from agent_runtime.evidence.repository import CareerEvidenceRepository
 from agent_runtime.evidence.types import EvidenceLinkType, EvidenceSourceType
 from agent_runtime.memory.repository import MemoryRepository
 from agent_runtime.memory.types import MemoryScope, MemorySensitivity, MemoryType
-from agent_runtime.resumes.repository import ResumeDocumentRepository, ResumeNotFoundError
+from agent_runtime.resumes.repository import ResumeDocumentRepository
 from agent_runtime.workspace.repository import JobWorkspaceRepository
 from agent_runtime.workspace.types import ArtifactType
 from custom_agent.handlers import JobAgentStepHandler
@@ -46,7 +46,7 @@ _COVER_SYSTEM = (
     "Use a neutral 'Dear Hiring Team,' greeting unless a verified recipient is supplied. "
     "The first paragraph must identify the verified target role and explain the focus of the letter "
     "without making an unsupported candidate claim. Select only two or three strong evidence-backed "
-    "themes. For each evidence paragraph, integrate the exact confirmed evidence text into natural "
+    "themes. For each evidence paragraph, paraphrase the confirmed evidence faithfully in natural "
     "prose and explain its relevance to an employer need without adding candidate facts. Do not emit "
     "a resume bullet as a complete paragraph. Cite the evidence ID, evidence version ID, and relevant "
     "target requirement IDs. Include a short role-specific motivation or contribution paragraph that "
@@ -167,6 +167,14 @@ def resume_analysis_from_snapshot(
 
 
 class SharedPackModel:
+    def verify_claims(self, claims):
+        from agent_runtime.semantics import SemanticDecisions
+        return SemanticDecisions().claims(claims)
+
+    def classify_question(self, question):
+        from agent_runtime.semantics import SemanticDecisions
+        return SemanticDecisions().question(question)
+
     """Use existing custom resume handlers and the shared structured model settings."""
 
     def __init__(self) -> None:
@@ -218,16 +226,25 @@ class ApplicationPackWorkflow:
         self._packs, self._workspace, self._evidence, self._memories = packs, workspace, evidence, memories
         self._resumes, self._owner_id = resumes, owner_id
         self._model = model or SharedPackModel()
-        self._verifier = verifier or ArtifactVerifier()
+        self._verifier = verifier or ArtifactVerifier(getattr(self._model, "verify_claims", None))
         self._selection = EvidenceSelectionPolicy()
 
-    def _resume_header_lines(self) -> list[str]:
-        if self._resumes is None:
+    def _resume_header_lines(self, application_id: str) -> list[str]:
+        artifacts = self._workspace.list_artifacts(application_id)
+        analysis = next((item for item in reversed(artifacts)
+                         if item.artifact_type == ArtifactType.RESUME_ANALYSIS), None)
+        text = self._workspace.resume_source(analysis.artifact_id) if analysis else None
+        if text is None:
+            match = next((item for item in reversed(artifacts)
+                          if item.artifact_type == ArtifactType.MATCH_REPORT), None)
+            source = self._packs.resume_source(application_id, match.source_run_id) if match and match.source_run_id else None
+            text = source[0] if source else None
+        if text is None:
             return []
-        try:
-            text = self._resumes.default(self._owner_id).extracted_text
-        except ResumeNotFoundError:
-            return []
+        return self.resume_header_lines(text)
+
+    @staticmethod
+    def resume_header_lines(text: str) -> list[str]:
         lines = [line.strip() for line in text.splitlines() if line.strip()]
         section_names = {
             "summary", "professional summary", "education", "experience",
@@ -307,7 +324,7 @@ class ApplicationPackWorkflow:
             raise PackValidationError("Confirm relevant resume or Career Evidence before generating a Pack.")
         preferences = self._preferences()
         model_configuration = self._model_configuration()
-        resume_header_lines = self._resume_header_lines()
+        resume_header_lines = self._resume_header_lines(application_id)
         digest = evidence_set_hash(selected, job_snapshot_id=app.current_snapshot_id,
                                    preferences=preferences, prompt_version=PACK_PROMPT_VERSION,
                                    model_configuration=model_configuration,
@@ -352,15 +369,12 @@ class ApplicationPackWorkflow:
             item for item in reversed(artifacts)
             if item.artifact_type == ArtifactType.RESUME_ANALYSIS
         ), None)
-        if resume_artifact is not None and self._resumes is not None:
-            try:
-                resume_document = self._resumes.default(self._owner_id)
-            except ResumeNotFoundError:
-                resume_document = None
-            if resume_document is not None:
+        if resume_artifact is not None:
+            original_text = self._workspace.resume_source(resume_artifact.artifact_id)
+            if original_text is not None:
                 imported = self._evidence.import_resume_evidence(
                     ResumeAnalysis.model_validate(resume_artifact.content),
-                    resume_document.extracted_text,
+                    original_text,
                     created_by="pack_resume_import",
                 )
                 linked = {
@@ -406,6 +420,7 @@ class ApplicationPackWorkflow:
             "skill_match": match.model_dump(mode="json"),
             "evidence": [e.model_dump(mode="json") for e in snap.items],
             "preferences": snap.preference_versions, "question": item.source_question,
+            "user_revision_feedback": item.regeneration_feedback,
             "max_length": item.max_length}, ensure_ascii=False)
 
     def _resume_state(self, pack_id: str, item: ApplicationPackItem,
@@ -420,17 +435,21 @@ class ApplicationPackWorkflow:
             *(e.exact_text for e in resume_analysis.evidence),
         ])
         verification = None
+        if content is not None and item.regeneration_feedback:
+            verification = VerificationResult(passed=True, unsupported_claims=[], revision_feedback=[])
         if feedback is not None:
             verification = VerificationResult(passed=False,
                 unsupported_claims=[UnsupportedClaim(claim=i.unsupported_text or "Length limit",
                     reason=i.reason) for i in feedback.issues],
                 revision_feedback=[i.revision_instruction for i in feedback.issues])
-        return AgentState(run_id=pack_id, step=Step.REVISE_RESUME if feedback else Step.WRITE_RESUME,
-            status=AgentStatus.REVISING if feedback else AgentStatus.RUNNING,
+        revising = feedback is not None or bool(content and item.regeneration_feedback)
+        return AgentState(run_id=pack_id, step=Step.REVISE_RESUME if revising else Step.WRITE_RESUME,
+            status=AgentStatus.REVISING if revising else AgentStatus.RUNNING,
             resume_text=source_text, job_description=self._workspace.current_snapshot(snap.application_id).cleaned_job_description,
             resume_analysis=resume_analysis,
             job_analysis=job, skill_match=match,
             tailored_resume=TailoredResume.model_validate(content) if content else None,
+            human_feedback=item.regeneration_feedback,
             verification=verification)
 
     def generate(self, pack_id: str, *, artifact_type: str, expected_version: int,
@@ -441,7 +460,7 @@ class ApplicationPackWorkflow:
         if artifact_type == "application_answer":
             if not question or not question.strip() or len(question) > 5000:
                 raise PackValidationError("An explicit application question is required.")
-            category = classify_question(question)
+            category = classify_question(question, classifier=getattr(self._model, "classify_question", None))
             manual = requires_manual_answer(category)
         else:
             if question is not None: raise PackValidationError("Questions apply only to application answers.")
@@ -467,18 +486,21 @@ class ApplicationPackWorkflow:
                     return item
                 try:
                     current = self._packs.artifact(pack_id, item_id)
+                    revising = item.status == ItemStatus.NEEDS_REVISION or bool(
+                        item.regeneration_feedback and current)
                     if item.artifact_type == "tailored_resume":
                         snapshot = self._packs.snapshot(pack_id)
                         state = self._resume_state(pack_id, item,
-                            content=current if item.status == ItemStatus.NEEDS_REVISION else None,
+                            content=current if revising else None,
                             feedback=item.verification if item.status == ItemStatus.NEEDS_REVISION else None)
-                        content = (self._model.revise_resume(state, snapshot.preference_versions) if item.status == ItemStatus.NEEDS_REVISION
+                        content = (self._model.revise_resume(state, snapshot.preference_versions) if revising
                                    else self._model.resume(state, snapshot.preference_versions)).model_dump(mode="json")
                     else:
                         context = self._context(pack_id, item)
-                        if item.status == ItemStatus.NEEDS_REVISION:
+                        if revising:
                             context += "\nCurrent artifact: " + json.dumps(current, ensure_ascii=False)
-                            context += "\nVerification feedback: " + item.verification.model_dump_json()
+                            if item.verification:
+                                context += "\nVerification feedback: " + item.verification.model_dump_json()
                             result = self._model.revise_blocks(item.artifact_type, context)
                         else:
                             result = self._model.cover_letter(context) if item.artifact_type == "cover_letter" else self._model.application_answer(context)
@@ -504,6 +526,7 @@ class ApplicationPackWorkflow:
                         # Same custom verifier prompt as the existing resume workflow.
                         state = AgentState.model_validate({**state.model_dump(mode="python"),
                             "step": Step.VERIFY_RESUME,
+                            "status": AgentStatus.RUNNING,
                             "tailored_resume": TailoredResume.model_validate(content)})
                         result = self._model.verify_resume(state)
                         if not result.passed:
@@ -542,7 +565,7 @@ class ApplicationPackWorkflow:
                                   verification=verdict)
 
     def regenerate(self, pack_id: str, item_id: str, *, expected_version: int,
-                   idempotency_key: str) -> ApplicationPackItem:
+                   idempotency_key: str, feedback: str | None = None) -> ApplicationPackItem:
         item = self._packs.request_regeneration(pack_id, item_id,
-            expected_version=expected_version, idempotency_key=idempotency_key)
+            expected_version=expected_version, idempotency_key=idempotency_key, feedback=feedback)
         return self.continue_item(pack_id, item_id) if item.status == ItemStatus.GENERATING else item

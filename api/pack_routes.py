@@ -101,7 +101,7 @@ def regenerate(pack_id: str, item_id: str, body: PackMutation,
                runtime: SessionRuntime = Depends(get_session_runtime)):
     workflow, _ = _runtime(runtime)
     workflow.regenerate(pack_id, item_id, expected_version=body.expected_version,
-                        idempotency_key=body.idempotency_key)
+                        idempotency_key=body.idempotency_key, feedback=body.feedback)
     record_action(runtime, source_type=(FeedbackSourceType.MANUAL_FEEDBACK if body.feedback
         else FeedbackSourceType.ARTIFACT_REJECTED),
         source_action_id=f"pack-regenerate:{body.idempotency_key}",
@@ -133,7 +133,7 @@ def approve(pack_id: str, item_id: str, body: PackMutation,
     record_action(runtime, source_type=FeedbackSourceType.ARTIFACT_ACCEPTED,
         source_action_id=f"pack-approve:{body.idempotency_key}",
         content="User approved this artifact.", artifact_id=item_id,
-        context_metadata_json={"artifact_type":repository.item(pack_id, item_id).artifact_type.value})
+        context_metadata_json={"artifact_type":repository.item(pack_id, item_id).artifact_type})
     return _detail(pack_id, runtime)
 
 

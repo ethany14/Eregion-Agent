@@ -28,7 +28,7 @@ class EvidenceSelectionPolicy:
         generic_words = {"with", "from", "have", "experience", "experienced", "working",
                          "work", "team", "teams", "role", "candidate", "strong", "skills",
                          "ability", "using", "good", "the", "and", "for", "this", "that"}
-        context_words = _words(" ".join([job.title, job.summary, *job.responsibilities])) - generic_words
+        context_words = _words(" ".join([job.title or "", job.summary, *job.responsibilities])) - generic_words
         by_id = {item.evidence_id: item for item in evidence
                  if item.status == EvidenceStatus.CONFIRMED
                  and not _INSTRUCTION_TEXT.search(item.current.claim_text)}
@@ -115,10 +115,19 @@ _LEGAL = re.compile(r"\b(sponsor(?:ship)?|work authori[sz]ation|citizen(?:ship)?
 _LOGISTICS = re.compile(r"\b(salary|compensation|relocat|availab|start date|travel)\w*\b", re.I)
 
 
-def classify_question(question: str) -> str:
+def classify_question(question: str, *, classifier=None) -> str:
     if _DEMOGRAPHIC.search(question): return "demographic"
     if _LEGAL.search(question): return "legal_or_identity"
     if _LOGISTICS.search(question): return "logistics"
+    if classifier is not None:
+        try:
+            category = classifier(question)
+            if category in {"experience", "role_fit", "motivation", "company_interest",
+                            "logistics", "legal_or_identity", "demographic", "unknown"}:
+                return category
+        except Exception:
+            # A model failure must not accidentally permit unknown personal claims.
+            return "unknown"
     lowered = question.casefold()
     if re.search(r"\b(why (?:this|our) company|interested in (?:this|our) company)\b", lowered): return "company_interest"
     if re.search(r"\b(why|motivat|interested)\b", lowered): return "motivation"

@@ -1,4 +1,4 @@
-"""Read-only deterministic memory selection."""
+"""Scoped memory retrieval with semantic relevance and a lexical fallback."""
 
 from __future__ import annotations
 
@@ -39,9 +39,11 @@ _SCOPE_RANK = {MemoryScope.USER: 1, MemoryScope.PROJECT: 2, MemoryScope.SESSION:
 
 
 class MemoryRetriever:
-    def __init__(self, reader: ConfirmedMemoryReader, *, clock: Clock | None = None) -> None:
+    def __init__(self, reader: ConfirmedMemoryReader, *, clock: Clock | None = None,
+                 semantic_ranker=None) -> None:
         self._reader = reader
         self._clock = clock or SystemClock()
+        self._semantic_ranker = semantic_ranker
 
     def retrieve(self, query: MemoryQuery) -> MemoryRetrievalResult:
         candidates = list(self._reader.list_confirmed(
@@ -61,12 +63,24 @@ class MemoryRetriever:
             (item, score_memory(item, query.text, query.required_memory_keys))
             for item in resolved
         ]
+        relevant_ids = set()
+        if self._semantic_ranker and scored:
+            # Apply ownership, sensitivity, expiry and scope BEFORE sharing any
+            # candidate with the model. Bound cost even for a large memory store.
+            bounded = sorted(scored, key=lambda pair: (-pair[1].total, pair[0].memory_id))[:40]
+            try:
+                relevant_ids = set(self._semantic_ranker(query.text, [m for m, _ in bounded]))
+                relevant_ids &= {m.memory_id for m, _ in bounded}
+            except Exception:
+                relevant_ids = set()  # lexical fallback stays useful during outages
+        scored = [(item, score.model_copy(update={"total": score.total + 8.0})
+                   if item.memory_id in relevant_ids else score) for item, score in scored]
         # Confidence alone does not make a Memory relevant. Required keys bypass
         # lexical matching; every other item needs an actual query match.
         scored = [
             (item, score)
             for item, score in scored
-            if score.required_key_priority > 0 or bool(score.matched_tokens)
+            if score.required_key_priority > 0 or bool(score.matched_tokens) or item.memory_id in relevant_ids
         ]
         scored.sort(key=lambda pair: (
             -pair[1].required_key_priority,

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import logging
 import subprocess
 import warnings
 from datetime import UTC, datetime
@@ -13,8 +12,6 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any
 
-from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 
 from evals import DATASET_VERSION
 from evals.metrics import (
@@ -28,14 +25,18 @@ from evals.metrics import (
     count_forbidden_claims,
     phrase_detected,
 )
-from job_agent.graph import builder
-from job_agent.nodes import _create_model, make_evidence_id, revise_resume, verify_resume
+from evals.runtime import EvaluationWorkflow, execute_reflection_step
+from custom_agent.state import Step
+from job_agent.model import create_model as _create_model
+from job_agent.domain import make_evidence_id, normalize_resume_analysis
 from job_agent.prompts import PROMPT_VERSION
 from job_agent.schemas import (
     SCHEMA_VERSION,
     JobAnalysis,
     ResumeAnalysis,
     ResumeEvidence,
+    ResumeEntry,
+    ResumeSection,
     SkillMatch,
     SupportedClaim,
     TailoredResume,
@@ -66,31 +67,24 @@ def _expected_requirements(case: dict[str, Any]) -> list[MissingRequirement]:
 
 def run_case(
     case: dict[str, Any],
-    graph: Any,
+    workflow: EvaluationWorkflow,
     *,
     callbacks: list[Any] | None = None,
     thread_id: str | None = None,
 ) -> EvaluationResult:
     case_id = case["id"]
     is_input_validation = "expected_error" in case
-    config: dict[str, Any] = {
-        "configurable": {"thread_id": thread_id or f"eval-{case_id}"}
-    }
-    if callbacks:
-        config["callbacks"] = callbacks
     started = perf_counter()
     try:
-        result = graph.invoke(
+        result = workflow.run(
             {"resume_text": case["resume_text"], "job_description": case["job_description"]},
-            config=config,
-        )
-        snapshot = graph.get_state(config)
-        reached_review = bool(result.get("__interrupt__")) and snapshot.next == ("human_review",)
+            run_id=thread_id or f"eval-{case_id}", callbacks=callbacks)
+        reached_review = result["reached_human_review"]
         if not reached_review:
-            raise RuntimeError("Graph did not pause at human_review.")
-        skill_match = SkillMatch.model_validate(snapshot.values["skill_match"])
-        tailored_resume = TailoredResume.model_validate(snapshot.values["tailored_resume"])
-        verification = VerificationResult.model_validate(snapshot.values["verification"])
+            raise RuntimeError("Agent did not pause for human review.")
+        skill_match = SkillMatch.model_validate(result["skill_match"])
+        tailored_resume = TailoredResume.model_validate(result["tailored_resume"])
+        verification = VerificationResult.model_validate(result["verification"])
         actual = [
             MissingRequirement.model_validate(item.model_dump(mode="json"))
             for item in skill_match.missing_required_requirements
@@ -123,7 +117,7 @@ def run_case(
                 tailored_resume_text(tailored_resume), case.get("forbidden_claims", [])
             ),
             verification_passed=verification.passed,
-            revision_count=snapshot.values["revision_count"],
+            revision_count=result["revision_count"],
             latency_seconds=round(perf_counter() - started, 3),
             error=None,
         )
@@ -182,13 +176,19 @@ def summarize(results: list[EvaluationResult]) -> dict[str, float | int]:
 
 def _adversarial_state(case: dict[str, Any]) -> dict[str, Any]:
     evidence_id = make_evidence_id(case["resume_text"])
-    supported = [SupportedClaim(text=text, evidence_ids=[evidence_id], source_entry_id="legacy:unattributed") for text in case["supported_claims"]]
-    injected = [SupportedClaim(text=text, evidence_ids=[evidence_id], source_entry_id="legacy:unattributed") for text in case["injected_claims"]]
-    resume_analysis = ResumeAnalysis(
+    resume_analysis = normalize_resume_analysis(ResumeAnalysis(
         summary=case["resume_text"], skills=[],
-        evidence=[ResumeEvidence(evidence_id=evidence_id, source_section="Resume", exact_text=case["resume_text"])],
-        education=[],
-    )
+        evidence=[ResumeEvidence(evidence_id=evidence_id, source_section="Experience",
+                                 exact_text=case["resume_text"])], education=[]))
+    source = resume_analysis.source_entries[0]
+    claims = [SupportedClaim(text=value, evidence_ids=[evidence_id],
+                             source_entry_id=source.source_entry_id)
+              for value in [*case["supported_claims"], *case["injected_claims"]]]
+    draft = TailoredResume(schema_version=2, sections=[ResumeSection(
+        section_type="experience", title="Experience", entries=[ResumeEntry(
+            entry_id=source.source_entry_id, heading=source.heading,
+            subheading=source.organization, location=source.location,
+            start_date=source.start_date, end_date=source.end_date, bullets=claims)])])
     return {
         "resume_text": case["resume_text"],
         "job_description": case["job_description"],
@@ -198,9 +198,7 @@ def _adversarial_state(case: dict[str, Any]) -> dict[str, Any]:
             matches=[], explanation="Adversarial verifier evaluation.", recommendations=[],
             missing_required_requirements=[], missing_preferred_requirements=[], overall_score=0,
         ).model_dump(mode="json"),
-        "tailored_resume": TailoredResume(
-            professional_summary=supported, experience_bullets=injected, highlighted_skills=[]
-        ).model_dump(mode="json"),
+        "tailored_resume": draft.model_dump(mode="json"),
         "verification": None,
         "revision_feedback": [], "revision_count": 0, "max_revisions": 3,
         "approved": None, "human_feedback": None, "workflow_status": "running",
@@ -211,21 +209,16 @@ def run_adversarial_case(
     case: dict[str, Any], callbacks: list[Any] | None = None
 ) -> ReflectionEvaluationResult:
     state = _adversarial_state(case)
-    config: dict[str, Any] = {
-        "configurable": {"thread_id": f"adversarial-{case['id']}"}
-    }
-    if callbacks:
-        config["callbacks"] = callbacks
     started = perf_counter()
     try:
-        state.update(verify_resume(state, config))
+        state.update(execute_reflection_step(Step.VERIFY_RESUME, state, callbacks))
         initial = VerificationResult.model_validate(state["verification"])
         detected_text = [item.claim for item in initial.unsupported_claims]
         detected = sum(phrase_detected(claim, detected_text) for claim in case["injected_claims"])
         false_positives = sum(phrase_detected(claim, detected_text) for claim in case["supported_claims"])
         while not VerificationResult.model_validate(state["verification"]).passed and state["revision_count"] < state["max_revisions"]:
-            state.update(revise_resume(state, config))
-            state.update(verify_resume(state, config))
+            state.update(execute_reflection_step(Step.REVISE_RESUME, state, callbacks))
+            state.update(execute_reflection_step(Step.VERIFY_RESUME, state, callbacks))
         final = VerificationResult.model_validate(state["verification"])
         return ReflectionEvaluationResult(
             case_id=case["id"],
@@ -279,27 +272,11 @@ def run_evaluations(cases_path: Path, adversarial_path: Path, output_path: Path)
             check=True,
         ).stdout.strip()
     )
-    checkpoint_messages: list[str] = []
-
-    class CheckpointWarningHandler(logging.Handler):
-        def emit(self, record: logging.LogRecord) -> None:
-            checkpoint_messages.append(record.getMessage())
-
-    checkpoint_logger = logging.getLogger("langgraph.checkpoint.serde")
-    handler = CheckpointWarningHandler(level=logging.WARNING)
-    checkpoint_logger.addHandler(handler)
-    try:
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            graph = builder.compile(
-                checkpointer=InMemorySaver(
-                    serde=JsonPlusSerializer(allowed_msgpack_modules=None)
-                )
-            )
-            workflow_results = [run_case(case, graph) for case in load_cases(cases_path)]
-            reflection_results = [run_adversarial_case(case) for case in load_cases(adversarial_path)]
-    finally:
-        checkpoint_logger.removeHandler(handler)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        workflow = EvaluationWorkflow()
+        workflow_results = [run_case(case, workflow) for case in load_cases(cases_path)]
+        reflection_results = [run_adversarial_case(case) for case in load_cases(adversarial_path)]
     model = _create_model()
     report = {
         "run_metadata": {
@@ -314,12 +291,11 @@ def run_evaluations(cases_path: Path, adversarial_path: Path, output_path: Path)
             "dataset_version": DATASET_VERSION,
         },
         "environment": {
-            "langgraph": version("langgraph"),
-            "langgraph_checkpoint": version("langgraph-checkpoint"),
+            "backend": "custom",
             "pydantic": version("pydantic"),
         },
         "warnings": list(dict.fromkeys(
-            [str(item.message) for item in caught] + checkpoint_messages
+            [str(item.message) for item in caught]
         )),
         "workflow_summary": summarize(workflow_results),
         "reflection_summary": summarize_reflection(reflection_results),

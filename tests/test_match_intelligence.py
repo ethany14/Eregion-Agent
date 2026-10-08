@@ -1,11 +1,8 @@
-from unittest.mock import patch
-
 import pytest
 
 from custom_agent.handlers import JobAgentStepHandler
 from custom_agent.state import AgentState, Step
 from job_agent.domain import normalize_skill_match
-from job_agent.nodes import match_skills
 from job_agent.prompts import MATCH_PROMPT
 from job_agent.schemas import (
     JobAnalysis,
@@ -194,7 +191,7 @@ def test_adjacent_tools_do_not_prove_specific_requirement(name):
     assert result.matches[0].resume_evidence == []
 
 
-def test_langgraph_and_custom_handlers_share_match_post_processing():
+def test_custom_handler_applies_match_post_processing():
     fact = "Built Tableau dashboards."
     power_bi = requirement("power_bi")
     job = JobAnalysis(
@@ -205,14 +202,6 @@ def test_langgraph_and_custom_handlers_share_match_post_processing():
     )
     resume = resume_with(fact)
     assessment = assessment_for(power_bi, evidence=[fact])
-
-    with patch("job_agent.nodes._analyze", return_value=assessment):
-        langgraph = SkillMatch.model_validate(
-            match_skills(
-                {"resume_analysis": resume, "job_analysis": job},
-                {},
-            )["skill_match"]
-        )
 
     handler = JobAgentStepHandler(
         analyzer=lambda schema, system_message, human_message: assessment
@@ -227,5 +216,4 @@ def test_langgraph_and_custom_handlers_share_match_post_processing():
     )
     custom = handler.execute(Step.MATCH_SKILLS, state).updates["skill_match"]
 
-    assert custom == langgraph
     assert custom.matches[0].match_status == "missing"

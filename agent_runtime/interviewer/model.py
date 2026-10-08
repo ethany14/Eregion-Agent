@@ -16,6 +16,10 @@ class InterviewModelClient(Protocol):
 
 
 class SharedInterviewModel:
+    def verify_claims(self, claims):
+        from agent_runtime.semantics import SemanticDecisions
+        return SemanticDecisions().claims(claims)
+
     def question(self, assessment: ApplicationRequirementAssessment, context: str) -> InterviewQuestion:
         model = create_model()
         return invoke_structured(model, InterviewQuestion, QUESTION_SYSTEM, context)

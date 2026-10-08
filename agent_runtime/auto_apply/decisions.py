@@ -1,0 +1,82 @@
+"""Run-local model decisions: presentation/defaults are not candidate facts."""
+import re
+import unicodedata
+
+from .contracts import candidate_answer
+from .matching import is_consent
+
+
+def signature(field):
+    return {k: field.get(k) for k in ("key", "label", "kind", "group")}
+
+
+def source_value(state, reference):
+    if reference.startswith('education:'):
+        from .education import facts
+        return facts(state['profile']).get(reference)
+    kind, _, key = reference.partition(":")
+    return state.get({"profile":"profile", "answer":"answers"}.get(kind, "__missing"), {}).get(key)
+
+
+def active_decision(field, state):
+    decision = state.get("field_decisions", {}).get(field["key"])
+    if not decision or decision["field"] != signature(field): return None
+    if any(ref.startswith('education:') for ref in decision['sources']):
+        from .education import binding
+        bound=binding(field,state)
+        if not bound or bound['source_ref'] not in decision['sources']:return None
+    if candidate_answer(field, state["profile"], state["answers"]) != decision["original_answer"]: return None
+    if any(source_value(state, ref) != value for ref, value in decision["sources"].items()): return None
+    if decision["mode"] == "default" and field["value"] and not field.get("invalid"):
+        from .autofill import matches
+        if not matches(field, decision["value"]): return None # Preserve a later manual choice.
+    return decision
+
+
+def unresolved_paths(fields, state):
+    from .autofill import matches
+    keys={f['key'] for f in fields};pending=[]
+    for key,path in state.get('option_paths',{}).items():
+        if key not in keys or source_value(state,path['source_ref']) != path['goal']: continue
+        complete=False
+        for field in fields:
+            if field['key'] not in path['field_keys']: continue
+            decision=active_decision(field,state)
+            if matches(field,path['goal']) or (decision and decision['mode']=='equivalent' and
+                decision['sources'].get(path['source_ref'])==path['goal'] and matches(field,decision['value'])):
+                complete=True;break
+        if not complete:pending.append(key)
+    return pending
+
+
+def protected(field):
+    text = " ".join(str(field.get(k) or "") for k in ("label", "group", "help"))
+    return is_consent(field) or field["kind"] in {"checkbox", "password", "file"} or bool(re.search(
+        r"\b(consent|agree|authorization|authori[sz]ed|sponsor\w*|visa|immigration|citizen\w*|eligib\w*|"
+        r"salary|compensation|pay expectation|race|ethnic\w*|gender|disabil\w*|veteran|criminal|background check|"
+        r"qualif\w*|degree|education|experience|certifi\w*|licen[cs]\w*|fluent|proficien\w*|relocat\w*|"
+        r"availability|start date|terms|privacy|marketing|subscribe)\b|授权|签证|担保|同意|薪资|性别|残疾|国籍",
+        text, re.I))
+
+
+def preserves_format(value, sources):
+    """Check conservation, not site-specific labels or a phone-country table.
+
+    The model decides which component belongs in which observed control. A phone
+    can be reformatted, or partitioned into its 1–3 digit prefix and number.
+    """
+    def clean(text):
+        return ''.join(c.casefold() for c in unicodedata.normalize('NFKD', str(text)) if c.isalnum())
+    for ref, original in sources.items():
+        if ref == "profile:phone" or (ref.startswith("answer:") and re.search(r"phone|telephone|mobile|tel:", ref, re.I)):
+            digits = re.sub(r"\D", "", str(original))
+            proposed = re.sub(r"\D", "", str(value))
+            if not proposed: continue
+            if digits == proposed: return True
+            international = digits[2:] if str(original).strip().startswith('00') else digits
+            if 1 <= len(proposed) <= 3 and international.startswith(proposed) and str(original).strip().startswith(('+', '00')):
+                return True
+            if len(proposed) >= 4 and international.endswith(proposed) and 0 < len(international)-len(proposed) <= 3:
+                return True
+        elif clean(value) == clean(original): return True
+    return False

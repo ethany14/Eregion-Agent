@@ -316,7 +316,8 @@ class InterviewController:
                     idempotency_key=f"classification:{answer.turn_id}:skip")
             elif decision.outcome == AnswerOutcome.SUFFICIENT_FOR_CANDIDATE:
                 try:
-                    claim, quote = validate_candidate(answer.content, decision)
+                    claim, quote = validate_candidate(answer.content, decision,
+                        semantic_judge=getattr(self._model, "verify_claims", None))
                 except InterviewValidationError:
                     result = self._clarify_or_skip(interview, assessment, answer.turn_id,
                                                    "candidate_validation_failed")

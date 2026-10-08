@@ -1,7 +1,6 @@
-from unittest.mock import patch
-
 from job_agent.domain import calculate_score_breakdown
-from job_agent.nodes import match_skills
+from custom_agent.handlers import JobAgentStepHandler
+from custom_agent.state import AgentState, Step
 from job_agent.schemas import (
     JobAnalysis,
     JobRequirement,
@@ -145,13 +144,11 @@ def test_match_handler_returns_grouped_score_breakdown():
         recommendations=[],
     )
 
-    with patch("job_agent.nodes._analyze", return_value=assessment):
-        result = SkillMatch.model_validate(
-            match_skills(
-                {"resume_analysis": resume, "job_analysis": job},
-                {},
-            )["skill_match"]
-        )
+    handler = JobAgentStepHandler(analyzer=lambda *args: assessment)
+    result = handler.execute(Step.MATCH_SKILLS, AgentState(
+        run_id="grouped", resume_text=fact, job_description="Python and SQL",
+        step=Step.MATCH_SKILLS, resume_analysis=resume, job_analysis=job
+    )).updates["skill_match"]
 
     assert result.overall_score == 50.0
     assert result.score_breakdown == ScoreBreakdown(

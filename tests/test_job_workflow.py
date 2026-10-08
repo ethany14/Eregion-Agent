@@ -111,7 +111,8 @@ def test_candidate_rejects_quote_not_in_original_resume_after_bounded_retry():
     assert len(calls) == 2
 
 
-def test_isolated_parallel_analysis_and_persisted_mode(tmp_path):
+@pytest.mark.parametrize("max_calls", [0, 20])
+def test_isolated_parallel_analysis_and_persisted_mode(tmp_path, max_calls):
     url = f"sqlite:///{(tmp_path / 'workflow.db').as_posix()}"
     upgrade_database(url)
     db = create_database(url)
@@ -137,6 +138,7 @@ def test_isolated_parallel_analysis_and_persisted_mode(tmp_path):
                                        workers=workers, contexts=contexts)
         plan = build_analysis_plan(application_id=application.application_id,
             parent_session_id="parent", idempotency_key="analysis-1")
+        plan.budget.max_model_calls = max_calls
         depths = AgentPlanValidator(worker_types=workers.names(),
             registered_tools=frozenset(), parent_tools=frozenset(),
             session_tools=frozenset()).validate(plan)
@@ -150,12 +152,20 @@ def test_isolated_parallel_analysis_and_persisted_mode(tmp_path):
         by_key = {task.idempotency_key: task for task in tasks.children(root.task_id)}
         assert by_key["candidate"].status == by_key["job"].status == TaskStatus.READY
         assert by_key["match"].status == TaskStatus.BLOCKED
+        if max_calls == 0:
+            blocked = scheduler.run_one(by_key["candidate"].task_id)
+            assert blocked.status == TaskStatus.FAILED
+            assert blocked.error_code == "budget_exceeded"
+            assert tasks.plan_usage(root.task_id) == {}
+            return
         assert scheduler.run_one(by_key["candidate"].task_id).status == TaskStatus.SUCCEEDED
         assert tasks.require(by_key["match"].task_id).status == TaskStatus.BLOCKED
         assert scheduler.run_one(by_key["job"].task_id).status == TaskStatus.SUCCEEDED
         assert tasks.require(by_key["match"].task_id).status == TaskStatus.READY
         assert scheduler.run_one(by_key["match"].task_id).status == TaskStatus.SUCCEEDED
         assert scheduler.run_one(by_key["gap"].task_id).status == TaskStatus.SUCCEEDED
+        assert tasks.plan_usage(root.task_id)["model_calls"] == 3
+        assert tasks.require(by_key["candidate"].task_id).result_summary["usage"]["input_tokens"] > 0
         from sqlalchemy import text
         with db.session_factory() as session:
             modes = session.execute(text("SELECT DISTINCT workflow_mode FROM agent_task_artifacts")).scalars().all()
@@ -276,6 +286,7 @@ def test_pack_plan_restricts_source_visibility_and_tools():
         "candidate_profile": "candidate", "job_analysis": "job"}
     assert tasks["interview"].input_from_tasks == {"evidence_gap_plan": "gap"}
     assert tasks["freeze"].input_spec["job_snapshot_id"] == "snapshot"
+    assert tasks["freeze"].input_from_tasks["resume_source"] == "source"
     for key in ("resume_writer", "cover_writer"):
         assert set(tasks[key].input_from_tasks) == {
             "generation_evidence_snapshot", "job_analysis", "match_report"}

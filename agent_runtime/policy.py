@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pydantic import ConfigDict
 
-from agent_runtime.types import AgentTool, RuntimeModel, ToolContext, ToolRiskLevel
+from agent_runtime.types import AgentTool, RuntimeModel, ToolContext, ToolRiskLevel, ToolSideEffect
 
 
 class ToolPolicyDecision(RuntimeModel):
@@ -16,6 +16,10 @@ class ToolPolicyDecision(RuntimeModel):
 
 
 class ToolPolicy:
+    def __init__(self, *, automatic_local_tools: frozenset[str] = frozenset()):
+        # Server-owned capability. Tool arguments/metadata cannot grant this.
+        self._automatic_local_tools = automatic_local_tools
+
     _APPROVAL_RISKS = frozenset(
         {
             ToolRiskLevel.LOCAL_WRITE,
@@ -41,6 +45,11 @@ class ToolPolicy:
                 allowed=True,
                 reason="Read-only tools are automatically allowed when allowlisted.",
             )
+        if (tool.name in self._automatic_local_tools
+                and tool.risk_level == ToolRiskLevel.LOCAL_WRITE
+                and tool.side_effect == ToolSideEffect.LOCAL_WRITE and tool.idempotent):
+            return ToolPolicyDecision(allowed=True,
+                reason="This idempotent local draft task is enabled by the server capability.")
         if tool.risk_level in self._APPROVAL_RISKS and not approval_granted:
             return ToolPolicyDecision(
                 allowed=False,

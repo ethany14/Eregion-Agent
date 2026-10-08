@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Offline candidate workflow</title></head><body>
+<main id="app"></main><script>
+window.accountClicks=0;window.submitClicks=0;window.nextClicks=0;window.saved={};
+const app=document.querySelector('#app');
+function landing(){app.innerHTML='<h1>Example Engineer</h1><button type="button" onclick="start()">Apply</button>';}
+function start(){app.insertAdjacentHTML('beforeend','<div role="dialog"><h2>Start Your Application</h2><button type="button" onclick="account(false)">Apply Manually</button></div>');}
+function account(register){
+ app.innerHTML='<button type="button">Sign In</button><div role="dialog"><h2>'+(register?'Create Account':'Sign In')+'</h2><form id="account" onsubmit="return false"><label>Email<input type="email" name="email" required></label><label>Password<input type="password" name="password" autocomplete="'+(register?'new-password':'current-password')+'" required></label>'+(register?'<label>Confirm password<input type="password" name="confirm" required></label><label><input type="checkbox" name="terms" required>I agree to account terms</label>':'')+'<button type="button" onclick="login()">'+(register?'Create Account':'Sign In')+'</button><a href="#" onclick="account('+!register+');return false">'+(register?'Sign In':'Create Account')+'</a></form></div>';
+}
+function login(){window.accountClicks++;if(!document.querySelector('#account').reportValidity())return;document.cookie='auth=offline-session;path=/;secure';personal();}
+function personal(){app.innerHTML='<h1>My Information</h1><form onsubmit="savePersonal();return false"><label>First name<input name="first_name" required></label><label>Last name<input name="last_name" required></label><label>Email<input type="email" name="email" required></label><button type="submit">Save and Continue</button></form>';}
+function savePersonal(){window.nextClicks++;window.saved=Object.fromEntries(new FormData(document.querySelector('form')));experience();}
+function experience(){app.innerHTML='<h1>My Experience</h1><form onsubmit="review();return false"><label>Resume/CV<input name="resume" type="file" required></label><label id="country-label">Country*</label><button type="button" id="country" aria-haspopup="listbox" aria-controls="countries" aria-labelledby="country-label" aria-required="true" onclick="document.querySelector(\'#countries\').hidden=false">Select One</button><div id="countries" role="listbox" hidden><div role="option" data-value="US" onclick="chooseCountry()">United States</div></div><button type="submit">Save and Continue</button></form>';}
+function chooseCountry(){document.querySelector('#country').textContent='United States';document.querySelector('#countries').hidden=true;}
+function review(){window.nextClicks++;app.innerHTML='<h1>Review</h1><p id="summary">'+window.saved.first_name+' '+window.saved.last_name+'</p><button type="button" onclick="done()">Submit Application</button>';}
+function done(){window.submitClicks++;app.innerHTML='<div data-automation-id="applicationConfirmation">Application received</div>';}
+if(document.cookie.includes('auth='))personal();else landing();
+</script></body></html>

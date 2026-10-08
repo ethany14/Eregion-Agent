@@ -16,11 +16,11 @@ class SessionApiModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-CapabilityProfile = Literal["job_assistant_readonly"]
+CapabilityProfile = Literal["job_assistant", "job_assistant_readonly"]
 
 
 class CreateSessionRequest(SessionApiModel):
-    capability_profile: CapabilityProfile = "job_assistant_readonly"
+    capability_profile: CapabilityProfile = "job_assistant"
     title: str | None = Field(default=None, max_length=256)
     active_run_id: str | None = Field(default=None, min_length=1, max_length=128)
     application_id: str | None = Field(default=None, min_length=1, max_length=128)

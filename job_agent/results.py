@@ -21,10 +21,10 @@ def public_result(state: dict[str, Any]) -> dict[str, Any]:
     output: dict[str, Any] = {}
     for field, schema in required_outputs.items():
         if field not in state:
-            raise RuntimeError(f"Graph completed without producing '{field}'.")
+            raise RuntimeError(f"Agent completed without producing '{field}'.")
         output[field] = schema.model_validate(state[field]).model_dump(mode="json")
     if "tailored_resume" not in state or state.get("verification") is None:
-        raise RuntimeError("Graph completed without generating and verifying a resume.")
+        raise RuntimeError("Agent completed without generating and verifying a resume.")
     output.update(
         {
             "tailored_resume": TailoredResume.model_validate(
@@ -39,13 +39,3 @@ def public_result(state: dict[str, Any]) -> dict[str, Any]:
         }
     )
     return output
-
-
-def interrupt_payload(state: dict[str, Any]) -> dict[str, Any] | None:
-    interruptions = state.get("__interrupt__", ())
-    if not interruptions:
-        return None
-    payload = interruptions[0].value
-    if not isinstance(payload, dict):
-        raise RuntimeError("Human review interrupt returned an invalid payload.")
-    return payload

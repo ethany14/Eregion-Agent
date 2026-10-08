@@ -1,0 +1,23 @@
+<!doctype html><html><head><style>
+body{margin:0;font:16px Arial;color:#253746;background:white}main{margin:60px 190px;width:620px}
+h1{text-align:center;margin-bottom:60px}.picker{width:340px;position:relative}
+input{box-sizing:border-box;width:340px;height:40px;padding:10px;border:1px solid #8a949d;background:white}
+#choices{position:absolute;top:40px;left:0;width:338px;border:1px solid #76b900;background:white;z-index:2}
+#choices div{height:36px;box-sizing:border-box;padding:9px 12px;cursor:pointer;font-size:14px}
+#choices div:hover{background:#ecf5e5}#choices span{float:right}button{margin-top:260px;padding:12px}
+</style></head><body><main><h1>My Information</h1><form id="application" onsubmit="window.submissions++;return false">
+<label for="source">How Did You Hear About Us?*</label>
+<div class="picker"><input id="source" readonly required placeholder="Select one"><div id="choices" hidden></div></div>
+<button type="submit"><span>Submit Application</span></button></form></main>
+<script>
+window.submissions=0;window.selectedPath=[];
+const input=document.querySelector('#source'),menu=document.querySelector('#choices');
+function show(items){menu.replaceChildren();menu.hidden=false;for(const name of items){
+ const row=document.createElement('div');row.textContent=name;
+ if(name==='Job Board'){const arrow=document.createElement('span');arrow.textContent='›';row.append(arrow);}
+ row.onclick=()=>{window.selectedPath.push(name);if(name==='Job Board')show(['Back','Indeed','LinkedIn']);
+ else if(name==='Back')root();else{input.value=name;menu.hidden=true;input.dispatchEvent(new Event('change',{bubbles:true}));}};
+ menu.append(row);}}
+function root(){show(['Associations','Event/Conference','Job Board','Social Media','University','Website']);}
+input.onclick=root;
+</script></body></html>

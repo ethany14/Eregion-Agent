@@ -42,7 +42,7 @@ export const api = {
   approvePackItem: (packId, itemId, body) => request(`/api/packs/${encodeURIComponent(packId)}/items/${encodeURIComponent(itemId)}/approve`, json("POST", body)),
   rejectPackItem: (packId, itemId, body) => request(`/api/packs/${encodeURIComponent(packId)}/items/${encodeURIComponent(itemId)}/reject`, json("POST", body)),
   regeneratePackItem: (packId, itemId, body) => request(`/api/packs/${encodeURIComponent(packId)}/items/${encodeURIComponent(itemId)}/regenerate`, json("POST", body)),
-  createSession: (body) => request("/sessions", json("POST", { capability_profile: "job_assistant_readonly", ...body })),
+  createSession: (body) => request("/sessions", json("POST", { capability_profile: "job_assistant", ...body })),
   listSessions: () => request("/sessions?limit=100"),
   getSession: (id) => request(`/sessions/${encodeURIComponent(id)}`),
   deleteSession: (id, version) => request(`/sessions/${encodeURIComponent(id)}?expected_version=${version}`, { method: "DELETE" }),

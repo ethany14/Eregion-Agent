@@ -46,6 +46,7 @@ class ApplicationPackItemRow(Base):
     revision_count: Mapped[int] = mapped_column(Integer, nullable=False)
     max_revisions: Mapped[int] = mapped_column(Integer, nullable=False)
     verification_json: Mapped[str | None] = mapped_column(Text)
+    regeneration_feedback: Mapped[str | None] = mapped_column(Text)
     requires_manual_answer: Mapped[bool] = mapped_column(Boolean, nullable=False)
     idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

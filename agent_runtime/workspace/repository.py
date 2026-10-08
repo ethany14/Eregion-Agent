@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 from datetime import UTC, datetime
 from typing import Any
@@ -21,7 +22,7 @@ from agent_runtime.workspace.errors import (
 )
 from agent_runtime.workspace.identity import job_content_hash, normalize_job_url, validate_extracted_page_text
 from agent_runtime.workspace.models import (
-    ApplicationArtifactRow, ApplicationEventRow, ApplicationRow,
+    ApplicationArtifactRow, ApplicationEventRow, ApplicationRow, ApplicationResumeSourceRow,
     ApplicationRunRow, ApplicationSessionRow, JobRow, JobSnapshotRow,
 )
 from agent_runtime.workspace.policy import ApplicationTransitionPolicy
@@ -390,6 +391,8 @@ class JobWorkspaceRepository:
             current = ApplicationStatus(row.status)
             self._policy.validate(current, target_status, applied_at=applied_at or row.applied_at)
             if current == target_status:
+                if target_status == ApplicationStatus.ANALYZING:
+                    raise InvalidApplicationTransitionError("An analysis is already running.")
                 return self._application(row)
             now = datetime.now(UTC); sequence = row.event_sequence + 1
             values = {"status": target_status.value, "version": row.version + 1,
@@ -518,6 +521,12 @@ class JobWorkspaceRepository:
                 ).values(event_sequence=sequence))
             session.flush(); return self._artifact(row)
 
+    def resume_source(self, artifact_id: str) -> str | None:
+        """Return the immutable original text paired with a resume analysis."""
+        with self._session_factory() as session:
+            row = session.get(ApplicationResumeSourceRow, artifact_id)
+            return row.resume_text if row is not None else None
+
     def project_fit_analysis(
         self,
         application_id: str,
@@ -528,6 +537,8 @@ class JobWorkspaceRepository:
         job: JobAnalysis,
         match: SkillMatch,
         expected_version: int,
+        resume_text: str,
+        resume_id: str | None = None,
     ) -> tuple[ApplicationRecord, list[ApplicationArtifactRecord]]:
         """Atomically publish analysis-only Job and match artifacts."""
         owner = f"fit-analysis:{analysis_id}"
@@ -567,6 +578,10 @@ class JobWorkspaceRepository:
                 session.add(row)
                 records.append(row)
 
+            session.flush()
+            session.add(ApplicationResumeSourceRow(artifact_id=records[0].artifact_id,
+                resume_id=resume_id, resume_text=resume_text,
+                content_hash=hashlib.sha256(resume_text.encode()).hexdigest()))
             now = datetime.now(UTC)
             sequence = app.event_sequence
             for row in records:

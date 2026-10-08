@@ -1,4 +1,4 @@
-"""Persisted sequential Agent Loop implemented without LangGraph."""
+"""Persisted sequential Agent Loop with transactional state and events."""
 
 from __future__ import annotations
 
@@ -146,6 +146,8 @@ class AgentLoop:
         if not grounded.evidence:
             assert last_error is not None
             raise last_error
+        self._handler.execute(Step.VALIDATE_EVIDENCE,
+                              self._updated(state, {"resume_analysis": grounded}))
         return type(outcome)(updates={"resume_analysis": grounded})
 
     def review(

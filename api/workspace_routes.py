@@ -1,6 +1,8 @@
 """Minimal public Job Workspace routes."""
 
 from fastapi import APIRouter, Depends, Query, Response, status
+from api.resume_routes import get_fit_analysis_service
+from api.services.fit_analysis_service import FitAnalysisService
 
 from agent_runtime.workspace.repository import JobWorkspaceRepository
 from agent_runtime.workspace.types import ApplicationStatus
@@ -109,9 +111,10 @@ def get_application(application_id: str, repository: JobWorkspaceRepository = De
 @router.post("/applications/{application_id}/analyze", response_model=AnalyzeApplicationResponse)
 async def analyze_application(application_id: str, request: AnalyzeApplicationRequest,
                               repository: JobWorkspaceRepository = Depends(get_workspace_repository),
-                              runtime: SessionRuntime = Depends(get_session_runtime)):
+                              runtime: SessionRuntime = Depends(get_session_runtime),
+                              fit_service: FitAnalysisService = Depends(get_fit_analysis_service)):
     application, run_id, run_status, artifacts = await WorkspaceAnalysisService(
-        repository, evidence=runtime.evidence).analyze(
+        repository, fit_service, evidence=runtime.evidence).analyze(
         application_id, snapshot_id=request.snapshot_id,
         resume_text=request.resume_text, expected_version=request.expected_version)
     return AnalyzeApplicationResponse(application=_application(application), run_id=run_id,

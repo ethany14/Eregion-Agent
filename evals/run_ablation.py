@@ -13,11 +13,6 @@ from typing import Any
 
 from dotenv import dotenv_values
 from langchain_core.callbacks import BaseCallbackHandler
-from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
-from langgraph.graph import END, START, StateGraph
-from langgraph.types import interrupt
-
 from evals import DATASET_VERSION
 from evals.metrics import count_forbidden_claims
 from evals.run_evals import (
@@ -27,20 +22,10 @@ from evals.run_evals import (
     summarize_reflection,
     tailored_resume_text,
 )
-from job_agent.graph import builder as full_builder
-from job_agent.nodes import (
-    ENV_PATH,
-    _create_model,
-    analyze_job,
-    analyze_resume,
-    match_skills,
-    validate_extracted_evidence,
-    validate_input,
-    write_resume,
-)
+from evals.runtime import EvaluationWorkflow
+from job_agent.model import DEFAULT_ENV_PATH as ENV_PATH, create_model as _create_model
 from job_agent.prompts import PROMPT_VERSION
 from job_agent.schemas import SCHEMA_VERSION, TailoredResume
-from job_agent.state import JobAgentState
 
 DEFAULT_CASES_PATH = EVALS_DIR / "cases.json"
 DEFAULT_ADVERSARIAL_CASES_PATH = EVALS_DIR / "adversarial_cases.json"
@@ -85,75 +70,25 @@ class UsageCollector(BaseCallbackHandler):
         return self.input_tokens + self.output_tokens
 
 
-def human_review_without_verifier(state: JobAgentState) -> dict:
-    decision = interrupt(
-        {
-            "question": "Do you approve this tailored resume?",
-            "tailored_resume": state["tailored_resume"],
-            "verification": None,
-            "revision_count": state["revision_count"],
-        }
-    )
-    return {"approved": bool(decision.get("approved"))}
-
-
-def build_writer_only_graph() -> StateGraph:
-    graph_builder = StateGraph(JobAgentState)
-    graph_builder.add_node("validate_input", validate_input)
-    graph_builder.add_node("analyze_resume", analyze_resume)
-    graph_builder.add_node("validate_extracted_evidence", validate_extracted_evidence)
-    graph_builder.add_node("analyze_job", analyze_job)
-    graph_builder.add_node("match_skills", match_skills)
-    graph_builder.add_node("write_resume", write_resume)
-    graph_builder.add_node("human_review", human_review_without_verifier)
-    graph_builder.add_edge(START, "validate_input")
-    graph_builder.add_edge("validate_input", "analyze_resume")
-    graph_builder.add_edge("analyze_resume", "validate_extracted_evidence")
-    graph_builder.add_edge("validate_extracted_evidence", "analyze_job")
-    graph_builder.add_edge("analyze_job", "match_skills")
-    graph_builder.add_edge("match_skills", "write_resume")
-    graph_builder.add_edge("write_resume", "human_review")
-    graph_builder.add_edge("human_review", END)
-    return graph_builder
-
-
-def compile_graph(graph_builder: StateGraph) -> Any:
-    return graph_builder.compile(
-        checkpointer=InMemorySaver(
-            serde=JsonPlusSerializer(allowed_msgpack_modules=None)
-        )
-    )
-
-
 def run_workflow_variant(
-    name: str, graph: Any, cases: list[dict[str, Any]], usage: UsageCollector
+    name: str, workflow: EvaluationWorkflow, cases: list[dict[str, Any]], usage: UsageCollector
 ) -> dict[str, Any]:
     results = []
     for case in cases:
         started = perf_counter()
         expected_error = case.get("expected_error")
-        config = {
-            "configurable": {"thread_id": f"ablation-{name}-{case['id']}"},
-            "callbacks": [usage],
-        }
         try:
-            result = graph.invoke(
-                {
-                    "resume_text": case["resume_text"],
-                    "job_description": case["job_description"],
-                },
-                config=config,
-            )
-            snapshot = graph.get_state(config)
-            reached_review = bool(result.get("__interrupt__")) and snapshot.next == (
-                "human_review",
-            )
-            resume = TailoredResume.model_validate(snapshot.values["tailored_resume"])
+            result = workflow.run(
+                {"resume_text": case["resume_text"], "job_description": case["job_description"]},
+                run_id=f"ablation-{name}-{case['id']}", callbacks=[usage])
+            reached_review = result["reached_human_review"]
+            resume = TailoredResume.model_validate(result["tailored_resume"])
             results.append(
                 {
                     "case_id": case["id"],
                     "case_type": "valid_workflow",
-                    "expected_behavior_achieved": reached_review,
+                    "expected_behavior_achieved": result["completed"],
+                    "draft_completed": result["completed"],
                     "reached_human_review": reached_review,
                     "forbidden_claim_count": count_forbidden_claims(
                         tailored_resume_text(resume), case.get("forbidden_claims", [])
@@ -340,10 +275,10 @@ def run_ablation(cases_path: Path, adversarial_path: Path, output_path: Path) ->
     model = _create_model()
     model_name = model.model_name
     writer = run_workflow_variant(
-        "writer-only", compile_graph(build_writer_only_graph()), cases, writer_usage
+        "writer-only", EvaluationWorkflow(writer_only=True), cases, writer_usage
     )
     full = run_workflow_variant(
-        "full-agent", compile_graph(full_builder), cases, full_workflow_usage
+        "full-agent", EvaluationWorkflow(), cases, full_workflow_usage
     )
     reflection_results = [
         run_adversarial_case(case, callbacks=[full_reflection_usage])
@@ -351,7 +286,9 @@ def run_ablation(cases_path: Path, adversarial_path: Path, output_path: Path) ->
     ]
     reflection = summarize_reflection(reflection_results)
     injected = sum(len(case["injected_claims"]) for case in adversarial_cases)
-    valid_workflow_count = writer["valid_workflows_reaching_human_review"]
+    writer_workflow_count = sum(item["expected_behavior_achieved"] for item in writer["results"]
+                                if item["case_type"] == "valid_workflow")
+    full_workflow_count = full["valid_workflows_reaching_human_review"]
     writer_workflow_usage = usage_report(writer_usage, model_name)
     full_workflow_usage_report = usage_report(full_workflow_usage, model_name)
     writer_total_usage = usage_report(writer_usage, model_name)
@@ -369,10 +306,10 @@ def run_ablation(cases_path: Path, adversarial_path: Path, output_path: Path) ->
             "supported_claim_false_positive_rate": None,
             "revision_success_rate": None,
             "workflow_usage": {
-                "valid_workflow_count": valid_workflow_count,
+                "valid_workflow_count": writer_workflow_count,
                 "totals": writer_workflow_usage,
                 "per_workflow_average": average_usage(
-                    writer_workflow_usage, valid_workflow_count
+                    writer_workflow_usage, writer_workflow_count
                 ),
             },
             "adversarial_usage": usage_report(UsageCollector(), model_name),
@@ -393,10 +330,10 @@ def run_ablation(cases_path: Path, adversarial_path: Path, output_path: Path) ->
             "supported_claim_false_positive_rate": reflection["supported_claim_false_positive_rate"],
             "revision_success_rate": reflection["revision_success_rate"],
             "workflow_usage": {
-                "valid_workflow_count": valid_workflow_count,
+                "valid_workflow_count": full_workflow_count,
                 "totals": full_workflow_usage_report,
                 "per_workflow_average": average_usage(
-                    full_workflow_usage_report, valid_workflow_count
+                    full_workflow_usage_report, full_workflow_count
                 ),
             },
             "adversarial_usage": usage_report(full_reflection_usage, model_name),

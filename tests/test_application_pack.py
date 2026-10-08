@@ -81,6 +81,101 @@ class FakePackModel:
         raise AssertionError("The grounded fake output should not need revision.")
 
 
+@pytest.mark.parametrize("extra", [
+    " I also led 500 engineers and increased revenue by $10 million.",
+    " I graduated from Harvard.",
+])
+def test_verifier_rejects_facts_appended_to_a_valid_quote(extra):
+    from agent_runtime.application_pack.types import EvidenceSnapshotItem
+    evidence = EvidenceSnapshotItem(evidence_id="e", evidence_version_id="v", content_hash="h",
+        source_type="resume", selection_reason="application_link", associated_requirement_ids=[],
+        claim_text="Built Python APIs.")
+    text = "My relevant experience includes the following: Built Python APIs." + extra
+    answer = ApplicationAnswer(question="Your experience?", answer_blocks=[GroundedBlock(
+        block_id="b", text=text, block_type="factual", evidence_ids=["e"], evidence_version_ids=["v"])],
+        character_count=len(text), word_count=len(text.split()))
+    assert not ArtifactVerifier().verify(answer.model_dump(), "application_answer", [evidence]).passed
+
+
+def test_nullable_job_title_does_not_crash_evidence_selection():
+    assert EvidenceSelectionPolicy().select(evidence=[], links=[], job=JobAnalysis(
+        title=None, summary="Python", requirements=[], responsibilities=[])) == []
+
+
+def test_pack_preserves_analyzed_resume_after_default_changes_and_original_is_deleted(setup):
+    from agent_runtime.resumes.repository import ResumeDocumentRepository
+    from job_agent.schemas import ResumeAnalysis, ResumeEvidence
+    workflow, packs, workspace, _, saved, db = setup
+    resumes = ResumeDocumentRepository(db.session_factory)
+    original = "Original Candidate\noriginal@example.com\nEXPERIENCE\nBuilt Python APIs."
+    document = resumes.create(owner_id="local-user", filename="original.pdf", display_name="Original",
+        content_sha256="a" * 64, extracted_text=original, page_count=1)
+    job, match = workflow._source(saved.application.application_id)
+    analysis = ResumeAnalysis(summary="", skills=["Python"], education=[], evidence=[
+        ResumeEvidence(evidence_id="original", source_section="Experience", exact_text="Built Python APIs.")])
+    application, artifacts = workspace.project_fit_analysis(saved.application.application_id,
+        snapshot_id=saved.snapshot.snapshot_id, analysis_id="original-analysis", resume=analysis,
+        job=job, match=match, expected_version=saved.application.version,
+        resume_text=original, resume_id=document.resume_id)
+    resumes.create(owner_id="local-user", filename="other.pdf", display_name="Other",
+        content_sha256="b" * 64, extracted_text="Other Candidate\nEXPERIENCE\nBuilt Go services.", page_count=1)
+    resumes.delete("local-user", document.resume_id)
+    workflow._workspace = JobWorkspaceRepository(db.session_factory)
+    workflow._resumes = resumes
+    pack = workflow.create(application.application_id, expected_version=application.version,
+                           idempotency_key="original-source")
+    snapshot = packs.snapshot(pack.pack_id)
+    assert snapshot.resume_header_lines == ["Original Candidate", "original@example.com"]
+    assert workspace.resume_source(artifacts[0].artifact_id) == original
+    assert any(item.claim_text == "Built Python APIs." for item in snapshot.items)
+
+
+def test_pack_approval_returns_success_after_commit(setup):
+    from api.session_dependencies import get_session_runtime
+    workflow, packs, _, _, saved, _ = setup
+    pack = workflow.create(saved.application.application_id, expected_version=saved.application.version,
+                           idempotency_key="create")
+    item = workflow.generate(pack.pack_id, artifact_type="tailored_resume",
+                             expected_version=pack.version, idempotency_key="resume")
+    app = create_app(run_service=object())
+    app.dependency_overrides[get_session_runtime] = lambda: SimpleNamespace(pack_workflow=workflow, packs=packs)
+    with TestClient(app) as client:
+        response = client.post(f"/api/packs/{pack.pack_id}/items/{item.pack_item_id}/approve",
+                              json={"expected_version": item.version, "idempotency_key": "approve"})
+        assert response.status_code == 200
+        assert response.json()["items"][0]["status"] == "approved"
+        assert packs.item(pack.pack_id, item.pack_item_id).status == ItemStatus.APPROVED
+
+
+@pytest.mark.parametrize("kind", ["tailored_resume", "cover_letter"])
+def test_regeneration_feedback_survives_reopen_and_reaches_revision(setup, kind):
+    workflow, packs, _, _, saved, db = setup
+    pack = workflow.create(saved.application.application_id, expected_version=saved.application.version,
+                           idempotency_key="create")
+    item = workflow.generate(pack.pack_id, artifact_type=kind,
+                             expected_version=pack.version, idempotency_key="item")
+    feedback = "Make it shorter while preserving the supported facts."
+    pending = packs.request_regeneration(pack.pack_id, item.pack_item_id, expected_version=item.version,
+                                        idempotency_key="regenerate", feedback=feedback)
+    with pytest.raises(PackConflictError):
+        packs.request_regeneration(pack.pack_id, item.pack_item_id, expected_version=item.version,
+                                   idempotency_key="regenerate", feedback="different")
+    captured = []
+    class RevisionModel(FakePackModel):
+        def revise_resume(self, state, preferences):
+            assert state.verification is not None and state.tailored_resume is not None
+            captured.append(state.human_feedback)
+            return self.resume(state, preferences)
+        def revise_blocks(self, artifact_type, context):
+            assert "Current artifact:" in context
+            captured.append(__import__('json').loads(context.split('\nCurrent artifact:')[0])["user_revision_feedback"])
+            return self.cover_letter(context.split('\nCurrent artifact:')[0])
+    workflow._packs = PackRepository(db.session_factory)
+    workflow._model = RevisionModel()
+    assert workflow.continue_item(pack.pack_id, pending.pack_item_id).status == ItemStatus.AWAITING_REVIEW
+    assert captured == [feedback]
+
+
 @pytest.fixture
 def setup(tmp_path):
     url = f"sqlite:///{(tmp_path / 'pack.db').as_posix()}"

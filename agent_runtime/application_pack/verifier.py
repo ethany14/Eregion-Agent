@@ -40,14 +40,28 @@ def _directly_supported(claim: str, evidence: EvidenceSnapshotItem) -> bool:
 
 
 def _contains_supported_text(claim: str, evidence: EvidenceSnapshotItem) -> bool:
+    """Allow neutral framing around an intact quote, never additional facts."""
     target = normalize_text(claim)
-    return any(normalize_text(source) in target for source in (
-        evidence.claim_text, evidence.exact_quote or ""
-    ) if normalize_text(source))
+    prefix = (
+        r"(?:one relevant example(?: from my background)? is(?: that i)?\s*:?\s*|"
+        r"my relevant experience includes(?: the following)?\s*:?\s*)?"
+    )
+    suffix = (
+        r"(?:\s*this (?:work|experience|example) (?:aligns with|is relevant to) "
+        r"(?:the|this) role(?:'s (?:backend |technical )?(?:focus|priorities|requirements))?\.?)?"
+    )
+    for source in (evidence.claim_text, evidence.exact_quote or ""):
+        quote = normalize_text(source)
+        if quote and re.fullmatch(prefix + re.escape(quote) + suffix, target):
+            return True
+    return False
 
 
 class ArtifactVerifier:
-    """Only literal supported claims pass in v0.1; no semantic guesswork."""
+    """Check immutable citations first, then meaning through an injectable judge."""
+
+    def __init__(self, semantic_judge=None):
+        self._semantic_judge = semantic_judge
 
     def verify(self, content: dict, artifact_type: str,
                evidence: list[EvidenceSnapshotItem], *, max_length: int | None = None,
@@ -182,6 +196,7 @@ class ArtifactVerifier:
             issues.append(ClaimIssue(block_id="length", unsupported_text="",
                 reason="Character limit exceeded.", cited_evidence_ids=[],
                 revision_instruction=f"Shorten to at most {effective_max_length} characters."))
+        semantic_candidates = []
         for block in blocks:
             citations = [by_id.get(identifier) or by_version.get(identifier)
                          for identifier in block.evidence_ids + block.evidence_version_ids]
@@ -208,13 +223,35 @@ class ArtifactVerifier:
                     or (artifact_type in {"cover_letter", "application_answer"}
                         and _contains_supported_text(block.text, item))
                     for item in citations):
-                reason = "The cited evidence does not directly support the complete claim."
+                if self._semantic_judge is not None:
+                    semantic_candidates.append({"claim_id": block.block_id,
+                        "claim": block.text, "evidence": [
+                            {"claim": item.claim_text, "quote": item.exact_quote}
+                            for item in citations]})
+                    reason = None
+                else:
+                    reason = "The cited evidence does not directly support the complete claim."
             else:
                 reason = None
             if reason:
                 issues.append(ClaimIssue(block_id=block.block_id,
                     unsupported_text=block.text, reason=reason,
                     cited_evidence_ids=block.evidence_ids,
-                    revision_instruction=("Integrate exact supported evidence into natural prose without "
+                    revision_instruction=("Preserve the meaning of supported evidence in natural prose without "
                         "adding facts, or remove the unsupported claim.")))
+        if semantic_candidates:
+            unavailable = False
+            try:
+                supported = self._semantic_judge(semantic_candidates)
+            except Exception:
+                supported, unavailable = set(), True
+            for candidate in semantic_candidates:
+                if candidate["claim_id"] in supported:
+                    continue
+                block = next(b for b in blocks if b.block_id == candidate["claim_id"])
+                issues.append(ClaimIssue(block_id=block.block_id, unsupported_text=block.text,
+                    reason=("Semantic verification is temporarily unavailable." if unavailable else
+                            "The cited evidence does not entail the complete claim."),
+                    cited_evidence_ids=block.evidence_ids,
+                    revision_instruction="Verify against the cited evidence; remove any added facts."))
         return ArtifactVerification(passed=not issues, issues=issues)

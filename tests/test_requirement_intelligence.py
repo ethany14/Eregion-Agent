@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 import pytest
 
 from custom_agent.handlers import JobAgentStepHandler
@@ -9,7 +7,6 @@ from job_agent.domain import (
     make_requirement_id,
     normalize_job_analysis,
 )
-from job_agent.nodes import analyze_job
 from job_agent.prompts import JOB_PROMPT
 from job_agent.schemas import (
     JobAnalysis,
@@ -184,13 +181,8 @@ def test_normalization_keeps_required_over_preferred_duplicate():
     assert python_requirements[0].source_text == PYTHON_SQL_SOURCE
 
 
-def test_langgraph_and_custom_backend_share_identical_job_normalization():
+def test_custom_handler_applies_job_normalization():
     raw = extracted_analysis()
-    with patch("job_agent.nodes._analyze", return_value=raw):
-        langgraph_result = JobAnalysis.model_validate(
-            analyze_job({"job_description": JOB_DESCRIPTION}, {})["job_analysis"]
-        )
-
     handler = JobAgentStepHandler(
         analyzer=lambda schema, system_message, human_message: raw
     )
@@ -202,4 +194,4 @@ def test_langgraph_and_custom_backend_share_identical_job_normalization():
     )
     custom_result = handler.execute(Step.ANALYZE_JOB, state).updates["job_analysis"]
 
-    assert custom_result == langgraph_result
+    assert custom_result == normalize_job_analysis(raw, JOB_DESCRIPTION)

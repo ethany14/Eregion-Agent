@@ -93,6 +93,34 @@ def test_no_claim_strengthening_or_invented_metric(repo):
             claim_text="Python")
 
 
+@pytest.mark.parametrize("field,value", [
+    ("heading", "Chief Technology Officer"), ("organization", "Invented Company"),
+    ("location", "New York"), ("start_date", "1990"), ("end_date", "2030"),
+])
+def test_resume_import_rejects_invented_source_metadata(repo, field, value):
+    from job_agent.schemas import ResumeSourceEntry
+    entry = ResumeSourceEntry(source_entry_id="source", entry_type="experience",
+        heading="Developer", organization="Acme", evidence_ids=["exp"])
+    analysis = ResumeAnalysis(summary="", skills=[], education=[], source_entries=[
+        entry.model_copy(update={field: value})], evidence=[ResumeEvidence(
+            evidence_id="exp", source_entry_id="source", source_section="Experience",
+            exact_text="Built Python APIs.")])
+    with pytest.raises(EvidenceProvenanceError, match="metadata"):
+        repo.import_resume_evidence(analysis, "Developer at Acme\nBuilt Python APIs.")
+    assert repo.list() == []
+
+
+def test_resume_import_preserves_grounded_source_metadata(repo):
+    from job_agent.schemas import ResumeSourceEntry
+    source = "Developer at Acme, Boston, 2020 - 2022\nBuilt Python APIs."
+    analysis = ResumeAnalysis(summary="", skills=[], education=[], source_entries=[
+        ResumeSourceEntry(source_entry_id="source", entry_type="experience", heading="Developer",
+            organization="Acme", location="Boston", start_date="2020", end_date="2022",
+            evidence_ids=["exp"])], evidence=[ResumeEvidence(evidence_id="exp",
+                source_entry_id="source", source_section="Experience", exact_text="Built Python APIs.")])
+    assert repo.import_resume_evidence(analysis, source)[0].status == EvidenceStatus.CONFIRMED
+
+
 def test_retrieval_excludes_unconfirmed_and_respects_budget(repo):
     first = candidate(repo, "Built Python APIs.")
     candidate(repo, "Worked with Python tests.")

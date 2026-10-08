@@ -10,7 +10,7 @@ from evals.metrics import (
     count_forbidden_claims,
 )
 from evals.run_evals import summarize, summarize_reflection, tailored_resume_text
-from evals.run_ablation import UsageCollector, build_comparison, build_writer_only_graph
+from evals.run_ablation import UsageCollector, build_comparison
 from evals.run_stability_evals import (
     consistency_summary,
     percentile,
@@ -21,7 +21,7 @@ from evals.run_evals import EVALS_DIR, load_cases
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 from job_agent.schemas import SupportedClaim, TailoredResume
-from job_agent.nodes import canonicalize_requirement, extract_minimum_years
+from job_agent.domain import canonicalize_requirement, extract_minimum_years
 
 
 def workflow_result(case_id: str, *, case_type="valid_workflow", strict=None,
@@ -142,14 +142,6 @@ def test_usage_collector_counts_provider_tokens():
     assert collector.total_tokens == 14
 
 
-def test_writer_only_graph_omits_verifier_nodes():
-    nodes = build_writer_only_graph().nodes
-    assert "write_resume" in nodes
-    assert "human_review" in nodes
-    assert "verify_resume" not in nodes
-    assert "revise_resume" not in nodes
-
-
 def test_ablation_comparison_reports_quality_and_cost_deltas():
     writer = {
         "adversarial_case_count": 3,
@@ -252,3 +244,56 @@ def test_tag_summary_reports_recall_and_unexpected_missing_requirements():
     assert summary["prompt_injection"]["canonical_recall"] == 1.0
     assert summary["synonym"]["canonical_recall"] is None
     assert summary["synonym"]["unexpected_missing_requirements"] == 0
+
+
+def test_evaluations_use_custom_loop_and_writer_ablation_does_not_claim_verification():
+    from evals.runtime import EvaluationWorkflow
+    from runtime_helpers import CompleteFakeHandler
+    from custom_agent.state import Step
+    class RecordingHandler(CompleteFakeHandler):
+        def __init__(self): self.steps = []
+        def execute(self, step, state):
+            self.steps.append(step)
+            return super().execute(step, state)
+    inputs = {"resume_text": "Built Python APIs.", "job_description": "Python"}
+    handler = RecordingHandler()
+    draft = EvaluationWorkflow(writer_only=True, handler=handler).run(inputs)
+    assert draft["completed"] is True
+    assert draft["verification"] is None
+    assert draft["reached_human_review"] is False
+    assert Step.VERIFY_RESUME not in handler.steps
+    verified = EvaluationWorkflow(handler=CompleteFakeHandler()).run(inputs)
+    assert verified["reached_human_review"] is True
+    assert verified["verification"]["passed"] is True
+
+
+def test_reflection_evaluation_uses_custom_verifier_and_reviser(monkeypatch):
+    from custom_agent.handlers import JobAgentStepHandler
+    from evals.run_evals import _adversarial_state, run_adversarial_case
+    from job_agent.schemas import VerificationResult, UnsupportedClaim
+    case = {"id": "reflection", "resume_text": "Built Python APIs.",
+            "job_description": "Python APIs", "supported_claims": ["Built Python APIs."],
+            "injected_claims": ["Managed Kubernetes production."]}
+    draft = TailoredResume.model_validate(_adversarial_state(case)["tailored_resume"])
+    revised = draft.model_copy(deep=True)
+    revised.sections[0].entries[0].bullets = revised.sections[0].entries[0].bullets[:1]
+    responses = iter([
+        VerificationResult(passed=False, unsupported_claims=[UnsupportedClaim(
+            claim=case["injected_claims"][0], reason="No source evidence.")],
+            revision_feedback=["Remove the unsupported claim."]),
+        revised,
+        VerificationResult(passed=True, unsupported_claims=[], revision_feedback=[]),
+    ])
+    calls = []
+    def analyze(schema, system, human):
+        calls.append(schema)
+        return next(responses)
+    monkeypatch.setattr("evals.runtime.evaluation_handler",
+                        lambda callbacks=None: JobAgentStepHandler(analyzer=analyze))
+    result = run_adversarial_case(case)
+    assert result.error is None
+    assert result.detected_unsupported_claims == 1
+    assert result.revision_successful
+    assert result.revision_count == 1
+    assert result.remaining_unsupported_claims == 0
+    assert calls == [VerificationResult, TailoredResume, VerificationResult]

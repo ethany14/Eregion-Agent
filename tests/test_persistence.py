@@ -1,96 +1,18 @@
-"""SQLite persistence and checkpoint recovery tests without LLM calls."""
-
-from __future__ import annotations
-
 import asyncio
-from pathlib import Path
-from typing import NotRequired, TypedDict
-
 import pytest
 from fastapi.testclient import TestClient
-from langgraph.graph import END, START, StateGraph
-from langgraph.types import interrupt
-
 from api.db import create_database
 from api.main import create_app
 from api.repositories.run_repository import RunRepository
-from api.runtime import create_frozen_langgraph_run_service
+from api.runtime import create_run_service
 from api.schemas.runs import CreateRunRequest, ReviewRequest
 from api.services.run_service import SAFE_RUN_ERROR, InvalidRunStateError, RunNotFoundError
+from runtime_helpers import CompleteFakeHandler, FailingHandler, sqlite_url
 
 
-class StubState(TypedDict):
-    resume_text: str
-    job_description: str
-    revision_count: NotRequired[int]
-    approved: NotRequired[bool | None]
-    human_feedback: NotRequired[str | None]
-    workflow_status: NotRequired[str]
-
-
-def build_test_graph() -> StateGraph:
-    graph = StateGraph(StubState)
-
-    def prepare(_: StubState) -> dict:
-        return {
-            "revision_count": 0,
-            "approved": None,
-            "human_feedback": None,
-            "workflow_status": "running",
-        }
-
-    def human_review(_: StubState) -> dict:
-        decision = interrupt({"question": "Approve this test resume?"})
-        approved = bool(decision["approved"])
-        return {
-            "approved": approved,
-            "human_feedback": decision.get("feedback"),
-            "workflow_status": "approved" if approved else "revision_requested",
-        }
-
-    def route(state: StubState) -> str:
-        return "end" if state.get("approved") else "revise"
-
-    def revise(state: StubState) -> dict:
-        return {
-            "revision_count": state["revision_count"] + 1,
-            "approved": None,
-            "human_feedback": None,
-            "workflow_status": "running",
-        }
-
-    graph.add_node("prepare", prepare)
-    graph.add_node("human_review", human_review)
-    graph.add_node("revise", revise)
-    graph.add_edge(START, "prepare")
-    graph.add_edge("prepare", "human_review")
-    graph.add_conditional_edges(
-        "human_review", route, {"end": END, "revise": "revise"}
-    )
-    graph.add_edge("revise", "human_review")
-    return graph
-
-
-def serialize_test_state(state: dict) -> dict:
-    return {
-        "revision_count": state.get("revision_count", 0),
-        "approved": state.get("approved"),
-        "human_feedback": state.get("human_feedback"),
-        "workflow_status": state.get("workflow_status", "running"),
-    }
-
-
-def sqlite_url(path: Path) -> str:
-    return f"sqlite:///{path.as_posix()}"
-
-
-def new_service(tmp_path: Path):
-    return create_frozen_langgraph_run_service(
-        database_url=sqlite_url(tmp_path / "runs.sqlite"),
-        checkpoint_path=tmp_path / "checkpoints.sqlite",
-        graph_builder=build_test_graph(),
-        result_serializer=serialize_test_state,
-    )
+def new_service(tmp_path):
+    return create_run_service(database_url=sqlite_url(tmp_path / "runs.sqlite"),
+                              custom_handler=CompleteFakeHandler())
 
 
 def create_paused_run(service) -> str:
@@ -182,7 +104,7 @@ def test_new_application_instance_reads_and_approves_after_restart(tmp_path):
         restarted_service.close()
 
 
-def test_reject_with_feedback_resumes_checkpoint_after_restart(tmp_path):
+def test_reject_with_feedback_resumes_custom_state_after_restart(tmp_path):
     first_service = new_service(tmp_path)
     run_id = create_paused_run(first_service)
     first_service.close()
@@ -232,20 +154,9 @@ def test_completed_run_cannot_be_reviewed_again_after_restart(tmp_path):
 
 
 def test_failed_status_is_persisted_without_internal_error_details(tmp_path):
-    graph = StateGraph(StubState)
-
-    def fail(_: StubState) -> dict:
-        raise RuntimeError("secret provider details and api key")
-
-    graph.add_node("fail", fail)
-    graph.add_edge(START, "fail")
-    graph.add_edge("fail", END)
-    service = create_frozen_langgraph_run_service(
+    service = create_run_service(
         database_url=sqlite_url(tmp_path / "runs.sqlite"),
-        checkpoint_path=tmp_path / "checkpoints.sqlite",
-        graph_builder=graph,
-        result_serializer=serialize_test_state,
-    )
+        custom_handler=FailingHandler())
     run_id = asyncio.run(
         service.create_run(
             CreateRunRequest(resume_text="Resume", job_description="Job")

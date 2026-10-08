@@ -40,3 +40,5 @@ jobs:
           tests/test_copilot_ui.mjs
           tests/test_learning_ui.mjs
           tests/test_mock_interview_ui.mjs
+          tests/test_web_ui.mjs
+          tests/test_apply_answers.mjs

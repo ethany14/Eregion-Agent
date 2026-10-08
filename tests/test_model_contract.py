@@ -3,7 +3,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from job_agent import nodes
 from job_agent.model import ProviderCompatibleChatOpenAI, create_model, invoke_structured
 from langchain_core.messages import AIMessage, HumanMessage
 from job_agent.prompts import (
@@ -74,6 +73,7 @@ def test_optional_model_settings_are_stripped_and_blank_values_are_omitted(tmp_p
         "temperature": 0,
         "max_retries": 0,
         "base_url": "https://provider.test/v1",
+        "timeout": 45.0,
     }
 
 
@@ -154,24 +154,6 @@ def test_shared_structured_invocation_preserves_schema_and_messages():
     structured.invoke.assert_called_once_with(
         [("system", "system instructions"), ("human", "human content")],
         config={"tags": ["contract"]},
-    )
-    assert result == analysis()
-
-
-def test_langgraph_node_wrapper_uses_identical_shared_message_contract(tmp_path):
-    fake_model = MagicMock()
-    fake_model.with_structured_output.return_value.invoke.return_value = analysis()
-    with patch.object(nodes, "_create_model", return_value=fake_model):
-        result = nodes._analyze(
-            ResumeAnalysis,
-            "system instructions",
-            "human content",
-            {"tags": ["baseline"]},
-        )
-    fake_model.with_structured_output.assert_called_once_with(ResumeAnalysis)
-    fake_model.with_structured_output.return_value.invoke.assert_called_once_with(
-        [("system", "system instructions"), ("human", "human content")],
-        config={"tags": ["baseline"]},
     )
     assert result == analysis()
 

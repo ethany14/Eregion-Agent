@@ -1,1 +1,1 @@
-"""Recoverable agent loop implemented without LangGraph."""
+"""Recoverable agent loop with durable state."""

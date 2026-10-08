@@ -25,7 +25,7 @@ from agent_runtime.evidence.types import (
     EvidenceVersion,
 )
 from agent_runtime.workspace.models import ApplicationRow
-from job_agent.domain import normalize_text
+from job_agent.domain import normalize_text, validate_resume_source_metadata
 from job_agent.schemas import ResumeAnalysis
 
 
@@ -322,6 +322,10 @@ class CareerEvidenceRepository:
     def import_resume_evidence(self, analysis: ResumeAnalysis, original_resume_text: str,
                                *, source_run_id: str | None = None,
                                created_by: str = "resume_import") -> list[CareerEvidence]:
+        try:
+            validate_resume_source_metadata(analysis, original_resume_text)
+        except ValueError as exc:
+            raise EvidenceProvenanceError(str(exc)) from exc
         source_ref = hashlib.sha256(normalize_text(original_resume_text).encode()).hexdigest()
         sources = {item.source_entry_id: item for item in analysis.source_entries}
         source_by_evidence = {

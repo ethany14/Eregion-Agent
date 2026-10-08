@@ -1,0 +1,37 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Hybrid fixture</title></head><body>
+<form id="application">
+  <label for="first_name">First Name *</label><input id="first_name" required>
+  <div class="select__container"><label for="country">Country *</label>
+    <div class="select-shell"><span class="select__single-value"></span>
+      <input id="country" role="combobox" readonly aria-required="true" aria-controls="country-options">
+    </div>
+  </div>
+  <button type="submit">Submit Application</button>
+</form>
+<div role="listbox" id="unrelated-options"><div role="option">Canada</div></div>
+<div role="listbox" id="country-options" hidden></div>
+<script>
+window.submissions = 0;
+const nameField = document.querySelector('#first_name');
+let receivedTyping = false;
+nameField.addEventListener('keydown', e => { if (e.key.length === 1) receivedTyping = true; });
+nameField.addEventListener('input', () => { if (!receivedTyping) nameField.value = ''; });
+const country = document.querySelector('#country');
+const options = document.querySelector('#country-options');
+country.addEventListener('click', () => {
+  options.hidden = false;
+  setTimeout(() => {
+    options.replaceChildren();
+    for (const label of ['Canada', 'United States']) {
+      const option = document.createElement('div'); option.role = 'option'; option.textContent = label;
+      option.addEventListener('click', () => {
+        document.querySelector('.select__single-value').textContent = label;
+        options.hidden = true;
+      });
+      options.append(option);
+    }
+  }, 80);
+});
+country.addEventListener('keydown', e => { if (e.key === 'Escape') options.hidden = true; });
+document.querySelector('form').addEventListener('submit', e => { e.preventDefault(); window.submissions++; });
+</script></body></html>

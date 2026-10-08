@@ -1,4 +1,4 @@
-"""LangGraph-independent model configuration and structured invocation."""
+"""Shared model configuration and structured invocation."""
 
 from __future__ import annotations
 
@@ -74,6 +74,7 @@ def create_model(
         "model": model_id,
         "temperature": 0,
         "max_retries": 0,
+        "timeout": 45.0,
     }
     api_key = optional_setting(settings, "LLM_API_KEY")
     base_url = optional_setting(settings, "LLM_BASE_URL")
@@ -110,6 +111,37 @@ def invoke_structured(
     config: Any = None,
 ) -> Result:
     """Invoke a Pydantic structured model using the baseline message layout."""
+    from agent_runtime.multi_agent.model_usage import invoke_model
+
+    return invoke_model(_invoke_structured, model, schema, system_message, human_message, config)
+
+
+def _invoke_structured(model, schema, system_message, human_message, config):
+    from agent_runtime.multi_agent.model_usage import current_model_call
+
+    call = current_model_call()
+    if call is not None and isinstance(model, ChatOpenAI):
+        # One reservation corresponds to one provider request; retries must
+        # acquire their own reservation. Raw usage replaces fallback estimates.
+        updates = {"max_tokens": call["output_tokens"], "max_retries": 0}
+        # The SDK client was initialized earlier; changing only the model field
+        # would leave its internal HTTP retries enabled.
+        if model.root_client is not None:
+            client = model.root_client.with_options(max_retries=0)
+            updates.update(root_client=client, client=client.chat.completions)
+        if model.root_async_client is not None:
+            client = model.root_async_client.with_options(max_retries=0)
+            updates.update(root_async_client=client, async_client=client.chat.completions)
+        model = model.model_copy(update=updates)
+        response = model.with_structured_output(schema, include_raw=True).invoke(
+            [("system", system_message), ("human", human_message)], config=config)
+        raw_usage = getattr(response.get("raw"), "usage_metadata", None)
+        if raw_usage:
+            call["usage"] = {key: int(raw_usage.get(key, 0)) for key in ("input_tokens", "output_tokens")}
+        if response.get("parsing_error") or response.get("parsed") is None:
+            raise ValueError("The model did not return valid structured output.")
+        result = response["parsed"]
+        return result if isinstance(result, schema) else schema.model_validate(result)
     structured_model = model.with_structured_output(schema)
     result = structured_model.invoke(
         [("system", system_message), ("human", human_message)], config=config

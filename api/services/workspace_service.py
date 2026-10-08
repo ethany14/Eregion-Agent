@@ -34,6 +34,7 @@ class WorkspaceAnalysisService:
         snapshot_id: str,
         resume_text: str,
         expected_version: int,
+        resume_id: str | None = None,
     ):
         current = self._workspace.require_snapshot_for_application(
             application_id, snapshot_id
@@ -82,6 +83,7 @@ class WorkspaceAnalysisService:
                 job=result.job_analysis,
                 match=result.skill_match,
                 expected_version=analyzing.version,
+                resume_text=resume_text, resume_id=resume_id,
             )
             has_gaps = bool(
                 result.skill_match.missing_required_requirements
@@ -102,7 +104,7 @@ class WorkspaceAnalysisService:
         except Exception as exc:
             logger.exception("Workspace fit analysis failed: %s", type(exc).__name__)
             latest = self._workspace.get_application(application_id)
-            if latest.status == ApplicationStatus.ANALYZING:
+            if latest.status == ApplicationStatus.ANALYZING and latest.version == analyzing.version:
                 self._workspace.transition_status(
                     application_id,
                     target_status=ApplicationStatus.ANALYSIS_FAILED,

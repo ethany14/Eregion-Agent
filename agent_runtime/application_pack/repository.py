@@ -78,6 +78,7 @@ class PackRepository:
             max_revisions=row.max_revisions,
             verification=ArtifactVerification.model_validate_json(row.verification_json)
                 if row.verification_json else None,
+            regeneration_feedback=row.regeneration_feedback,
             requires_manual_answer=row.requires_manual_answer,
             created_at=_utc(row.created_at), updated_at=_utc(row.updated_at))
 
@@ -432,7 +433,7 @@ class PackRepository:
             return self._item(item)
 
     def request_regeneration(self, pack_id: str, item_id: str, *, expected_version: int,
-                             idempotency_key: str) -> ApplicationPackItem:
+                             idempotency_key: str, feedback: str | None = None) -> ApplicationPackItem:
         with self._factory.begin() as session:
             pack = self._require(session, pack_id)
             item = self._require_item(session, pack_id, item_id)
@@ -440,8 +441,9 @@ class PackRepository:
                 raise PackConflictError("A stale Pack cannot be regenerated.")
             replay = self._replay(session, pack_id, idempotency_key, "ITEM_REGENERATE_REQUESTED")
             if replay:
-                if json.loads(replay.payload_json).get("item_id") != item_id:
-                    raise PackConflictError("Idempotency key was used for another item.")
+                payload = json.loads(replay.payload_json)
+                if payload.get("item_id") != item_id or payload.get("feedback") != feedback:
+                    raise PackConflictError("Idempotency key was used for different regeneration input.")
                 return self._item(item)
             if item.version != expected_version: raise PackConflictError("Pack item version changed.")
             if item.status not in {ItemStatus.REJECTED.value, ItemStatus.FAILED.value,
@@ -454,9 +456,10 @@ class PackRepository:
             item.status = ItemStatus.GENERATING.value
             item.revision_count = 0
             item.verification_json = None
+            item.regeneration_feedback = feedback
             pack.status = PackStatus.GENERATING.value
             self._event(session, pack, "ITEM_REGENERATE_REQUESTED",
-                        {"item_id": item_id}, idempotency_key)
+                        {"item_id": item_id, "feedback": feedback}, idempotency_key)
             session.flush()
             return self._item(item)
 

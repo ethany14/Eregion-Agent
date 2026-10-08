@@ -27,7 +27,8 @@ from agent_runtime.interviewer.repository import InterviewRepository
 from agent_runtime.workspace.repository import JobWorkspaceRepository
 
 from agent_runtime.multi_agent.types import AgentTask, AgentTaskResult, ExecutionContext, OutputArtifact
-from agent_runtime.multi_agent.errors import WorkerStepError
+from agent_runtime.multi_agent.errors import BudgetExceededError, WorkerStepError
+from agent_runtime.multi_agent.model_usage import invoke_model
 from custom_agent.handlers import JobAgentStepHandler
 from custom_agent.state import AgentState, Step
 from job_agent.schemas import (
@@ -77,15 +78,25 @@ def _artifact(role: str, data: dict) -> OutputArtifact:
 class SourceProvisionWorker:
     task_type = "job_source_provision"
 
-    def __init__(self, reader: JobSourceReader) -> None:
+    def __init__(self, reader: JobSourceReader, *, resumes=None, workspace=None) -> None:
         self._reader = reader
+        self._resumes, self._workspace = resumes, workspace
 
     def execute(self, task: AgentTask, context: ExecutionContext) -> AgentTaskResult:
         if not task.application_id:
             raise ValueError("A saved Application is required.")
-        resume, jd = self._reader.read_sources(task.application_id,
-            run_id=task.input_spec.get("source_run_id"),
-            snapshot_id=task.input_spec.get("job_snapshot_id"))
+        if task.input_spec.get("source_resume_id"):
+            if self._resumes is None or self._workspace is None:
+                raise ValueError("Resume document source is unavailable.")
+            document = self._resumes.require(task.input_spec["owner_id"], task.input_spec["source_resume_id"])
+            snapshot = self._workspace.current_snapshot(task.application_id)
+            if snapshot.snapshot_id != task.input_spec.get("job_snapshot_id"):
+                raise ValueError("The Job snapshot changed after execution was created.")
+            resume, jd = document.extracted_text, snapshot.cleaned_job_description
+        else:
+            resume, jd = self._reader.read_sources(task.application_id,
+                run_id=task.input_spec.get("source_run_id"),
+                snapshot_id=task.input_spec.get("job_snapshot_id"))
         if not resume.strip() or not jd.strip():
             raise ValueError("Both an original resume and Job snapshot are required.")
         expected = task.input_spec.get("source_hash")
@@ -116,6 +127,8 @@ class CandidateAnalysisWorker:
             try:
                 analysis = ResumeAnalysis.model_validate(self._handler.execute(
                     Step.ANALYZE_RESUME, state).updates["resume_analysis"])
+            except BudgetExceededError:
+                raise
             except Exception as exc:
                 raise WorkerStepError("resume_analysis_failed") from exc
             validated = AgentState.model_validate({**state.model_dump(mode="python"),
@@ -149,6 +162,8 @@ class JobAnalysisWorker:
         try:
             analysis = JobAnalysis.model_validate(self._handler.execute(
                 Step.ANALYZE_JOB, state).updates["job_analysis"])
+        except BudgetExceededError:
+            raise
         except Exception as exc:
             raise WorkerStepError("job_analysis_failed") from exc
         return AgentTaskResult(summary="Job requirements analyzed.", output_artifacts=[
@@ -296,7 +311,8 @@ class EvidenceFreezeWorker:
             raise ValueError("Confirmed, relevant evidence is required before writing.")
         preferences = self._pack_workflow._preferences()
         model_configuration = self._pack_workflow._model_configuration()
-        resume_header_lines = self._pack_workflow._resume_header_lines()
+        source = _one(context, "resume_source")
+        resume_header_lines = self._pack_workflow.resume_header_lines(source["resume_text"])
         snapshot = GenerationEvidenceSnapshot(
             generation_snapshot_id=str(uuid5(NAMESPACE_URL, f"generation:{task.task_id}")),
             pack_id=str(uuid5(NAMESPACE_URL, f"pack:{task.root_task_id}")),
@@ -370,18 +386,19 @@ class ArtifactWriterWorker:
         kind = task.input_spec["artifact_type"]
         if kind == "application_answer":
             question = task.input_spec["question"]
-            if requires_manual_answer(classify_question(question)):
+            if requires_manual_answer(classify_question(question,
+                    classifier=getattr(self._model, "classify_question", None))):
                 return AgentTaskResult(summary="Application question needs a manual answer.",
                     awaiting_input=True)
             output = ApplicationAnswer.model_validate(
-                self._model.application_answer(_writing_context(task, context)))
+                invoke_model(self._model.application_answer, _writing_context(task, context)))
         elif kind == "cover_letter":
-            output = CoverLetter.model_validate(self._model.cover_letter(
+            output = CoverLetter.model_validate(invoke_model(self._model.cover_letter,
                 _writing_context(task, context)))
         elif kind == "tailored_resume":
             snapshot = GenerationEvidenceSnapshot.model_validate(
                 _one(context, "generation_evidence_snapshot"))
-            output = TailoredResume.model_validate(self._model.resume(
+            output = TailoredResume.model_validate(invoke_model(self._model.resume,
                 _writer_state(task, context), snapshot.preference_versions))
         else:
             raise ValueError("Unregistered application artifact type.")
@@ -395,7 +412,7 @@ class ArtifactVerifierWorker:
     def __init__(self, *, model: PackModelClient | None = None,
                  verifier: ArtifactVerifier | None = None) -> None:
         self._model = model or SharedPackModel()
-        self._verifier = verifier or ArtifactVerifier()
+        self._verifier = verifier or ArtifactVerifier(getattr(self._model, "verify_claims", None))
 
     def execute(self, task: AgentTask, context: ExecutionContext) -> AgentTaskResult:
         key, kind = task.input_spec["artifact_key"], task.input_spec["artifact_type"]
@@ -416,7 +433,7 @@ class ArtifactVerifierWorker:
                 expected_role=job_data.get("title") if isinstance(job_data, dict) else None)
         if kind == "tailored_resume" and verdict.passed and not (
                 prior and prior["source_content_hash"] == content_hash and prior["verification"]["passed"]):
-            llm_verdict = self._model.verify_resume(_writer_state(task, context, current=content))
+            llm_verdict = invoke_model(self._model.verify_resume, _writer_state(task, context, current=content))
             if not llm_verdict.passed:
                 from agent_runtime.application_pack.types import ClaimIssue
                 verdict = ArtifactVerification(passed=False, issues=[ClaimIssue(
@@ -454,14 +471,14 @@ class ArtifactRevisionWorker:
         elif kind == "tailored_resume":
             snapshot = GenerationEvidenceSnapshot.model_validate(
                 _one(context, "generation_evidence_snapshot"))
-            revised = TailoredResume.model_validate(self._model.revise_resume(
+            revised = TailoredResume.model_validate(invoke_model(self._model.revise_resume,
                 _writer_state(task, context, current=current, report=verdict),
                 snapshot.preference_versions)).model_dump(mode="json")
             summary = "Resume revised from verification feedback."
         else:
             prompt = _writing_context(task, context) + "\nCurrent artifact: " + json.dumps(
                 current, ensure_ascii=False) + "\nVerification feedback: " + verdict.model_dump_json()
-            result = self._model.revise_blocks(kind, prompt)
+            result = invoke_model(self._model.revise_blocks, kind, prompt)
             schema = CoverLetter if kind == "cover_letter" else ApplicationAnswer
             revised = schema.model_validate(result).model_dump(mode="json")
             summary = "Artifact revised from verification feedback."

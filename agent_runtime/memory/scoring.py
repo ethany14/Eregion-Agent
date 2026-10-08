@@ -10,7 +10,7 @@ from pydantic import Field
 from agent_runtime.memory.types import MemoryItem
 from agent_runtime.types import RuntimeModel
 
-_TOKEN_PATTERN = re.compile(r"(?u)[a-z0-9]+(?:\+\+|#)?(?:[./][a-z0-9+#]+)*")
+_TOKEN_PATTERN = re.compile(r"(?u)[^\W_]+(?:\+\+|#)?(?:[./][^\W_+#]+)*")
 
 
 def _lexical_form(token: str) -> str:
@@ -25,10 +25,15 @@ def _lexical_form(token: str) -> str:
 
 def lexical_tokens(text: str) -> tuple[str, ...]:
     """Normalize search text while retaining meaningful technical punctuation."""
-    return tuple(
+    tokens = tuple(
         _lexical_form(token)
         for token in _TOKEN_PATTERN.findall(text.casefold().replace("_", " "))
     )
+    # CJK text has no whitespace word boundaries; overlapping pairs preserve
+    # local phrases without maintaining a language-specific vocabulary.
+    pairs = [run[i:i + 2] for run in re.findall(r"[\u3400-\u9fff]+", text)
+             for i in range(len(run) - 1)]
+    return tokens + tuple(pairs)
 
 
 class MemoryScoreBreakdown(RuntimeModel):

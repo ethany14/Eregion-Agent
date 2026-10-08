@@ -17,6 +17,7 @@ class AgentPlanRow(Base):
     plan_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     root_task_id: Mapped[str] = mapped_column(String(36), nullable=False)
     budget_json: Mapped[str] = mapped_column(Text, nullable=False)
+    usage_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}", server_default="{}")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 

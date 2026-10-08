@@ -26,6 +26,9 @@ the same local service at `http://localhost:8000`.
 - Exports tailored resumes as searchable, ATS-friendly Letter-size PDFs.
 - Persists Copilot conversations and lists them in a ChatGPT-style sidebar.
 - Supports resumable tool calls, approvals, cancellation, deadlines, and recovery.
+- Opens public job pages, navigates application steps, fills confirmed candidate
+  details, and supports secure account input for login or registration. Greenhouse,
+  Lever and Workday entry flows have focused coverage; other sites use the generic loop.
 - Keeps Memory and Skills governed, versioned, reviewable, and separate from resume evidence.
 
 ### Resume agent loop
@@ -344,6 +347,11 @@ The runtime provides:
 - **Bounded parallelism.** Ready tasks are claimed with leases and heartbeats, while
   the plan limits total tasks, depth, concurrent work, model calls, tool calls,
   tokens, cost, and deadlines.
+  Model workers reserve call and token capacity before contacting the provider.
+  Failed attempts retain their reservation when actual usage is unavailable;
+  retries share the same persisted plan budget. Provider usage replaces token
+  estimates when returned. Monetary cost caps are not supported yet: setting one
+  blocks model calls instead of silently ignoring the cap.
 - **Durable artifacts.** Analyses, evidence snapshots, drafts, verification reports,
   revisions, and the final pack are versioned outputs rather than hidden agent-to-agent
   messages.
@@ -358,18 +366,21 @@ their terminal outcome. The resulting pack still requires human review.
 Important boundaries:
 
 - **Custom Agent is the active backend** for newly created runs.
-- **LangGraph is frozen** and remains only for historical runs, baseline tests, and
-  explicit evaluation runners.
+- **The custom Agent Loop is the only execution backend** for the API, CLI, and
+  workflow evaluations. The retired graph runtime and its dependencies are removed.
 - Schemas, prompts, model configuration, domain rules, rendering, and evaluation
   datasets are shared where behavior must remain comparable.
-- The backend stored on an existing run is authoritative; environment defaults never
-  reinterpret an old run.
+- Saved results from historical runs remain readable. Runs whose stored backend
+  is retired or unknown cannot be reviewed or resumed; create a new custom run.
+  Historical backend labels remain in the database for provenance.
 - Model and tool calls execute outside database transactions.
 
 ## Persistence and recovery
 
-The default database is `job_agent.db`. Historical LangGraph checkpoints use
-`job_agent_checkpoints.sqlite`. Override the active database with:
+The default database is `job_agent.db`; custom state and audit events live in the
+same database. Old checkpoint files are no longer opened or required. Existing
+database files and archived evaluation reports are not deleted by this cleanup.
+Override the active database with:
 
 ```dotenv
 JOB_AGENT_DATABASE_URL=sqlite:///./job_agent.db
@@ -431,17 +442,18 @@ python -m pytest -q
 Run the browser-side unit tests:
 
 ```powershell
-node --test tests/test_copilot_ui.mjs tests/test_learning_ui.mjs tests/test_mock_interview_ui.mjs
+node --test tests/test_copilot_ui.mjs tests/test_learning_ui.mjs tests/test_mock_interview_ui.mjs tests/test_web_ui.mjs
 ```
 
-The current local release baseline is:
+The historical release baseline before removal of the graph backend was:
 
 ```text
 638 passed, 1 skipped
 18 JavaScript tests passed
 ```
 
-Tests use fake models or scripted adapters by default and do not make paid model
+Current test totals change as retired-backend tests are replaced by custom-loop
+coverage. Tests use fake models or scripted adapters by default and do not make paid model
 calls. Live evaluations are opt-in. Reproducible datasets, runners, raw outputs, and
 version metadata live under `evals/`.
 
@@ -508,7 +520,201 @@ multi-tenant authorization boundary.
 
 ## Development policy
 
-New product work belongs to the custom runtime. Preserve the frozen LangGraph
-baseline so historical runs and parity evaluations remain reproducible. Database
+All executable workflows use the custom runtime. Archived evaluation reports
+retain their original backend metadata and are historical evidence only. Database
 changes require Alembic migrations, and tests should use isolated temporary SQLite
 files rather than production `create_all()`.
+
+### Command-line workflow
+
+`python main.py resume.txt job.txt --thread-id application-001 --output result.json`
+runs the same persisted custom Agent Loop as the API. Use a unique run ID for each
+application; the CLI never overwrites an existing run. `--database-url` optionally
+selects a separate database. A run paused for review can be reviewed through `/runs`
+using the same database. A retired backend cannot be selected by environment settings.
+
+## Browser application assistant (first release)
+
+Open `/apply` from the web workspace's **Apply** link, or choose **Prepare
+application** on a saved job. This uses a separate persisted custom observe/act/verify
+loop under `agent_runtime/auto_apply`; it has no LangGraph dependency. The existing
+resume-generation loop remains focused on producing and reviewing materials.
+
+1. Install the updated `requirements.txt` and run `python -m alembic upgrade head`.
+2. Start the local service with one worker. Chrome must be installed on this machine.
+   Set `JOB_AGENT_BROWSER_CHANNEL=msedge` to use an installed Edge instead.
+3. Attach the final resume PDF in the chat. Selectable text is sent to the configured
+   model to extract evidenced contact and education details. Missing required details
+   are asked in chat; **Your details** opens an optional profile editor.
+4. Send a direct public HTTPS job link (for example Greenhouse, Lever or Workday).
+   The chat starts Agent + autofill automatically.
+   New chat applications always show a review card before submission. The API retains
+   its existing explicit automation/submission settings for other clients.
+5. Reply in the conversation; no question-selection dropdown or Continue click is
+   needed. Short choices appear next to questions. **View workspace** opens the
+   browser preview, plan, activity, completed answers and answer memory. **Pause agent
+   & use Chrome** stops automation for manual interaction; send `continue` to resume.
+   Review approval remains bound to the observed form and is invalidated by changes.
+
+Hybrid mode uses the existing `LLM_MODEL_ID`, `LLM_BASE_URL`, and `LLM_API_KEY`
+configuration. The model must support native tool calls and image input for visual
+backup. It chooses how to combine
+deterministic `autofill`, individual field actions, and page navigation. Playwright
+performs real browser input using DOM/ARIA locators or screenshot coordinates.
+The visual backup uses the same model and browser session, rather than requiring
+a provider-specific computer-use model or controlling the user's desktop.
+
+Field observations include nearby groups, help, constraints and validation errors.
+`resolve_field` lets the model adapt a sourced value to the site's representation
+(including splitting an international phone), match an observed semantic option,
+or choose an incidental default such as a handset classification. These run-local
+decisions have provenance and are kept separate from confirmed answers/memory;
+source corrections invalidate them. The review panel labels incidental defaults.
+Material answers and consent still require explicit facts. This does not prevent
+`equivalent` mappings of a supplied fact (for example an M.Eng. to an observed
+Masters category); those cite this question's confirmed source, respect explicit
+corrections, and never become default qualifications or new remembered facts.
+`explore_option` opens
+an observed category without requiring it to equal the user's intended leaf, then
+reads its children or newly revealed dependent controls. Search text is distinct
+from a committed selection. A rejected unchanged value is handed to the model for
+repair instead of repeatedly being written by autofill.
+
+It observes retained values after every action. **Visual browser backup** is an
+explicit option in application details, disabled by default. When enabled, after
+a failed DOM action (or when the model requests `view_browser`), the model sees
+the current viewport and can click, double-click, hover, scroll, drag, type a known
+source or press editing/navigation keys. Each action returns a fresh screenshot.
+The model uses an explicit 0..1000 coordinate grid, mapped to the screenshot's CSS
+pixel dimensions (also on high-DPI displays); old images are rejected
+after page changes. The model can explore menus without DOM option roles. Actual
+form values and errors still determine completion, not a successful mouse click.
+Screenshots stay in memory, password/verification controls are masked, and account
+pages use the secure account workflow. Candidate facts, fields and requested
+screenshots are sent to the configured model. Changing the visual option applies
+to the active attempt with the next chat message, including `continue`.
+The model cannot navigate arbitrarily, execute page JavaScript, or submit directly.
+Final validation and the submission boundary remain in the custom host loop.
+
+The agent executes up to 12 decisions per worker slice and schedules the next slice
+automatically while making progress. The task plan, recent actions and last tool
+result survive slices. A user instruction/resume has a budget of 40 model calls and
+120 tool calls; cumulative usage is retained. Transient failures have at most two
+automatic recovery attempts with backoff. Waiting does not block other browser work,
+and pause/cancel invalidates scheduled retries. Persistent failures surface a retry
+action rather than asking for already supplied answers. Autofill failures are isolated
+per field. Existing API clients can still select deterministic autofill mode.
+
+Country aliases (for example US/USA/United States), phone-country suffixes, and
+common school names/abbreviations are matched against observed options. School
+acronyms with multiple matches pause rather than select an arbitrary campus.
+Autocomplete searches can expand known aliases before retrieving options.
+
+**Remember my answers** stores user-provided answers under the candidate email.
+Equivalent questions on another application can reuse them, with their original
+question shown beside the field. Work authorization preserves country context;
+sponsorship and present/future scope are separate. Consent is asked on first use,
+including optional consent controls, then reused for an equivalent question.
+Generic "I agree" labels without scope are not reused. Candidate details in the
+current resume/form take priority over older remembered contact/education answers.
+Open **Remembered answers** to inspect or forget entries. Previously saved explicit
+answers are indexed once on upgrade; forgetting an entry survives a restart.
+Migration `0030_application_memory` adds the answer store.
+
+The original resume PDF and editable candidate details now persist locally across
+new applications, page reloads and server restarts. **Your details** includes an
+editable education history. Migration `0031_saved_candidate` adds this store;
+the latest legacy application's resume is restored once and re-extracted to obtain
+all education records. Removing the saved resume prevents legacy backfill from
+restoring it again. Resume extraction uses the agent's ordinary tool-call transport
+and validates each extracted fact against a literal quote from the PDF.
+
+The agent sees confirmed answer memories with their original questions and can
+reuse paraphrased questions through `use_remembered_answer`; consent, immigration
+and employer-specific facts retain their scope. Education rows are associated with
+individual saved records using `bind_education`. Autofill then fills each record's
+school, degree, major and stated dates, including optional fields. Completion checks
+prevent moving past an offered repeatable education section with missing records
+or known details. Date components absent from the resume are not invented.
+
+Inline questions keep selections as drafts. Choose all answers, then use
+**Submit answers & continue** to save them in one request and resume the agent once.
+Polling retains unsent choices; changing the question schema invalidates its draft.
+
+The application chat persists user feedback and agent replies. Sending feedback
+invalidates an outstanding model decision; the next decision sees the new message.
+**Pause** stops subsequent actions and submission until you continue. The browser
+panel shows local snapshots and named tool actions. The browser preview stays local;
+the separate visual-backup option also sends requested viewport images to the model. This is a preview,
+not a remote-control video stream; use the separate Chrome window to interact.
+
+Each attempt stores its selected PDF, candidate details, explicit answers, observed
+form state, and bounded event history in the local application database. Cookies and
+passwords are not stored in that database; encrypted browser login state is described
+below. The existing resume library retains extracted text rather
+than original PDF bytes, so this release asks you to select the actual file to upload.
+
+The runtime limits open active attempts to three and runs browser actions serially.
+It re-observes after every fill, bounds execution time and action count, and detects
+an unchanged unsuccessful action instead of clicking indefinitely. A unique posting
+identity prevents duplicate attempts, including across tracking URLs and restarts.
+Before a submit click it durably enters `submitting`. Missing confirmation, crashes,
+or timeouts after that point become `submission_unknown`; there is no automatic
+resubmission. Only an observed employer confirmation marks a run `submitted`.
+
+Running/queued hybrid attempts resume on server startup from saved facts and answers.
+Paused tasks remain paused; previously approved review screens require fresh review
+after reopening the browser. The local backend and computer must stay running for
+background execution. Unstarted chat drafts and the reusable upload are held in the
+current page, while started applications and their chat are stored in the database.
+The browser now accepts public HTTPS job links beyond Greenhouse and Lever. The
+LLM observes page text, application controls and the current form, and chooses when
+to open Apply, import a resume, add a repeated section, or continue to the next
+step. Final submission remains host-controlled, and a Next button does not count
+as a completed application. Earlier-page answers stay available for review.
+
+Workday account pages open a dedicated credential dialog. The agent can sign in
+or register using the supplied email/password; the password is kept out of model
+inputs, chat, application records and previews. Account agreements are shown with
+the page's instructions and require explicit choices. Verification emails, MFA,
+CAPTCHA and unrecognized authentication layouts pause for browser interaction.
+Successful login cookies/local storage are encrypted with Windows DPAPI under
+`.browser-sessions/`, isolated by candidate email and the initial job-site host.
+Passwords themselves are not retained by the agent. Other operating systems retain
+the current browser session but do not persist an unencrypted fallback. This is a
+local Windows implementation, not a credential service for cloud deployment.
+
+Hosted Greenhouse/Lever controls have regression coverage. Workday's public
+application, email sign-in, and registration entry screens have been inspected;
+account execution, multiple pages, and final review are tested using offline
+fixtures. Other ATS links (including Ashby, SmartRecruiters, iCIMS, Taleo,
+SuccessFactors and Jobvite) enter the same generic loop; URL acceptance is not a
+claim of verified compatibility. Custom widgets, SSO redirects, unknown questions
+and employer-specific steps can still require browser interaction. Job discovery
+and cloud browser hosting are not included.
+Attempts have their own history; they do not automatically change the saved
+job's pipeline status. Use a single trusted local server process, not a public or
+multi-tenant deployment.
+
+Application tests (scripted model responses, no live model calls):
+
+```powershell
+python -m pytest tests/test_auto_apply.py tests/test_auto_apply_agent.py tests/test_auto_apply_personalization.py tests/test_auto_apply_conversation.py tests/test_auto_apply_autonomy.py -q
+$env:JOB_AGENT_BROWSER_TESTS = "1"
+python -m pytest tests/test_auto_apply_navigation.py tests/test_auto_apply_workday.py tests/test_auto_apply_browser.py -q
+```
+
+The Chrome tests intercept every employer request and use local fixture pages. They
+cover actual browser filling, PDF upload, questions, review, confirmation, and the
+web UI through the real API without submitting to an employer. Hybrid tests also
+cover keyboard fallback, readonly portal dropdowns, replaced DOM nodes, background
+requests during pauses, cancellation, stale observations, answer grounding, resume
+extraction, cross-application memory, chat corrections, previews and forgetting.
+These tests do not establish compatibility with every live model provider. Production selectors
+were also checked against public read-only Greenhouse and Lever pages; this does not
+establish success across every employer customization.
+
+Implementation references: [Playwright input actions](https://playwright.dev/python/docs/input),
+[Playwright locators](https://playwright.dev/python/docs/locators),
+[Greenhouse job board documentation](https://docs.greenhouse.io/job-board.html),
+and [Lever hosted application URLs](https://github.com/lever/postings-api).

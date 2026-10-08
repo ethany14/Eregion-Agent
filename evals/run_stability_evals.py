@@ -14,10 +14,10 @@ from typing import Any
 
 from evals import DATASET_VERSION
 from evals.metrics import EvaluationResult, requirement_key
-from evals.run_ablation import UsageCollector, compile_graph, usage_report
+from evals.run_ablation import UsageCollector, usage_report
 from evals.run_evals import EVALS_DIR, load_cases, run_adversarial_case, run_case
-from job_agent.graph import builder
-from job_agent.nodes import _create_model
+from evals.runtime import EvaluationWorkflow
+from job_agent.model import create_model as _create_model
 from job_agent.prompts import PROMPT_VERSION
 from job_agent.schemas import SCHEMA_VERSION, TailoredResume
 
@@ -78,9 +78,8 @@ def decision_signature(result: EvaluationResult) -> str:
     return json.dumps(value, sort_keys=True, ensure_ascii=False)
 
 
-def content_hash(graph: Any, thread_id: str) -> str | None:
-    snapshot = graph.get_state({"configurable": {"thread_id": thread_id}})
-    value = snapshot.values.get("tailored_resume")
+def content_hash(workflow: EvaluationWorkflow, thread_id: str) -> str | None:
+    value = workflow.get_result(thread_id).get("tailored_resume")
     if value is None:
         return None
     resume = TailoredResume.model_validate(value).model_dump(mode="json")
@@ -150,7 +149,7 @@ def run_stability_evaluation(
     cases = load_cases(cases_path)
     adversarial_cases = load_cases(adversarial_path)
     dataset = validate_dataset(cases, adversarial_cases)
-    graph = compile_graph(builder)
+    workflow = EvaluationWorkflow()
     model = _create_model()
     workflow_records: list[dict[str, Any]] = []
     total_workflow_usage = UsageCollector()
@@ -161,7 +160,7 @@ def run_stability_evaluation(
             thread_id = f"stability-{case['id']}-{run_index}"
             result = run_case(
                 case,
-                graph,
+                workflow,
                 callbacks=[usage],
                 thread_id=thread_id,
             )
@@ -179,7 +178,7 @@ def run_stability_evaluation(
                     **result.model_dump(mode="json"),
                     "decision_signature": decision_signature(result),
                     "tailored_resume_sha256": (
-                        content_hash(graph, thread_id)
+                        content_hash(workflow, thread_id)
                         if result.reached_human_review else None
                     ),
                     "usage": usage_report(usage, model.model_name),

@@ -307,11 +307,22 @@ def test_save_workspace_is_idempotent_and_tracks_changed_snapshot(workspace):
 
 
 def test_workspace_analysis_projects_artifacts_and_failure_is_retryable(workspace):
+    from api.services.fit_analysis_service import FitAnalysisResult
+    class FakeFitService:
+        failed = False
+        async def analyze(self, **kwargs):
+            if self.failed:
+                raise RuntimeError("Provider unavailable")
+            data = public_run_result()
+            return FitAnalysisResult(analysis_id=str(uuid4()), latency_seconds=0,
+                resume_analysis={"summary": "Developer", "skills": [], "education": [], "evidence": []},
+                job_analysis=data["job_analysis"], skill_match=data["skill_match"])
     database, repository = workspace
     saved = repository.save_workspace(cleaned_job_description="Requires Python.")
-    service = WorkspaceFakeRunService(RunRepository(database.session_factory))
-    app = create_app(run_service=service, session_runtime=SimpleNamespace(workspace=repository))
-    with TestClient(app) as client:
+    service = FakeFitService()
+    app = create_app(run_service=object(), fit_analysis_service=service,
+        session_runtime=SimpleNamespace(workspace=repository, evidence=None))
+    with TestClient(app, raise_server_exceptions=False) as client:
         response = client.post(f"/api/applications/{saved.application.application_id}/analyze", json={
             "snapshot_id": saved.snapshot.snapshot_id,
             "resume_text": "Python developer.",
@@ -321,32 +332,32 @@ def test_workspace_analysis_projects_artifacts_and_failure_is_retryable(workspac
         body = response.json()
         assert body["application"]["status"] == "materials_ready"
         assert {item["artifact_type"] for item in body["artifacts"]} == {
-            "job_analysis", "match_report", "tailored_resume",
+            "resume_analysis", "job_analysis", "match_report",
         }
         detail = client.get(f"/api/applications/{saved.application.application_id}").json()
-        assert detail["associated_runs"][0]["status"] == "awaiting_review"
+        assert detail["associated_runs"] == []
 
     failed_saved = repository.save_workspace(cleaned_job_description="Requires Go.")
-    failed_service = WorkspaceFakeRunService(RunRepository(database.session_factory), failed=True)
-    failed_app = create_app(run_service=failed_service,
-                            session_runtime=SimpleNamespace(workspace=repository))
-    with TestClient(failed_app) as client:
+    service.failed = True
+    with TestClient(app, raise_server_exceptions=False) as client:
         response = client.post(
             f"/api/applications/{failed_saved.application.application_id}/analyze",
             json={"snapshot_id": failed_saved.snapshot.snapshot_id,
                   "resume_text": "Go developer.",
                   "expected_version": failed_saved.application.version},
         )
-        assert response.status_code == 200
-        failed = response.json()["application"]
+        assert response.status_code == 500
+        failed = client.get(f"/api/applications/{failed_saved.application.application_id}").json()
         assert failed["status"] == "analysis_failed"
-        assert failed["error_code"] == "analysis_run_failed"
+        assert failed["error_code"] == "fit_analysis_failed"
+        service.failed = False
         retry = client.post(
             f"/api/applications/{failed_saved.application.application_id}/analyze",
             json={"snapshot_id": failed_saved.snapshot.snapshot_id,
                   "resume_text": "Go developer.", "expected_version": failed["version"]},
         )
         assert retry.status_code == 200
+        assert retry.json()["application"]["status"] == "materials_ready"
 
 
 def test_workspace_session_context_is_scoped_to_attached_application(workspace):
@@ -388,3 +399,58 @@ def test_workspace_context_excerpt_is_bounded_and_requirement_focused():
     assert "PostgreSQL and Docker" in excerpt
     assert "Unrelated marketing copy" not in excerpt
     assert len(excerpt) <= 3_000
+
+
+def test_overlapping_analysis_is_rejected_before_a_second_model_call(workspace):
+    import asyncio
+    from api.services.workspace_service import WorkspaceAnalysisService
+    from api.services.fit_analysis_service import FitAnalysisResult
+    _, repository = workspace
+    saved = repository.save_workspace(cleaned_job_description="Python")
+    async def scenario():
+        entered, release = asyncio.Event(), asyncio.Event()
+        class Fit:
+            calls = 0
+            async def analyze(self, **kwargs):
+                self.calls += 1
+                entered.set()
+                await release.wait()
+                data = public_run_result()
+                return FitAnalysisResult(analysis_id="one", latency_seconds=0,
+                    resume_analysis={"summary": "", "skills": [], "evidence": [], "education": []},
+                    job_analysis=data["job_analysis"], skill_match=data["skill_match"])
+        fit = Fit()
+        service = WorkspaceAnalysisService(repository, fit)
+        kwargs = dict(snapshot_id=saved.snapshot.snapshot_id, resume_text="Python developer")
+        first = asyncio.create_task(service.analyze(saved.application.application_id,
+            expected_version=saved.application.version, **kwargs))
+        await asyncio.wait_for(entered.wait(), timeout=5)
+        current = repository.get_application(saved.application.application_id)
+        try:
+            with pytest.raises(InvalidApplicationTransitionError):
+                await service.analyze(current.application_id, expected_version=current.version, **kwargs)
+        finally:
+            release.set()
+            result = await first
+        assert fit.calls == 1
+        assert result[0].status == ApplicationStatus.MATERIALS_READY
+    asyncio.run(scenario())
+
+
+def test_old_analysis_failure_cannot_overwrite_a_new_analysis_version(workspace):
+    import asyncio
+    from api.services.workspace_service import WorkspaceAnalysisService
+    _, repository = workspace
+    saved = repository.save_workspace(cleaned_job_description="Python")
+    class Fit:
+        async def analyze(self, **kwargs):
+            current = repository.get_application(saved.application.application_id)
+            failed = repository.transition_status(current.application_id,
+                expected_version=current.version, target_status=ApplicationStatus.ANALYSIS_FAILED)
+            repository.transition_status(current.application_id,
+                expected_version=failed.version, target_status=ApplicationStatus.ANALYZING)
+            raise RuntimeError("Old request failed")
+    with pytest.raises(RuntimeError, match="Old request"):
+        asyncio.run(WorkspaceAnalysisService(repository, Fit()).analyze(saved.application.application_id,
+            snapshot_id=saved.snapshot.snapshot_id, resume_text="Python developer", expected_version=0))
+    assert repository.get_application(saved.application.application_id).status == ApplicationStatus.ANALYZING

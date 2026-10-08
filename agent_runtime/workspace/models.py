@@ -74,6 +74,14 @@ class ApplicationArtifactRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class ApplicationResumeSourceRow(Base):
+    __tablename__ = "application_resume_sources"
+    artifact_id: Mapped[str] = mapped_column(ForeignKey("application_artifacts.artifact_id", ondelete="CASCADE"), primary_key=True)
+    resume_id: Mapped[str | None] = mapped_column(String(36))
+    resume_text: Mapped[str] = mapped_column(Text, nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
 class ApplicationEventRow(Base):
     __tablename__ = "application_events"
     __table_args__ = (UniqueConstraint("application_id", "sequence", name="uq_application_event_sequence"),)

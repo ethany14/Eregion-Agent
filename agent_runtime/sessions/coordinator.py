@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+from agent_runtime.model_runtime import model_failure
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 from uuid import uuid4
@@ -292,6 +293,10 @@ class SessionCoordinator:
                         ),
                         expected_version=state.version,
                     )
+                # Semantic retrieval may take time. Renew the lease and compute
+                # the remaining model budget after projection, not before it.
+                attempt = self._heartbeat(attempt)
+                timeout = self._effective_timeout(state, attempt, self._model_timeout_seconds)
                 messages = prepared.messages
                 context = self._context(
                     state,
@@ -323,12 +328,32 @@ class SessionCoordinator:
                 )
             except SessionClaimNotOwnedError:
                 raise
-            except Exception:
+            except Exception as exc:
                 self._abandon_context(state, "model_invocation_failed")
                 current = self._sessions.require(state.session_id)
                 control = self._control_outcome(current)
                 if control is not None:
                     return control
+                failure = model_failure(exc)
+                if failure.retryable:
+                    message = AgentMessage(message_id=str(uuid4()), role="assistant", content=(
+                        "The model service is temporarily unavailable. Your conversation and completed "
+                        "work are saved. Send another message to continue."))
+                    resumed = self._sessions.save_transition(
+                        self._updated(current, {
+                            "status": SessionStatus.AWAITING_USER,
+                            "error_code": failure.code, "error_message": message.content,
+                            "turn_deadline_at": None, "current_context_snapshot_id": None,
+                            "terminal_reason": None,
+                        }),
+                        SessionEvent(session_id=current.session_id,
+                            event_type=SessionEventType.WAITING_FOR_USER,
+                            payload={"reason": failure.code, "retryable": True}),
+                        expected_version=current.version,
+                        messages=[SessionMessageDraft(message=message)],
+                    )
+                    return self._outcome(SessionOutcomeStatus.AWAITING_USER, resumed,
+                        final_text=message.content, error_code=failure.code, error_message=message.content)
                 return self._fail(
                     current,
                     code="model_invocation_failed",

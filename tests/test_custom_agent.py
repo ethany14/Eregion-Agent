@@ -750,7 +750,7 @@ def test_custom_loop_retries_then_discards_non_verbatim_model_evidence(custom_ru
     loop = make_loop(custom_runtime.repository, JobAgentStepHandler(analyzer))
     state = AgentState(
         run_id="discard-invalid-evidence",
-        resume_text="Built Python APIs.\nExample University\nOther text\nExpected May 2027",
+        resume_text="Developer\nBuilt Python APIs.\nExample University\nOther text\nExpected May 2027",
         job_description="Requires Python",
         step=Step.ANALYZE_RESUME,
     )

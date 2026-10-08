@@ -25,7 +25,9 @@ import agent_runtime.application_pack.models  # noqa: F401
 import agent_runtime.multi_agent.models  # noqa: F401
 import agent_runtime.assistant.models  # noqa: F401
 import agent_runtime.workspace.models  # noqa: F401
+import agent_runtime.resumes.models  # noqa: F401
 import custom_agent.models  # noqa: F401
+import agent_runtime.auto_apply.models  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

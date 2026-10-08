@@ -61,11 +61,14 @@ from agent_runtime.skills.routing import SkillRouter
 from agent_runtime.skills.evolution import SkillEvolutionService
 from agent_runtime.skills.evolution_types import ActivationMode
 from agent_runtime.tools.job_agent_tools import register_builtin_job_agent_tools
+from agent_runtime.tools.workflow_tools import WORKFLOW_TOOLS, LOCAL_WORKFLOW_TOOLS, register_workflow_tools
 from agent_runtime.tools.loop import ToolCallingLoop
 from agent_runtime.tools.model_adapter import LangChainToolModelAdapter
 from agent_runtime.tools.run_reader import SqlAlchemyRunReader
 from api.db import Database, create_database, upgrade_database
 from job_agent.model import create_model
+from agent_runtime.model_runtime import model_timeout
+from agent_runtime.semantics import SemanticDecisions
 from agent_runtime.workspace.repository import JobWorkspaceRepository
 from agent_runtime.resumes.repository import ResumeDocumentRepository
 
@@ -79,9 +82,11 @@ JOB_ASSISTANT_READONLY_TOOLS = frozenset(
     }
 )
 CAPABILITY_PROFILES = {
+    "job_assistant": JOB_ASSISTANT_READONLY_TOOLS | WORKFLOW_TOOLS,
     "job_assistant_readonly": JOB_ASSISTANT_READONLY_TOOLS,
 }
 CAPABILITY_SKILL_PROFILES = {
+    "job_assistant": frozenset(),
     "job_assistant_readonly": frozenset({"job-run-analysis"}),
 }
 LOCAL_PROJECT_ID = "jobhunteragent"
@@ -176,7 +181,7 @@ def create_session_runtime(
     tool_calls = ToolCallRepository(database.session_factory)
     run_reader = SqlAlchemyRunReader(database.session_factory)
     registry = register_builtin_job_agent_tools(ToolRegistry(), run_reader)
-    executor = ToolExecutor(registry, policy=ToolPolicy(), repository=tool_calls)
+    executor = ToolExecutor(registry, policy=ToolPolicy(automatic_local_tools=LOCAL_WORKFLOW_TOOLS), repository=tool_calls)
     manager_options: dict[str, Any] = {
         "config": mcp_config or load_mcp_runtime_config(),
         "registry": registry,
@@ -233,7 +238,9 @@ def create_session_runtime(
             "what is missing and ask a focused clarification."
         ),
         memories=memories,
-        memory_retriever=MemoryRetriever(memories),
+        memory_retriever=MemoryRetriever(memories, semantic_ranker=(
+            SemanticDecisions(configured_model).relevant_memories
+            if hasattr(configured_model, "with_structured_output") else None)),
         evidence=evidence,
         evidence_retriever=CareerEvidenceRetriever(evidence),
         application_for_session=workspace.application_id_for_session,
@@ -255,6 +262,8 @@ def create_session_runtime(
         context_projector=projector,
         context_snapshots=context_snapshots,
         default_allowed_skills=CAPABILITY_SKILL_PROFILES["job_assistant_readonly"],
+        model_timeout_seconds=model_timeout(configured_model),
+        lease_seconds=max(60, model_timeout(configured_model) + 15),
     )
     interviewer = InterviewController(
         interviews=InterviewRepository(database.session_factory),
@@ -272,7 +281,7 @@ def create_session_runtime(
     agent_tasks = AgentTaskRepository(database.session_factory)
     agent_workers = AgentWorkerRegistry()
     for worker in (
-        SourceProvisionWorker(ApplicationSourceReader(workspace, packs)),
+        SourceProvisionWorker(ApplicationSourceReader(workspace, packs), resumes=resumes, workspace=workspace),
         CandidateAnalysisWorker(evidence=evidence), JobAnalysisWorker(),
         RequirementMatchWorker(),
         EvidenceGapWorker(InterviewRepository(database.session_factory)),
@@ -295,7 +304,7 @@ def create_session_runtime(
     agent_scheduler = AgentTaskScheduler(tasks=agent_tasks, sessions=sessions,
         workers=agent_workers, contexts=agent_context)
     agent_scheduler.start()
-    return SessionRuntime(
+    runtime = SessionRuntime(
         database=database,
         sessions=sessions,
         tool_calls=tool_calls,
@@ -326,6 +335,8 @@ def create_session_runtime(
         conversation_learning=conversation_learning,
         resumes=resumes,
     )
+    register_workflow_tools(runtime)
+    return runtime
 
 
 def get_session_runtime(request: Request) -> SessionRuntime:

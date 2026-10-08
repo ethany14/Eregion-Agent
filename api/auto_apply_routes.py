@@ -1,0 +1,162 @@
+"""Local browser application API; construction does not open a browser."""
+from threading import Lock
+from urllib.parse import urlsplit
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
+from agent_runtime.auto_apply.contracts import ContinueApplication, StartApplication, VersionRequest, ChatRequest, ResumeProfileRequest, PreparationMessage, AccountCredentials, AccountMode, SavedCandidateRequest
+from agent_runtime.auto_apply.loop import ApplicationLoop
+from agent_runtime.auto_apply.repository import ApplyConflict, ApplyNotFound, ApplyRepository
+
+router = APIRouter(prefix="/api/auto-apply", tags=["automatic applications"])
+_lock = Lock()
+
+
+def restore_applications(application):
+    """Resume durable work on server startup, without waiting for an open UI."""
+    runtime = application.state.session_runtime
+    if runtime is None or getattr(runtime, "database", None) is None:
+        return
+    with _lock:
+        if getattr(application.state, "auto_apply", None) is None:
+            application.state.auto_apply = ApplicationLoop(ApplyRepository(runtime.database.session_factory))
+
+
+def service(request: Request):
+    origin = request.headers.get("origin")
+    if origin and urlsplit(origin).netloc != request.url.netloc:
+        raise HTTPException(403, "Open application automation from this local workspace.")
+    with _lock:
+        existing = getattr(request.app.state, "auto_apply", None)
+        if existing is None:
+            runtime = request.app.state.session_runtime
+            if runtime is None:
+                raise HTTPException(503, "The local workspace is not ready.")
+            existing = ApplicationLoop(ApplyRepository(runtime.database.session_factory))
+            request.app.state.auto_apply = existing
+        return existing
+
+
+def public(state):
+    return {key: value for key, value in state.items() if key not in {"profile", "answers", "review_digest"}}
+
+
+def invoke(action):
+    try:
+        return public(action())
+    except ApplyNotFound as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except ApplyConflict as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@router.get("")
+def list_attempts(loop=Depends(service)):
+    return {"attempts": [public(state) for state in loop.repository.list()]}
+
+
+@router.post("", status_code=202)
+def start_attempt(body: StartApplication, loop=Depends(service)):
+    return invoke(lambda: loop.start(body))
+
+
+@router.post("/resume-profile")
+def resume_profile(body: ResumeProfileRequest, loop=Depends(service)):
+    from agent_runtime.auto_apply.resume_profile import extract_profile
+    try:
+        result=extract_profile(body.resume_base64)
+        saved=loop.repository.saved_candidate()
+        profile=result['profile']
+        if saved['resume_base64']==body.resume_base64:
+            profile={**profile,**{k:v for k,v in saved['profile'].items() if v and k!='education'},
+                'education':profile.get('education') or saved['profile'].get('education',[])}
+        result['profile']=profile
+        return result
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@router.get("/candidate")
+def saved_candidate(response: Response, loop=Depends(service)):
+    response.headers['Cache-Control']='no-store'
+    return loop.repository.saved_candidate()
+
+
+@router.post("/candidate")
+def save_candidate(body: SavedCandidateRequest, loop=Depends(service)):
+    import base64
+    return {'profile':loop.repository.save_candidate(body.profile.model_dump(),
+        resume=base64.b64decode(body.resume_base64) if body.resume_base64 else None,
+        name=body.resume_name if body.resume_base64 else None,extracted=body.extracted)}
+
+
+@router.delete("/candidate")
+def clear_candidate(loop=Depends(service)):
+    loop.repository.clear_candidate()
+    return {'removed':True}
+
+
+@router.post("/{run_id}/chat", status_code=202)
+def chat(run_id: str, body: ChatRequest, loop=Depends(service)):
+    return invoke(lambda: loop.chat(run_id, body))
+
+
+@router.post("/prepare-message")
+def prepare_message(body: PreparationMessage, loop=Depends(service)):
+    from agent_runtime.auto_apply.resume_profile import extract_chat_profile
+    return extract_chat_profile(body.text, field=body.field)
+
+
+@router.get("/{run_id}/preview")
+def preview(run_id: str, loop=Depends(service)):
+    try:
+        content = loop.preview(run_id)
+    except ApplyNotFound as exc:
+        raise HTTPException(404, str(exc)) from exc
+    return Response(content=content or b"", media_type="image/jpeg", status_code=200 if content else 204,
+        headers={"Cache-Control": "no-store"})
+
+
+@router.get("/{run_id}/memory")
+def memory(run_id: str, loop=Depends(service)):
+    return invoke(lambda: {"memories": loop.repository.memories(loop.repository.get(run_id)["profile"])})
+
+
+@router.delete("/{run_id}/memory/{memory_id}")
+def forget(run_id: str, memory_id: str, loop=Depends(service)):
+    def action():
+        with loop.lock:
+            loop.repository.forget(loop.repository.get(run_id)["profile"], memory_id)
+        return {"forgotten": True}
+    return invoke(action)
+
+
+@router.get("/{run_id}")
+def get_attempt(run_id: str, loop=Depends(service)):
+    return invoke(lambda: loop.repository.get(run_id))
+
+
+@router.post("/{run_id}/continue", status_code=202)
+def continue_attempt(run_id: str, body: ContinueApplication, loop=Depends(service)):
+    return invoke(lambda: loop.continue_run(run_id, body))
+
+
+@router.post("/{run_id}/cancel")
+def cancel_attempt(run_id: str, body: VersionRequest, loop=Depends(service)):
+    return invoke(lambda: loop.cancel(run_id, body.expected_version))
+
+
+@router.post("/{run_id}/account", status_code=202)
+async def account(run_id: str, request: Request, loop=Depends(service)):
+    # FastAPI's default validation responses echo invalid input. Validate this
+    # secret-bearing request explicitly and return a constant error instead.
+    try:
+        body = AccountCredentials.model_validate(await request.json())
+    except (ValueError, TypeError):
+        raise HTTPException(422, "Check the account details and try again.") from None
+    return invoke(lambda: loop.account(run_id, body))
+
+
+@router.post("/{run_id}/account-mode", status_code=202)
+def account_mode(run_id: str, body: AccountMode, loop=Depends(service)):
+    return invoke(lambda: loop.account(run_id, body, switch=True))

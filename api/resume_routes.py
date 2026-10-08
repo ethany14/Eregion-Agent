@@ -222,6 +222,7 @@ async def analyze_saved_application(
         snapshot_id=application.current_snapshot_id,
         resume_text=resume.extracted_text,
         expected_version=payload.expected_version,
+        resume_id=resume.resume_id,
     )
     return AnalyzeApplicationResponse(
         application=PublicApplication.model_validate(current.model_dump()),

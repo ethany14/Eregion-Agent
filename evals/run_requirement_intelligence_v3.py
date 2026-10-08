@@ -1,4 +1,4 @@
-"""Run the paired v3 requirement-intelligence regression evaluation."""
+"""Run the custom-loop v3 requirement-intelligence regression evaluation."""
 
 from __future__ import annotations
 
@@ -19,11 +19,9 @@ from custom_agent.loop import AgentLoop
 from custom_agent.repository import StateRepository
 from custom_agent.state import AgentStatus, Step
 from evals import DATASET_VERSION
-from evals.run_ablation import compile_graph
 from evals.run_evals import EVALS_DIR, load_cases, tailored_resume_text
 from job_agent.domain import calculate_score_breakdown, normalize_text
-from job_agent.graph import builder
-from job_agent.nodes import _create_model
+from job_agent.model import create_model as _create_model
 from job_agent.prompts import PROMPT_VERSION
 from job_agent.schemas import (
     SCHEMA_VERSION,
@@ -374,12 +372,10 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
 
 def baseline_comparison(
     baseline: dict[str, Any],
-    langgraph_summary: dict[str, Any],
     custom_summary: dict[str, Any],
 ) -> dict[str, Any]:
     shared = {}
     for backend, current in (
-        ("langgraph", langgraph_summary),
         ("custom_agent", custom_summary),
     ):
         old = baseline[backend]["summary"]
@@ -414,9 +410,7 @@ def run_evaluation(
 ) -> dict[str, Any]:
     cases = load_cases(cases_path)
     baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
-    graph = compile_graph(builder)
     model = _create_model()
-    langgraph_records: list[dict[str, Any]] = []
     custom_records: list[dict[str, Any]] = []
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -430,51 +424,6 @@ def run_evaluation(
         try:
             for case in cases:
                 for repeat in range(1, RUNS_PER_CASE + 1):
-                    config = {
-                        "configurable": {
-                            "thread_id": (
-                                f"requirement-v3-langgraph-{case['id']}-{repeat}"
-                            )
-                        }
-                    }
-                    started = perf_counter()
-                    result = graph.invoke(
-                        {
-                            "resume_text": case["resume_text"],
-                            "job_description": case["job_description"],
-                        },
-                        config=config,
-                    )
-                    elapsed = perf_counter() - started
-                    snapshot = graph.get_state(config)
-                    langgraph_records.append(
-                        _record(
-                            case,
-                            backend="langgraph",
-                            repeat=repeat,
-                            job=JobAnalysis.model_validate(
-                                snapshot.values["job_analysis"]
-                            ),
-                            skill_match=SkillMatch.model_validate(
-                                snapshot.values["skill_match"]
-                            ),
-                            tailored_resume=TailoredResume.model_validate(
-                                snapshot.values["tailored_resume"]
-                            ),
-                            verification=snapshot.values["verification"],
-                            revision_count=snapshot.values["revision_count"],
-                            reached_human_review=(
-                                bool(result.get("__interrupt__"))
-                                and snapshot.next == ("human_review",)
-                            ),
-                            latency_seconds=elapsed,
-                        )
-                    )
-                    print(
-                        f"LangGraph {case['id']} repeat {repeat}/{RUNS_PER_CASE}",
-                        flush=True,
-                    )
-
                     custom_run_id = f"requirement-v3-custom-{case['id']}-{repeat}"
                     started = perf_counter()
                     state = loop.start(
@@ -507,24 +456,7 @@ def run_evaluation(
         finally:
             database.close()
 
-    langgraph_summary = summarize(langgraph_records)
     custom_summary = summarize(custom_records)
-    paired = []
-    for langgraph_record, custom_record in zip(
-        langgraph_records, custom_records, strict=True
-    ):
-        langgraph_metrics = langgraph_record["metrics"]
-        custom_metrics = custom_record["metrics"]
-        paired.append(
-            {
-                "case_id": langgraph_record["case_id"],
-                "repeat": langgraph_record["repeat"],
-                "metrics_match": langgraph_metrics == custom_metrics,
-                "langgraph_metrics": langgraph_metrics,
-                "custom_agent_metrics": custom_metrics,
-            }
-        )
-
     source_commit = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         capture_output=True,
@@ -553,21 +485,12 @@ def run_evaluation(
             "cases": len(cases),
             "dataset_path": str(cases_path.as_posix()),
         },
-        "langgraph": {
-            "summary": langgraph_summary,
-            "records": langgraph_records,
-        },
         "custom_agent": {
             "summary": custom_summary,
             "records": custom_records,
         },
-        "paired_backend_comparison": {
-            "metric_matches": sum(item["metrics_match"] for item in paired),
-            "pairs": len(paired),
-            "records": paired,
-        },
         "comparison_to_frozen_pre_v3": baseline_comparison(
-            baseline, langgraph_summary, custom_summary
+            baseline, custom_summary
         ),
     }
     output_path.write_text(
@@ -588,11 +511,7 @@ def main() -> None:
         json.dumps(
             {
                 "run_metadata": report["run_metadata"],
-                "langgraph": report["langgraph"]["summary"],
                 "custom_agent": report["custom_agent"]["summary"],
-                "paired_backend_comparison": report[
-                    "paired_backend_comparison"
-                ],
                 "comparison_to_frozen_pre_v3": report[
                     "comparison_to_frozen_pre_v3"
                 ],

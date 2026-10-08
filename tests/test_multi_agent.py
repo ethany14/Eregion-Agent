@@ -78,6 +78,91 @@ def validate(plan):
         session_tools=frozenset()).validate(plan)
 
 
+@pytest.mark.parametrize("limit,expected_calls", [(0, 0), (1, 1)])
+def test_model_budget_is_reserved_before_calls_and_survives_retry(setup, limit, expected_calls):
+    from agent_runtime.multi_agent.model_usage import invoke_model
+    _, _, tasks, _, workers, scheduler = setup
+    calls = []
+    def provider():
+        calls.append(1)
+        raise RuntimeError("Provider failed after accepting the request")
+    workers.get("echo").execute = lambda *args: invoke_model(provider)
+    plan = make_plan()
+    plan.budget = MultiAgentBudget(max_model_calls=limit)
+    root = tasks.create_plan(plan, validate(plan))
+    failed = scheduler.run_one(root.task_id)
+    assert failed.status == TaskStatus.FAILED
+    assert len(calls) == expected_calls
+    tasks.retry(root.task_id, expected_version=failed.version)
+    failed = scheduler.run_one(root.task_id)
+    assert failed.error_code == "budget_exceeded"
+    assert len(calls) == expected_calls
+
+
+def test_parallel_workers_share_one_model_budget(setup):
+    from concurrent.futures import ThreadPoolExecutor
+    from agent_runtime.multi_agent.model_usage import invoke_model
+    _, _, tasks, _, workers, scheduler = setup
+    calls = []
+    def provider():
+        calls.append(1)
+        return "Done"
+    workers.get("echo").execute = lambda *args: AgentTaskResult(summary=invoke_model(provider))
+    plan = make_plan(second=True)
+    plan.dependencies = []
+    plan.tasks[1].input_from_tasks = {}
+    plan.budget = MultiAgentBudget(max_model_calls=1)
+    root = tasks.create_plan(plan, validate(plan))
+    ids = [root.task_id, tasks.children(root.task_id)[0].task_id]
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(scheduler.run_one, ids))
+    assert len(calls) == 1
+    assert sorted(task.status.value for task in results) == ["failed", "succeeded"]
+    success = next(task for task in results if task.status == TaskStatus.SUCCEEDED)
+    assert success.result_summary["usage"]["model_calls"] == 1
+
+
+@pytest.mark.parametrize("status_code", [200, 500])
+def test_provider_usage_and_retry_cap_are_applied_at_http_boundary(setup, status_code):
+    import json
+    import httpx
+    from job_agent.model import ProviderCompatibleChatOpenAI, invoke_structured
+    from job_agent.schemas import ResumeAnalysis
+    from agent_runtime.multi_agent.model_usage import invoke_model
+    _, _, tasks, _, workers, scheduler = setup
+    requests = []
+    def respond(request):
+        requests.append(json.loads(request.content))
+        if status_code == 500:
+            return httpx.Response(500, json={"error": {"message": "Unavailable", "type": "server_error"}})
+        return httpx.Response(200, json={"id": "test", "object": "chat.completion", "created": 0,
+            "model": "test-model", "choices": [{"index": 0, "finish_reason": "stop", "message": {
+                "role": "assistant", "content": json.dumps({"summary": "Developer", "skills": [],
+                    "education": [], "evidence": []})}}],
+            "usage": {"prompt_tokens": 17, "completion_tokens": 9, "total_tokens": 26}})
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        model = ProviderCompatibleChatOpenAI(model="test-model", api_key="test-key",
+            base_url="https://provider.test/v1", http_client=client, max_retries=3,
+            use_responses_api=False)
+        def execute(*args):
+            result = invoke_model(invoke_structured, model, ResumeAnalysis, "Extract", "Developer")
+            return AgentTaskResult(summary=result.summary)
+        workers.get("echo").execute = execute
+        plan = make_plan()
+        plan.budget = MultiAgentBudget(max_model_calls=1, max_output_tokens=50)
+        root = tasks.create_plan(plan, validate(plan))
+        result = scheduler.run_one(root.task_id)
+    assert len(requests) == 1
+    assert requests[0].get("max_completion_tokens", requests[0].get("max_tokens")) == 50
+    assert tasks.plan_usage(root.task_id)["model_calls"] == 1
+    if status_code == 200:
+        assert result.status == TaskStatus.SUCCEEDED
+        assert result.result_summary["usage"] == {"model_calls": 1, "input_tokens": 17, "output_tokens": 9}
+    else:
+        assert result.status == TaskStatus.FAILED
+        assert tasks.plan_usage(root.task_id)["output_tokens"] == 50
+
+
 def test_plan_validation_and_idempotency(setup):
     _, _, tasks, _, _, _ = setup
     plan = make_plan(second=True)

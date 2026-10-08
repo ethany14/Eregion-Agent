@@ -11,3 +11,4 @@ __pycache__/
 .pytest-tmp*/
 .release-local/
 uploads/
+.browser-sessions/

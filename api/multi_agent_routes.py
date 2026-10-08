@@ -63,6 +63,7 @@ def _summary(root_id: str, runtime: SessionRuntime) -> dict:
         for key, value in (task.result_summary or {}).get("usage", {}).items():
             if isinstance(value, (int, float)):
                 usage[key] = usage.get(key, 0) + value
+    usage.update(runtime.agent_tasks.plan_usage(root_id))
     return {"root_task_id": root_id, "application_id": root.application_id,
         "workflow_mode": "multi_agent_v1", "status": status,
         "pack_id": pack.pack_id if pack else None,

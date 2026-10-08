@@ -8,9 +8,12 @@ import sys
 from pathlib import Path
 from typing import Callable, Sequence
 
-from langgraph.types import Command
-from job_agent.agent import graph
-from job_agent.results import interrupt_payload, public_result
+from api.db import create_database, upgrade_database
+from custom_agent.handlers import JobAgentStepHandler
+from custom_agent.loop import AgentLoop
+from custom_agent.repository import StateRepository
+from custom_agent.state import AgentStatus
+from job_agent.results import public_result
 
 
 def _read_text(path: Path, label: str) -> str:
@@ -32,23 +35,31 @@ def analyze_files(
     job_path: Path,
     thread_id: str,
     reviewer: Callable[[dict], dict] | None = None,
+    *,
+    database_url: str | None = None,
+    handler=None,
 ) -> dict:
     """Run or pause the agent, optionally handling reviews in the same process."""
     if not thread_id.strip():
         raise ValueError("thread_id must be a non-empty string.")
-    config = {"configurable": {"thread_id": thread_id}}
-    result = graph.invoke(
-        {
-            "resume_text": _read_text(resume_path, "Resume"),
-            "job_description": _read_text(job_path, "Job description"),
-        },
-        config=config,
-    )
-    payload = interrupt_payload(result)
-    while payload is not None and reviewer is not None:
-        result = graph.invoke(Command(resume=reviewer(payload)), config=config)
-        payload = interrupt_payload(result)
-    return public_result(result)
+    resume_text = _read_text(resume_path, "Resume")
+    job_description = _read_text(job_path, "Job description")
+    upgrade_database(database_url)
+    database = create_database(database_url)
+    try:
+        loop = AgentLoop(repository=StateRepository(database.session_factory),
+            handler=handler if handler is not None else JobAgentStepHandler())
+        state = loop.start(run_id=thread_id, resume_text=resume_text,
+                           job_description=job_description)
+        while state.status == AgentStatus.AWAITING_REVIEW and reviewer is not None:
+            payload = {"question": "Do you approve this tailored resume?",
+                       **public_result(state.job_state())}
+            decision = reviewer(payload)
+            state = loop.review(state.run_id, approved=decision["approved"],
+                                feedback=decision.get("feedback"))
+        return public_result(state.job_state())
+    finally:
+        database.close()
 
 
 def _console_review(payload: dict) -> dict:
@@ -78,8 +89,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--thread-id",
         required=True,
-        help="Unique checkpoint thread ID, for example application-001.",
+        help="Unique persistent run ID, for example application-001.",
     )
+    parser.add_argument("--database-url", help="Override the application database URL.")
     parser.add_argument(
         "-o",
         "--output",
@@ -98,6 +110,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.job,
             thread_id=args.thread_id,
             reviewer=_console_review,
+            database_url=args.database_url,
         )
         rendered = json.dumps(result, indent=2, ensure_ascii=False) + "\n"
         if args.output:

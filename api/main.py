@@ -24,12 +24,13 @@ from api.session_routes import router as sessions_router
 from api.workspace_routes import router as workspace_router
 from api.feedback_routes import router as feedback_router
 from api.assistant_routes import router as assistant_router
-from api.services.run_service import BackendRoutingRunService, RunService
+from api.services.run_service import RunService
 from api.resume_routes import router as resume_router
+from api.auto_apply_routes import router as auto_apply_router
 
 
 def create_app(
-    run_service: RunService | BackendRoutingRunService | None = None,
+    run_service: RunService | None = None,
     *,
     session_runtime: SessionRuntime | None = None,
     session_runtime_factory: Callable[[], SessionRuntime] | None = None,
@@ -50,8 +51,17 @@ def create_app(
             created_runtime = await anyio.to_thread.run_sync(factory)
             application.state.session_runtime = created_runtime
         try:
+            from api.auto_apply_routes import restore_applications
+            await anyio.to_thread.run_sync(restore_applications, application)
             yield
         finally:
+            automation = getattr(application.state, "auto_apply", None)
+            if automation is not None:
+                await anyio.to_thread.run_sync(automation.close)
+                application.state.auto_apply = None
+            if run_service is None and application.state.run_service is not None:
+                await anyio.to_thread.run_sync(application.state.run_service.close)
+                application.state.run_service = None
             if created_runtime is not None:
                 await anyio.to_thread.run_sync(created_runtime.close)
                 application.state.session_runtime = None
@@ -81,6 +91,7 @@ def create_app(
     application.include_router(feedback_router)
     application.include_router(assistant_router)
     application.include_router(resume_router)
+    application.include_router(auto_apply_router)
     from api.skill_evolution_routes import router as skill_evolution_router
     application.include_router(skill_evolution_router)
     install_error_handlers(application)
@@ -88,6 +99,10 @@ def create_app(
     web_root = Path(__file__).resolve().parent.parent / "web_app"
     if web_root.exists():
         application.mount("/web-assets", StaticFiles(directory=web_root), name="web-assets")
+
+        @application.get("/apply", include_in_schema=False)
+        async def auto_apply_page() -> FileResponse:
+            return FileResponse(web_root / "apply.html", headers={"Cache-Control": "no-store"})
 
         @application.get("/app", include_in_schema=False)
         async def web_app() -> FileResponse:

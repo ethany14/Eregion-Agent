@@ -1,0 +1,244 @@
+"""Optimistic state writes and one durable attempt per posting."""
+import base64
+import hashlib
+import json
+from datetime import UTC, datetime
+from uuid import uuid4
+
+from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
+
+from .contracts import TERMINAL, posting, candidate_answer
+from .models import AutoApplicationRow, ApplicationMemoryRow, SavedCandidateRow
+from .matching import question_identity, boolean_answer, clean
+
+
+class ApplyConflict(RuntimeError):
+    pass
+
+
+class ApplyNotFound(LookupError):
+    pass
+
+
+def now():
+    return datetime.now(UTC).isoformat()
+
+
+class ApplyRepository:
+    def __init__(self, session_factory):
+        self.sessions = session_factory
+
+    def saved_candidate(self):
+        with self.sessions.begin() as session:
+            row=session.get(SavedCandidateRow,'local')
+            if row is None:
+                previous=session.scalars(select(AutoApplicationRow)).all()
+                latest=max(previous,key=lambda r:json.loads(r.state_json).get('updated_at',''),default=None)
+                data=json.loads(latest.state_json) if latest else {}
+                row=SavedCandidateRow(slot='local',profile_json=json.dumps(data.get('profile',{})),
+                    resume_bytes=latest.resume_bytes if latest else None,resume_name='resume.pdf',
+                    extracted=False,updated_at=now())
+                session.add(row)
+            return {'profile':json.loads(row.profile_json),'resume_base64':base64.b64encode(row.resume_bytes).decode() if row.resume_bytes else None,
+                'resume_name':row.resume_name,'needs_extraction':bool(row.resume_bytes and not row.extracted),'updated_at':row.updated_at}
+
+    def save_candidate(self,profile,*,resume=None,name=None,extracted=None):
+        from .contracts import CandidateDetails
+        from .education import normalize_records
+        profile=CandidateDetails.model_validate(profile).model_dump()
+        profile['education']=normalize_records(profile.get('education',[]))
+        with self.sessions.begin() as session:
+            row=session.get(SavedCandidateRow,'local')
+            if row is None:
+                row=SavedCandidateRow(slot='local',profile_json='{}',resume_bytes=None,resume_name='resume.pdf',extracted=False,updated_at=now())
+                session.add(row)
+            if resume is not None:
+                if row.resume_bytes!=resume:row.extracted=False
+                row.resume_bytes=resume
+            if name:row.resume_name=name
+            if extracted is not None:row.extracted=extracted
+            row.profile_json=json.dumps(profile);row.updated_at=now()
+        return profile
+
+    def clear_candidate(self):
+        # Keep a tombstone so legacy attempt backfill cannot resurrect a removal.
+        self.save_candidate({})
+        with self.sessions.begin() as session:
+            row=session.get(SavedCandidateRow,'local');row.resume_bytes=None;row.extracted=False
+
+    def refresh_education(self,state):
+        if state['profile'].get('education'):return state
+        saved=self.saved_candidate()
+        if (saved['profile'].get('education') and self.owner_key(saved['profile'])==self.owner_key(state['profile'])
+            and saved['resume_base64'] and base64.b64decode(saved['resume_base64'])==self.resume(state['run_id'])):
+            return self.save(state,profile={**state['profile'],'education':saved['profile']['education']})
+        return state
+
+    def create(self, request):
+        platform, identity, url = posting(request.url)
+        fingerprint = hashlib.sha256(request.model_dump_json().encode()).hexdigest()
+        with self.sessions.begin() as session:
+            existing = session.scalar(select(AutoApplicationRow).where(
+                AutoApplicationRow.posting_key == identity))
+            if existing:
+                if existing.idempotency_key == request.idempotency_key and existing.request_hash == fingerprint:
+                    return self._state(existing), False
+                raise ApplyConflict("An attempt already exists for this job. Open it to continue; duplicate submission is disabled.")
+            active = session.scalars(select(AutoApplicationRow.run_id).where(
+                AutoApplicationRow.status.not_in(TERMINAL))).all()
+            if len(active) >= 3:
+                raise ApplyConflict("Finish or cancel an existing attempt before opening another browser (limit: 3).")
+            state = {"run_id": str(uuid4()), "platform": platform, "url": url,
+                "profile": request.profile.model_dump(), "auto_submit": request.auto_submit,
+                "automation_mode": request.automation_mode, "visual_fallback": request.visual_fallback,
+                "reuse_answers": request.reuse_answers, "consent_policy": request.consent_policy,
+                "messages": [], "chat_revision": 0, "answer_sources": {}, "pause_requested": False,
+                "memory_indexed": True,
+                "agent_calls": 0, "agent_tools": 0,
+                "budget_model_base": 0, "budget_tool_base": 0, "recovery_attempts": 0,
+                "continuations": 0, "task_plan": [], "last_tool_result": None,
+                "answers": {}, "fields": [], "review_digest": None, "message": "Waiting to open the application.",
+                "created_at": now(), "updated_at": now(), "events": [], "cancel_requested": False}
+            if request.initial_message:
+                state["messages"] = [{"id": str(uuid4()), "role": "user", "text": request.initial_message, "at": now()}]
+            state["messages"].append({"id": str(uuid4()), "role": "assistant", "at": now(),
+                "text": "I’m opening the application and using your resume details. You can send corrections or ask me to pause at any time."})
+            row = AutoApplicationRow(run_id=state["run_id"], posting_key=identity,
+                idempotency_key=request.idempotency_key, request_hash=fingerprint,
+                version=1, status="queued", state_json=json.dumps(state),
+                resume_bytes=base64.b64decode(request.resume_base64))
+            session.add(row)
+            try:
+                session.flush()
+            except IntegrityError as exc:
+                raise ApplyConflict("This job or request already has an attempt. Refresh the list.") from exc
+            return self._state(row), True
+
+    @staticmethod
+    def _state(row):
+        return {**json.loads(row.state_json), "version": row.version, "status": row.status}
+
+    def get(self, run_id):
+        with self.sessions() as session:
+            row = session.get(AutoApplicationRow, run_id)
+            if row is None:
+                raise ApplyNotFound("Application attempt not found.")
+            return self._state(row)
+
+    def resume(self, run_id):
+        with self.sessions() as session:
+            row = session.get(AutoApplicationRow, run_id)
+            if row is None:
+                raise ApplyNotFound("Application attempt not found.")
+            return row.resume_bytes
+
+    @staticmethod
+    def owner_key(profile):
+        return hashlib.sha256(profile.get("email",'').strip().casefold().encode()).hexdigest()
+
+    def memories(self, profile):
+        with self.sessions() as session:
+            rows = session.scalars(select(ApplicationMemoryRow).where(ApplicationMemoryRow.owner_key == self.owner_key(profile))).all()
+            return [json.loads(row.record_json) for row in rows]
+
+    def remember(self, state, answers, *, historical=False):
+        if not state.get("reuse_answers", True): return
+        fields = {f["key"]: f for f in state["fields"]}
+        owner = self.owner_key(state["profile"])
+        profile_updates={}
+        with self.sessions.begin() as session:
+            for key, answer in answers.items():
+                if key not in fields or answer == "": continue
+                field = fields[key]
+                if field["kind"] in {"file", "password"}: continue
+                if clean(field["label"]) in {"i agree", "agree", "accept", "yes", "no", "consent", "authorization", "acknowledge confirm", "acknowledge", "confirm"}: continue
+                # Store the label, not employer-specific numeric option IDs.
+                option = next((o for o in field.get("options", []) if str(o["value"]) == str(answer)), None)
+                value = option["label"] if option else answer
+                # Explicit contact corrections should outlive this application.
+                # Keep split phone values, account identity and per-row education
+                # out of this flat update; their sources have different scopes.
+                from .contracts import normalized_label
+                contact={'first name':'first_name','last name':'last_name','city':'city','location (city)':'city',
+                    'current city':'city','country of residence':'country','linkedin':'linkedin','linkedin profile':'linkedin',
+                    'linkedin url':'linkedin','github':'github','github url':'github','website':'website','portfolio':'website'}
+                member=contact.get(normalized_label(field['label']))
+                identity = question_identity(field["label"])
+                if sum(question_identity(f["label"]) == identity for f in fields.values()) > 1: continue
+                if not historical and member and isinstance(value,str):profile_updates[member]=value
+                memory_id = hashlib.sha256(f"{owner}:{identity}".encode()).hexdigest()
+                record = {"memory_id": memory_id, "question": field["label"], "identity": identity,
+                    "value": value, "run_id": state["run_id"], "url":state.get('url'), "updated_at": state["updated_at"] if historical else now(), "source": "user_answer"}
+                row = session.get(ApplicationMemoryRow, memory_id)
+                if row and historical and json.loads(row.record_json)["updated_at"] >= record["updated_at"]: continue
+                if row: row.record_json = json.dumps(record)
+                else: session.add(ApplicationMemoryRow(memory_id=memory_id, owner_key=owner, record_json=json.dumps(record)))
+        if profile_updates:
+            saved=self.saved_candidate()
+            if self.owner_key(saved['profile'])==owner:
+                try:self.save_candidate({**saved['profile'],**profile_updates})
+                except ValueError:pass # Keep the confirmed answer even if it is too long for a flat contact field.
+
+    def forget(self, profile, memory_id):
+        with self.sessions.begin() as session:
+            row = session.get(ApplicationMemoryRow, memory_id)
+            if row is None or row.owner_key != self.owner_key(profile): raise ApplyNotFound("Remembered answer not found.")
+            session.delete(row)
+
+    def recalled_answers(self, state, fields):
+        from .memory import compatible
+        if not state.get("reuse_answers", True): return {}, {}
+        memories = {m["identity"]: m for m in self.memories(state["profile"])}
+        answers, sources = {}, {}
+        for field in fields:
+            memory = memories.get(question_identity(field["label"]))
+            if memory and compatible(memory,field,state) and field["key"] not in state["answers"] and candidate_answer(field, state["profile"], {}) is None:
+                value = memory["value"]
+                if field["kind"] == "checkbox" and isinstance(value, str):
+                    value = boolean_answer(value)
+                    if value is None: continue
+                answers[field["key"]] = value
+                sources[field["key"]] = {"type": "memory", "memory_id": memory["memory_id"], "question": memory["question"]}
+        return answers, sources
+
+    def agent_context(self, run_id):
+        state=self.get(run_id)
+        return {**state,'remembered_answers':self.memories(state['profile']) if state.get('reuse_answers',True) else []}
+
+    def list(self):
+        with self.sessions() as session:
+            rows = session.scalars(select(AutoApplicationRow).order_by(AutoApplicationRow.run_id)).all()
+            return sorted((self._state(row) for row in rows), key=lambda state: state["created_at"], reverse=True)
+
+    def save(self, state, *, status=None, message=None, **changes):
+        next_state = {**state, **changes, "version": state["version"] + 1,
+                      "status": status or state["status"], "updated_at": now()}
+        if message:
+            next_state["message"] = message
+            next_state["events"] = [*state["events"], {"at": now(), "status": next_state["status"], "message": message}][-100:]
+        with self.sessions.begin() as session:
+            updated = session.execute(update(AutoApplicationRow).where(
+                AutoApplicationRow.run_id == state["run_id"],
+                AutoApplicationRow.version == state["version"]).values(
+                    version=next_state["version"], status=next_state["status"], state_json=json.dumps(next_state)))
+            if updated.rowcount != 1:
+                raise ApplyConflict("The attempt changed. Refresh before continuing.")
+        return next_state
+
+    def recover(self):
+        resumable = []
+        for state in self.list():
+            if not state.get("memory_indexed"):
+                self.remember(state, state.get("answers", {}), historical=True)
+                state = self.save(state, memory_indexed=True)
+            if state["status"] == "submitting":
+                self.save(state, status="submission_unknown", message="The service stopped during submission. Check the employer confirmation before taking any further action.")
+            elif state["status"] in {"running", "queued"} and state.get("automation_mode") == "hybrid" and not state.get("pause_requested"):
+                self.save(state, status="queued", review_digest=None, retry_at=None,
+                    message="Restoring the application and continuing from saved progress.")
+                resumable.append(state["run_id"])
+            elif state["status"] in {"running", "queued", "awaiting_review", "needs_input"}:
+                self.save(state, status="needs_input", review_digest=None,
+                    message="The browser session ended. Continue to reopen the form and restore saved answers.")
+        return resumable

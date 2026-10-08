@@ -1,4 +1,4 @@
-"""Deterministic requirement ranking and claim validation."""
+"""Requirement ranking and source-grounded claim validation."""
 from __future__ import annotations
 
 import re
@@ -54,8 +54,8 @@ class InterviewPriorityPolicy:
         return min(eligible, key=lambda pair: pair[0])[1] if eligible else None
 
 
-def validate_candidate(answer: str, assessment: InterviewAnswerAssessment) -> tuple[str, str]:
-    """V0.1 accepts only a literal supported answer span as a proposed claim."""
+def validate_candidate(answer: str, assessment: InterviewAnswerAssessment, *, semantic_judge=None) -> tuple[str, str]:
+    """Keep a literal source quote while allowing a separately verified paraphrase."""
     from agent_runtime.evidence.extraction import career_fact_candidates, extract_evidence_candidates
     claim = (assessment.proposed_claim or "").strip()
     if not claim or not assessment.exact_supporting_quotes:
@@ -64,6 +64,17 @@ def validate_candidate(answer: str, assessment: InterviewAnswerAssessment) -> tu
     for quote in assessment.exact_supporting_quotes:
         if not normalize_text(quote) or normalize_text(quote) not in normalized_answer:
             raise InterviewValidationError("A supporting quote was not present in the answer.")
+    literal = any(normalize_text(claim) == normalize_text(q) for q in assessment.exact_supporting_quotes)
+    if not literal and semantic_judge is not None and not _INSTRUCTION_IN_ANSWER.search(answer):
+        try:
+            supported = semantic_judge([{"claim_id": "answer", "claim": claim,
+                "evidence": assessment.exact_supporting_quotes}])
+        except Exception as exc:
+            raise InterviewValidationError("The paraphrase could not be verified.") from exc
+        if "answer" not in supported:
+            raise InterviewValidationError("The proposed claim adds unsupported facts.")
+        # Exact quote remains distinct from the normalized candidate claim.
+        return claim, "\n".join(assessment.exact_supporting_quotes)
     if normalize_text(claim) not in normalized_answer:
         raise InterviewValidationError("The proposed claim must use the user's own wording.")
     if not any(normalize_text(claim) == normalize_text(q) for q in assessment.exact_supporting_quotes):

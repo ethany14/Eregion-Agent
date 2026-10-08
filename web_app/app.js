@@ -123,6 +123,11 @@ async function renderApplication(id) {
     const metric = node("div", "score-block"); metric.append(node("strong", "", score(item.latest_match_score)), node("span", "", "Match score"));
     panel.append(metric, node("p", "description-preview", item.snapshot.cleaned_job_description));
     const actions = node("div", "detail-actions");
+    if (item.job.canonical_url) {
+      const apply = node("a", "soft-button", "Prepare application");
+      apply.href = `/apply?url=${encodeURIComponent(item.job.canonical_url)}`;
+      actions.append(apply);
+    }
     const analyze = node("button", "primary-button", "Analyze fit");
     analyze.addEventListener("click", async () => {
       analyze.disabled = true; analyze.textContent = "Analyzing...";
@@ -142,7 +147,7 @@ async function renderApplication(id) {
 }
 
 async function saveJob(event) {
-  event.preventDefault(); const form = new FormData(event.currentTarget);
+  event.preventDefault(); const formElement = event.currentTarget, form = new FormData(formElement);
   const jd = String(form.get("job_description") || "").trim(); if (!jd) return;
   const sourceUrl = String(form.get("source_url") || "").trim() || null;
   let sourceSite = "web";
@@ -160,7 +165,7 @@ async function saveJob(event) {
       location: String(form.get("location") || "").trim() || null,
       raw_page_text: null, cleaned_job_description: jd,
       extraction_metadata: { source: "manual_web" }, reopen_existing: true });
-    $("#job-dialog").close(); event.currentTarget.reset();
+    $("#job-dialog").close(); formElement.reset();
     state.selectedApplication = result.application.application_id;
     localStorage.setItem("northstar.application", state.selectedApplication);
     await loadApplications(); toast("Job workspace saved.", "success");
@@ -199,10 +204,14 @@ async function newSession() {
   } catch (error) { toast(error.message, "error"); }
 }
 
+let sessionRenderRequest = 0;
 async function renderSession(response = null) {
   if (!state.session) return;
+  const sessionId = state.session, requestId = ++sessionRenderRequest;
   try {
-    const current = response || await api.getSession(state.session), data = await api.messages(state.session), area = $("#conversation"); clear(area);
+    const current = response || await api.getSession(sessionId), data = await api.messages(sessionId);
+    if (state.session !== sessionId || requestId !== sessionRenderRequest) return;
+    const area = $("#conversation"); clear(area);
     for (const message of data.messages || []) {
       area.append(conversationMessage(message.role, message.content, { messageId: message.message_id }));
     }
@@ -211,6 +220,7 @@ async function renderSession(response = null) {
     const context = $("#copilot-context"); clear(context);
     context.append(node("strong", "", String(current.session.status).replaceAll("_", " ")), node("p", "", `${current.session.total_input_tokens + current.session.total_output_tokens} tokens / ${current.session.executed_tool_calls} tool calls`));
   } catch (error) {
+    if (state.session !== sessionId || requestId !== sessionRenderRequest) return;
     if (error.status === 404) { state.session = null; state.sessionVersion = null; localStorage.removeItem("northstar.session"); await loadSessionHistory(); }
     toast(error.message, "error");
   }
@@ -445,10 +455,11 @@ $("#generate-pack").addEventListener("click", async () => {
 });
 $("#new-evidence").addEventListener("click", () => $("#evidence-dialog").showModal());
 $("#evidence-form").addEventListener("submit", async (event) => {
-  event.preventDefault(); const values = new FormData(event.currentTarget);
+  event.preventDefault(); const formElement = event.currentTarget, values = new FormData(formElement);
+  const claim = String(values.get("claim_text") || "").trim();
   try {
-    await api.createEvidence({ category: String(values.get("category")), claim_text: String(values.get("claim_text") || "").trim(), source_type: "user_attested", source_reference: null, exact_quote: null, source_section: null, employer_or_project: String(values.get("employer_or_project") || "").trim() || null, role: null, start_date: null, end_date: null, technologies: [], metrics: [], tags: [] });
-    $("#evidence-dialog").close(); event.currentTarget.reset(); await loadEvidence(); toast("Evidence candidate saved. Confirm it before use.", "success");
+    await api.createEvidence({ category: String(values.get("category")), claim_text: claim, source_type: "user_attested", source_reference: null, exact_quote: claim, source_section: null, employer_or_project: String(values.get("employer_or_project") || "").trim() || null, role: null, start_date: null, end_date: null, technologies: [], metrics: [], tags: [] });
+    $("#evidence-dialog").close(); formElement.reset(); await loadEvidence(); toast("Evidence candidate saved. Confirm it before use.", "success");
   } catch (error) { toast(error.message, "error"); }
 });
 

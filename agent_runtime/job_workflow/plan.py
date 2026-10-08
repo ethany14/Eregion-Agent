@@ -96,7 +96,7 @@ def build_pack_plan(*, application_id: str, parent_session_id: str,
     for parent in ("job", "match"):
         base.dependencies.append(TaskDependencySpec(task_key="project", depends_on_key=parent))
     base.dependencies.append(TaskDependencySpec(task_key="gap", depends_on_key="project"))
-    freeze_inputs = {"job_analysis": "job", "evidence_gap_plan": "gap"}
+    freeze_inputs = {"job_analysis": "job", "evidence_gap_plan": "gap", "resume_source": "source"}
     if include_interview:
         base.tasks.append(TaskSpec(key="interview", task_type="evidence_interview",
             agent_role="Evidence interview", max_attempts=25,
@@ -108,7 +108,7 @@ def build_pack_plan(*, application_id: str, parent_session_id: str,
         agent_role="Evidence freeze", input_spec={"job_snapshot_id": job_snapshot_id},
         input_from_tasks=freeze_inputs,
         output_spec={"roles": ["generation_evidence_snapshot"]}, **common))
-    for parent in ("job", "gap", "project", *(("interview",) if include_interview else ())):
+    for parent in ("source", "job", "gap", "project", *(("interview",) if include_interview else ())):
         base.dependencies.append(TaskDependencySpec(task_key="freeze", depends_on_key=parent))
     artifacts = ([('resume', 'tailored_resume', None)] if "tailored_resume" in requested_artifacts else [])
     if "cover_letter" in requested_artifacts:
