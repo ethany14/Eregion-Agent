@@ -3,4 +3,6 @@
 
 #account-form>label{display:flex;flex-direction:column;gap:6px;font-size:13px;margin:16px 0}#account-form>label>input{width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;background:white}#account-origin{overflow-wrap:anywhere}
 
+.answer-batch textarea{display:block;width:100%;box-sizing:border-box;padding:12px;border:1px solid #b9c7c0;border-radius:8px;background:white;font:inherit;font-size:13px;line-height:1.6;resize:vertical}.answer-batch .question-choice{margin-bottom:18px}.draft-note,.draft-missing,.draft-evidence{font-size:12px;line-height:1.6;overflow-wrap:anywhere}.draft-note{color:#385e43;margin:8px 0}.draft-missing{color:#815c20;margin:6px 0}.draft-evidence{margin:8px 0 12px;color:var(--muted)}.draft-evidence summary{cursor:pointer}.draft-evidence p{white-space:pre-wrap}
+
 .question-actions button[aria-pressed="true"]{background:#245b4c;color:white;border-color:#245b4c}.answer-batch input,.answer-batch select{display:block;width:100%;padding:10px;border:1px solid #b9c7c0;border-radius:8px;background:white;font:inherit}.education-record{border:1px solid #ccd6ce;border-radius:10px;margin:12px 0;padding:14px}.education-record label{display:block;margin:8px 0}.education-record input{display:block;width:100%;box-sizing:border-box}

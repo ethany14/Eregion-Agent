@@ -37,3 +37,39 @@ test('polling and failed submission preserve choices; changed questions and anot
   drafts.sync('A',[{...fields[0],label:'Different question'},fields[1]]);
   assert.deepEqual(drafts.payload('A'),{b:false});
 });
+
+const essay={key:'essay',label:'Describe your LLM project',kind:'textarea',options:[]};
+const suggestion={field:{key:essay.key,label:essay.label,kind:essay.kind,group:null},text:'I built a document assistant.',
+  evidence:[{source_ref:'resume',quote:'Built a document assistant.'}],missing_details:['What measurable effect did it have?']};
+
+test('resume draft is editable multiline text and sends only after batch submission',async()=>{
+  const drafts=new AnswerDrafts(),container=el('div'),calls=[];
+  renderAnswerBatch({container,id:'A',fields:[essay],drafts,suggestions:{essay:suggestion},busy:false,
+    submit:async answers=>{calls.push(answers);return true;},el,button});
+  const form=container.children[0],input=form.querySelectorAll('textarea')[0];
+  assert.equal(input.value,suggestion.text);assert.equal(calls.length,0);
+  assert.ok(form.querySelectorAll('p').some(p=>p.textContent.includes('What measurable effect')));
+  assert.ok(form.querySelectorAll('details').length);
+  input.value+='\nIt saved 3 hours per week.';await input.fire('input');
+  drafts.sync('A',[essay],{essay:{...suggestion,text:'A newly generated draft'}});
+  assert.equal(drafts.payload('A').essay,input.value);
+  await form.fire('submit');await form.fire('submit');
+  assert.deepEqual(calls,[{essay:input.value}]);assert.equal(input.disabled,true);
+});
+
+test('polls cannot restore a deliberately cleared draft; stale questions and runs are isolated',()=>{
+  const drafts=new AnswerDrafts();
+  drafts.sync('A',[essay],{essay:suggestion});drafts.set('A','essay','');
+  drafts.sync('A',[essay],{essay:suggestion});assert.equal(drafts.complete('A'),false);
+  drafts.sync('B',[essay]);assert.deepEqual(drafts.payload('B'),{});
+  drafts.sync('A',[{...essay,label:'Why do you want this role?'}],{essay:suggestion});
+  assert.deepEqual(drafts.payload('A'),{});
+});
+
+test('failed submission keeps the edited draft and re-enables the textarea',async()=>{
+  const drafts=new AnswerDrafts(),container=el('div');
+  renderAnswerBatch({container,id:'A',fields:[essay],drafts,suggestions:{essay:suggestion},busy:false,submit:async()=>false,el,button});
+  const form=container.children[0],input=form.querySelectorAll('textarea')[0];
+  input.value='My edited answer';await input.fire('input');await form.fire('submit');
+  assert.equal(input.disabled,false);assert.deepEqual(drafts.payload('A'),{essay:'My edited answer'});
+});

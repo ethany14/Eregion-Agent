@@ -15,6 +15,14 @@ GREENHOUSE = {"boards.greenhouse.io", "job-boards.greenhouse.io",
 LEVER = {"jobs.lever.co", "jobs.eu.lever.co"}
 TERMINAL = {"submitted", "submission_unknown", "cancelled", "failed"}
 PAUSED = {"needs_input", "awaiting_review"}
+SUBMISSION_STATES = {"submitting", "submitted", "submission_unknown"}
+
+
+def can_reopen(state):
+    """Cancellation before submission is reversible; a submission attempt is not."""
+    return (state["status"] in {"cancelled", "failed"}
+        and not state.get("submission_started") and not state.get("confirmation")
+        and not any(event.get("status") in SUBMISSION_STATES for event in state.get("events", [])))
 
 
 def public_https_url(url: str) -> str:

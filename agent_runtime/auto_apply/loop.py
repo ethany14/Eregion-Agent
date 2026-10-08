@@ -17,6 +17,7 @@ from .conversation import ordered_answers, input_prompt
 from .browser_sessions import BrowserSessionStore
 from . import authentication
 from .decisions import unresolved_paths
+from .drafting import visible_drafts
 
 
 class ApplicationLoop:
@@ -113,12 +114,14 @@ class ApplicationLoop:
                 return state
             if self.closed or state["status"] in TERMINAL | {"submitting"}:
                 raise ApplyConflict("This attempt no longer accepts changes.")
+            if state.get("reopening"):
+                raise ApplyConflict("The application is reopening. Wait for the browser to be ready.")
             fields = {f["key"]: f for f in state["fields"]}
             if request.field_key and request.field_key not in fields:
                 raise ApplyConflict("Choose a question from the current application.")
             pause = request.text.strip().casefold() in {"pause", "stop", "暂停", "停止", "先暂停"}
             resume = request.text.strip().casefold() in {"continue", "resume", "继续", "继续吧", "重试", "retry"}
-            if not pause and not request.field_key and state.get("automation_mode", "autofill") != "hybrid":
+            if not pause and not resume and not request.field_key and state.get("automation_mode", "autofill") != "hybrid":
                 raise ApplyConflict("General feedback requires Agent + autofill. In autofill-only mode, choose the question you are answering.")
             answers = {}
             if request.field_key and not pause:
@@ -292,10 +295,31 @@ class ApplicationLoop:
             state = self.repository.get(run_id)
             if state["version"] != version or state["status"] in TERMINAL | {"submitting"}:
                 raise ApplyConflict("This attempt cannot be cancelled at its current step.")
-            state = self.repository.save(state, status="cancelled", message="Application cancelled before submission.")
+            state = self.repository.save(state, status="cancelled", pause_requested=False, reopening=False,
+                review_digest=None, retry_at=None, message="Application cancelled before submission. Your saved progress can be resumed.")
             self.scheduled.pop(run_id, None)
             self.executor.submit(self._close_browser, run_id)
             return state
+
+    def resume(self, run_id, version):
+        with self.lock:
+            state = self.repository.get(run_id)
+            if self.closed or state["version"] != version:
+                raise ApplyConflict("The attempt changed. Refresh before resuming.")
+            updated = self.repository.reopen(state)
+            self.executor.submit(self._finish_reopen, run_id, updated["chat_revision"])
+            return updated
+
+    def _finish_reopen(self, run_id, revision):
+        with self.lock:
+            state = self._active(run_id)
+            if (state is None or not state.get("reopening") or state["status"] != "queued"
+                    or state.get("chat_revision") != revision):
+                return
+            self.repository.save(state, reopening=False, pause_requested=False,
+                message="Restoring saved answers in a new browser session.")
+        self._close_browser(run_id)
+        self._drive(run_id, None)
 
     def _close_browser(self, run_id):
         browser = self.browsers.pop(run_id, None)
@@ -456,6 +480,19 @@ class ApplicationLoop:
                     if desired is not None and not matches(field, desired):
                         missing.append(field)
             reason = outcome["reason"]
+            # The agent can ask about optional fields too (for example voluntary
+            # self-identification). They must reach the same question/option UI
+            # as required fields, rather than only the pending_fields list.
+            requested = set(outcome.get("field_keys", []))
+            for field in fields:
+                if field["key"] not in requested or field in missing:
+                    continue
+                desired = desired_answer(field, state)
+                if ((desired is None and (not field["value"] or field.get("invalid")))
+                        or (desired is not None and not matches(field, desired))):
+                    missing.append(field)
+            drafts = visible_drafts(state, fields)
+            missing.extend(f for f in fields if f['key'] in drafts and f not in missing)
             paths = unresolved_paths(fields,state)
             missing.extend(f for f in fields if f['key'] in paths and f not in missing)
             if reason == "ready" and any(desired_answer(f,state) is not None for f in missing):
@@ -496,6 +533,8 @@ class ApplicationLoop:
                         unknown = [f for f in missing if desired_answer(f, state) is None]
                         failed = [f for f in missing if desired_answer(f, state) is not None]
                         text, question_keys = input_prompt(unknown, failed, {f["key"]: desired_answer(f, state) for f in failed})
+                        if any(key in drafts for key in question_keys):
+                            text = "I drafted answers from your resume and supplied details below. Edit the drafts and add any missing details, then send your answers.\n\n" + text
                         if reason in {"model_error", "model_timeout", "model_unavailable", "model_rate_limited", "invalid_model_response"}:
                             text = messages[reason] + " Your chat messages are saved.\n\n" + text
                     else:

@@ -556,6 +556,23 @@ resume-generation loop remains focused on producing and reviewing materials.
    & use Chrome** stops automation for manual interaction; send `continue` to resume.
    Review approval remains bound to the observed form and is invalidated by changes.
 
+If the browser never opens, confirm that Playwright is installed in the **same
+Python environment as the server**. Installing Chrome alone is not enough. After
+pulling updated code, rerun `python -m pip install -r requirements.txt` in that
+environment and restart the server. Missing Python browser dependencies pause the
+attempt with setup instructions rather than automatically retrying.
+
+For macOS, run these commands from the repository root (with Google Chrome installed):
+
+```bash
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
+```
+
+The default `chrome` channel uses the installed Google Chrome on Windows, macOS,
+and Linux; it does not require a separate `playwright install` browser download.
+After repairing the environment, choose **Try again** on the existing attempt.
+
 Hybrid mode uses the existing `LLM_MODEL_ID`, `LLM_BASE_URL`, and `LLM_API_KEY`
 configuration. The model must support native tool calls and image input for visual
 backup. It chooses how to combine
@@ -565,6 +582,15 @@ The visual backup uses the same model and browser session, rather than requiring
 a provider-specific computer-use model or controlling the user's desktop.
 
 Field observations include nearby groups, help, constraints and validation errors.
+The agent also reads selectable text from the attempt's saved resume, including
+work and project history. For open-ended questions it can compose a draft with
+literal resume/chat evidence. Drafts appear in editable multiline answer boxes
+with source excerpts; missing details such as an unreported measurable effect are
+called out separately, without inventing results. Review or edit the draft and use
+the existing **Submit answers & continue** button. Until then, the draft is kept
+separate from confirmed answers, browser input and cross-application answer memory.
+Existing attempts reuse their stored PDF; they do not require a new upload.
+
 `resolve_field` lets the model adapt a sourced value to the site's representation
 (including splitting an international phone), match an observed semantic option,
 or choose an incidental default such as a handset classification. These run-local
@@ -621,6 +647,12 @@ Open **Remembered answers** to inspect or forget entries. Previously saved expli
 answers are indexed once on upgrade; forgetting an entry survives a restart.
 Migration `0030_application_memory` adds the answer store.
 
+Optional fields explicitly requested by the agent appear in the same question
+list and answer controls as required fields. Voluntary demographic dropdowns use
+confirmed answers or ask for the site's actual choices, including decline options;
+they are never inferred from the resume. Newly revealed dependent questions are
+handled after the preceding selection.
+
 The original resume PDF and editable candidate details now persist locally across
 new applications, page reloads and server restarts. **Your details** includes an
 editable education history. Migration `0031_saved_candidate` adds this store;
@@ -667,6 +699,11 @@ Paused tasks remain paused; previously approved review screens require fresh rev
 after reopening the browser. The local backend and computer must stay running for
 background execution. Unstarted chat drafts and the reusable upload are held in the
 current page, while started applications and their chat are stored in the database.
+Cancelling before submission preserves progress and offers **Resume application**.
+Resuming reopens the same attempt, restores saved answers and drafts, and requires
+a fresh final review. Sending an existing job link in a new chat opens its original
+application instead of leaving the user at a duplicate error. An application that
+has reached submission (including an uncertain result) cannot be restarted this way.
 The browser now accepts public HTTPS job links beyond Greenhouse and Lever. The
 LLM observes page text, application controls and the current form, and chooses when
 to open Apply, import a resume, add a repeated section, or continue to the next

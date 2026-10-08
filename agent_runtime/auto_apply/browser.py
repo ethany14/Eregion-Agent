@@ -120,7 +120,17 @@ class BrowserBlocked(RuntimeError):
 
 class ApplicationBrowser:
     def __init__(self, url, *, headless=None, session_store=None, owner_key=None):
-        from playwright.sync_api import sync_playwright
+        try:
+            from playwright.sync_api import sync_playwright
+        except ImportError as exc:
+            # Installing Chrome does not install the Python automation package.
+            # Retrying cannot repair a missing dependency in the server's venv.
+            raise BrowserBlocked(
+                "Browser automation dependencies are missing or incomplete. "
+                "Run python -m pip install -r requirements.txt in the same Python "
+                "environment used to start the local server, restart the server, "
+                "then try again."
+            ) from exc
         self.platform, self.identity, self.url = posting(url)
         self.playwright = sync_playwright().start()
         self.browser = None

@@ -8,13 +8,19 @@ from uuid import uuid4
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 
-from .contracts import TERMINAL, posting, candidate_answer
+from .contracts import TERMINAL, SUBMISSION_STATES, can_reopen, posting, candidate_answer
 from .models import AutoApplicationRow, ApplicationMemoryRow, SavedCandidateRow
 from .matching import question_identity, boolean_answer, clean
 
 
 class ApplyConflict(RuntimeError):
     pass
+
+
+class DuplicateApplication(ApplyConflict):
+    def __init__(self, run_id):
+        super().__init__("An attempt already exists for this job. Open the existing application to view or resume it.")
+        self.run_id = run_id
 
 
 class ApplyNotFound(LookupError):
@@ -84,7 +90,7 @@ class ApplyRepository:
             if existing:
                 if existing.idempotency_key == request.idempotency_key and existing.request_hash == fingerprint:
                     return self._state(existing), False
-                raise ApplyConflict("An attempt already exists for this job. Open it to continue; duplicate submission is disabled.")
+                raise DuplicateApplication(existing.run_id)
             active = session.scalars(select(AutoApplicationRow.run_id).where(
                 AutoApplicationRow.status.not_in(TERMINAL))).all()
             if len(active) >= 3:
@@ -203,8 +209,10 @@ class ApplyRepository:
         return answers, sources
 
     def agent_context(self, run_id):
+        from .drafting import resume_context
         state=self.get(run_id)
-        return {**state,'remembered_answers':self.memories(state['profile']) if state.get('reuse_answers',True) else []}
+        return {**state, 'resume_context':resume_context(self.resume(run_id)),
+            'remembered_answers':self.memories(state['profile']) if state.get('reuse_answers',True) else []}
 
     def list(self):
         with self.sessions() as session:
@@ -214,6 +222,10 @@ class ApplyRepository:
     def save(self, state, *, status=None, message=None, **changes):
         next_state = {**state, **changes, "version": state["version"] + 1,
                       "status": status or state["status"], "updated_at": now()}
+        if (state.get("submission_started") or state["status"] in SUBMISSION_STATES
+                or next_state["status"] in SUBMISSION_STATES
+                or any(event.get("status") in SUBMISSION_STATES for event in state.get("events", []))):
+            next_state["submission_started"] = True
         if message:
             next_state["message"] = message
             next_state["events"] = [*state["events"], {"at": now(), "status": next_state["status"], "message": message}][-100:]
@@ -226,6 +238,23 @@ class ApplyRepository:
                 raise ApplyConflict("The attempt changed. Refresh before continuing.")
         return next_state
 
+    def reopen(self, state):
+        if not can_reopen(state):
+            raise ApplyConflict("Only an application stopped before submission can be resumed.")
+        with self.sessions() as session:
+            active = session.scalars(select(AutoApplicationRow.run_id).where(
+                AutoApplicationRow.status.not_in(TERMINAL))).all()
+            if len(active) >= 3:
+                raise ApplyConflict("Finish or cancel an existing attempt before opening another browser (limit: 3).")
+        # Reserve a browser slot now, but keep the old worker stopped until its
+        # cancellation and browser-close jobs have drained from the same queue.
+        return self.save(state, status="queued", reopening=True, pause_requested=True,
+            cancel_requested=False, review_digest=None, account_request=None, auto_submit=False,
+            retry_at=None, recovery_attempts=0, continuations=0,
+            chat_revision=state.get("chat_revision", 0) + 1,
+            budget_model_base=state.get("agent_calls", 0), budget_tool_base=state.get("agent_tools", 0),
+            message="Reopening the application from saved progress.")
+
     def recover(self):
         resumable = []
         for state in self.list():
@@ -234,6 +263,9 @@ class ApplyRepository:
                 state = self.save(state, memory_indexed=True)
             if state["status"] == "submitting":
                 self.save(state, status="submission_unknown", message="The service stopped during submission. Check the employer confirmation before taking any further action.")
+            elif state.get("reopening") and state["status"] == "queued":
+                self.save(state, status="needs_input", reopening=False, pause_requested=True, review_digest=None,
+                    message="Reopening was interrupted. Resume to restore the saved application.")
             elif state["status"] in {"running", "queued"} and state.get("automation_mode") == "hybrid" and not state.get("pause_requested"):
                 self.save(state, status="queued", review_digest=None, retry_at=None,
                     message="Restoring the application and continuing from saved progress.")

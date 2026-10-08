@@ -23,7 +23,7 @@ async function removeResume(){
 
 async function request(path='',body,method=body===undefined?'GET':'POST') {
   const response=await fetch(`/api/auto-apply${path}`,{method,headers:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(path==='/resume-profile'?120000:30000)});
-  const data=await response.json();if(!response.ok)throw new Error(typeof data.detail==='string'?data.detail:'Please check the job link and profile details.');return data;
+  const data=await response.json();if(!response.ok){const failure=new Error(typeof data.detail==='string'?data.detail:data.detail?.message||'Please check the job link and profile details.');failure.existingRunId=data.detail?.existing_run_id;throw failure;}return data;
 }
 function error(text=''){$('#apply-error').textContent=text;$('#apply-error').hidden=!text;}
 function company(item){try{const u=new URL(item.url);return /greenhouse\.io$|lever\.co$/.test(u.hostname)?u.pathname.split('/').filter(Boolean)[0]:u.hostname.endsWith('.myworkdayjobs.com')?u.hostname.split('.')[0]:u.hostname;}catch{return 'Application';}}
@@ -31,6 +31,7 @@ function button(text,action,cls='secondary-button'){const b=el('button',text,cls
 function bottom(){const n=$('#chat-scroll');n.scrollTop=n.scrollHeight;}
 function workspace(open=true){$('#browser-panel').hidden=!open;$('#browser-toggle').setAttribute('aria-expanded',String(open));if(open&&current)refreshPreview(current);}
 function select(id){selected=id;current=attempts.find(a=>a.run_id===id)||null;epoch++;logSignature='';actionSignature='';$('#chat-text').value='';$('#history-panel').classList.remove('open');$('#browser-preview').hidden=true;$('#preview-placeholder').hidden=false;error();render();refresh();}
+async function openExisting(id){const item=await request(`/${id}`);attempts=[item,...attempts.filter(a=>a.run_id!==id)];select(id);}
 function reset(url=''){selected=null;current=null;epoch++;draft=newDraft();draft.url=url;logSignature='';actionSignature='';failedMessage=null;$('#chat-text').value='';$('#history-panel').classList.remove('open');$('#browser-preview').hidden=true;$('#preview-placeholder').hidden=false;error();restoring=true;render();if(url)addDraft('user',url);restoreCandidate();}
 async function refresh(){
   clearTimeout(poll);const ticket=++serial;
@@ -47,9 +48,9 @@ function render(){
   const signature=JSON.stringify(messages);
   if(signature!==logSignature){logSignature=signature;const s=$('#chat-scroll'),near=s.scrollHeight-s.scrollTop-s.clientHeight<120;$('#agent-messages').replaceChildren();for(const m of messages){const bubble=el('div','',`message ${m.role}`);bubble.dataset.messageId=m.id;bubble.append(el('span',m.role==='user'?'You':'Northstar','speaker'),el('p',m.text));$('#agent-messages').append(bubble);}if(near)requestAnimationFrame(bottom);}
   $('#chat-title').textContent=current?`Applying at ${company(current)}`:'Your next opportunity';
-  $('#agent-status').textContent=extracting?'Reading your resume…':current?(current.pause_requested?'Paused — send “continue” when ready':statuses[current.status]):'A little less paperwork. A step closer.';
-  $('#pause-agent').hidden=!current||terminal.has(current.status)||current.status==='submitting';$('#pause-agent').textContent=current?.pause_requested?'Resume':'Pause';$('#pause-agent').disabled=actionBusy;
-  $('#send-message').disabled=chatBusy||starting||restoring||current?.status==='submitting';$('#attach-resume').disabled=extracting||restoring;$('#profile-toggle').disabled=extracting||restoring;
+  $('#agent-status').textContent=extracting?'Reading your resume…':current?(current.reopening?'Reopening your saved application':current.pause_requested&&!terminal.has(current.status)?'Paused — send “continue” when ready':statuses[current.status]):'A little less paperwork. A step closer.';
+  $('#pause-agent').hidden=!current||terminal.has(current.status)||current.status==='submitting';$('#pause-agent').textContent=current?.pause_requested?'Resume':'Pause';$('#pause-agent').disabled=actionBusy||current?.reopening;
+  $('#send-message').disabled=chatBusy||starting||restoring||current?.reopening||current?.status==='submitting';$('#attach-resume').disabled=extracting||restoring;$('#profile-toggle').disabled=extracting||restoring;
   const attachment=$('#attachment');attachment.replaceChildren();attachment.hidden=!resume&&!extracting;
   if(extracting)attachment.append(el('span','Reading your resume…'));else if(resume){attachment.append(el('span',`▤ ${resume.name}`),button('×',removeResume,'quiet-button'));}
   decisions();renderWorkspace();
@@ -57,10 +58,11 @@ function render(){
 function addDraft(role,text){draft.messages.push({id:crypto.randomUUID(),role,text});render();requestAnimationFrame(bottom);}
 function ask(text){if(draft.messages.at(-1)?.text!==text)addDraft('assistant',text);}
 function decisions(){
-  const container=$('#conversation-actions');const sig=JSON.stringify([current?.run_id,current?.status,current?.pause_requested,current?.message,current?.account_request,current?.pending_fields,current?.fields,chatBusy,actionBusy,starting]);
+  const container=$('#conversation-actions');const sig=JSON.stringify([current?.run_id,current?.status,current?.pause_requested,current?.can_reopen,current?.reopening,current?.message,current?.account_request,current?.pending_fields,current?.fields,current?.answer_drafts,chatBusy,actionBusy,starting]);
   if(sig===actionSignature)return;actionSignature=sig;container.replaceChildren();if(!current)return;
   const item=current,id=item.run_id;
   if(['running','queued','submitting'].includes(item.status)){container.append(el('p',item.message,'status-line'));return;}
+  if(terminal.has(item.status)){const box=el('div','','decision');box.append(el('h3',statuses[item.status]),el('p',item.confirmation?.text||item.message));if(item.can_reopen){const resumeButton=button('Resume application',()=>act('resume',{},id),'primary-button');resumeButton.disabled=chatBusy||actionBusy;box.append(resumeButton);}box.append(button('Next application',()=>reset()));container.append(box);return;}
   if(item.status==='awaiting_review'){
     const box=el('div','','decision');box.append(el('h3','Your application is ready'),el('p',`Review the answers for ${company(item)}. I’ll submit once when you confirm.`));const actions=el('div','','actions');
     actions.append(button('Review answers',()=>{workspace();$('#answer-list').parentElement.open=true;}));const submit=button('Submit application',()=>act('continue',{confirm_submit:true},id),'primary-button');submit.disabled=chatBusy||actionBusy;actions.append(submit);box.append(actions);container.append(box);return;
@@ -69,10 +71,9 @@ function decisions(){
   if(item.status==='needs_input'){
     if(item.account_request){const box=el('div','','decision');box.append(el('p',item.message),el('strong',item.account_request.origin),button(item.account_request.mode==='register'?'Create candidate account':'Sign in securely',()=>openAccount(item)));const other=item.account_request.mode==='register'?'login':'register';box.append(button(other==='register'?'Create an account instead':'Use an existing account',()=>act('account-mode',{origin:item.account_request.origin,mode:other},id)));container.append(box);return;}
     const last=[...(item.messages||[])].reverse().find(m=>m.role==='assistant'&&Array.isArray(m.question_keys));const keys=(last?.question_keys||[]).filter(key=>item.pending_fields?.includes(key)??true);
-    renderAnswerBatch({container,id,fields:keys.map(key=>item.fields.find(f=>f.key===key)).filter(Boolean),drafts:answerDrafts,busy:chatBusy||actionBusy,submit:answers=>act('continue',{answers},id),el,button});
+    renderAnswerBatch({container,id,fields:keys.map(key=>item.fields.find(f=>f.key===key)).filter(Boolean),drafts:answerDrafts,suggestions:item.answer_drafts,busy:chatBusy||actionBusy,submit:answers=>act('continue',{answers},id),el,button});
     if(!keys.length){const box=el('div','','decision');box.append(el('p',item.message));const actions=el('div','','actions');actions.append(button('Try again',()=>send('continue')),button('Open browser',()=>workspace()));box.append(actions);container.append(box);}
   }
-  if(terminal.has(item.status)){const box=el('div','','decision');box.append(el('h3',statuses[item.status]),el('p',item.confirmation?.text||item.message),button('Next application',()=>reset()));container.append(box);}
 }
 function renderWorkspace(){
   $('#task-plan').replaceChildren();$('#browser-actions').replaceChildren();$('#answer-list').replaceChildren();
@@ -80,7 +81,7 @@ function renderWorkspace(){
   $('#browser-caption').textContent=current?`${company(current)} · ${statuses[current.status]}. Live snapshots; use the separate Chrome window for direct interaction.`:'The application browser will appear here.';
   if(!current)return;
   for(const step of current.task_plan||[])$('#task-plan').append(el('li',step));if(!current.task_plan?.length)$('#task-plan').append(el('li',current.status==='awaiting_review'?'Review the completed application':current.message));
-  const names={view_browser:'Look at browser',computer_click:'Click visible target',computer_move:'Move pointer',computer_scroll:'Scroll browser',computer_drag:'Drag visible control',computer_type:'Type confirmed answer',computer_key:'Press key',computer_wait:'Wait for page',resolve_field:'Adapt answer to this form',explore_option:'Explore option category',click_page_action:'Navigate application',autofill:'Fill known details',inspect_field:'Read options',search_options:'Search options',choose_option:'Choose option',type_from_source:'Type answer',use_chat_answer:'Apply your answer',click_field:'Open control',view_field:'Inspect control',ready_for_review:'Check completion',request_input:'Ask for missing information',say:'Update',observe:'Inspect page',update_plan:'Update plan'};
+  const names={draft_answer:'Draft an answer from your resume',view_browser:'Look at browser',computer_click:'Click visible target',computer_move:'Move pointer',computer_scroll:'Scroll browser',computer_drag:'Drag visible control',computer_type:'Type confirmed answer',computer_key:'Press key',computer_wait:'Wait for page',resolve_field:'Adapt answer to this form',explore_option:'Explore option category',click_page_action:'Navigate application',autofill:'Fill known details',inspect_field:'Read options',search_options:'Search options',choose_option:'Choose option',type_from_source:'Type answer',use_chat_answer:'Apply your answer',click_field:'Open control',view_field:'Inspect control',ready_for_review:'Check completion',request_input:'Ask for missing information',say:'Update',observe:'Inspect page',update_plan:'Update plan'};
   for(const a of [...(current.actions||[])].slice(-20).reverse())$('#browser-actions').append(el('li',`${names[a.tool]||a.tool} · ${a.label} · ${a.outcome}`));
   const answers=new Map((current.review_fields||[]).map(f=>[f.key,f]));for(const f of current.fields)answers.set(f.key,f);
   for(const f of answers.values()){const row=el('div','','answer');row.append(el('strong',f.label),el('p',typeof f.value==='boolean'?(f.value?'Yes':'No'):String(f.value||'Not filled')));const decision=current.field_decisions?.[f.key];if(decision?.mode==='default')row.append(el('small',`Agent default: ${decision.reason}`));if(!terminal.has(current.status)&&current.status!=='submitting'&&f.kind!=='file')row.append(button('Correct in chat',()=>{$('#chat-text').value=`For “${f.label}”, use `;$('#chat-text').focus();},'quiet-button'));$('#answer-list').append(row);}
@@ -101,7 +102,7 @@ async function advance(){
   if(draft.field){ask(`What ${labels[draft.field].toLowerCase()} should I use? Send just that detail.`);return;}
   const id=draft.id,version=epoch;starting=true;render();ask('I have what I need to start. I’ll open the application and keep you updated here.');
   try{await candidateWrites;draft.payload ||= {url:draft.url,profile:{...profile},resume_base64:resume.encoded,resume_name:resume.name,auto_submit:false,automation_mode:'hybrid',consent_policy:'ask',reuse_answers:$('#reuse-answers').checked,visual_fallback:$('#visual-fallback').checked,idempotency_key:id,initial_message:draft.lastText||`Apply to ${draft.url} using ${resume.name}.`};const item=await request('',draft.payload);if(epoch===version&&draft.id===id){selected=item.run_id;current=item;logSignature='';actionSignature='';}await refresh();}
-  catch(e){error(e.message);if(draft.id===id)ask('I couldn’t open this application yet. Check the message above, then send a corrected job link or tell me to try again.');}finally{starting=false;render();}
+  catch(e){if(e.existingRunId&&epoch===version&&draft.id===id){try{await openExisting(e.existingRunId);}catch(openError){error(openError.message);}}else{error(e.message);if(draft.id===id)ask('I couldn’t open this application yet. Check the message above, then send a corrected job link or tell me to try again.');}}finally{starting=false;render();}
 }
 async function prepare(text){
   const id=draft.id;draft.lastText=text;addDraft('user',text);const url=jobLink(text);
@@ -113,8 +114,8 @@ async function prepare(text){
 }
 async function send(text,key=null,expectedRun=null){
   text=text.trim();if(!text||chatBusy||starting)return;if(expectedRun&&current?.run_id!==expectedRun)return;
-  if(current&&terminal.has(current.status)){const url=jobLink(text);if(url){reset(url);return;}error('Start a new application to continue chatting.');return;}
-  if(current?.status==='submitting')return;
+  if(current&&terminal.has(current.status)){if(current.can_reopen&&/^(continue|resume|retry|继续|继续吧|恢复|重试)[.!。！]?$/i.test(text)){await act('resume',{});return;}const url=jobLink(text);if(url){reset(url);return;}error(current.can_reopen?'Use “Resume application” to continue with your saved progress.':'This application has ended. Check its submission status, or send a different job link.');return;}
+  if(current?.status==='submitting'||current?.reopening)return;
   if(current&&/^(submit|confirm and submit|提交|确认提交)[.!。！]?$/i.test(text)){error('Use “Submit application” on the review card to confirm this application.');return;}
   chatBusy=true;error();const runId=current?.run_id,version=epoch;render();
   try{if(!runId)await prepare(text);else{const id=failedMessage?.runId===runId&&failedMessage.text===text&&failedMessage.key===key?failedMessage.id:crypto.randomUUID();optimistic.set(runId,[{id,role:'user',text}]);render();bottom();failedMessage={id,text,key,runId};await request(`/${runId}/chat`,{text,field_key:key,message_id:id,visual_fallback:$('#visual-fallback').checked});failedMessage=null;optimistic.delete(runId);await refresh();}if(epoch===version&&$('#chat-text').value.trim()===text)$('#chat-text').value='';}

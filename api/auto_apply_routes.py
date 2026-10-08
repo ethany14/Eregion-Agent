@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from agent_runtime.auto_apply.contracts import ContinueApplication, StartApplication, VersionRequest, ChatRequest, ResumeProfileRequest, PreparationMessage, AccountCredentials, AccountMode, SavedCandidateRequest
 from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.repository import ApplyConflict, ApplyNotFound, ApplyRepository
+from agent_runtime.auto_apply.repository import ApplyConflict, ApplyNotFound, ApplyRepository, DuplicateApplication
 
 router = APIRouter(prefix="/api/auto-apply", tags=["automatic applications"])
 _lock = Lock()
@@ -38,7 +38,14 @@ def service(request: Request):
 
 
 def public(state):
-    return {key: value for key, value in state.items() if key not in {"profile", "answers", "review_digest"}}
+    from agent_runtime.auto_apply.drafting import visible_drafts
+    result = {key: value for key, value in state.items()
+        if key not in {"profile", "answers", "review_digest", "resume_context"}}
+    if "fields" in state:
+        from agent_runtime.auto_apply.contracts import can_reopen
+        result["answer_drafts"] = visible_drafts(state, state["fields"])
+        result["can_reopen"] = can_reopen(state)
+    return result
 
 
 def invoke(action):
@@ -46,6 +53,8 @@ def invoke(action):
         return public(action())
     except ApplyNotFound as exc:
         raise HTTPException(404, str(exc)) from exc
+    except DuplicateApplication as exc:
+        raise HTTPException(409, {"message": str(exc), "existing_run_id": exc.run_id}) from exc
     except ApplyConflict as exc:
         raise HTTPException(409, str(exc)) from exc
 
@@ -99,6 +108,11 @@ def clear_candidate(loop=Depends(service)):
 @router.post("/{run_id}/chat", status_code=202)
 def chat(run_id: str, body: ChatRequest, loop=Depends(service)):
     return invoke(lambda: loop.chat(run_id, body))
+
+
+@router.post("/{run_id}/resume", status_code=202)
+def resume_attempt(run_id: str, body: VersionRequest, loop=Depends(service)):
+    return invoke(lambda: loop.resume(run_id, body.expected_version))
 
 
 @router.post("/prepare-message")
