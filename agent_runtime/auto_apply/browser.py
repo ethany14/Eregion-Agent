@@ -12,38 +12,53 @@ import os
 import re
 import socket
 import time
+from threading import local
 from urllib.parse import urlsplit
 
+from .errors import BrowserBlocked
 from .contracts import GREENHOUSE, LEVER, posting, public_https_url
-from .matching import resolve_option, search_text
+from .matching import clean, equivalent, resolve_option, search_text
 from .navigation import PAGE_SCAN, page_state
 
 SCAN = r"""() => {
   const visible = el => !!(el.getClientRects().length) && getComputedStyle(el).visibility !== 'hidden';
   const clean = text => (text || '').replace(/\s+/g, ' ').trim().slice(0, 1000);
-  const label = el => clean(Array.from(el.labels || []).map(x => x.textContent).join(' ') || el.getAttribute('aria-label') ||
+  const nearbyLabel = el => {
+    for(let node=el.parentElement, depth=0;node && depth<4;node=node.parentElement,depth++){
+      const direct=node.querySelector(':scope > label, :scope > legend');
+      if(direct && !direct.contains(el))return clean(direct.textContent);
+      if(node.matches('[data-field-path], fieldset'))break;
+    }
+    return '';
+  };
+  const label = el => clean([...new Set(Array.from(el.labels || []).map(x => clean(x.textContent)))].join(' ') ||
+    el.closest('[data-automation-id^="formField-"]')?.querySelector('label')?.textContent ||
+    (el.matches('button[aria-haspopup="listbox"]') && nearbyLabel(el)) ||
+    el.getAttribute('aria-label') ||
     (el.getAttribute('aria-labelledby') || '').split(' ').map(id => document.getElementById(id)?.textContent || '').join(' ') ||
-    el.closest('.application-question')?.querySelector('.application-label')?.textContent ||
-    el.closest('[data-automation-id^="formField-"]')?.querySelector('label')?.textContent || el.name || el.id);
+    el.closest('.application-question')?.querySelector('.application-label')?.textContent || nearbyLabel(el) || el.name || el.id);
   const root = [...document.querySelectorAll('[role="dialog"], dialog[open]')].filter(visible).at(-1) || document;
   document.querySelectorAll('[data-northstar-field]').forEach(el => el.removeAttribute('data-northstar-field'));
-  const elements = Array.from(root.querySelectorAll('input, textarea, select, [role="combobox"], button[aria-haspopup="listbox"]'));
+  const elements = Array.from(root.querySelectorAll('input, textarea, select, [role="combobox"], button[aria-haspopup="listbox"], button[aria-pressed][data-option]'));
   const counts = new Map(), fields = [], groups = new Set();
   for (const [index, el] of elements.entries()) {
     if (el.getAttribute('role') === 'combobox' && !['INPUT','BUTTON','SELECT'].includes(el.tagName) && el.querySelector('input:not([type="hidden"])')) continue;
-    const kind = el.tagName === 'SELECT' ? 'select' : el.getAttribute('role') === 'combobox' || el.getAttribute('aria-haspopup') === 'listbox' ? 'combobox' :
+    const buttonChoice = el.matches('button[aria-pressed][data-option]');
+    const kind = buttonChoice ? 'radio' : el.tagName === 'SELECT' ? 'select' : el.getAttribute('role') === 'combobox' || el.getAttribute('aria-haspopup') === 'listbox' ? 'combobox' :
       el.name === 'location' && el.parentElement.querySelector('input[name="selectedLocation"]') ? 'location' : (el.type || 'text');
     if (['hidden', 'password', 'submit', 'button', 'reset', 'image'].includes(kind) ||
-        el.autocomplete === 'one-time-code' || /otp|verificationcode/i.test(el.name || '') || el.disabled ||
-        el.getAttribute('data-automation-id') === 'beecatcher' ||
-        (kind !== 'file' && (!visible(el) || el.closest('[aria-hidden="true"]')))) continue;
-    if (kind === 'file' && !el.closest('form, #application, .application-form, [data-automation-id]')) continue;
+        el.hasAttribute('data-northstar-secret') || el.autocomplete === 'one-time-code' || /otp|verificationcode/i.test(el.name || '') || el.disabled ||
+        el.getAttribute('data-automation-id') === 'beecatcher') continue;
+    const hiddenField = kind !== 'file' && (!visible(el) || el.closest('[aria-hidden="true"]'));
+    if(hiddenField && kind === 'radio')continue;
+    if (kind === 'file' && !el.closest('form, #application, .application-form, [data-automation-id], [role="form"], [role="tabpanel"], [data-field-path]')) continue;
+    if (kind === 'file' && !label(el)) continue; // Ignore an unlabelled resume-autofill dropzone.
     const id = `ns-${index}`; el.setAttribute('data-northstar-field', id);
-    const wrapper = el.closest('[data-automation-id^="formField-"], .application-question, .form-field, .field');
+    const wrapper = el.closest('[data-automation-id^="formField-"], .application-question, .form-field, .field, [data-field-path]');
     const group = el.closest('fieldset, [role="group"]');
     const sections=[];
     for(let parent=el.parentElement;parent && parent!==root;parent=parent.parentElement){
-      const heading=clean(parent.querySelector(':scope > legend, :scope > h2, :scope > h3, :scope > h4, :scope > [data-automation-id="formLabel"]')?.textContent);
+      const heading=clean(parent.querySelector(':scope > legend, :scope > h2, :scope > h3, :scope > h4, :scope > [data-automation-id="formLabel"], :scope > label')?.textContent);
       if(heading && !sections.includes(heading))sections.push(heading);
     }
     const described = attr => (el.getAttribute(attr) || '').split(/\s+/).map(id => document.getElementById(id)).filter(Boolean);
@@ -54,17 +69,30 @@ SCAN = r"""() => {
     const choice = kind === 'combobox' || kind === 'select' || kind === 'radio' ||
       ['listbox','tree','true'].includes(el.getAttribute('aria-haspopup')) ||
       !!el.closest('[data-automation-id="multiSelectContainer"], [role="combobox"]');
-    let committed = false;
+    let committed = false, checkboxGroup = false;
     let text = label(el), options = [], value = el.getAttribute('aria-valuetext') || el.value || '', required = el.required || el.getAttribute('aria-required') === 'true';
     let invalid = el.getAttribute('aria-invalid') === 'true' || (!!el.validity && !el.validity.valid) || errors.length > 0;
     let parentRequired = !!el.closest('.application-question.required, [data-required="true"]');
-    if (kind === 'radio') {
+    if (buttonChoice) {
+      const owner=el.parentElement;
+      if(groups.has(owner))continue;groups.add(owner);
+      const members=elements.filter(x=>x.parentElement===owner && x.matches('button[aria-pressed][data-option]'));
+      text=clean(wrapper?.querySelector(':scope > label')?.textContent || nearbyLabel(el));
+      options=members.map(x=>{const token=`ns-${elements.indexOf(x)}`;x.setAttribute('data-northstar-field',token);return {label:clean(x.textContent),value:x.getAttribute('data-option'),id:token,button:true};});
+      value=members.find(x=>x.getAttribute('aria-pressed')==='true')?.getAttribute('data-option') || '';
+      committed=!!value;
+      required=required || !!wrapper?.querySelector('[required], [aria-required="true"], label[class*="required"]');
+    } else if (kind === 'radio') {
       const group = el.name || id; if (groups.has(group)) continue; groups.add(group);
       const members = elements.filter(x => x.type === 'radio' && (x.name || `ns-${elements.indexOf(x)}`) === group);
       text = clean(el.closest('fieldset')?.querySelector('legend')?.textContent || el.closest('.application-question')?.querySelector('.application-label')?.textContent || text);
       options = members.map((x) => {const token=`ns-${elements.indexOf(x)}`;x.setAttribute('data-northstar-field',token);return {label:label(x),value:x.value,id:token};});
       value = members.find(x => x.checked)?.value || ''; required = members.some(x => x.required);
-    } else if (kind === 'select') options = Array.from(el.options).map(x => ({label: clean(x.textContent), value:x.value, disabled:x.disabled}));
+    } else if (kind === 'select') {
+      options = Array.from(el.options).map(x => ({label: clean(x.textContent), value:x.value, disabled:x.disabled}));
+      const part=clean(el.options[0]?.textContent).replace(/\.+$/, '');
+      if(/^(month|year|day)$/i.test(part) && text && !text.toLowerCase().includes(part.toLowerCase()))text+=` ${part}`;
+    }
     else if (kind === 'checkbox') {
       const description = clean(el.getAttribute('description') || (el.getAttribute('aria-describedby') || '').split(' ')
         .filter(id => id.endsWith('-description')).map(id => document.getElementById(id)?.textContent || '').join(' '));
@@ -72,22 +100,50 @@ SCAN = r"""() => {
       value = el.checked;
       const peers = elements.filter(x => x.type === 'checkbox' && x.name && x.name === el.name);
       const leverGroup = !!el.closest('[data-qa="checkboxes"]');
-      if (peers.length > 1 && (parentRequired || leverGroup)) {
-        // Lever marks the question group required; it does not require every
-        // language or qualification checkbox to be selected.
+      // Greenhouse repeats native required on every member of a multi-choice
+      // question. Its shared legend/error describes the group, not each choice.
+      const errorId = el.getAttribute('aria-errormessage');
+      const greenhouseGroup = el.name.endsWith('[]') && group?.querySelector(':scope > legend.checkbox__description') &&
+        errorId && peers.every(x => x.closest('fieldset, [role="group"]') === group && x.getAttribute('aria-errormessage') === errorId);
+      if (peers.length > 1 && (parentRequired || leverGroup || greenhouseGroup)) {
+        checkboxGroup = true;
         const groupRequired = parentRequired || peers.some(x => x.required);
-        invalid = el.getAttribute('aria-invalid') === 'true' || (groupRequired && peers[0] === el && !peers.some(x => x.checked));
+        // Only discard native valueMissing. Keep visible website errors and
+        // independent required consent controls intact.
+        if (el.validity?.valueMissing && el.validationMessage && errors.at(-1) === el.validationMessage) errors.pop();
+        invalid = el.getAttribute('aria-invalid') === 'true' || errors.length > 0 ||
+          (groupRequired && peers[0] === el && !peers.some(x => x.checked));
         required = false;
         parentRequired = false;
       }
       const groupLabel = clean(el.closest('.application-question')?.querySelector('.application-label')?.textContent);
       if (peers.length > 1 && groupLabel) text = `${groupLabel.replace(/[✱*]/g, '').trim()} — ${text}`;
     } else if (kind === 'file') {
+      // Upload buttons may be labelled only 'Attach'; use the containing
+      // accessible group's document label (e.g. Cover Letter).
+      const uploadLabel = clean((group?.getAttribute('aria-labelledby') || '').split(/\s+/)
+        .map(id => document.getElementById(id)?.textContent || '').join(' ') || group?.getAttribute('aria-label'));
+      if (uploadLabel) text = uploadLabel;
       value = el.files?.length ? el.files[0].name : '';
+      // Workday clears the native input after transferring the file. Read the
+      // successful attachment cards within this upload control, not page text.
+      const upload = el.closest('[data-automation-id="attachments-FileUpload"]');
+      const attached = [...(upload?.querySelectorAll('[data-automation-id="file-upload-item"]') || [])]
+        .filter(item => item.querySelector('[data-automation-id="file-upload-successful"]'))
+        .map(item => clean(item.querySelector('[data-automation-id="file-upload-item-name"]')?.textContent)).filter(Boolean);
+      if (attached.length) value = [...new Set(attached)].join('; ');
       if ((el.id === 'resume' || el.name === 'resume')) { text = 'Resume/CV'; required = true; }
     } else if (kind === 'combobox') {
       const shell = el.closest('.select__container, .select-shell');
-      if (shell) {value = clean(Array.from(shell.querySelectorAll('.select__single-value, .select__multi-value__label')).map(x => x.textContent).join('; '));committed=!!value;}
+      if (shell) {
+        value = clean(Array.from(shell.querySelectorAll('.select__single-value, .select__multi-value__label')).map(x => x.textContent).join('; '));
+        // Telephone country widgets collapse the selected label to a flag and
+        // shared dial code. Keep the observed flag identity (US vs CA at +1).
+        const flag = shell.querySelector('.select__single-value .iti__flag');
+        const region = flag && [...flag.classList].map(c => /^iti__([a-z]{2})$/.exec(c)).find(Boolean);
+        if (region && /^\+\d{1,3}$/.test(value)) value = `${region[1].toUpperCase()} ${value}`;
+        committed=!!value;
+      }
       else if (el.tagName === 'BUTTON') {
         value = clean(el.textContent);
         if (/^(select|choose)(?: one| an? option)?(?:\.\.\.)?$/i.test(value)) value = '';
@@ -101,10 +157,13 @@ SCAN = r"""() => {
       const selected = [...(shell?.querySelectorAll('[data-automation-id="selectedItem"], [data-automation-id="selectedItemLabel"], [data-automation-id="selectedPrompt"]') || [])].filter(visible).map(x => clean(x.textContent));
       if (selected.length) {value = [...new Set(selected)].join('; ');committed=true;}
     }
-    const base = `${kind}:${el.name || el.id || text}${kind === 'checkbox' ? ':' + el.value : ''}`;
+    const base = `${kind}:${el.name || el.id || (buttonChoice && wrapper?.getAttribute("data-field-path")) || text}${kind === 'checkbox' ? ':' + el.value : ''}`;
     const occurrence = (counts.get(base) || 0) + 1; counts.set(base, occurrence);
     const key = `${base}:${occurrence}`.slice(0, 1000);
-    fields.push({id, dom_id:el.id, name:el.name || '', key, kind, label:text || 'Unlabelled field', required:!!(required || parentRequired || text.includes('*') || text.includes('✱')), options, value, invalid,
+    // Modal menus hide sibling controls using aria-hidden. Count their stable
+    // occurrences before excluding them, or row 2 becomes row 1 while editing.
+    if(hiddenField)continue;
+    fields.push({id, dom_id:el.id, name:el.name || '', key, kind, label:text || 'Unlabelled field', required:!checkboxGroup && !!(required || parentRequired || text.includes('*') || text.includes('✱')), options, value, invalid,
       choice_control:choice, value_committed:committed, errors:[...new Set(errors)], help:clean(described('aria-describedby').map(x=>x.textContent).join(' ')),
       group:clean(group?.querySelector('legend')?.textContent || group?.getAttribute('aria-label')), section:sections.join(' / ').slice(0,500),
       constraints:{read_only:!!el.readOnly, pattern:el.getAttribute('pattern'), max_length:el.getAttribute('maxlength'), min_length:el.getAttribute('minlength'),
@@ -114,12 +173,48 @@ SCAN = r"""() => {
 }"""
 
 
-class BrowserBlocked(RuntimeError):
-    """A safe user-facing reason to pause."""
+OPTION_SCAN = r"""els => {
+  const clean = value => (value || '').replace(/\s+/g, ' ').trim();
+  const members = new Set(els);
+  return els.map((el, index) => {
+    const text = clean(el.innerText);
+    // Nested wrappers describe the same choice. Keep the outer clickable node,
+    // but retain distinct nested tree choices with different text.
+    for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+      if (members.has(parent) && text && clean(parent.innerText) === text) return null;
+    }
+    return {index, label:text || clean(el.getAttribute('aria-label')),
+      value:clean(el.getAttribute('data-value')) || clean(el.querySelector('[class*="canonicalSchoolResultName"]')?.textContent) || text || clean(el.getAttribute('aria-label')),
+      role:el.getAttribute('role'), automation_id:el.getAttribute('data-automation-id'),
+      expandable:el.hasAttribute('aria-expanded') || !!el.querySelector('[aria-expanded], [aria-haspopup]'),
+      disabled:el.getAttribute('aria-disabled') === 'true'};
+  }).filter(Boolean);
+}"""
+
+_playwright_runtime = local()
+
+
+def _acquire_playwright(start):
+    # Several task browsers share a worker thread. Playwright's sync dispatcher
+    # must be started once on that thread, even with separate Chrome processes.
+    if getattr(_playwright_runtime, 'instance', None) is None:
+        _playwright_runtime.instance = start()
+        _playwright_runtime.users = 0
+    _playwright_runtime.users += 1
+    return _playwright_runtime.instance
+
+
+def _release_playwright(instance):
+    if getattr(_playwright_runtime, 'instance', None) is not instance:
+        return
+    _playwright_runtime.users -= 1
+    if _playwright_runtime.users == 0:
+        _playwright_runtime.instance = None
+        instance.stop()
 
 
 class ApplicationBrowser:
-    def __init__(self, url, *, headless=None, session_store=None, owner_key=None):
+    def __init__(self, url, *, headless=None, session_store=None, owner_key=None, purpose='application'):
         try:
             from playwright.sync_api import sync_playwright
         except ImportError as exc:
@@ -131,8 +226,16 @@ class ApplicationBrowser:
                 "environment used to start the local server, restart the server, "
                 "then try again."
             ) from exc
-        self.platform, self.identity, self.url = posting(url)
-        self.playwright = sync_playwright().start()
+        self.purpose = purpose
+        self.headless = True if headless is None else headless
+        if purpose == 'browse':
+            self.url = public_https_url(url)
+            if urlsplit(url).fragment:self.url += '#' + urlsplit(url).fragment
+            self.platform, self.identity = 'generic', self.url
+        else:
+            self.platform, self.identity, self.url = posting(url)
+        self.playwright = _acquire_playwright(lambda: sync_playwright().start())
+        self._closed = False
         self.browser = None
         self.option_cache = {}
         self.choice_fields = set()
@@ -145,9 +248,7 @@ class ApplicationBrowser:
         self._page_context = None
         self._document_url = None
         try:
-            self.browser = self.playwright.chromium.launch(
-                channel=os.getenv("JOB_AGENT_BROWSER_CHANNEL", "chrome"),
-                headless=headless if headless is not None else False)
+            self.browser = self._launch(self.headless)
             login_state = session_store.load(owner_key, self.session_site) if session_store and owner_key else None
             self.context = self.browser.new_context(viewport={"width": 1280, "height": 900},
                 **({"storage_state":login_state} if login_state else {}))
@@ -155,7 +256,9 @@ class ApplicationBrowser:
             self.context.route("**/*", self._guard_request)
             self.page = self.context.new_page()
             self.context.on("page", self._popup)
-            self.page.goto(self.url, wait_until="domcontentloaded", timeout=30_000)
+            try:self.page.goto(self.url, wait_until="domcontentloaded", timeout=30_000)
+            except Exception as exc:
+                if purpose!='browse' or 'Timeout' not in type(exc).__name__ or not self.page.locator('body').count():raise
             self.scope = self.page
             # ATS analytics/images can keep `load` pending after the application
             # is usable. Wait for form controls, not every third-party resource.
@@ -172,6 +275,69 @@ class ApplicationBrowser:
     def _popup(self, page):
         self.page = page
         self.option_cache.clear()
+
+    def _launch(self, headless):
+        return self.playwright.chromium.launch(
+            channel=os.getenv('JOB_AGENT_BROWSER_CHANNEL','chrome'),headless=headless)
+
+    def set_visible(self, visible):
+        """User-only handoff. Relaunch with session state, without replaying actions.
+
+        Chrome cannot change headless mode in place. Current URLs, cookies, local
+        storage and session storage are retained; unsaved DOM/file inputs are not.
+        The caller must pause/fence the agent and invalidate submission review.
+        """
+        if type(visible) is not bool:raise BrowserBlocked('Choose whether to show the browser window.')
+        if not self.is_open():raise BrowserBlocked('The browser is closed. Resume the task to reopen it in the background.')
+        if self.headless == (not visible):
+            if visible:self.page.bring_to_front()  # Only an explicit UI action may focus Chrome.
+            return
+        self._check_page()
+        pages=[]
+        for page in self.context.pages:
+            if page.is_closed() or page.url=='about:blank':continue
+            public_https_url(page.url)
+            try:session=page.evaluate('() => ({origin:location.origin,values:Object.fromEntries(Object.entries(sessionStorage))})')
+            except Exception:session=None
+            pages.append((page.url,session,page==self.page))
+        state=self.context.storage_state()
+        replacement=None
+        try:
+            replacement=self._launch(not visible)
+            context=replacement.new_context(viewport={'width':1280,'height':900},storage_state=state)
+            context.set_default_timeout(8000)
+            context.route('**/*',self._guard_request)
+            active=None
+            for url,session,selected in pages:
+                page=context.new_page()
+                cdp,script_id=None,None
+                if session:
+                    cdp=context.new_cdp_session(page)
+                    cdp.send('Page.enable')
+                    script_id=cdp.send('Page.addScriptToEvaluateOnNewDocument',{'source':
+                        '(()=>{const restored = '+json.dumps(session)+'; if(location.origin===restored.origin) '
+                        'for(const [key,value] of Object.entries(restored.values))sessionStorage.setItem(key,value);})();'})['identifier']
+                try:page.goto(url,wait_until='domcontentloaded',timeout=20000)
+                except Exception as exc:
+                    if 'Timeout' not in type(exc).__name__ or not page.locator('body').count():raise
+                finally:
+                    if cdp:
+                        cdp.send('Page.removeScriptToEvaluateOnNewDocument',{'identifier':script_id})
+                        cdp.detach()
+                if selected:active=page
+            if active is None:raise BrowserBlocked('The current browser tab could not be restored.')
+        except Exception:
+            if replacement:replacement.close()
+            raise BrowserBlocked('Could not switch browser mode. The original session is still available; retry from Agent activity.') from None
+        previous=self.browser
+        self.browser,self.context,self.page=replacement,context,active
+        self.headless=not visible
+        self.scope=active
+        self.context.on('page',self._popup)
+        self.option_cache.clear();self.choice_fields.clear();self._choice_queries.clear()
+        self._option_owner,self._page_context,self._document_url,self._preferred_frame=None,None,None,None
+        previous.close()
+        if visible:active.bring_to_front()
 
     def save_login_state(self, *, force=False):
         if not self.session_store or not self.owner_key or not hasattr(self, "page") or not self.is_open(): return
@@ -203,8 +369,10 @@ class ApplicationBrowser:
         if route.request.is_navigation_request():
             # Top-level redirects and embedded application frames stay on the
             # selected ATS. CAPTCHA providers may use their own child frames.
-            if route.request.frame == self.page.main_frame:
-                blocked = blocked or host not in self.navigation_hosts or url.scheme != "https"
+            try:top_level = route.request.frame.parent_frame is None
+            except Exception:top_level = True # A popup's request can precede frame creation.
+            if top_level:
+                blocked = blocked or url.scheme != "https" or (self.purpose != 'browse' and host not in self.navigation_hosts)
         if blocked or url.scheme not in {"http", "https"} or not self._public_host(host):
             route.abort()
         else:
@@ -214,7 +382,7 @@ class ApplicationBrowser:
         if self.page.is_closed():
             raise BrowserBlocked("The browser was closed. Continue to reopen the application.")
         allowed = self.navigation_hosts
-        if urlsplit(self.page.url).hostname not in allowed:
+        if urlsplit(self.page.url).hostname not in allowed and self.purpose != 'browse':
             raise BrowserBlocked("The application navigated outside the supported site.")
         try:
             identity = posting(self.page.url)[1]
@@ -223,8 +391,12 @@ class ApplicationBrowser:
         if self.platform in {"greenhouse", "lever", "workday"} and identity != self.identity and ("/job/" in self.page.url or self.platform != "workday"):
             raise BrowserBlocked("The browser is showing a different job. Reopen this attempt.")
         self.scope = self.page
+        preferred = getattr(self,'_preferred_frame',None)
+        if preferred in self.page.frames and urlsplit(preferred.url).hostname in allowed:
+            self.scope = preferred
         for frame in self.page.frames[1:]:
-            if urlsplit(frame.url).hostname in allowed and frame.locator('input[type="email"]').count():
+            if self.scope != self.page:break
+            if urlsplit(frame.url).hostname in allowed and frame.locator('input[type="email"]:visible, input[type="password"]:visible, input[autocomplete="username"]:visible').count():
                 self.scope = frame
                 break
         if self._document_url != self.page.url:
@@ -244,7 +416,7 @@ class ApplicationBrowser:
         candidates = [c for c in page["controls"] if all(c.get(k) == action.get(k)
             for k in ("label", "href", "automation_id", "kind")) and not c["disabled"]]
         target = next((c for c in candidates if c["id"] == action["id"]), None)
-        if target is None or action["kind"] in {"submit", "unavailable"}:
+        if target is None or action["kind"] in {"submit", "unavailable", "guarded", "field"}:
             raise BrowserBlocked("This navigation control changed or requires final submission review.")
         if target.get("href"):
             url = public_https_url(target["href"])
@@ -290,14 +462,15 @@ class ApplicationBrowser:
     def field(self, key):
         field = next((item for item in self.observe() if item["key"] == key), None)
         if field is None:
-            raise BrowserBlocked("The form changed. Observe the page again.")
+            raise BrowserBlocked("The form changed. Observe the page again.", code='stale_observation')
         return field
 
     def locate(self, field):
         # React hydration can discard our observation markers. Prefer persistent
         # IDs, then unique names, before using the temporary marker.
         if field.get("dom_id"):
-            return self.scope.locator(f'[id={json.dumps(field["dom_id"])}]')
+            identified = self.scope.locator(f'[id={json.dumps(field["dom_id"])}]')
+            if identified.count() == 1:return identified
         if field.get("name") and field["kind"] not in {"radio", "checkbox"}:
             named = self.scope.locator(f'[name={json.dumps(field["name"])}]')
             if named.count() == 1:
@@ -325,29 +498,69 @@ class ApplicationBrowser:
                     return choices
         if field["kind"] == "location":
             return self.scope.locator('.dropdown-results > *:visible')
+        # A global portal is usable only for the field whose menu we opened.
+        # Otherwise inspecting field B can return field A's still-open choices.
+        if self._option_owner != field['key']:
+            return self.scope.locator(':not(*)')
         # Some select libraries portal the sole open menu to document.body.
-        menus = self.scope.locator('[role="listbox"]:visible, [role="tree"]:visible, [role="menu"]:visible, [data-automation-id="promptOptionList"]:visible')
-        if menus.count() == 1:
-            return menus.locator('[role="option"]:visible, [role="treeitem"]:visible, [role="menuitem"]:visible, [data-automation-id="promptOption"]:visible, [data-automation-id="promptLeafNode"]:visible')
+        menus = self.scope.locator('[role="listbox"]:visible:not([data-automation-id="selectedItemList"]), [role="tree"]:visible, [role="menu"]:visible, [data-automation-id="promptOptionList"]:visible')
+        # A single popup may contain both a role=listbox and an ATS menu wrapper.
+        # Count independent menu roots, not nested descriptions of one popup.
+        roots = menus.evaluate_all("els => els.flatMap((el, index) => els.some(parent => parent !== el && parent.contains(el)) ? [] : [index])")
+        if len(roots) == 1:
+            return menus.nth(roots[0]).locator('[role="option"]:visible, [role="treeitem"]:visible, [role="menuitem"]:visible, [data-automation-id="promptOption"]:visible, [data-automation-id="promptLeafNode"]:visible')
         return self.scope.locator('.select__menu:visible .select__option')
 
     def inspect_options(self, key, query=None):
+        if self._option_owner and self._option_owner != key:
+            previous = next((item for item in self.observe() if item['key'] == self._option_owner), None)
+            if previous and self._option_locator(previous).count():
+                self.locate(previous).press('Escape')
+                self.page.wait_for_timeout(150)
+                if self._option_locator(previous).count():
+                    raise BrowserBlocked('The previous dropdown is still open. Close it before opening another field.', code='dom_interaction_failed')
         field = self.field(key)
         if field["kind"] in {"select", "radio"}:
-            return field["options"]
+            options = field["options"]
+            if query is None or not str(query).strip():
+                return options
+            # Native controls cannot filter themselves like an autocomplete.
+            # Search their observed choices before pagination, keeping every
+            # equivalent match so ambiguous answers still require resolution.
+            matches = [option for option in options if equivalent(field["label"], query, option)]
+            if matches:
+                return matches
+            terms = clean(query).split()
+            return [option for option in options if terms and any(
+                all(term in clean(option.get(part, "")) for term in terms)
+                for part in ("label", "value"))]
         if field["kind"] not in {"combobox", "location", "text", "search", "tel"}:
             return []
         locator = self.locate(field)
+        # Some searchable pickers explicitly advertise Enter as the search key.
+        # Filling their input alone only changes the query, not the option list.
+        enter_search = bool(field.get("choice_control") and
+                            locator.get_attribute("enterkeyhint") == "search")
         # A second click closes an open React Select before a search can run.
         if query is None and key in self._choice_queries and locator.is_editable():
             locator.fill("")
             self._choice_queries.pop(key,None)
+            if enter_search:
+                locator.press("Enter")
         if (self._option_owner != key and locator.get_attribute("aria-expanded") != "true") or not self._option_locator(field).count():
-            self.click_field(key)
+            # Workday separates its search textbox from the menu-opening icon.
+            # Scope the observed icon to this field's container, never the page.
+            icon = locator.locator('xpath=ancestor::*[@data-automation-id="multiSelectContainer"][1]').locator('[data-automation-id="promptIcon"]')
+            if icon.count() == 1 and icon.is_visible():
+                icon.click(timeout=5000)
+            else:
+                self.click_field(key)
         self._option_owner = key
         if query and locator.is_editable():
             locator.fill(str(query))
             self._choice_queries[key] = str(query)
+            if enter_search:
+                locator.press("Enter")
         options = self._option_locator(field)
         try:
             options.first.wait_for(state="visible", timeout=4000)
@@ -356,12 +569,8 @@ class ApplicationBrowser:
         return self._read_options(key, options)
 
     def _read_options(self, key, options):
-        items = options.evaluate_all("""els => els.slice(0,300).map(el => ({
-            label:(el.getAttribute('aria-label') || el.innerText || '').trim(),
-            value:(el.getAttribute('data-value') || el.innerText || '').trim(),
-            role:el.getAttribute('role'), automation_id:el.getAttribute('data-automation-id'),
-            expandable:el.hasAttribute('aria-expanded') || !!el.querySelector('[aria-expanded], [aria-haspopup]'),
-            disabled:el.getAttribute('aria-disabled') === 'true'}))""")
+        items = [{k: v for k, v in item.items() if k != "index"}
+                 for item in options.evaluate_all(OPTION_SCAN)]
         if items: self.choice_fields.add(key)
         self.option_cache[key] = items
         return items
@@ -384,14 +593,10 @@ class ApplicationBrowser:
             return self.fill(field, label)
         options = self._option_locator(field)
         # Match only the active field's observed options, never a global text hit.
-        choices = options.evaluate_all("""els => els.map(el => ({
-            label:(el.getAttribute('aria-label') || el.innerText || '').trim(),
-            value:(el.getAttribute('data-value') || el.innerText || '').trim(),
-            expandable:el.hasAttribute('aria-expanded') || !!el.querySelector('[aria-expanded], [aria-haspopup]'),
-            disabled:el.getAttribute('aria-disabled') === 'true'}))""")
-        matching = [(index, item) for index, item in enumerate(choices) if item['label'].strip().casefold() == label.strip().casefold() and not item['disabled']]
+        choices = options.evaluate_all(OPTION_SCAN)
+        matching = [(item["index"], item) for item in choices if item['label'].strip().casefold() == label.strip().casefold() and not item['disabled']]
         if not matching or resolve_option(field["label"], label, [item for _, item in matching]) is None:
-            raise BrowserBlocked("The option changed or is ambiguous. Inspect the field again.")
+            raise BrowserBlocked("The option changed or is ambiguous. Inspect the field again.", code='options_changed')
         options.nth(matching[0][0]).click(timeout=5000)
         if not matching[0][1]['expandable']: self._choice_queries.pop(key,None)
         self.page.wait_for_timeout(150)
@@ -421,7 +626,7 @@ class ApplicationBrowser:
 
     def preview(self):
         return self.page.screenshot(type="jpeg", quality=55, timeout=2000,
-            mask=[self.page.locator('input[type="password"], input[autocomplete="one-time-code"], input[name*="otp" i], input[name*="verificationCode" i]')])
+            mask=[frame.locator('input[type="password"], [data-northstar-secret], input[autocomplete="one-time-code"], input[name*="otp" i], input[name*="verificationCode" i]') for frame in self.page.frames])
 
     def enrich_options(self, fields, *, active=lambda: True):
         deadline = time.monotonic() + 20
@@ -440,18 +645,39 @@ class ApplicationBrowser:
         return not self.page.is_closed()
 
     def barrier(self):
-        if self.scope.locator('input[type="password"]:visible').count():
+        verification = self.verification_barrier()
+        if verification:return verification
+        from .authentication import context
+        if context(self):
             return "This site requires a candidate account. Use the secure account form to let the agent sign in or register. Keep your password out of chat."
-        if self.scope.locator('input[autocomplete="one-time-code"]:visible, input[name*="verificationCode" i]:visible').count():
-            return "Complete the site's email verification in the open Chrome window, then send continue here."
+        return None
+
+    def verification_barrier(self):
+        if self.scope.locator('input[autocomplete="one-time-code"]:visible, input[name*="otp" i]:visible, input[name*="verificationCode" i]:visible').count():
+            return "Complete the site's email verification in Control browser, then send continue here."
         if self.scope.get_by_text(re.compile(r"^(?:check your email|verify your email(?: address)?|verify your account)$", re.I)).count():
             return "Complete the site's email verification, then send continue here. Your application will resume in this browser."
+        # DataDome renders an actual access restriction in a visible iframe
+        # without a challenge title. Do not confuse passive CAPTCHA widgets
+        # on normal forms with this dedicated verification page.
+        for frame in self.page.frames:
+            location = urlsplit(frame.url)
+            if ((location.hostname or "").endswith(".captcha-delivery.com")
+                    and location.path.startswith("/captcha/") and frame.parent_frame):
+                try:
+                    if frame.frame_element().is_visible():
+                        return ("The site is showing a verification or access restriction. "
+                            "Use Control browser in Agent activity to inspect it and complete any available verification, "
+                            "then send continue here. No application was submitted.")
+                except Exception:
+                    continue  # A detached frame will be checked on the next observation.
         # An embedded CAPTCHA widget alone is not evidence of a challenge.
         if self.page.locator('iframe[title*="challenge" i]:visible, iframe[title*="verification" i]:visible').count():
             return "Complete the verification challenge in the open browser, then continue."
         return None
 
     def fill(self, field, value):
+        upload_filename = field.get('upload_filename')
         field = self.field(field["key"])
         from .autofill import matches
         if field["kind"] != "file" and matches(field, value):
@@ -459,7 +685,11 @@ class ApplicationBrowser:
         locator = self.locate(field)
         kind = field["kind"]
         if kind == "file":
-            locator.set_input_files({"name": "resume.pdf", "mimeType": "application/pdf", "buffer": value})
+            filename = upload_filename or ('cover-letter.pdf' if 'cover letter' in field['label'].casefold() else 'resume.pdf')
+            locator.set_input_files({"name": filename, "mimeType": "application/pdf", "buffer": value})
+            upload = locator.locator('xpath=ancestor::*[@data-automation-id="attachments-FileUpload"][1]')
+            if upload.count():
+                upload.locator('[data-automation-id="file-upload-successful"]').last.wait_for(state="visible", timeout=10000)
         elif kind == "checkbox":
             if not isinstance(value, bool):
                 raise BrowserBlocked("Choose a checkbox answer explicitly.")
@@ -467,11 +697,13 @@ class ApplicationBrowser:
         elif kind in {"select", "radio"}:
             option = resolve_option(field["label"], value, field["options"])
             if option is None:
-                raise BrowserBlocked("Choose an exact option from the application form.")
+                raise BrowserBlocked("Choose an exact option from the application form.", code='option_mapping_required')
             if kind == "select":
                 locator.select_option(value=option["value"])
             else:
-                self.scope.locator(f'[data-northstar-field="{option["id"]}"]').check()
+                selected = self.scope.locator(f'[data-northstar-field="{option["id"]}"]')
+                if option.get("button"): selected.click()
+                else: selected.check()
         elif kind == "combobox" or field.get("choice_control"):
             options = self.inspect_options(field["key"])
             option = resolve_option(field["label"], value, options)
@@ -479,7 +711,7 @@ class ApplicationBrowser:
                 options = self.inspect_options(field["key"], query=search_text(field["label"], value))
                 option = resolve_option(field["label"], value, options)
             if option is None:
-                raise BrowserBlocked("Select an option from this field's available choices.")
+                raise BrowserBlocked("Select an option from this field's available choices.", code='option_mapping_required')
             self.choose_option(field["key"], option["label"])
         elif kind == "location":
             locator.fill(str(value))
@@ -487,15 +719,15 @@ class ApplicationBrowser:
             try:
                 option.wait_for(state="visible", timeout=5000)
                 if option.count() != 1:
-                    raise BrowserBlocked("Choose the intended location suggestion in the browser, then continue.")
+                    raise BrowserBlocked("Choose the intended location suggestion in the browser, then continue.", code='dom_interaction_failed')
                 option.click()
             except Exception as exc:
-                raise BrowserBlocked("Choose the intended location suggestion in the browser, then continue.") from exc
+                raise BrowserBlocked("Choose the intended location suggestion in the browser, then continue.", code='dom_interaction_failed') from exc
         elif kind in {"text", "email", "tel", "url", "textarea", "number", "search"}:
             locator.fill(str(value))
             locator.press("Tab")
         else:
-            raise BrowserBlocked("Complete this control in the browser, then continue.")
+            raise BrowserBlocked("Complete this control in the browser, then continue.", code='dom_interaction_failed')
         self.page.wait_for_timeout(200)
 
     def confirmation(self):
@@ -533,12 +765,15 @@ class ApplicationBrowser:
         return None
 
     def close(self):
+        if getattr(self, '_closed', False):
+            return
+        self._closed = True
         try:
             if self.browser is not None:
                 self.save_login_state(force=True)
                 self.browser.close()
         finally:
-            self.playwright.stop()
+            _release_playwright(self.playwright)
 
 
 def form_digest(fields):

@@ -1,4 +1,5 @@
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
 from fastapi.testclient import TestClient
 
@@ -11,16 +12,35 @@ WEB = ROOT / "web_app"
 
 def test_web_app_route_and_assets_are_served() -> None:
     with TestClient(create_app(run_service=object())) as client:
-        response = client.get("/app")
+        response = client.get("/apply")
         assert response.status_code == 200
-        assert "Northstar Career Copilot" in response.text
-        assert client.get("/web-assets/styles.css").status_code == 200
-        assert client.get("/web-assets/app.js").status_code == 200
+        assert "Northstar · Career agent" in response.text
+        assert 'href="/app#' not in response.text
+        assert 'data-view-panel=' not in response.text
+        assert client.get("/web-assets/apply.css").status_code == 200
+        assert client.get("/web-assets/apply.js").status_code == 200
+        assert client.get("/web-assets/career-chat.js").status_code == 200
         assert response.headers["cache-control"] == "no-store"
-        assert "/web-assets/styles.css?v=copilot-optimistic-20260922" in response.text
+        for path in ("/", "/app", "/app/", "/index.html", "/web-assets/index.html",
+                     "/web-assets/INDEX.HTML", "/web-assets/apply.html"):
+            redirect = client.get(path, follow_redirects=False)
+            assert redirect.status_code == 307, path
+            assert redirect.headers["location"] == "/apply"
+            assert redirect.headers["cache-control"] == "no-store"
+            assert client.get(path).text == response.text
 
 
-def test_web_app_exposes_full_workspace_navigation() -> None:
+def test_old_bookmarks_preserve_job_context_and_drop_old_view_settings() -> None:
+    with TestClient(create_app(run_service=object())) as client:
+        for path in ("/app", "/web-assets/index.html"):
+            response = client.get(path, params={"application":"saved-job", "url":"https://example.org/jobs?a=1&b=2",
+                                               "mode":"legacy", "next":"https://example.org"}, follow_redirects=False)
+            target = urlsplit(response.headers["location"])
+            assert target.path == "/apply" and not target.netloc
+            assert parse_qs(target.query) == {"application":["saved-job"], "url":["https://example.org/jobs?a=1&b=2"]}
+
+
+def test_archived_workspace_source_retains_reusable_controls() -> None:
     page = (WEB / "index.html").read_text(encoding="utf-8")
     for view in {"overview", "jobs", "copilot", "materials",
                  "evidence", "learning", "settings"}:

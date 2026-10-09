@@ -52,6 +52,13 @@ def city_equivalent(answer, value):
         code = next((code for code, name in US_STATES.items() if name == state), None)
         if code:
             variants.extend([[parts[0], region, *parts[2:]] for region in (state, code)])
+    if len(parts) >= 3 and country(parts[2]) in COUNTRIES:
+        # The selected city may render USA while the source says United States.
+        # Expand only aliases of this option's actual country; never drop a
+        # conflicting country supplied by the user.
+        name = country(parts[2])
+        variants = [[*variant[:2], clean(alias), *variant[3:]]
+            for variant in variants for alias in (name, *COUNTRIES[name])]
     return any(source == "".join(variant[:end]).replace(" ", "")
         for variant in variants for end in range(1, len(variant) + 1))
 
@@ -71,6 +78,8 @@ def school(value):
 def field_category(label):
     text = clean(label)
     if re.search(r"\b(country|citizenship|nationality)\b|国家|国籍", text): return "country"
+    # The question may mention university while asking which degree is pursued.
+    if re.search(r"\b(?:what|which)\s+degree\b", text): return "degree"
     if re.search(r"\b(school|university|college|institution)\b|学校|大学", text): return "school"
     if re.search(r"\bdegree\b|学位", text): return "degree"
     if re.search(r"\bcity\b|城市", text): return "city"
@@ -103,10 +112,10 @@ def equivalent(label, answer, option):
         for value in values:
             target = clean(value)
             # Specific degrees can map to their general level, not another specialism.
-            if target in {"bachelor s degree", "bachelors degree", "bachelor degree"} and (
+            if target in {"bachelor s degree", "bachelors degree", "bachelor degree", "bachelors", "bachelor", "bachelor s"} and (
                 source in {"bs", "b s", "bsc", "b sc", "ba", "b a", "beng", "本科", "学士"} or source.startswith(("bachelor ", "bachelors "))): return True
-            if target in {"master s degree", "masters degree", "master degree"} and (
-                source in {"ms", "m s", "msc", "m sc", "ma", "m a", "meng", "硕士"} or source.startswith(("master of science", "master of arts", "master of engineering", "master s", "masters "))): return True
+            if target in {"master s degree", "masters degree", "master degree", "masters", "master", "master s"} and (
+                source in {"ms", "m s", "msc", "m sc", "ma", "m a", "meng", "m eng", "硕士"} or source.startswith(("master of science", "master of arts", "master of engineering", "master s", "masters "))): return True
             if "doctor of philosophy" in target and source in {"phd", "ph d", "doctor of philosophy", "博士"}: return True
     if category == "city":
         # Ignore spacing/punctuation, but require whole geographic components.

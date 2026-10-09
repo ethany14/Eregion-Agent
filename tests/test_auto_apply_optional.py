@@ -175,7 +175,7 @@ def test_optional_demographic_controls_render_and_fill_real_dropdowns(database):
                     route.fulfill(status=response.status_code, body=response.content,
                         headers={"content-type":response.headers.get("content-type", "application/json")})
                 page.route('**/*', handle)
-                page.goto('http://localhost/apply')
+                page.goto('http://localhost/apply?mode=application')
                 page.locator('#attempts .attempt').click()
                 expect(page.locator('.question-choice')).to_have_count(3)
                 page.get_by_role('group', name='Gender', exact=True).get_by_role('button', name=GENDER[-1], exact=True).click()

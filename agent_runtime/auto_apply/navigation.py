@@ -6,7 +6,7 @@ PAGE_SCAN = r"""() => {
   const clean = s => (s || '').replace(/\s+/g, ' ').trim();
   const root = [...document.querySelectorAll('[role="dialog"], dialog[open]')].filter(visible).at(-1) || document;
   document.querySelectorAll('[data-northstar-action]').forEach(el => el.removeAttribute('data-northstar-action'));
-  const controls = [...root.querySelectorAll('button, a[href], [role="button"]')]
+  const controls = [...root.querySelectorAll('button, a[href], [role="button"], input[type="submit"], input[type="button"]')]
     .filter(visible).slice(0, 150).map((el, i) => {
       const id = `ns-action-${i}`; el.setAttribute('data-northstar-action', id);
       const labelled = (el.getAttribute('aria-labelledby') || '').split(' ')
@@ -16,19 +16,23 @@ PAGE_SCAN = r"""() => {
         const heading=clean(parent.querySelector(':scope > legend, :scope > h2, :scope > h3, :scope > h4, :scope > [data-automation-id="formLabel"]')?.textContent);
         if(heading && !sections.includes(heading))sections.push(heading);
       }
-      return {id, label:clean(el.getAttribute('aria-label') || labelled || el.innerText).slice(0,240),
+      return {id, label:clean(el.getAttribute('aria-label') || labelled || el.innerText || el.value).slice(0,240),
         section:sections.join(' / ').slice(0,500),
+        tag:el.tagName, role:el.getAttribute('role'), type:el.type || '', field_id:el.getAttribute('data-northstar-field'),
         href:el.tagName === 'A' ? el.href : null, automation_id:el.getAttribute('data-automation-id'),
         disabled:!!el.disabled || el.getAttribute('aria-disabled') === 'true',
-        submits_form:el.tagName === 'BUTTON' && el.type === 'submit' && !!el.form};
+        submits_form:['BUTTON','INPUT'].includes(el.tagName) && ['submit','image'].includes(el.type) && !!el.form};
     });
   const otp = [...document.querySelectorAll('input[autocomplete="one-time-code"], input[name*="otp" i], input[name*="verificationCode" i]')].some(visible);
   const password = [...document.querySelectorAll('input[type="password"]')].some(visible);
   const heading = [...document.querySelectorAll('[aria-current="step"], [data-automation-id="pageHeaderTitle"], h1, h2')]
     .filter(visible).map(el => clean(el.textContent)).join(' / ').slice(0,600);
+  const accountHeading = [...root.querySelectorAll('h1, h2, legend, [role="heading"]')].filter(visible)
+    .some(el => /sign.?in|log.?in|create.*account|candidate account|sign.?up|register/i.test(el.textContent));
+  const identifier = accountHeading && [...root.querySelectorAll('input:not([type="hidden"])')].some(visible);
   const text = clean((root === document ? document.querySelector('main, [role="main"], form') || document.body : root).innerText).slice(0,6000);
   const errors = [...root.querySelectorAll('[role="alert"], [data-automation-id="errorMessage"], .field-error, .error-message')].filter(visible).map(el=>clean(el.textContent)).filter(Boolean).slice(0,20);
-  return {heading, text, controls, errors, authentication_required: password || otp};
+  return {heading, text, controls, errors, authentication_required: password || otp || identifier};
 }"""
 
 
@@ -50,7 +54,14 @@ def action_kind(control, *, has_fields=False):
     # Workday uses Add on repeated sections. Its automation ID gives this short
     # button a bounded purpose without assigning fixed step numbers.
     if text == "add" and automation in {"Add", "addExperience", "addEducation", "addWebsite"}: return "add_entry"
-    return "unavailable"
+    if not text: return "unavailable"
+    if control.get('field_id') or control.get('role') in {'option','checkbox','radio','combobox'}:
+        return "field"  # Source-aware field tools own these controls.
+    if control.get('submits_form'):
+        return "guarded"  # Unknown submit buttons require a browser handoff.
+    if re.search(r"\b(submit|send application|finish application|complete application|accept|agree|consent|subscribe|delete|withdraw)\b", text):
+        return "guarded"
+    return "interact"
 
 
 def page_state(raw, *, url, fields):

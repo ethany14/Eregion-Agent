@@ -11,7 +11,7 @@ function safeDetail(payload, status) {
   const detail = payload?.detail;
   if (typeof detail === "string") return detail;
   if (typeof detail?.message === "string") return detail.message;
-  if (status === 409) return "Upload a default PDF resume in the full web workspace first.";
+  if (status === 409) return "Upload a PDF resume in career chat first.";
   if (status === 422) return "Check the job description and try again.";
   return "The backend could not complete the request.";
 }
@@ -25,7 +25,7 @@ async function request(path, options = {}) {
     if (!response.ok) throw new ApiError(safeDetail(payload, response.status), { status: response.status });
     return payload;
   } catch (error) {
-    if (error?.name === "AbortError") throw new ApiError("The analysis timed out. The run may still be processing; check the full workspace.");
+    if (error?.name === "AbortError") throw new ApiError("The analysis timed out. The run may still be processing; open this job in career chat.");
     if (error instanceof ApiError) throw error;
     throw new ApiError("Cannot reach JobHunterAgent at http://localhost:8000.");
   } finally { clearTimeout(timeout); }

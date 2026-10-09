@@ -41,7 +41,10 @@ class SemanticDecisions:
     def claims(self, claims: list[dict]) -> set[str]:
         """An incomplete, duplicated or unknown decision fails closed as a whole."""
         result = self._invoke(ClaimDecisions,
-            "Judge whether EACH complete claim is entailed by ONLY its attached evidence. "
+            "Judge whether EACH complete claim is entailed by its attached evidence. "
+            "Candidate facts must be entailed ONLY by candidate evidence. When employer_context is "
+            "provided, it may support employer needs and neutral statements linking confirmed candidate "
+            "evidence to those needs, never new candidate skills, experience or eligibility. "
             "Allow faithful paraphrases, translation and neutral connective prose. Reject added "
             "skills, experience, employers, dates, metrics, stronger responsibility, negation reversals "
             "and unsupported causation. Evidence may support a weaker statement. Uncertainty means "

@@ -44,6 +44,8 @@ class Database:
         import agent_runtime.resumes.models  # noqa: F401
         import custom_agent.models  # noqa: F401
         import agent_runtime.auto_apply.models  # noqa: F401
+        import agent_runtime.career.repository  # noqa: F401
+        import agent_runtime.career.alerts  # noqa: F401
 
         Base.metadata.create_all(self.engine)
 

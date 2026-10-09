@@ -1,9 +1,191 @@
-﻿<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Northstar · Application agent</title><link rel="stylesheet" href="/web-assets/apply.css?v=memory-education-20261008"></head>
-<body><main class="agent-shell">
-<aside class="history" id="history-panel"><a class="brand" href="/app#jobs"><span aria-hidden="true">✳</span> northstar</a><button id="new-chat" class="new-chat">＋ New application</button><p class="eyebrow">YOUR APPLICATIONS</p><nav id="attempts" aria-label="Applications"></nav><div class="history-footer"><span class="online-dot"></span> Your local application agent<a href="/app#jobs">Back to career workspace ↗</a></div></aside>
-<section class="conversation"><header class="chat-header"><button id="history-toggle" class="icon-button mobile-only" aria-label="Show application history">☰</button><div><h1 id="chat-title">Your next opportunity</h1><p id="agent-status">A little less paperwork. A step closer.</p></div><button id="browser-toggle" class="quiet-button" aria-expanded="false" aria-controls="browser-panel">View workspace ↗</button></header><p id="apply-error" role="alert" hidden></p>
-<div id="chat-scroll" class="chat-scroll"><div id="welcome" class="welcome"><div class="agent-mark" aria-hidden="true">✳</div><p class="eyebrow">LET’S MAKE YOUR NEXT MOVE</p><h2>You bring the experience.<br>I’ll handle the application.</h2><p>Attach your resume and send a job link.<br>I’ll fill what I know and ask you for anything that’s missing.</p><div class="welcome-notes"><span>Resume and answers saved for future applications</span><span>You review before submission</span></div></div><div id="agent-messages" role="log" aria-live="polite" aria-relevant="additions text"></div><div id="conversation-actions"></div></div>
-<div class="composer-wrap"><div id="attachment" class="attachment" hidden></div><form id="agent-chat-form" class="composer"><label class="sr-only" for="chat-text">Message your application agent</label><textarea id="chat-text" rows="2" maxlength="4000" placeholder="Paste a job link, ask a question, or tell me what to change…"></textarea><div class="composer-tools"><div><button type="button" id="attach-resume" class="quiet-button">＋ Resume</button><button type="button" id="profile-toggle" class="quiet-button">Your details</button></div><div><button type="button" id="pause-agent" class="quiet-button" hidden>Pause</button><button type="submit" id="send-message" class="send-button" aria-label="Send message">↑</button></div></div></form><input id="resume-file" name="resume" type="file" accept="application/pdf,.pdf" hidden><p id="chat-status" class="composer-note" role="status">Works in your browser. You can interrupt or pause at any time.</p></div></section>
-<aside id="browser-panel" class="workspace" hidden><header><div><p class="eyebrow">AGENT WORKSPACE</p><h2>Behind the conversation</h2></div><button id="browser-close" class="icon-button" aria-label="Close workspace">×</button></header><p id="browser-caption">The application browser will appear here.</p><img id="browser-preview" alt="Live view of the application browser" hidden><p id="preview-placeholder" class="empty-preview">A window into the work, whenever you need it.</p><button id="take-over" class="quiet-button" hidden>Pause agent & use Chrome</button><details open><summary>Current plan</summary><ol id="task-plan"></ol></details><details><summary>Browser activity</summary><ol id="browser-actions"></ol></details><details><summary>Application answers</summary><div id="answer-list"></div></details><details id="answer-memory"><summary>Remembered answers</summary><div id="memory-list"></div></details><button id="cancel-attempt" class="quiet-button danger" hidden>Cancel application</button></aside>
-</main><dialog id="profile-dialog"><form id="profile-form"><div class="dialog-heading"><div><p class="eyebrow">FROM YOUR RESUME & CONVERSATION</p><h2>Your application details</h2></div><button type="button" id="profile-close" class="icon-button" aria-label="Close profile">×</button></div><p>Used for new applications. You can correct an active application in chat.</p><div id="profile-fields"></div><h3>Education history</h3><div id="education-fields"></div><button type="button" id="add-education" class="quiet-button">＋ Add education</button><label class="check-row"><input id="reuse-answers" type="checkbox" checked> Remember answers to similar application questions</label><label class="check-row"><input id="visual-fallback" type="checkbox"> Visual browser backup: send screenshots to the model and let it operate difficult controls</label><p class="fine-print">Consent is asked the first time, then remembered for equivalent questions. Applications are reviewed before submission.</p><button class="primary-button" type="submit">Save details</button></form></dialog><dialog id="account-dialog"><form id="account-form"><div class="dialog-heading"><h2 id="account-title">Candidate account</h2><button type="button" id="account-close" class="icon-button" aria-label="Close account form">?</button></div><p>Account site: <strong id="account-origin"></strong></p><p>Your password goes directly to the application browser. It is not saved in chat or sent to the AI model. Login state is encrypted on this Windows computer.</p><label>Email<input id="account-username" type="email" autocomplete="username" required maxlength="254"></label><label>Password<input id="account-password" type="password" autocomplete="current-password" required maxlength="1000"></label><p id="account-instructions" style="max-height:220px;overflow:auto;white-space:pre-line"></p><div id="account-consents"></div><button id="account-submit" type="submit" class="primary-button">Sign in &amp; continue</button></form></dialog><script type="module" src="/web-assets/apply.js?v=memory-education-20261008"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Northstar · Career agent</title>
+<link rel="stylesheet" href="/web-assets/tokens.css?v=v2-20261008">
+<link rel="stylesheet" href="/web-assets/apply.css?v=local-browser-control-20261009">
+<link rel="stylesheet" href="/web-assets/chat-typography.css?v=v2-20261008">
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-mark" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M15 4v16"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-chevd" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+  <symbol id="i-brief" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4h6v3"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v7"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-restore" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v4h4"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+</svg>
+
+<main class="agent-shell">
+  <aside class="history" id="history-panel">
+    <a class="brand" href="/apply"><svg class="i" aria-hidden="true"><use href="#i-mark"/></svg>Northstar</a>
+    <button id="new-chat" class="new-chat" type="button" aria-keyshortcuts="Control+K Meta+K" title="New conversation (Ctrl+K)"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg><span>New application</span></button>
+    <nav id="side-nav" class="side-nav" aria-label="Workspace" hidden>
+      <a href="?view=applications" data-view="applications"><svg class="i" aria-hidden="true"><use href="#i-brief"/></svg>Applications</a>
+      <a href="?view=materials" data-view="materials"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Materials</a>
+      <a href="?view=alerts" data-view="alerts"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Job alerts<span id="count-alerts" class="count"></span></a>
+    </nav>
+    <nav id="attempts" class="conversations" aria-label="Applications"></nav>
+    <div class="history-footer">
+      <div id="side-footer-links" class="side-footer-links" hidden>
+        <a href="?view=archived" data-view="archived"><svg class="i" aria-hidden="true"><use href="#i-archive"/></svg>Archived<span id="count-archived" class="count"></span></a>
+        <a href="?view=trash" data-view="trash"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg>Trash<span id="count-trash" class="count"></span></a>
+      </div>
+      <button id="profile-toggle" class="me" type="button" aria-label="Your details"><span class="avatar" id="profile-initials" aria-hidden="true"></span><span id="profile-name" aria-hidden="true">Your details</span></button>
+    </div>
+  </aside>
+  <div class="history-scrim" id="history-scrim"></div>
+
+  <section class="conversation" id="conversation">
+    <header class="chat-header">
+      <button id="history-toggle" class="icon-button mobile-only" type="button" aria-label="Show conversation history"><svg class="i" aria-hidden="true"><use href="#i-menu"/></svg></button>
+      <div class="chat-heading">
+        <h1 id="chat-title">Your next opportunity</h1>
+        <span id="chat-subtitle" class="chat-subtitle"></span>
+        <p id="agent-status">A little less paperwork. A step closer.</p>
+      </div>
+      <ol id="journey" class="journey" aria-label="Progress" hidden></ol>
+      <button id="browser-toggle" class="icon-button" type="button" aria-expanded="false" aria-controls="browser-panel" aria-label="Agent activity" title="Agent activity"><svg class="i" aria-hidden="true"><use href="#i-panel"/></svg></button>
+    </header>
+    <p id="apply-error" role="alert" hidden></p>
+
+    <div id="chat-scroll" class="chat-scroll">
+      <div class="column">
+        <div id="welcome" class="welcome">
+          <h2>You bring the experience. I’ll handle the application.</h2>
+          <p>Attach your resume and send a job link. I’ll fill what I know and ask you for anything that’s missing.</p>
+        </div>
+        <div id="agent-messages" role="log" aria-live="polite" aria-relevant="additions text"></div>
+        <details id="agent-trace" class="trace" hidden><summary></summary><ol></ol></details>
+        <div id="career-results"></div>
+        <div id="conversation-actions"></div>
+      </div>
+    </div>
+
+    <div class="composer-wrap">
+      <div class="column">
+        <p id="needs-you" class="needs-you" hidden></p>
+        <div id="attachment" class="attachment" hidden></div>
+        <form id="agent-chat-form" class="composer">
+          <button type="button" id="attach-resume" class="icon-button" aria-label="Attach resume" title="Attach resume"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></button>
+          <label class="sr-only" for="chat-text">Message your career agent</label>
+          <textarea id="chat-text" rows="1" maxlength="4000" placeholder="Paste a job link, ask a question, or tell me what to change…"></textarea>
+          <button type="button" id="pause-agent" class="text-button" hidden>Pause</button>
+          <button type="submit" id="send-message" class="send-button" aria-label="Send message"><svg class="i" aria-hidden="true"><use href="#i-up"/></svg></button>
+        </form>
+        <div id="starters" class="starters" hidden></div>
+        <input id="resume-file" name="resume" type="file" accept="application/pdf,.pdf" hidden>
+        <p id="chat-status" class="composer-note" role="status">Works in your browser. You can interrupt or pause at any time.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-view" class="page-view" hidden></section>
+
+  <aside id="browser-panel" class="workspace" hidden>
+    <header>
+      <h2>Agent activity</h2>
+      <button id="browser-close" class="icon-button" type="button" aria-label="Close agent activity"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+    </header>
+    <div class="browser-frame">
+      <p id="browser-caption" class="browser-bar">The browser will appear here.</p>
+      <img id="browser-preview" alt="Live browser view" hidden>
+      <p id="preview-placeholder" class="empty-preview">A live view appears here when I open a page.</p>
+    </div>
+    <p id="workspace-now" class="workspace-now" hidden></p>
+    <details open><summary>Plan</summary><ol id="task-plan" class="plan"></ol></details>
+    <details><summary>Recent actions</summary><ol id="browser-actions" class="log"></ol></details>
+    <details><summary>Application answers</summary><div id="answer-list"></div></details>
+    <details id="answer-memory"><summary>Remembered answers</summary><div id="memory-list"></div></details>
+    <div class="workspace-footer">
+      <button id="take-over" class="text-button" type="button" hidden>Control browser</button>
+      <button id="background-browser" class="text-button" type="button" hidden>Open Chrome window</button>
+      <button id="cancel-attempt" class="text-button danger" type="button" hidden>Cancel application</button>
+    </div>
+    <p id="browser-mode-note" class="workspace-now" hidden>Control the current page here while the agent pauses. The separate Chrome window is a fallback and reloads the page; unsaved edits may be lost.</p>
+  </aside>
+</main>
+
+<dialog id="browser-control-dialog" aria-labelledby="control-title">
+  <div class="dialog-heading">
+    <div><p class="eyebrow">Local browser · Agent paused</p><h2 id="control-title">You have control</h2></div>
+    <button id="control-close" type="button" class="icon-button" aria-label="Close browser control"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+  </div>
+  <p id="control-address" class="control-address"></p>
+  <div class="control-toolbar">
+    <label class="sr-only" for="control-tabs">Browser tab</label><select id="control-tabs" data-input-control></select>
+    <button id="control-refresh" type="button" class="text-button" data-input-control>Refresh view</button>
+    <label class="check-row"><input id="control-zoom" type="checkbox">Actual size</label>
+  </div>
+  <div class="control-viewport"><img id="control-image" alt="Interactive local browser. Click or drag to operate the page; use the controls below to type or send keys." tabindex="0" draggable="false" hidden></div>
+  <p id="control-status" role="status">Connecting…</p>
+  <form id="control-text-form" class="control-text-form" autocomplete="off">
+    <label for="control-text">Type into the selected page field</label>
+    <div class="control-input-row"><input id="control-text" type="password" maxlength="2000" autocomplete="off" spellcheck="false" data-input-control><button type="submit" class="secondary-button" data-input-control>Type text</button></div>
+    <label class="check-row"><input id="control-show-text" type="checkbox">Show what I type</label>
+  </form>
+  <div class="control-toolbar">
+    <label class="sr-only" for="control-key">Key to send to browser</label>
+    <select id="control-key" data-input-control><option>Tab</option><option value="Shift+Tab">Shift + Tab</option><option>Enter</option><option>Escape</option><option>Backspace</option><option>Delete</option><option value="ControlOrMeta+A">Select all</option><option value="ArrowDown">Arrow down</option><option value="ArrowUp">Arrow up</option><option value="ArrowLeft">Arrow left</option><option value="ArrowRight">Arrow right</option><option>Home</option><option>End</option></select>
+    <button id="control-key-send" type="button" class="text-button" data-input-control>Send key</button>
+    <button id="control-scroll-up" type="button" class="text-button" data-input-control>Scroll up</button>
+    <button id="control-scroll-down" type="button" class="text-button" data-input-control>Scroll down</button>
+  </div>
+  <p class="fine-print">Input goes directly to this local browser, not into chat. Passwords and verification codes are masked. The agent can read other page content after resuming. Actions affect the real website; closing this view keeps the agent paused.</p>
+  <div class="dialog-actions"><button id="control-resume" type="button" class="primary-button" data-input-control>Done · Resume agent</button></div>
+</dialog>
+
+<dialog id="profile-dialog">
+  <form id="profile-form">
+    <div class="dialog-heading">
+      <div><p class="eyebrow">From your resume and conversation</p><h2>Your application details</h2></div>
+      <button type="button" id="profile-close" class="icon-button" aria-label="Close profile"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+    </div>
+    <p>Used for new applications. You can correct an active application in chat.</p>
+    <div id="profile-fields"></div>
+    <h3>Education history</h3>
+    <div id="education-fields"></div>
+    <button type="button" id="add-education" class="text-button">＋ Add education</button>
+    <label class="check-row"><input id="reuse-answers" type="checkbox" checked> Remember answers to similar application questions</label>
+    <label class="check-row"><input id="visual-fallback" type="checkbox"> Visual browser backup: send screenshots to the model and let it operate difficult controls</label>
+    <p class="fine-print">Consent is asked the first time, then remembered for equivalent questions. Applications are reviewed before submission.</p>
+    <div class="dialog-actions"><button class="primary-button" type="submit">Save details</button></div>
+  </form>
+</dialog>
+
+<dialog id="account-dialog">
+  <form id="account-form">
+    <div class="dialog-heading">
+      <h2 id="account-title">Candidate account</h2>
+      <button type="button" id="account-close" class="icon-button" aria-label="Close account form"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+    </div>
+    <p>Account site: <strong id="account-origin"></strong></p>
+    <p>Your password goes directly to the application browser. It is not saved in chat or sent to the AI model. Login state is encrypted on this Windows computer.</p>
+    <label>Email or username<input id="account-username" type="text" autocomplete="username" required maxlength="254"></label>
+    <label>Password<input id="account-password" type="password" autocomplete="current-password" required maxlength="1000"></label>
+    <p id="account-instructions" class="account-instructions"></p>
+    <div id="account-consents"></div>
+    <div class="dialog-actions"><button id="account-submit" type="submit" class="primary-button">Sign in &amp; continue</button></div>
+  </form>
+</dialog>
+
+<script type="module" src="/web-assets/apply.js?v=local-browser-control-20261009"></script>
+</body>
+</html>

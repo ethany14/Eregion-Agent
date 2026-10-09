@@ -1,26 +1,60 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Northstar Job Lens</title><link rel="stylesheet" href="sidepanel.css"></head>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Northstar Job Lens</title>
+<link rel="stylesheet" href="shared/tokens.css">
+<link rel="stylesheet" href="sidepanel.css">
+</head>
 <body>
   <main class="panel-shell">
-    <header class="panel-header"><div class="brand"><span>N</span><div><strong>Job Lens</strong><small>by Northstar</small></div></div><i id="health-dot" title="Backend status"></i></header>
-    <section class="intro"><p class="eyebrow">CURRENT PAGE</p><h1>Is this role<br><em>worth your time?</em></h1><p>Extract the job, compare it with your default resume, and get a focused answer.</p></section>
-    <section class="input-card">
-      <div class="section-title"><div><span class="step">1</span><strong>Job description</strong></div><button id="extract-button" class="ghost-button">Extract page</button></div>
-      <div class="meta-grid"><label>Role<input id="job-title" maxlength="256" placeholder="Job title"></label><label>Company<input id="job-company" maxlength="256" placeholder="Company"></label></div>
-      <label class="full-field">Description<textarea id="job-description" maxlength="50000" rows="9" placeholder="Extract the current page or paste a job description"></textarea></label>
-      <p id="extract-note" class="note">Nothing is sent until you select Analyze.</p>
-      <button id="save-job-button" class="ghost-button" type="button">Save job without analyzing</button>
+    <header class="panel-header">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19"/></svg>
+        <div><strong>Job Lens</strong><small>Northstar</small></div>
+      </div>
+      <i id="health-dot" title="Backend status"></i>
+    </header>
+
+    <section class="input-card" aria-labelledby="detected-title">
+      <div class="section-title">
+        <h1 id="detected-title">Detected on this page</h1>
+        <button id="extract-button" class="ghost-button" type="button">Extract page</button>
+      </div>
+      <div class="meta-grid">
+        <label>Role<input id="job-title" maxlength="256" placeholder="Job title"></label>
+        <label>Company<input id="job-company" maxlength="256" placeholder="Company"></label>
+      </div>
+      <label class="full-field">Description<textarea id="job-description" maxlength="50000" rows="7" placeholder="Extract the current page or paste a job description"></textarea></label>
+      <p id="extract-note" class="note">Nothing is sent until you select Analyze or Save.</p>
     </section>
-    <button id="analyze-button" class="analyze-button"><span id="analyze-label">Analyze fit</span><b>→</b></button>
+
+    <div class="primary-actions">
+      <button id="analyze-button" class="analyze-button" type="button"><span id="analyze-label">Analyze fit</span><b aria-hidden="true">→</b></button>
+      <button id="save-job-button" class="ghost-button" type="button">Save job without analyzing</button>
+    </div>
     <div id="message" class="message" role="status" hidden></div>
-    <section id="result" class="result" hidden>
-      <div class="result-head"><div class="score-ring" id="score-ring"><strong id="match-score">0%</strong><span>match</span></div><div><p class="eyebrow">QUICK READ</p><h2 id="result-title">Your fit</h2><p id="result-status"></p></div></div>
-      <div class="requirement-grid"><div><strong id="matched-count">0</strong><span>Matched</span></div><div><strong id="partial-count">0</strong><span>Partial</span></div><div><strong id="missing-count">0</strong><span>Missing</span></div></div>
-      <div class="suggestions"><p class="eyebrow">WHAT TO DO NEXT</p><ol id="suggestion-list"></ol></div>
+
+    <section id="result" class="result" hidden aria-labelledby="result-title">
+      <div class="result-head">
+        <div class="score-ring" id="score-ring"><strong id="match-score">0%</strong><span>match</span></div>
+        <div><h2 id="result-title">Your fit</h2><p id="result-status"></p></div>
+      </div>
+      <p class="requirement-grid">
+        <span><strong id="matched-count">0</strong> matched</span>
+        <span><strong id="partial-count">0</strong> partial</span>
+        <span><strong id="missing-count">0</strong> missing</span>
+      </p>
+      <div class="suggestions"><p class="eyebrow">What to do next</p><ol id="suggestion-list"></ol></div>
       <details><summary>Requirement details</summary><div id="requirement-details"></div></details>
     </section>
-    <footer><button id="open-web-button" class="web-button">Open full workspace <span>↗</span></button><button id="open-application-button" class="web-button" hidden>Open this saved job <span>↗</span></button><small>Your resume stays in the local web workspace.</small></footer>
+
+    <footer>
+      <button id="open-web-button" class="web-button" type="button">Continue in chat <span aria-hidden="true">↗</span></button>
+      <button id="open-application-button" class="web-button" type="button" hidden>Open this saved job <span aria-hidden="true">↗</span></button>
+      <small>Your resume stays on this computer.</small>
+    </footer>
   </main>
   <script type="module" src="sidepanel.js"></script>
 </body>

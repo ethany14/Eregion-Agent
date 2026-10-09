@@ -4,14 +4,16 @@ JobHunterAgent is a local-first career copilot for saving job postings, comparin
 them with a resume, producing evidence-grounded application materials, and managing
 the conversations and review steps around an application.
 
-The project has two user-facing surfaces:
+The web app has one conversational interface, with an optional Chrome extension:
 
 | Surface | Purpose |
 |---|---|
-| **Web workspace** | Full job workspace, resume management, Copilot conversations, application materials, evidence, interviews, and governed learning |
+| **Career chat (`/apply`)** | One conversation for job discovery, match scores, tailored materials, applications and interview practice |
 | **Chrome Side Panel** | Lightweight extraction and fit analysis for the job currently open in the browser |
 
-The web workspace runs at `http://localhost:8000/app`. The extension always talks to
+The career chat runs at `http://localhost:8000/apply`. The home page and retired
+`/app` workspace redirect to this chat; saved-job links preserve their job context.
+The extension always talks to
 the same local service at `http://localhost:8000`.
 
 ## What it does
@@ -125,21 +127,21 @@ python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
 
 Open:
 
-- Web workspace: <http://localhost:8000/app>
+- Career chat: <http://localhost:8000/apply>
 - OpenAPI documentation: <http://localhost:8000/docs>
 - Health check: <http://localhost:8000/health>
 
 ### 5. Complete the first-use setup
 
-1. Open **Settings** in the web workspace.
-2. Upload a PDF resume containing selectable text.
-3. Save a job or install the Chrome extension.
-4. Run **Analyze fit**.
-5. Use Copilot or Materials to continue the application workflow.
+1. Open the career chat and use the **＋** button in the message box to upload a selectable-text PDF.
+2. Check extracted information in **Your details** (your name at the bottom of the sidebar).
+3. Describe your goal or share a job link in chat.
+4. Review match scores and generated materials in the same conversation.
+5. Continue through application review and interview practice in chat.
 
-The resume upload stores extracted text, document metadata, and a content hash in
-SQLite. It does not retain the original PDF bytes. Scanned-image PDFs require OCR
-and are rejected in the current version.
+The chat retains the original PDF and candidate details locally for future
+applications. Extension analysis also uses this saved resume and indexes its text
+and metadata in the resume library. Use PDFs with selectable text.
 
 ## Chrome extension
 
@@ -148,15 +150,24 @@ The extension is intentionally smaller than the web application. It can:
 - detect the title, company, location, URL, and job description on the active page;
 - automatically extract the visible LinkedIn job when the Side Panel opens;
 - keep the extracted fields editable before anything is submitted;
-- save the job into the web workspace;
+- save the job locally;
 - compare it with the default resume and show a match score and suggestions;
-- open the saved application in the full web workspace.
+- open the saved job in career chat, preserving its description and analysis.
 
 **Analyze fit** uses the analysis-only pipeline: input validation, resume evidence
-analysis, job analysis, and requirement matching. It makes three logical model calls
-and does not write or verify a tailored resume, create a reviewable run, or enter
-human review. Full `/runs` and Application Pack workflows retain the complete
-write/verify/revise/review lifecycle.
+analysis, job analysis, and requirement matching. A cold analysis makes three
+logical model calls: resume and job extraction run in parallel, then matching
+uses both results after resume evidence validation. Within the same service,
+an unchanged resume is reused for another job (two calls), and identical inputs
+reuse the complete result (zero calls). Concurrent identical requests share work.
+Scoring rules and evidence checks are unchanged.
+
+This bounded in-memory cache clears when the backend restarts; saved job analyses
+remain in the database. Changed inputs, model configuration, prompts, or schema
+invalidate reuse. Analysis logs report stage durations, cache hits, and call counts
+without resume or job content. Fit analysis does not write or verify a tailored
+resume, create a reviewable run, or enter human review. Full `/runs` and Application
+Pack workflows retain the complete write/verify/revise/review lifecycle.
 
 Install it locally:
 
@@ -182,7 +193,25 @@ The extension requests only:
 It does not request broad browsing history, cookies, downloads, `webRequest`, or
 `<all_urls>` access.
 
-## Web workspace
+## Capabilities in the conversation
+
+Job cards, material reviews, and interview practice appear inside the chat.
+The panel button in the chat header opens **Agent activity**: the live browser
+view, plan, recent actions and answers. It opens on its own when an application
+starts in a wide window, and remembers if you close it.
+
+Next to the conversations, the sidebar links to three overviews:
+
+- **Applications**: pipeline and weekly charts, a filterable table, and a board
+  where cards can be dragged to any stage the application allows next.
+- **Materials**: every tailored resume, cover letter and answer, with version
+  history, verification status, PDF download and approval.
+- **Archived** and **Trash**: conversations you have put away. Trash keeps them for
+  30 days before deleting them; applications and materials are never deleted with
+  a conversation.
+
+The older Jobs, Copilot, Evidence, Learning and Settings pages are no longer served.
+Their backend services and stored records remain available to the agent and API.
 
 ### Jobs
 
@@ -190,15 +219,16 @@ Saved jobs keep their source URL and immutable description snapshots. Reopening 
 job shows its latest analysis and application materials without requiring the
 original page to remain open.
 
-### Copilot
+### Conversations
 
-Copilot conversations are durable and listed in a left sidebar. Messages appear
+Conversations can be renamed (F2), pinned, grouped into folders, archived or moved
+to Trash from each row's **⋯** menu or by right-clicking. Conversations that need
+your input are listed first under **Needs you**. Ctrl+K (⌘K) starts a new one.
+
+Career conversations are durable and listed in a left sidebar. Messages appear
 optimistically while a model turn is running, and failed sends remain visible for
-editing and retry. A conversation can be reopened or archived without deleting its
-audit history.
-
-Copilot uses a server-owned read-only capability profile. The browser cannot submit
-arbitrary tools, model IDs, system prompts, API keys, or permission metadata.
+editing and retry. The agent chooses tools, asks questions, and resumes work within
+the same conversation; it does not require navigation between feature pages.
 
 ### Materials
 
@@ -234,7 +264,7 @@ process restart; neither may silently confirm new career evidence.
 
 ```mermaid
 flowchart TB
-    WEB[Web workspace] --> API[FastAPI]
+    WEB[Career chat] --> API[FastAPI]
     EXT[Chrome Side Panel] --> API
 
     API --> RUNS[Custom resume Agent Loop]
@@ -419,9 +449,10 @@ The complete contract is available from `/docs`. Main endpoint groups are:
 |---|---|
 | `/runs` | Resume workflow runs and human review |
 | `/sessions` | Persistent Copilot conversations, messages, approvals, cancellation, and recovery |
-| `/api/workspaces`, `/api/applications` | Saved jobs and application workspaces |
+| `/api/workspaces`, `/api/applications` | Saved jobs and application workspaces; `/api/applications/overview` adds pipeline and weekly figures |
 | `/api/resumes` | PDF resume upload and default resume selection |
 | `/api/packs` | Application Pack generation and review |
+| `/api/materials` | Materials library across applications, with rendered versions |
 | `/api/evidence` | Governed Career Evidence |
 | `/memories`, `/skills` | Memory and Skill lifecycle management |
 | `/api/interviews`, `/api/mock-interviews` | Evidence discovery and interview practice |
@@ -490,7 +521,7 @@ JobHunterAgent/
 |-- chrome_extension/    # Manifest V3 Side Panel extension
 |-- custom_agent/        # Active persisted resume workflow loop
 |-- job_agent/           # Shared schemas, prompts, model config, domain rules, rendering
-|-- web_app/             # Full local web workspace
+|-- web_app/             # Unified career chat and retained UI modules
 |-- migrations/          # Alembic schema history
 |-- evals/               # Synthetic datasets, runners, and versioned results
 |-- skills/              # Built-in, project, and generated Skill packages
@@ -533,10 +564,215 @@ application; the CLI never overwrites an existing run. `--database-url` optional
 selects a separate database. A run paused for review can be reviewed through `/runs`
 using the same database. A retired backend cannot be selected by environment settings.
 
-## Browser application assistant (first release)
+## On-demand discovery and optional daily recommendations
 
-Open `/apply` from the web workspace's **Apply** link, or choose **Prepare
-application** on a saved job. This uses a separate persisted custom observe/act/verify
+Job discovery is available directly in the existing `/apply` conversation. For
+example, say “Find five data analyst jobs in New York that fit my resume.” Northstar
+chooses sources and search terms, searches in the actual browser, reads postings, scores promising roles against
+the saved resume, and adds its reasons and uncertainties to the job cards. Continue
+with “Only show remote roles” or ask it to prepare materials for a selected job.
+A one-time search creates no schedule and requires no notification setup.
+
+Browser search is the default for both chat and scheduled research. For example,
+“Search LinkedIn for data analyst roles in New York” opens LinkedIn Jobs and uses
+its search fields, filters and visible results. The agent can read or scroll a
+specific result/detail panel, expand descriptions and capture the selected posting
+for analysis without mixing in neighboring results. Public HTTP search and
+Greenhouse/Lever APIs remain supplementary tools for blocked access or broader
+coverage; a requested LinkedIn search should not silently become an API search of
+unrelated company boards.
+
+Research and application browsers run locally in the background, including
+scheduled searches, reopened tasks and server recovery. Click **Control browser**
+in **Agent activity** to pause the agent and interact with its current page inside
+the chat interface. The browser is not restarted, so unsaved form fields and file
+inputs are preserved. Click, drag, scroll, switch tabs, type text or send keys;
+use Actual size on a small screen. Input goes directly to the local browser, not
+to chat or answer memory. Passwords and one-time codes are masked in previews;
+other page content can be observed by the agent after resuming. Closing the view keeps the agent paused; **Done · Resume agent**
+returns control. Resuming or new feedback invalidates the old control session.
+Submission review is invalidated before handoff; a submission in progress cannot
+be taken over. **Open Chrome window** is an explicit fallback: it restarts the
+browser with storage state, so unsaved DOM edits and file inputs may be lost.
+This local viewer does not bypass site verification or keep a browser alive
+through a backend restart. No cloud browser subscription is required.
+
+The research browser is isolated from the user's usual Chrome profile. Public
+LinkedIn search can work without an account; access varies by page and session.
+Observed public links and dismiss buttons remain usable on an account overlay,
+while account text, credentials and screenshots stay hidden from the model. When
+an account or verification is required, use **Control browser**, sign in there,
+and reply in chat to continue. This research path does not yet expose the
+application worker's secure credential form or persist its login across research
+sessions. Scheduled runs try other accessible sources and report coverage limits.
+
+For recurring research, explicitly ask in chat, for example: “Every day at 9 AM
+New York time, find up to five new remote Python roles with a match score of at
+least 75.” The agent can create, edit, pause and resume daily searches. The optional
+**Job alerts** view provides the same settings, manual **Search now**, digest history
+and **Find jobs now** to return to an ordinary chat. Daily searches call the same
+career tools and task loop as one-time searches; they are not a separate search bot.
+
+Each recommendation must have a retrieved posting and a saved score for the current
+resume and job description. Scheduled digests enforce the selected score threshold,
+result count and deduplication across prior digests, including common tracking URL
+variants. A digest can contain fewer results or no matches. Blocked sources and
+uncertainties should be explained instead of replaced with invented jobs. Scheduled
+research does not apply, register accounts or contact employers. Opening its
+conversation lets the user continue with the normal interactive capabilities.
+
+Run one local backend worker and keep the computer awake. Searches **start** at the
+chosen local time; recommendations arrive after retrieval and model scoring finish.
+Schedules and results persist in the database. After downtime, one catch-up search
+replaces missed daily runs. IANA timezones handle daylight saving: repeated local
+times fire once and nonexistent times shift forward. Windows installs `tzdata`
+from `requirements.txt`. Startup applies migration `0034_career_job_alerts`.
+
+In-app digests are saved even when the web page is closed. Optional browser popups
+require the Northstar page to stay open and **Enable browser notifications** to be
+clicked; permission is never requested just because the user searched. Popups are
+deduplicated in this browser and read digests are not notified again. This version
+does not provide browser-closed Web Push or an OS/cloud scheduler. See
+[MDN's notification permission documentation](https://developer.mozilla.org/en-US/docs/Web/API/Notification/requestPermission_static).
+
+The API is `/api/career/alerts`: GET lists schedules and digests, POST creates a
+schedule, PUT `/{alert_id}` updates it with an expected version, POST
+`/{alert_id}/run` starts an idempotent manual run, and POST
+`/digests/{run_id}/read` acknowledges a digest. Settings remain opt-in; installation
+does not create an enabled search schedule.
+
+Verification uses isolated databases and synthetic candidate data:
+
+```powershell
+python -m pytest tests/test_job_alerts.py -q
+$env:JOB_AGENT_BROWSER_TESTS='1'
+python -m pytest tests/test_job_alerts_browser.py -q
+python -m pytest tests/test_general_browser.py tests/test_browser_job_search.py -q
+# Optional: real configured model and real public boards; incurs model usage.
+python scripts/job_discovery_eval.py --live --seconds 360
+python scripts/job_discovery_eval.py --live --source linkedin --seconds 420
+python scripts/browser_eval.py --case linkedin --seconds 240
+```
+
+The live evaluation searches Greenhouse/Lever or LinkedIn, checks recommendation scores
+against saved analyses and verifies that a one-time request creates no schedules.
+It uses a synthetic resume and does not apply or create accounts. Reports are saved
+under `artifacts/browser-eval/`; they establish the tested path, not universal
+coverage across all employers.
+
+## Unified career conversation
+
+Open `/apply` and describe the goal in ordinary language, for example:
+“Find Python backend roles in New York, compare them with my resume, prepare
+materials for the best fit, and help me apply and practice the interview.” Attach
+a selectable-text PDF once; the saved source resume and profile persist across
+conversations. Existing browser attempts still appear in the sidebar.
+
+The model owns planning and tool selection through `agent_runtime/task_loop.py`.
+`agent_runtime/career/harness.py` provides career capabilities: public job discovery,
+saved jobs, actual fit analysis, verified writing, browser applications, confirmed
+career evidence, and mock interviews. There is no required stage ordering. A user
+can start with an interview, compare several roles, revise documents, or change the
+goal while work is running. Questions can wait while independent work continues;
+browser waits resume on state changes without spending repeated model calls.
+
+- Search prioritizes browsing job websites such as LinkedIn, with public web results
+  and Greenhouse/Lever APIs available as supplemental sources. Rendered job text
+  from the selected posting is captured before scoring. Search can be blocked;
+  login-only descriptions can need user sign-in in the agent's browser. This is not
+  a guarantee of every job board's coverage.
+  Applying with the saved resume can open the browser directly without prior
+  description extraction or scoring; no fabricated workspace/score is created.
+- Scores, document previews, PDF downloads, document approval, application review,
+  interview questions and feedback appear in the same chat. Versions remain linked
+  to their job. Original resumes are preserved; approved tailored materials are
+  the default when that job has a pack. Updated documents invalidate the old
+  application review and reopen the browser to upload the replacement files.
+- Extra career facts supplied in chat can be saved as exact user-attested quotes
+  for future writing. The existing evidence verifier remains responsible for
+  rejecting unsupported claims.
+- The browser capability retains autofill, model-controlled DOM operations, optional
+  visual computer use, secure login/registration, remembered answers, multiple
+  education records, batched questions and explicit final submission confirmation.
+  Credentials go directly to its secure account endpoint, outside model context.
+- The main task loop also has a general browser: public home pages, search, links,
+  editable controls, dropdowns, dynamic loading, back navigation, tabs, frames,
+  open shadow roots, and paginated/filterable page observations. Browsing needs no
+  resume or application record. The same navigation tools are available to the
+  application worker, where applicant answers still use its grounded field tools.
+  Every action returns the observed page; stale targets and navigation races can
+  be recovered by reading/waiting rather than restarting the task. Rendered job
+  text can feed `read_job` and `import_job` when an HTTP fetch misses JavaScript.
+  Previews use `/api/career/tasks/{task_id}/browser/preview` in the existing chat.
+  The existing **Visual browser backup** option also enables main-task screenshots
+  and coordinate clicks. The agent can choose visual recovery when DOM controls
+  are incomplete. Non-login viewport images are sent to the configured model for
+  one decision, with password/OTP controls masked, and are not stored in task
+  history. Turning the option off removes retained model image inputs. Login and
+  verification pages stay in the secure workflow. Browsing tabs are ephemeral and
+  isolated from the user's signed-in Chrome. After restart, reopen the last URL.
+- Only a confirmed employer receipt marks a workspace job as applied. Practice
+  interviews do not imply a real interview invitation or a scheduled meeting.
+- Conversations, plans, linked results and question IDs persist in migration
+  `0032_career_tasks`. Startup applies migrations and restores unfinished work.
+  Use one backend worker. Pause persists until an explicit resume; user feedback
+  invalidates model decisions computed before that feedback.
+
+The API is `/api/career/tasks` (create/list/read/chat, material reviews and browser
+review actions). `PATCH /api/career/tasks/{id}` renames, pins, groups, archives or
+trashes a conversation; `?view=archived|trash` lists those views; `DELETE` removes a
+trashed conversation permanently and `DELETE /api/career/tasks/trash` empties Trash.
+Groups live at `/api/career/groups`. Existing workspace, Pack, interview and browser APIs remain usable.
+The standalone browser chat is available at `/apply?mode=application`.
+
+Live browser evaluations are opt-in: run
+`.venv/Scripts/python.exe scripts/browser_eval.py --case wikipedia --case todo`.
+They use the configured model and the real task loop/career harness, a fresh test
+database, and isolated Chrome with no saved candidate details, resumes or cookies.
+The model chooses actions; separate DOM assertions verify outcomes. Public-site
+interaction tests do not submit applications or create accounts. Reports, timings,
+tool histories and final screenshots are saved under `artifacts/browser-eval/`.
+`--driver` checks reachability only and does not count as an autonomous pass.
+`--case visual` explicitly enables screenshot-to-model input and verifies a real
+coordinate click on the W3C combobox demo; other cases use DOM tools only.
+
+The conversation loop retries temporary model connection errors, timeouts, HTTP 429,
+and server failures up to twice, counting each attempt against its model-call budget.
+It reports retry progress and safe error details in chat, without recording provider
+response bodies. New feedback or a pause cancels pending retries; completed tools are
+never replayed by a model retry. Greetings can receive a direct conversational reply
+without inspecting saved jobs or starting a workflow.
+
+Text accompanying a tool call appears in chat before the tool executes. The API
+exposes active tool progress and recent observation/model/tool timings for latency
+diagnosis. Each decision includes the current context once, with document status
+summaries; full documents and verification results remain available through
+`inspect_materials` and the review cards. Model responses are currently displayed
+after each response completes, rather than streamed token by token.
+
+Chat replies render Markdown as semantic headings, lists, emphasis, links, code,
+and responsive tables. Historical replies use the same typography without a data
+migration; Copy copies the visible plain text. The pinned local Marked lexer lives
+in `web_app/vendor` with its MIT license. The renderer creates DOM nodes directly:
+embedded HTML stays inert, and Markdown images do not trigger external requests.
+
+Verification with synthetic profiles and intercepted employer requests:
+
+```powershell
+python -m pytest tests/test_task_loop.py tests/test_career_flow.py -q
+$env:JOB_AGENT_BROWSER_TESTS='1'
+python -m pytest tests/test_career_browser.py tests/test_auto_apply_browser.py -q
+node --test tests/test_career_chat.mjs tests/test_apply_answers.mjs
+```
+
+`JOB_AGENT_LIVE_CAREER_TEST=1` additionally enables the configured-model orchestration
+check in `test_career_flow.py`. It uses a fictional candidate and local job/browser
+fixtures; no real application is submitted.
+
+## Standalone browser application assistant
+
+Open `/apply?mode=application` to work directly with the browser capability.
+It uses a persisted custom observe/act/verify
 loop under `agent_runtime/auto_apply`; it has no LangGraph dependency. The existing
 resume-generation loop remains focused on producing and reviewing materials.
 
@@ -545,13 +781,14 @@ resume-generation loop remains focused on producing and reviewing materials.
    Set `JOB_AGENT_BROWSER_CHANNEL=msedge` to use an installed Edge instead.
 3. Attach the final resume PDF in the chat. Selectable text is sent to the configured
    model to extract evidenced contact and education details. Missing required details
-   are asked in chat; **Your details** opens an optional profile editor.
+   are asked in chat; **Your details** (bottom of the sidebar) opens an optional profile editor.
 4. Send a direct public HTTPS job link (for example Greenhouse, Lever or Workday).
    The chat starts Agent + autofill automatically.
    New chat applications always show a review card before submission. The API retains
    its existing explicit automation/submission settings for other clients.
 5. Reply in the conversation; no question-selection dropdown or Continue click is
-   needed. Short choices appear next to questions. **View workspace** opens the
+   needed. Short choices appear next to questions; three or more questions are asked
+   one at a time. **Agent activity** (the panel button in the header) opens the
    browser preview, plan, activity, completed answers and answer memory. **Pause agent
    & use Chrome** stops automation for manual interaction; send `continue` to resume.
    Review approval remains bound to the observed form and is invalidated by changes.
@@ -673,18 +910,38 @@ Inline questions keep selections as drafts. Choose all answers, then use
 **Submit answers & continue** to save them in one request and resume the agent once.
 Polling retains unsent choices; changing the question schema invalidates its draft.
 
+The application agent now owns its questions through `ask_user`, including general
+questions that are not attached to a form field. Its wording is preserved in chat.
+It can set `wait_for_reply=false`, keep working on independent controls, and use
+`wait_for_user` when the reply becomes necessary. Pending answer batches remain
+available while the browser runs. Replies use the question ID (`POST
+/{run_id}/reply`) instead of a changing application version; duplicate replies are
+idempotent, stale questions are rejected, and new feedback invalidates a pending
+model action. Replying to an explicitly paused task saves answers without resuming it.
+
+`agent_runtime/auto_apply/runner.py` runs decisions separately from the tool
+implementations. A bounded history of the last 24 tool arguments and outcomes is
+persisted with the task and included in subsequent observations, including after a
+worker yield or restart. Repeated unchanged actions receive strategy feedback before
+being stopped. Worker slices continue within the configurable per-interaction budget
+(120 model calls and 360 tool calls by default); a slice ending is not itself a request
+for user input. Screenshots and credentials are excluded from this durable trace.
+Ordinary observed page buttons such as Edit or Show details are available without an
+ATS-specific label whitelist. Final submission, unknown form-submit controls, consent
+and source-sensitive field changes retain their dedicated checks.
+
 The application chat persists user feedback and agent replies. Sending feedback
 invalidates an outstanding model decision; the next decision sees the new message.
 **Pause** stops subsequent actions and submission until you continue. The browser
 panel shows local snapshots and named tool actions. The browser preview stays local;
 the separate visual-backup option also sends requested viewport images to the model. This is a preview,
-not a remote-control video stream; use the separate Chrome window to interact.
+a periodic screenshot preview; click **Control browser** for direct local interaction.
 
 Each attempt stores its selected PDF, candidate details, explicit answers, observed
 form state, and bounded event history in the local application database. Cookies and
 passwords are not stored in that database; encrypted browser login state is described
-below. The existing resume library retains extracted text rather
-than original PDF bytes, so this release asks you to select the actual file to upload.
+below. The reusable candidate store keeps the original PDF separately from the
+resume library's extracted text, so subsequent applications can reuse the upload.
 
 The runtime limits open active attempts to three and runs browser actions serially.
 It re-observes after every fill, bounds execution time and action count, and detects
@@ -697,8 +954,8 @@ resubmission. Only an observed employer confirmation marks a run `submitted`.
 Running/queued hybrid attempts resume on server startup from saved facts and answers.
 Paused tasks remain paused; previously approved review screens require fresh review
 after reopening the browser. The local backend and computer must stay running for
-background execution. Unstarted chat drafts and the reusable upload are held in the
-current page, while started applications and their chat are stored in the database.
+background execution. Unstarted chat drafts are held in the current page; the reusable
+candidate profile/PDF, started applications and their chat are stored in the database.
 Cancelling before submission preserves progress and offers **Resume application**.
 Resuming reopens the same attempt, restores saved answers and drafts, and requires
 a fresh final review. Sending an existing job link in a new chat opens its original
@@ -710,11 +967,22 @@ to open Apply, import a resume, add a repeated section, or continue to the next
 step. Final submission remains host-controlled, and a Next button does not count
 as a completed application. Earlier-page answers stay available for review.
 
-Workday account pages open a dedicated credential dialog. The agent can sign in
-or register using the supplied email/password; the password is kept out of model
+Candidate account pages open a dedicated credential dialog. The agent can sign in
+or register using the supplied email or username and password; the password is kept out of model
 inputs, chat, application records and previews. Account agreements are shown with
 the page's instructions and require explicit choices. Verification emails, MFA,
-CAPTCHA and unrecognized authentication layouts pause for browser interaction.
+CAPTCHA still pause for browser interaction. The secure worker observes each step
+and supports email-first, password-only, confirmation fields, unfamiliar submit
+labels, and account forms inside already allowed site frames. Ambiguous controls
+can be selected by the model from a value-free catalog of control types and locally
+classified purposes. Login-page prose, labels, screenshots and credential values
+are not sent by this selector. New agreements and origin/mode changes require a
+fresh secure request; rejected credentials are never submitted repeatedly.
+Structurally ambiguous layouts, third-party embedded sign-in and SSO can still need
+browser interaction. This is not a claim that every employer login is supported.
+Account requests take priority over parent chat questions, and the parent observes
+only their summary. Truncated responses and detected internal protocol narration
+are withheld and given one repair attempt before a clear model error is displayed.
 Successful login cookies/local storage are encrypted with Windows DPAPI under
 `.browser-sessions/`, isolated by candidate email and the initial job-site host.
 Passwords themselves are not retained by the agent. Other operating systems retain
@@ -728,7 +996,8 @@ fixtures. Other ATS links (including Ashby, SmartRecruiters, iCIMS, Taleo,
 SuccessFactors and Jobvite) enter the same generic loop; URL acceptance is not a
 claim of verified compatibility. Custom widgets, SSO redirects, unknown questions
 and employer-specific steps can still require browser interaction. Job discovery
-and cloud browser hosting are not included.
+is available in the career conversation described above; cloud browser hosting is
+not included.
 Attempts have their own history; they do not automatically change the saved
 job's pipeline status. Use a single trusted local server process, not a public or
 multi-tenant deployment.

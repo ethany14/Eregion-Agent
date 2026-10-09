@@ -130,7 +130,7 @@ def test_secure_account_ui_keeps_password_out_of_chat_and_clears_input():
                 file=root/path.removeprefix('/web-assets/');r.fulfill(path=str(file))
             elif path=='/apply':r.fulfill(path=str(root/'apply.html'))
             else:r.abort()
-        page.route('**/*',route);page.goto('https://northstar.example/apply')
+        page.route('**/*',route);page.goto('https://northstar.example/apply?mode=application')
         page.locator('#attempts button').click();page.get_by_role('button',name='Sign in securely',exact=True).click()
         page.locator('#account-username').fill('test@example.com');page.locator('#account-password').fill('UI-SECRET-ONLY')
         # Polling must not erase a partially completed secure form.

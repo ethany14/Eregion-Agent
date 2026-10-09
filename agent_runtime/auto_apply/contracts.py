@@ -65,11 +65,11 @@ def posting(url: str) -> tuple[str, str, str]:
             raise ValueError("Use a direct Lever job URL.")
         return "lever", f"lever:{host}:{match[1]}:{match[2]}", f"https://{host}/{match[1]}/{match[2]}/apply"
     if host.endswith(".myworkdayjobs.com"):
-        match = re.search(r"/job/(.+?)(?:/apply(?:/.*)?)?$", path)
+        match = re.search(r"/(?:job|details)/(.+?)(?:/apply(?:/.*)?)?$", path)
         if not match:
-            raise ValueError("Use a Workday job detail URL containing /job/.")
+            raise ValueError("Use a Workday job detail URL containing /job/ or /details/.")
         job_path = path.split("/apply", 1)[0]
-        site = path.split('/job/', 1)[0].split('/')[-1]
+        site = path[:match.start()].split('/')[-1]
         job = match[1].split('/')[-1].rsplit('_', 1)[-1]
         return "workday", f"workday:{host}:{site}:{job}", urlunsplit(("https", host, job_path, "", ""))
     platform = next((name for domain, name in (
@@ -133,6 +133,8 @@ class StartApplication(StrictModel):
     profile: Candidate
     resume_base64: str = Field(min_length=1, max_length=14_000_000)
     resume_name: str = Field(default="resume.pdf", max_length=250)
+    save_as_default: bool = True
+    cover_letter: str | None = Field(default=None, max_length=20000)
     auto_submit: bool = False
     automation_mode: Literal["autofill", "hybrid"] = "hybrid"
     visual_fallback: bool = False
@@ -173,6 +175,16 @@ class ContinueApplication(StrictModel):
                for key, answer in value.items()):
             raise ValueError("An answer is too long.")
         return value
+
+
+class ReplyQuestion(StrictModel):
+    request_id: str = Field(min_length=8, max_length=100)
+    answers: dict[str, str | bool] = Field(min_length=1, max_length=100)
+
+    @field_validator('answers')
+    @classmethod
+    def bounded_answers(cls, value):
+        return ContinueApplication.bounded_answers(value)
 
 
 class VersionRequest(StrictModel):

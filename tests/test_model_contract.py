@@ -77,6 +77,17 @@ def test_optional_model_settings_are_stripped_and_blank_values_are_omitted(tmp_p
     }
 
 
+def test_model_cache_fingerprint_tracks_configuration_without_exposing_secrets(tmp_path):
+    from job_agent.model import model_settings_fingerprint
+    path=tmp_path/'.env'
+    path.write_text('LLM_MODEL_ID=one\nLLM_API_KEY=private-test-key\n',encoding='utf-8')
+    key=model_settings_fingerprint(env_path=path,environ={})
+    assert len(key)==64 and 'private-test-key' not in key
+    assert key==model_settings_fingerprint(env_path=path,environ={'UNRELATED':'value'})
+    assert key!=model_settings_fingerprint(env_path=path,environ={'LLM_MODEL_ID':'two'})
+    assert key!=model_settings_fingerprint(env_path=path,environ={'LLM_API_KEY':'changed'})
+
+
 def test_gemini_tool_history_gets_documented_signature_fallback():
     model = ProviderCompatibleChatOpenAI(
         model="gemini-test",

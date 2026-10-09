@@ -5,10 +5,11 @@ from collections.abc import Callable
 from typing import Any
 
 import anyio
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+from urllib.parse import urlencode
 
 from api.error_handlers import install_error_handlers
 from api.context_routes import router as context_router
@@ -27,6 +28,25 @@ from api.assistant_routes import router as assistant_router
 from api.services.run_service import RunService
 from api.resume_routes import router as resume_router
 from api.auto_apply_routes import router as auto_apply_router
+from api.career_routes import router as career_router, groups_router as career_groups_router
+from api.material_routes import router as material_router
+from api.job_alert_routes import router as job_alert_router
+
+
+def chat_redirect(request: Request) -> RedirectResponse:
+    # Keep saved-job and browser links useful without carrying old view settings.
+    query = urlencode({key: request.query_params[key] for key in ("application", "url")
+                       if request.query_params.get(key)})
+    return RedirectResponse("/apply" + (f"?{query}" if query else ""),
+                            headers={"Cache-Control": "no-store"})
+
+
+class ChatAssets(StaticFiles):
+    async def get_response(self, path, scope):
+        # HTML is served only by the chat route, including on case-insensitive Windows.
+        if Path(path).suffix.lower() in {".html", ".htm"}:
+            return chat_redirect(Request(scope))
+        return await super().get_response(path, scope)
 
 
 def create_app(
@@ -53,8 +73,14 @@ def create_app(
         try:
             from api.auto_apply_routes import restore_applications
             await anyio.to_thread.run_sync(restore_applications, application)
+            from api.career_routes import restore_tasks
+            await anyio.to_thread.run_sync(restore_tasks, application)
             yield
         finally:
+            career = getattr(application.state, 'career_agent', None)
+            if career is not None:
+                await anyio.to_thread.run_sync(career.close)
+                application.state.career_agent = None
             automation = getattr(application.state, "auto_apply", None)
             if automation is not None:
                 await anyio.to_thread.run_sync(automation.close)
@@ -92,24 +118,28 @@ def create_app(
     application.include_router(assistant_router)
     application.include_router(resume_router)
     application.include_router(auto_apply_router)
+    application.include_router(career_router)
+    application.include_router(career_groups_router)
+    application.include_router(material_router)
+    application.include_router(job_alert_router)
     from api.skill_evolution_routes import router as skill_evolution_router
     application.include_router(skill_evolution_router)
     install_error_handlers(application)
 
     web_root = Path(__file__).resolve().parent.parent / "web_app"
     if web_root.exists():
-        application.mount("/web-assets", StaticFiles(directory=web_root), name="web-assets")
+        application.mount("/web-assets", ChatAssets(directory=web_root), name="web-assets")
 
         @application.get("/apply", include_in_schema=False)
         async def auto_apply_page() -> FileResponse:
             return FileResponse(web_root / "apply.html", headers={"Cache-Control": "no-store"})
 
+        @application.get("/", include_in_schema=False)
         @application.get("/app", include_in_schema=False)
-        async def web_app() -> FileResponse:
-            return FileResponse(
-                web_root / "index.html",
-                headers={"Cache-Control": "no-store"},
-            )
+        @application.get("/app/", include_in_schema=False)
+        @application.get("/index.html", include_in_schema=False)
+        async def web_app(request: Request) -> RedirectResponse:
+            return chat_redirect(request)
 
     @application.get("/health", tags=["health"])
     async def health() -> dict[str, Any]:

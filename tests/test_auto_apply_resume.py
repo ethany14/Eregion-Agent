@@ -202,7 +202,7 @@ def test_duplicate_new_chat_opens_cancelled_attempt_and_resume_works(database):
                     route.fulfill(status=response.status_code, body=response.content,
                         headers={"content-type":response.headers.get("content-type", "application/json")})
                 page.route("**/*", handle)
-                page.goto("http://localhost/apply")
+                page.goto("http://localhost/apply?mode=application")
                 page.locator('#chat-text').fill("https://jobs.lever.co/example/abc123?utm_source=new-chat")
                 page.get_by_role('button', name='Send message', exact=True).click()
                 expect(page.locator('#agent-status')).to_have_text('Application cancelled', timeout=10000)

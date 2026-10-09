@@ -78,6 +78,41 @@ def extract_pdf_text(content: bytes) -> tuple[str, int]:
     return text, len(reader.pages)
 
 
+def _analysis_resume(runtime: SessionRuntime, resume_id: str | None) -> ResumeDocument:
+    repository, owner_id = _resources(runtime)
+    if resume_id:
+        return repository.require(owner_id, resume_id)
+    # The chat is now the resume upload surface. Reuse its original document for
+    # extension analysis too, including resumes saved before the UI migration.
+    if getattr(runtime, "database", None) is not None:
+        import base64
+        from agent_runtime.auto_apply.repository import ApplyRepository
+
+        saved = ApplyRepository(runtime.database.session_factory).saved_candidate()
+        if saved.get("resume_base64"):
+            content = base64.b64decode(saved["resume_base64"])
+            digest = sha256(content).hexdigest()
+            existing = next((item for item in repository.list(owner_id)
+                             if item.content_sha256 == digest), None)
+            if existing:
+                return existing if existing.is_default else repository.set_default(owner_id, existing.resume_id)
+            try:
+                text, page_count = extract_pdf_text(content)
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+            filename = saved.get("resume_name") or "resume.pdf"
+            try:
+                return repository.create(owner_id=owner_id, filename=filename,
+                    display_name=Path(filename).stem, content_sha256=digest,
+                    extracted_text=text, page_count=page_count, make_default=True)
+            except ResumeConflictError:
+                # A concurrent analysis may have indexed the same original PDF.
+                for item in repository.list(owner_id):
+                    if item.content_sha256 == digest:return item
+                raise
+    return repository.default(owner_id)
+
+
 @router.post("/resumes", response_model=PublicResume, status_code=status.HTTP_201_CREATED)
 async def upload_resume(
     request: Request,
@@ -149,9 +184,8 @@ async def quick_analysis(
     runtime: SessionRuntime = Depends(get_session_runtime),
     fit_service: FitAnalysisService = Depends(get_fit_analysis_service),
 ) -> QuickAnalysisResponse:
-    repository, owner_id = _resources(runtime)
     try:
-        resume = repository.require(owner_id, payload.resume_id) if payload.resume_id else repository.default(owner_id)
+        resume = _analysis_resume(runtime, payload.resume_id)
     except ResumeNotFoundError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     try:
@@ -209,9 +243,8 @@ async def analyze_saved_application(
 ) -> AnalyzeApplicationResponse:
     if runtime.workspace is None:
         raise RuntimeError("The Job Workspace runtime is not initialized.")
-    repository, owner_id = _resources(runtime)
     try:
-        resume = repository.require(owner_id, payload.resume_id) if payload.resume_id else repository.default(owner_id)
+        resume = _analysis_resume(runtime, payload.resume_id)
     except ResumeNotFoundError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     application = runtime.workspace.get_application(application_id)

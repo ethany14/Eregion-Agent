@@ -15,7 +15,7 @@ from uuid import uuid4
 from .browser import BrowserBlocked
 from .navigation import action_kind
 
-SECRET_SELECTOR = ('input[type="password"], input[autocomplete="one-time-code"], '
+SECRET_SELECTOR = ('input[type="password"], [data-northstar-secret], input[autocomplete="one-time-code"], '
                    'input[name*="otp" i], input[name*="verificationCode" i]')
 
 SCREEN_STATE = r"""() => ({url:location.href, width:innerWidth, height:innerHeight,
@@ -23,9 +23,19 @@ SCREEN_STATE = r"""() => ({url:location.href, width:innerWidth, height:innerHeig
   scrolled:[...document.querySelectorAll('*')].filter(e=>e.scrollTop || e.scrollLeft)
     .map(e=>[e.tagName,e.id,e.scrollTop,e.scrollLeft]),
   controls:[...document.querySelectorAll('input,textarea,select,button,a,[role],[onclick],canvas,iframe')]
-    .filter(e=>e.getClientRects().length).map(e=>{
+    .filter(e=>{
+      // Coordinate freshness concerns the rendered viewport. Hidden/offscreen
+      // spinners can keep animating without changing any clickable pixels.
       const r=e.getBoundingClientRect();
-      return [e.tagName,e.id,e.getAttribute('role'),e.type==='password'?'':e.value,
+      if(!e.getClientRects().length || r.width<=0 || r.height<=0 || r.bottom<=0 || r.right<=0 || r.top>=innerHeight || r.left>=innerWidth)return false;
+      for(let node=e;node;node=node.parentElement){
+        const style=getComputedStyle(node);
+        if(style.visibility==='hidden' || style.display==='none' || Number(style.opacity)===0)return false;
+      }
+      return true;
+    }).map(e=>{
+      const r=e.getBoundingClientRect();
+      return [e.tagName,e.id,e.getAttribute('role'),e.matches('input[type="password"], [data-northstar-secret], input[autocomplete="one-time-code"]')?'':e.value,
         e.checked,e.getAttribute('aria-expanded'),e.scrollTop,e.scrollLeft,
         ...[r.x,r.y,r.width,r.height].map(Math.round)];})})"""
 
@@ -38,7 +48,7 @@ TARGET = r"""el => {
     action_id:e.getAttribute('data-northstar-action'), field_id:e.getAttribute('data-northstar-field'),
     expanded:e.getAttribute('aria-expanded')==='true',
     submits_form:(e.tagName==='BUTTON' || e.tagName==='INPUT') && ['submit','image'].includes(e.type) && !!e.form,
-    secret:e.type==='password' || e.autocomplete==='one-time-code' || /otp|verificationcode/i.test(e.name || ''),
+    secret:e.hasAttribute('data-northstar-secret') || e.type==='password' || e.autocomplete==='one-time-code' || /otp|verificationcode/i.test(e.name || ''),
     editable:!e.readOnly && (e.isContentEditable || e.tagName==='TEXTAREA' || (e.tagName==='INPUT' && !['checkbox','radio','file','submit','button','hidden'].includes(e.type))),
     disabled:!!e.disabled || e.getAttribute('aria-disabled')==='true',
     choice:!!e.closest('[role="listbox"],[role="tree"],[role="menu"]') ||
@@ -91,7 +101,7 @@ class VisualBrowser:
         self._check()
         if not self.screen or screenshot_id != self.screen["screenshot_id"] or time.monotonic()-self._captured > 120 or self._stamp != self._fingerprint():
             self.invalidate()
-            raise BrowserBlocked("The screenshot is stale. Call view_browser for a fresh image before acting.")
+            raise BrowserBlocked("The screenshot is stale. Call view_browser for a fresh image before acting.", code='stale_screenshot')
 
     def point(self, x, y):
         if (not self.screen or any(isinstance(n,bool) or not isinstance(n,(int,float)) or not math.isfinite(n) for n in (x,y))
@@ -142,7 +152,7 @@ class VisualBrowser:
         kind = action_kind(target, has_fields=True)
         if target["secret"] or target["type"] == "file" or kind == "authentication":
             raise BrowserBlocked("Use the dedicated credential/upload tools for this control.")
-        if kind == "submit" or target["submits_form"] and kind != "next":
+        if kind in {"submit","guarded"} or target["submits_form"] and kind != "next":
             raise BrowserBlocked("Final submission requires application review; visual actions cannot submit.")
         if target["disabled"]:
             raise BrowserBlocked("This visual target is disabled.")

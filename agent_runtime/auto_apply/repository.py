@@ -81,7 +81,7 @@ class ApplyRepository:
             return self.save(state,profile={**state['profile'],'education':saved['profile']['education']})
         return state
 
-    def create(self, request):
+    def create(self, request, *, material_refs=None):
         platform, identity, url = posting(request.url)
         fingerprint = hashlib.sha256(request.model_dump_json().encode()).hexdigest()
         with self.sessions.begin() as session:
@@ -99,6 +99,9 @@ class ApplyRepository:
                 "profile": request.profile.model_dump(), "auto_submit": request.auto_submit,
                 "automation_mode": request.automation_mode, "visual_fallback": request.visual_fallback,
                 "reuse_answers": request.reuse_answers, "consent_policy": request.consent_policy,
+                "cover_letter": request.cover_letter,
+                "material_refs": material_refs or {},
+                "document_refresh": {'resume':True,'cover_letter':bool(request.cover_letter)} if material_refs is not None else {},
                 "messages": [], "chat_revision": 0, "answer_sources": {}, "pause_requested": False,
                 "memory_indexed": True,
                 "agent_calls": 0, "agent_tools": 0,
@@ -138,6 +141,27 @@ class ApplyRepository:
             if row is None:
                 raise ApplyNotFound("Application attempt not found.")
             return row.resume_bytes
+
+    def replace_documents(self, state, resume, cover_letter, *, profile=None, material_refs=None):
+        """Replace an unsubmitted attempt's files and invalidate its review atomically."""
+        from .contracts import SUBMISSION_STATES
+        with self.sessions.begin() as db:
+            row = db.get(AutoApplicationRow, state['run_id'])
+            if row is None or row.version != state['version'] or row.status in SUBMISSION_STATES:
+                raise ApplyConflict('The application changed; inspect it before updating materials.')
+            updated = {**self._state(row), 'cover_letter':cover_letter,
+                'material_refs':material_refs or {},
+                'document_refresh':{'resume':True,'cover_letter':bool(cover_letter)},
+                'review_digest':None, 'resume_context':None, 'reopening':True,
+                'pause_requested':True, 'input_request':None, 'pending_fields':[],
+                'fields':[], 'review_fields':[], 'drafts':{}, 'field_decisions':{},
+                'chat_revision':state.get('chat_revision',0)+1, 'updated_at':now(),
+                'message':'Reopening to upload the updated application materials.'}
+            if profile is not None:updated['profile']=profile
+            row.resume_bytes = resume
+            row.status, row.version = 'queued', row.version+1
+            row.state_json = json.dumps(updated)
+            return self._state(row)
 
     @staticmethod
     def owner_key(profile):
@@ -266,11 +290,22 @@ class ApplyRepository:
             elif state.get("reopening") and state["status"] == "queued":
                 self.save(state, status="needs_input", reopening=False, pause_requested=True, review_digest=None,
                     message="Reopening was interrupted. Resume to restore the saved application.")
-            elif state["status"] in {"running", "queued"} and state.get("automation_mode") == "hybrid" and not state.get("pause_requested"):
-                self.save(state, status="queued", review_digest=None, retry_at=None,
-                    message="Restoring the application and continuing from saved progress.")
+            elif (state.get("automation_mode") == "hybrid" and not state.get("pause_requested")
+                  and not state.get("cancel_requested") and not state.get("account_request")
+                  and (state["status"] in {"running", "queued"}
+                       or (not state.get("input_request") and not state.get("pending_fields")
+                           and (state["status"] == "awaiting_review"
+                                or (state["status"] == "needs_input" and state.get("agent_reason") == "browser_session_ended"))))):
+                self.save(state, status="queued", review_digest=None, retry_at=None, account_request=None,
+                    recovery_review_required=True, recovery_origin=state["status"],
+                    agent_reason="restoring_session", recovery_attempts=0,
+                    message="Restoring the browser from saved progress. Submission will require a fresh review.")
                 resumable.append(state["run_id"])
             elif state["status"] in {"running", "queued", "awaiting_review", "needs_input"}:
+                # Do not replace a real question, account request or user pause
+                # with a generic browser-session-ended prompt.
+                waiting = state.get("pause_requested") or state.get("input_request") or state.get("pending_fields") or state.get("account_request")
                 self.save(state, status="needs_input", review_digest=None,
-                    message="The browser session ended. Continue to reopen the form and restore saved answers.")
+                    **({} if waiting else {"agent_reason":"browser_session_ended",
+                       "message":"The browser session ended. Continue to restore saved progress."}))
         return resumable

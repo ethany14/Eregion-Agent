@@ -48,6 +48,10 @@ class ApplicationTransitionPolicy:
         ApplicationStatus.ARCHIVED: set(),
     }
 
+    def targets(self, current: ApplicationStatus) -> list[ApplicationStatus]:
+        """Statuses this application may move to next, in declaration order."""
+        return [status for status in ApplicationStatus if status in self._allowed[current]]
+
     def validate(
         self,
         current: ApplicationStatus,

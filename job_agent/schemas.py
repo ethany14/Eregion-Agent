@@ -344,6 +344,13 @@ class UnsupportedClaim(AnalysisModel):
     reason: NonEmptyString
 
 
+class FactualVerificationResult(AnalysisModel):
+    """Model-owned factual verdict; structural quality is computed by Python."""
+    passed: bool
+    unsupported_claims: list[UnsupportedClaim]
+    revision_feedback: list[str]
+
+
 class VerificationResult(AnalysisModel):
     passed: bool
     unsupported_claims: list[UnsupportedClaim]

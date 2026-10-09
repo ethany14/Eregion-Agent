@@ -1,6 +1,8 @@
 // Option clicks only edit a draft; submit sends the whole group once.
 export class AnswerDrafts {
-  constructor(){this.runs=new Map();}
+  constructor(){this.runs=new Map();this.steps=new Map();}
+  // The visible question survives polling re-renders of the same batch.
+  step(id,value){if(value!==undefined)this.steps.set(id,value);return this.steps.get(id)??0;}
   sync(id,fields,suggestions={}){
     const previous=this.runs.get(id)||new Map(),next=new Map();
     for(const f of fields){
@@ -14,41 +16,82 @@ export class AnswerDrafts {
     this.runs.set(id,next);return next;
   }
   set(id,key,value){const entry=this.runs.get(id)?.get(key);if(entry){entry.value=value;entry.edited=true;}}
-  clear(id){this.runs.delete(id);}
+  clear(id){this.runs.delete(id);this.steps.delete(id);}
   payload(id){return Object.fromEntries([...(this.runs.get(id)||[])].filter(([,v])=>v.value!==undefined&&String(v.value).trim()!=='').map(([k,v])=>[k,v.value]));}
   complete(id){const entries=this.runs.get(id);return Boolean(entries?.size&&Object.keys(this.payload(id)).length===entries.size);}
 }
 
+// Three or more questions are shown one at a time; shorter batches stay side by side.
+const STEP_THRESHOLD=3;
+
 export function renderAnswerBatch({container,id,fields,drafts,suggestions={},busy,submit,el,button}){
   fields=fields.filter(f=>!['file','password'].includes(f.kind));
   if(!fields.length)return;
-  const entries=drafts.sync(id,fields,suggestions),form=el('form','','answer-batch');
+  const stepped=fields.length>=STEP_THRESHOLD;
+  const entries=drafts.sync(id,fields,suggestions),form=el('form','',stepped?'answer-batch stepped':'answer-batch');
   const commit=el('button','Submit answers & continue','primary-button');commit.type='submit';
-  const progress=el('p','','fine-print');
-  const update=()=>{commit.disabled=busy||!drafts.complete(id);progress.textContent=`${Object.keys(drafts.payload(id)).length} of ${fields.length} ready to send. Review your answers, then send them together.`;};
+  const progress=el('p','','fine-print'),counter=el('p','','qcount'),rows=[];
+  let step=Math.min(drafts.step(id),fields.length-1);
+  const back=button('Back',()=>show(step-1),'text-button'),next=button('Next question',()=>show(step+1),'text-button');
+  back.type='button';next.type='button';
+  const update=()=>{
+    commit.disabled=busy||!drafts.complete(id);
+    progress.textContent=`${Object.keys(drafts.payload(id)).length} of ${fields.length} ready. Your answers are sent together.`;
+  };
+  function show(index){
+    step=Math.max(0,Math.min(fields.length-1,index));drafts.step(id,step);
+    if(!stepped)return;
+    rows.forEach((row,i)=>{row.hidden=i!==step;});
+    counter.textContent=`Question ${step+1} of ${fields.length}`;
+    back.disabled=busy||step===0;next.disabled=busy||step===fields.length-1;
+  }
+  const advance=key=>{if(stepped&&fields[step]?.key===key&&step<fields.length-1)show(step+1);};
+  if(stepped)form.append(counter);
   for(const f of fields){
-    const row=el('div','','question-choice'),label=el('label',f.label,'question-label');row.append(label);
+    const row=el('div','','question-choice'),label=el('label',f.label,'question-label');row.append(label);rows.push(row);
     const {value,suggestion}=entries.get(f.key);
     if(suggestion){
-      row.append(el('p','Draft from your resume and supplied details. Review or edit before sending.','draft-note'));
-      for(const detail of suggestion.missing_details||[])row.append(el('p',`Please add: ${detail}`,'draft-missing'));
-      const evidence=el('details','','draft-evidence');evidence.append(el('summary','Source excerpts'));
-      for(const item of suggestion.evidence||[])evidence.append(el('p',item.quote));row.append(evidence);
+      row.append(el('p','Drafted from your resume and details. Edit freely before sending.','draft-note'));
+      for(const detail of suggestion.missing_details||[])row.append(el('p',`Add if you can: ${detail}`,'draft-missing'));
     }
     const options=f.kind==='checkbox'?[{label:'Yes',value:true},{label:'No',value:false}]:(f.options||[]).filter(o=>!o.disabled&&String(o.value)!=='');
     if(options.length&&options.length<=6){
       const choices=el('div','','question-actions');choices.setAttribute('role','group');choices.setAttribute('aria-label',f.label);
-      for(const option of options){const answer=f.kind==='checkbox'?option.value:option.label;const b=button(option.label,()=>{drafts.set(id,f.key,answer);for(const other of choices.children)other.setAttribute('aria-pressed','false');b.setAttribute('aria-pressed','true');update();});b.disabled=busy;b.setAttribute('aria-pressed',String(value===answer));choices.append(b);}row.append(choices);
+      for(const option of options){const answer=f.kind==='checkbox'?option.value:option.label;const b=button(option.label,()=>{drafts.set(id,f.key,answer);for(const other of choices.children)other.setAttribute('aria-pressed','false');b.setAttribute('aria-pressed','true');update();advance(f.key);});b.disabled=busy;b.setAttribute('aria-pressed',String(value===answer));choices.append(b);}row.append(choices);
     }else{
       const multiline=!options.length&&(f.kind==='textarea'||Boolean(suggestion));
       const input=el(options.length?'select':multiline?'textarea':'input');input.disabled=busy;input.id=`batch-${id}-${fields.indexOf(f)}`;label.htmlFor=input.id;
       if(options.length){const placeholder=el('option','Choose an answer');placeholder.value='';input.append(placeholder);for(const o of options){const n=el('option',o.label);n.value=o.label;input.append(n);}}
-      else{if(multiline)input.rows=8;else input.type='text';input.maxLength=Math.min(10000,Number(f.constraints?.max_length)>0?Number(f.constraints.max_length):10000);input.placeholder='Your answer';}
+      else{if(multiline)input.rows=6;else input.type='text';input.maxLength=Math.min(10000,Number(f.constraints?.max_length)>0?Number(f.constraints.max_length):10000);input.placeholder='Your answer';}
       input.value=value??'';input.addEventListener(options.length?'change':'input',()=>{drafts.set(id,f.key,input.value);update();});row.append(input);
+    }
+    if(suggestion?.evidence?.length){
+      const evidence=el('details','','draft-evidence');
+      evidence.append(el('summary',`Based on ${suggestion.evidence.length} ${suggestion.evidence.length===1?'line':'lines'} from your resume`));
+      for(const item of suggestion.evidence)evidence.append(el('p',`“${item.quote}”`));row.append(evidence);
     }
     form.append(row);
   }
-  form.append(progress,commit);update();
+  const footer=el('div','','batch-footer');
+  if(stepped)footer.append(back,next);
+  footer.append(commit,progress);form.append(footer);
+  show(step);update();
   form.addEventListener('submit',async event=>{event.preventDefault();if(commit.disabled)return;commit.disabled=true;for(const n of form.querySelectorAll('input,textarea,select,button'))n.disabled=true;if(await submit(drafts.payload(id)))drafts.clear(id);else{for(const n of form.querySelectorAll('input,textarea,select,button'))n.disabled=busy;update();}});
   container.append(form);
+}
+
+// A question remains answerable while independent browser work continues. Its
+// request ID and frozen fields isolate drafts from later pages and polling.
+export function renderPendingQuestion({item,container,drafts,busy,reply,el,button,renderText=text=>el('p',text)}){
+  const question=item.input_request;
+  if(!question||item.pause_requested||item.status==='submitting')return false;
+  const fields=question.field_keys.map(key=>question.fields?.find(f=>f.key===key)||item.fields?.find(f=>f.key===key)).filter(Boolean);
+  if(fields.some(f=>!['file','password'].includes(f.kind)))renderAnswerBatch({container,id:`${item.run_id}:${question.id}`,fields,drafts,suggestions:item.answer_drafts,busy,submit:answers=>reply({request_id:question.id,answers}),el,button});
+  else {
+    const inConversation=item.messages?.some(m=>m.role==='assistant'&&(m.id===question.id||m.text===question.text));
+    if(item.career&&question.text&&!inConversation)container.append(renderText(question.text));
+    container.append(el('p','Reply in the chat below.','status-line'));
+  }
+  if(['running','queued'].includes(item.status))container.append(el('p','I am continuing the independent steps while you answer.','status-line'));
+  return true;
 }

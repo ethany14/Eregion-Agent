@@ -43,6 +43,7 @@ from job_agent.schemas import (
     TailoredResume,
     UnsupportedClaim,
     VerificationResult,
+    FactualVerificationResult,
 )
 
 
@@ -56,10 +57,20 @@ class SharedModelAnalyzer:
     def __init__(self, env_path: Path = DEFAULT_ENV_PATH) -> None:
         self._env_path = env_path
 
+    def cache_namespace(self):
+        from job_agent.model import model_settings_fingerprint
+        return model_settings_fingerprint(env_path=self._env_path)
+
     def __call__(
         self, schema: type[BaseModel], system_message: str, human_message: str
     ) -> BaseModel:
         model = create_model(env_path=self._env_path)
+        if schema is VerificationResult:
+            # Quality is checked deterministically below. Requesting it from
+            # the model can reject an otherwise valid factual verdict before
+            # that check, e.g. passed=false with no structural issues.
+            result = invoke_structured(model, FactualVerificationResult, system_message, human_message)
+            return VerificationResult.model_validate(result.model_dump())
         return invoke_structured(model, schema, system_message, human_message)
 
 
@@ -68,7 +79,12 @@ class JobAgentStepHandler:
 
     def __init__(self, analyzer: Analyzer | None = None) -> None:
         model_analyzer = analyzer or SharedModelAnalyzer()
+        self._model_analyzer = model_analyzer
         self._analyze = lambda *args, **kwargs: invoke_model(model_analyzer, *args, **kwargs)
+
+    def analysis_cache_namespace(self):
+        namespace = getattr(self._model_analyzer,'cache_namespace',None)
+        return namespace() if callable(namespace) else f'custom:{id(self._model_analyzer)}'
 
     def execute(self, step: Step, state: AgentState) -> StepOutcome:
         handlers = {

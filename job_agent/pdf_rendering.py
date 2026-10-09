@@ -8,6 +8,22 @@ from io import BytesIO
 from job_agent.schemas import ResumeEntry, ResumeSection, TailoredResume
 
 
+def render_letter_pdf(text: str) -> bytes:
+    """Export already-approved letter text without rewriting its claims."""
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    stream = BytesIO()
+    document = SimpleDocTemplate(stream,pagesize=letter,leftMargin=54,rightMargin=54,topMargin=54,bottomMargin=54,
+        title='Cover letter')
+    style = ParagraphStyle('Letter',fontName='Helvetica',fontSize=11,leading=16)
+    content = []
+    for paragraph in text.split('\n\n'):
+        content += [Paragraph(escape(paragraph).replace('\n','<br/>'),style),Spacer(1,12)]
+    document.build(content)
+    return stream.getvalue()
+
+
 def _safe(value: str | None) -> str:
     return escape((value or "").replace("\u2013", "-").replace("\u2014", "-").strip())
 

@@ -16,6 +16,83 @@ pytestmark = pytest.mark.skipif(os.getenv("JOB_AGENT_BROWSER_TESTS") != "1",
 FIXTURES = Path(__file__).parent / "fixtures" / "auto_apply"
 
 
+def test_generic_page_control_opens_details_but_cannot_send_form_or_toggle_consent():
+    browser = FixtureBrowser('https://jobs.lever.co/example/abc123')
+    try:
+        browser.page.set_content('''<form onsubmit="event.preventDefault();window.sent=true">
+            <button type="button" onclick="document.querySelector('#details').hidden=false">Edit education</button>
+            <section id="details" hidden><label>Major<input name="major"></label></section>
+            <button type="submit">Finish and send</button>
+            <button type="button" onclick="window.accepted=true">Accept privacy terms</button>
+        </form>''')
+        controls = browser.page_state()['controls']
+        browser.click_page_action(next(c for c in controls if c['label']=='Edit education'))
+        assert any(f['label']=='Major' for f in browser.observe())
+        for label in ('Finish and send','Accept privacy terms'):
+            target = next(c for c in browser.page_state()['controls'] if c['label']==label)
+            with pytest.raises(BrowserBlocked):browser.click_page_action(target)
+        assert browser.page.evaluate('!window.sent && !window.accepted')
+    finally:
+        browser.close()
+
+
+def test_answering_during_background_work_keeps_focus_and_sends_one_batch(tmp_path):
+    from types import SimpleNamespace
+    from fastapi.testclient import TestClient
+    from playwright.sync_api import sync_playwright, expect
+    from api.main import create_app
+    from test_auto_apply import FakeBrowser, field
+
+    database = create_database(f"sqlite:///{(tmp_path/'async-ui.sqlite').as_posix()}",create_schema_for_tests=True)
+    repo = ApplyRepository(database.session_factory)
+    repo.clear_candidate()
+    loop = ApplicationLoop(repo,browser_factory=FakeBrowser)
+    saved, _ = repo.create(request())
+    fields = [field('city',label='Location'),field('consent','checkbox',label='Consent')]
+    question = {'id':'question-async-ui','text':'Which location and consent should I use?',
+        'field_keys':['city','consent'],'fields':fields}
+    saved = repo.save(saved,status='running',fields=fields,pending_fields=question['field_keys'],
+        input_request=question,messages=[{'id':question['id'],'role':'assistant','text':question['text']}])
+    app = create_app(run_service=object(),session_runtime=SimpleNamespace(database=database))
+    app.state.auto_apply = loop
+    try:
+        with TestClient(app,base_url='http://localhost') as client, sync_playwright() as playwright:
+            browser = playwright.chromium.launch(channel='chrome',headless=True)
+            page = browser.new_page()
+            replies, errors = [], []
+            page.on('pageerror',lambda error:errors.append(str(error)))
+            def handle(route):
+                req = route.request
+                if req.url.endswith('/reply'):replies.append(req.post_data_json)
+                response = client.request(req.method,req.url,content=req.post_data,
+                    headers={k:v for k,v in req.headers.items() if k in {'content-type','origin'}})
+                route.fulfill(status=response.status_code,body=response.content,
+                    headers={'content-type':response.headers.get('content-type','application/json')})
+            page.route('http://localhost/**',handle)
+            page.route('https://fonts.googleapis.com/**',lambda route:route.abort())
+            page.goto('http://localhost/apply?mode=application')
+            page.locator('#attempts button').click()
+            location = page.locator('#conversation-actions input')
+            location.fill('Ithaca')
+            location.evaluate("e=>e.dataset.marker='same-input'")
+            current = repo.get(saved['run_id'])
+            repo.save(current,fields=[field('independent-step')],message='Filling another control.')
+            page.wait_for_timeout(2400)  # One normal UI poll while the user is typing.
+            expect(location).to_be_focused()
+            expect(location).to_have_attribute('data-marker','same-input')
+            expect(location).to_have_value('Ithaca')
+            page.get_by_role('button',name='No',exact=True).click()
+            page.get_by_role('button',name='Submit answers & continue',exact=True).click()
+            expect(page.locator('#conversation-actions form')).to_have_count(0)
+            assert replies == [{'request_id':question['id'],'answers':{'city':'Ithaca','consent':False}}]
+            assert repo.get(saved['run_id'])['answers'] == {'city':'Ithaca','consent':False}
+            assert not errors
+            browser.close()
+    finally:
+        loop.close()
+        database.engine.dispose()
+
+
 def test_duplicate_city_suggestions_select_once_and_repeated_fill_does_not_reopen():
     browser = FixtureBrowser("https://job-boards.greenhouse.io/example/jobs/123")
     try:
@@ -324,7 +401,7 @@ def test_web_application_flow_with_actual_api_and_offline_employer(tmp_path, mon
                     headers={"content-type":response.headers.get("content-type", "application/json")})
             page.route("http://localhost/**", handle)
             page.route("https://fonts.googleapis.com/**", lambda route: route.abort())
-            page.goto("http://localhost/apply")
+            page.goto("http://localhost/apply?mode=application")
             expect(page.locator('#welcome')).to_be_visible()
             expect(page.locator('#browser-panel')).to_be_hidden()
             page.locator('input[name="resume"]').set_input_files({"name":"resume.pdf", "mimeType":"application/pdf", "buffer":base64.b64decode(resume_pdf())})

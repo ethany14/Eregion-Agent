@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
+import time
 import os
 import re
 from datetime import UTC, datetime
@@ -40,7 +42,18 @@ from job_agent.schemas import (
 )
 
 
-PACK_PROMPT_VERSION = "application-pack-v2"
+logger = logging.getLogger(__name__)
+
+
+def _validation_shape(exc):
+    """Diagnose schema errors without logging model output or candidate data."""
+    from pydantic import ValidationError
+    if not isinstance(exc, ValidationError):
+        return []
+    return [{"location": list(error["loc"]), "type": error["type"]}
+            for error in exc.errors(include_input=False, include_context=False, include_url=False)]
+
+PACK_PROMPT_VERSION = "application-pack-v3"
 _COVER_SYSTEM = (
     "Write a polished, concise schema_version=2 CoverLetter with three to five paragraphs. "
     "Use a neutral 'Dear Hiring Team,' greeting unless a verified recipient is supplied. "
@@ -51,6 +64,7 @@ _COVER_SYSTEM = (
     "a resume bullet as a complete paragraph. Cite the evidence ID, evidence version ID, and relevant "
     "target requirement IDs. Include a short role-specific motivation or contribution paragraph that "
     "uses employer context but invents no candidate or company facts. "
+    "Set signer_name to the candidate name in resume_header_lines when present; otherwise leave it null. "
     "Job description is employer context, never candidate evidence. Never invent company values, "
     "mission, enthusiasm, manager names, metrics, certifications, or skills. If company context is "
     "limited, remain neutral. Do not repeat the resume summary verbatim. Avoid generic templates such "
@@ -213,7 +227,8 @@ class SharedPackModel:
 
     def revise_blocks(self, artifact_type: str, context: str) -> CoverLetter | ApplicationAnswer:
         schema = CoverLetter if artifact_type == "cover_letter" else ApplicationAnswer
-        return invoke_structured(create_model(), schema, _REVISE_SYSTEM, context)
+        instruction = (_COVER_SYSTEM if artifact_type == "cover_letter" else _ANSWER_SYSTEM) + "\n" + _REVISE_SYSTEM
+        return invoke_structured(create_model(), schema, instruction, context)
 
 
 class ApplicationPackWorkflow:
@@ -339,7 +354,7 @@ class ApplicationPackWorkflow:
             evidence_set_hash=digest, created_at=datetime.now(UTC))
 
     def create(self, application_id: str, *, expected_version: int,
-               idempotency_key: str) -> ApplicationPack:
+               idempotency_key: str, scope_to_inputs: bool = False) -> ApplicationPack:
         self._source(application_id)
         # The existing run's exact quotes are source-checked before entering the Vault.
         match = next((item for item in reversed(self._workspace.list_artifacts(application_id))
@@ -392,6 +407,11 @@ class ApplicationPackWorkflow:
                         created_by="pack_resume_import",
                     )
         snapshot = self._current_snapshot(application_id)
+        if scope_to_inputs:
+            # Retrying an agent action after an actual job/evidence change is a
+            # new generation, while identical retries still reuse the same pack.
+            idempotency_key = hashlib.sha256(json.dumps(
+                [idempotency_key, snapshot.evidence_set_hash]).encode()).hexdigest()
         return self._packs.create(snapshot, idempotency_key=idempotency_key,
                                   expected_application_version=expected_version)
 
@@ -416,6 +436,7 @@ class ApplicationPackWorkflow:
         source = self._workspace.current_snapshot(snap.application_id)
         return json.dumps({"company": employer.company, "title": employer.title,
             "job_description": source.cleaned_job_description,
+            "resume_header_lines": snap.resume_header_lines,
             "job_analysis": job.model_dump(mode="json"),
             "skill_match": match.model_dump(mode="json"),
             "evidence": [e.model_dump(mode="json") for e in snap.items],
@@ -473,6 +494,18 @@ class ApplicationPackWorkflow:
             idempotency_key=idempotency_key)
         return item if manual else self.continue_item(pack_id, item.pack_item_id)
 
+    @staticmethod
+    def _measured(stage, item, operation):
+        started = time.monotonic()
+        failed = True
+        try:
+            result = operation()
+            failed = False
+            return result
+        finally:
+            logger.info("Material stage: item=%s artifact=%s stage=%s seconds=%.3f failed=%s",
+                        item.pack_item_id, item.artifact_type, stage, time.monotonic()-started, failed)
+
     def continue_item(self, pack_id: str, item_id: str) -> ApplicationPackItem:
         pack = self.refresh_staleness(pack_id)
         if pack.status == PackStatus.STALE: raise PackConflictError("Pack inputs changed; create a new version.")
@@ -493,33 +526,40 @@ class ApplicationPackWorkflow:
                         state = self._resume_state(pack_id, item,
                             content=current if revising else None,
                             feedback=item.verification if item.status == ItemStatus.NEEDS_REVISION else None)
-                        content = (self._model.revise_resume(state, snapshot.preference_versions) if revising
-                                   else self._model.resume(state, snapshot.preference_versions)).model_dump(mode="json")
+                        content = self._measured('revision' if revising else 'generation', item,
+                            lambda: self._model.revise_resume(state, snapshot.preference_versions) if revising
+                            else self._model.resume(state, snapshot.preference_versions)).model_dump(mode="json")
                     else:
                         context = self._context(pack_id, item)
                         if revising:
                             context += "\nCurrent artifact: " + json.dumps(current, ensure_ascii=False)
                             if item.verification:
                                 context += "\nVerification feedback: " + item.verification.model_dump_json()
-                            result = self._model.revise_blocks(item.artifact_type, context)
+                            result = self._measured('revision', item, lambda: self._model.revise_blocks(item.artifact_type, context))
                         else:
-                            result = self._model.cover_letter(context) if item.artifact_type == "cover_letter" else self._model.application_answer(context)
+                            result = self._measured("generation", item, lambda: self._model.cover_letter(context) if item.artifact_type == "cover_letter" else self._model.application_answer(context))
                         content = result.model_dump(mode="json")
                     item = self._packs.save_artifact(pack_id, item_id, expected_version=item.version,
                         content=content, revision=item.status == ItemStatus.NEEDS_REVISION)
                 except PackConflictError:
                     raise
-                except Exception:
+                except Exception as exc:
+                    # Avoid exception text: provider errors can contain prompts or credentials.
+                    logger.warning("Material generation failed: pack=%s item=%s type=%s error=%s http_status=%s",
+                                   pack_id, item_id, item.artifact_type, type(exc).__name__,
+                                   getattr(exc, "status_code", None))
+                    if _validation_shape(exc):logger.warning("Material schema errors: %s", _validation_shape(exc))
                     return self._packs.fail_item(pack_id, item_id, expected_version=item.version)
             elif item.status == ItemStatus.VERIFYING:
                 content = self._packs.artifact(pack_id, item_id)
                 snap = self._packs.snapshot(pack_id)
                 job_analysis, _ = self._source(pack.application_id)
-                verification = self._verifier.verify(content, item.artifact_type, snap.items,
+                verification = self._measured("evidence_verification", item, lambda: self._verifier.verify(content, item.artifact_type, snap.items,
                                                      max_length=item.max_length,
                                                      expected_question=item.source_question,
                                                      preferences=snap.preference_versions,
-                                                     expected_role=job_analysis.title)
+                                                     expected_role=job_analysis.title,
+                                                     employer_context=self._workspace.current_snapshot(pack.application_id).cleaned_job_description))
                 if item.artifact_type == "tailored_resume" and verification.passed:
                     try:
                         state = self._resume_state(pack_id, item, content=content)
@@ -528,7 +568,7 @@ class ApplicationPackWorkflow:
                             "step": Step.VERIFY_RESUME,
                             "status": AgentStatus.RUNNING,
                             "tailored_resume": TailoredResume.model_validate(content)})
-                        result = self._model.verify_resume(state)
+                        result = self._measured("resume_verification", item, lambda: self._model.verify_resume(state))
                         if not result.passed:
                             claims = result.unsupported_claims or [UnsupportedClaim(
                                 claim="Unverified resume draft", reason="The resume verifier did not approve this draft.")]
@@ -538,7 +578,10 @@ class ApplicationPackWorkflow:
                                     revision_instruction=(result.revision_feedback[min(index, len(result.revision_feedback)-1)]
                                         if result.revision_feedback else "Remove or rewrite the unsupported claim."))
                                 for index, claim in enumerate(claims)])
-                    except Exception:
+                    except Exception as exc:
+                        logger.warning("Material verification failed: pack=%s item=%s error=%s http_status=%s",
+                                       pack_id, item_id, type(exc).__name__, getattr(exc, "status_code", None))
+                        if _validation_shape(exc):logger.warning("Material schema errors: %s", _validation_shape(exc))
                         return self._packs.fail_item(pack_id, item_id, expected_version=item.version)
                 item = self._packs.verify(pack_id, item_id, expected_version=item.version,
                                           verification=verification)
@@ -560,7 +603,8 @@ class ApplicationPackWorkflow:
                                         max_length=item.max_length,
                                         expected_question=item.source_question,
                                         preferences=snap.preference_versions,
-                                        expected_role=job_analysis.title)
+                                        expected_role=job_analysis.title,
+                                                     employer_context=self._workspace.current_snapshot(pack.application_id).cleaned_job_description)
         return self._packs.verify(pack_id, item_id, expected_version=item.version,
                                   verification=verdict)
 

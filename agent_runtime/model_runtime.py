@@ -2,6 +2,12 @@
 from dataclasses import dataclass
 
 
+MODEL_PAYMENT_MESSAGE = (
+    "The model provider requires payment or available credits (HTTP 402). "
+    "Check the provider balance or billing, then continue. Your work is saved."
+)
+
+
 def model_timeout(model, default=45.0):
     value = getattr(model, "request_timeout", None)
     if isinstance(value, (int, float)) and value > 0:
@@ -28,6 +34,8 @@ def model_failure(error):
     status = status if isinstance(status, int) else None
     if isinstance(error, TimeoutError) or "timeout" in name.casefold():
         return ModelFailure("model_timeout", True, name, status)
+    if status == 402:
+        return ModelFailure("model_payment_required", False, name, status)
     if status == 429:
         return ModelFailure("model_rate_limited", True, name, status)
     if isinstance(error, ConnectionError) or "connection" in name.casefold() or (status and status >= 500):

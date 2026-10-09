@@ -34,7 +34,8 @@ def test_extension_is_a_focused_job_lens() -> None:
     assert 'request("/api/workspaces"' in client
     assert '/analyze-with-resume' in client
     assert 'request("/health"' in client
-    assert 'http://localhost:8000/app' in script
+    assert 'http://localhost:8000/apply' in script
+    assert 'http://localhost:8000/app?' not in script
     assert "source_url: currentExtraction?.source_url" in script
     assert "?application=" in script
     for removed in {"resume-text", "assistant-panel", "memory-list", "skill-list",

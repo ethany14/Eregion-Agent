@@ -27,9 +27,11 @@ def test_generic_job_links_preserve_job_identity_query():
 def test_workday_identity_survives_location_locale_and_application_steps():
     base='https://example.wd5.myworkdayjobs.com/'
     paths=['en-US/External/job/Engineer_JR123', 'en-US/External/job/US-CA/Engineer_JR123/apply/applyManually',
-           'fr-FR/External/job/US-CA/Ingenieur_JR123/apply/autofillWithResume']
+           'fr-FR/External/job/US-CA/Ingenieur_JR123/apply/autofillWithResume',
+           'en-US/External/details/Engineer_JR123', 'External/details/Engineer_JR123/apply/applyManually']
     assert len({posting(base+p)[1] for p in paths})==1
     assert posting(base+paths[0])[1]!=posting(base+'en-US/Internal/job/Engineer_JR123')[1]
+    assert posting(base+'en-US/External/details/Engineer_JR123?q=engineer')[2]==base+'en-US/External/details/Engineer_JR123'
 
 
 @pytest.mark.parametrize('label,kind',[('Apply','open_application'),('Next','next'),('Save and Continue','next'),
@@ -37,6 +39,18 @@ def test_workday_identity_survives_location_locale_and_application_steps():
 def test_navigation_distinguishes_save_from_submission(label,kind):
     assert action_kind({'label':label,'submits_form':True},has_fields=False)==kind
     assert action_kind({'label':'Apply','submits_form':True},has_fields=True)=='submit'
+
+
+@pytest.mark.parametrize('control,kind',[
+    ({'label':'Edit education','submits_form':False},'interact'),
+    ({'label':'Show additional details','submits_form':False},'interact'),
+    ({'label':'Choose a country','field_id':'ns-1'},'field'),
+    ({'label':'Finish and send','submits_form':True},'guarded'),
+    ({'label':'Accept privacy terms','submits_form':False},'guarded'),
+    ({'label':'Withdraw application','submits_form':False},'guarded'),
+])
+def test_observed_controls_are_available_without_a_site_specific_whitelist(control,kind):
+    assert action_kind(control,has_fields=True)==kind
 
 
 def test_agent_cannot_finish_or_submit_an_intermediate_page():

@@ -3,7 +3,7 @@ import re
 import unicodedata
 
 from .contracts import candidate_answer
-from .matching import is_consent
+from .matching import is_consent, boolean_answer
 
 
 def signature(field):
@@ -11,9 +11,10 @@ def signature(field):
 
 
 def source_value(state, reference):
+    if reference == 'material:cover_letter':return state.get('cover_letter')
     if reference.startswith('education:'):
         from .education import facts
-        return facts(state['profile']).get(reference)
+        return facts(state['profile'], state.get('education_answer_overrides')).get(reference)
     kind, _, key = reference.partition(":")
     return state.get({"profile":"profile", "answer":"answers"}.get(kind, "__missing"), {}).get(key)
 
@@ -51,11 +52,13 @@ def unresolved_paths(fields, state):
 
 def protected(field):
     text = " ".join(str(field.get(k) or "") for k in ("label", "group", "help"))
-    return is_consent(field) or field["kind"] in {"checkbox", "password", "file"} or bool(re.search(
+    boolean_choice = any(boolean_answer(option.get("label", "")) is not None
+                         for option in field.get("options", []))
+    return boolean_choice or is_consent(field) or field["kind"] in {"checkbox", "password", "file"} or bool(re.search(
         r"\b(consent|agree|authorization|authori[sz]ed|sponsor\w*|visa|immigration|citizen\w*|eligib\w*|"
         r"salary|compensation|pay expectation|race|ethnic\w*|gender|disabil\w*|veteran|criminal|background check|"
         r"qualif\w*|degree|education|experience|certifi\w*|licen[cs]\w*|fluent|proficien\w*|relocat\w*|"
-        r"availability|start date|terms|privacy|marketing|subscribe)\b|授权|签证|担保|同意|薪资|性别|残疾|国籍",
+        r"enroll\w*|return to (?:the )?(?:program|school)|availability|start date|terms|privacy|marketing|subscribe)\b|授权|签证|担保|同意|薪资|性别|残疾|国籍",
         text, re.I))
 
 
@@ -67,6 +70,8 @@ def preserves_format(value, sources):
     """
     def clean(text):
         return ''.join(c.casefold() for c in unicodedata.normalize('NFKD', str(text)) if c.isalnum())
+    if len(sources) > 1 and clean(value) == clean("".join(str(v) for v in sources.values())):
+        return True  # e.g. confirmed first + last name, or month + year.
     for ref, original in sources.items():
         if ref == "profile:phone" or (ref.startswith("answer:") and re.search(r"phone|telephone|mobile|tel:", ref, re.I)):
             digits = re.sub(r"\D", "", str(original))

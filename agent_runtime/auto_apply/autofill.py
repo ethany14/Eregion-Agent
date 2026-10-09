@@ -1,8 +1,10 @@
 """Reusable bulk-fill tool, with field-level failures and bounded verification."""
 import time
+import re
 
+from .errors import failure_detail, failure
 from .contracts import candidate_answer
-from .matching import consent_answer, equivalent, resolve_option
+from .matching import city_equivalent, consent_answer, equivalent, resolve_option, field_category
 from .decisions import active_decision
 
 
@@ -10,6 +12,8 @@ def desired_answer(field, state):
     decision = active_decision(field, state)
     if decision: return decision["value"]
     if field['key'] in state['answers']:return state['answers'][field['key']]
+    if field['kind'] != 'file' and 'cover letter' in field['label'].casefold() and state.get('cover_letter'):
+        return state['cover_letter']
     from .education import bound_value
     education=bound_value(field,state)
     if education is not None:return education
@@ -18,10 +22,17 @@ def desired_answer(field, state):
 
 
 def matches(field, value):
+    if field['kind'] == 'location':
+        # The browser exposes a value only after this picker commits a place.
+        return bool(field['value']) and city_equivalent(value, field['value']) and not field.get('invalid')
     if field["kind"] in {"radio", "select", "combobox"} or field.get("choice_control"):
         option = resolve_option(field["label"], value, field.get("options", []))
         if option:
-            return str(field["value"]).strip().casefold() in {str(option["label"]).strip().casefold(), str(option["value"]).strip().casefold()} and not field.get("invalid")
+            selected = str(field["value"]).strip().casefold()
+            exact = selected in {str(option["label"]).strip().casefold(), str(option["value"]).strip().casefold()}
+            country_match = (field.get('value_committed') and field_category(field['label']) == 'country'
+                and equivalent(field['label'], field['value'], option))
+            return bool(exact or country_match) and not field.get("invalid")
         if not field.get("options") and equivalent(field["label"], value, {"label": field["value"]}):
             return not field.get("invalid")
         accepted = {str(value).strip().casefold()}
@@ -29,15 +40,45 @@ def matches(field, value):
             if accepted.intersection({str(option["label"]).strip().casefold(), str(option["value"]).strip().casefold()}):
                 accepted.update((str(option["label"]).strip().casefold(), str(option["value"]).strip().casefold()))
         return str(field["value"]).strip().casefold() in accepted and not field.get("invalid")
+    if field['kind'] == 'tel' or (field['kind'] == 'text' and re.search(r'\b(phone|telephone|mobile)\b', field['label'], re.I)):
+        observed, expected = str(field['value']), str(value)
+        if all(re.fullmatch(r'[\d\s()+.\-]+', text) for text in (observed, expected)):
+            # Browser input masks may insert punctuation. Never drop a country
+            # prefix here: the agent must explicitly bind that format decision.
+            digits = re.sub(r'\D', '', expected)
+            return bool(digits) and re.sub(r'\D', '', observed) == digits and not field.get('invalid')
+    if field['kind'] in {'text', 'textarea', 'search'} and isinstance(value, str):
+        # Single-line controls can flatten line breaks in prose. Verify all words
+        # and punctuation while tolerating this presentation-only whitespace.
+        normalize = lambda text: re.sub(r'\s+', ' ', str(text)).strip()
+        return normalize(field['value']) == normalize(value) and not field.get('invalid')
     return field["value"] == value and not field.get("invalid")
 
 
+def document_kind(field,state):
+    if field['kind']!='file':return None
+    bound = state.get('document_bindings',{}).get(field['key'])
+    if bound:return bound
+    label=field['label'].casefold()
+    if 'cover letter' in label:return 'cover_letter'
+    if re.search(r'resume|résumé|curriculum|\bcv\b',label):return 'resume'
+    return None
+
+
+def pending_documents(state,fields):
+    refresh=state.get('document_refresh',{})
+    pending=['resume'] if refresh.get('resume') else []
+    if refresh.get('cover_letter') and any(document_kind(f,state)=='cover_letter' for f in [*fields,*state.get('review_fields',[])]):
+        pending.append('cover_letter')
+    return pending
+
+
 def autofill(browser, state, resume, *, edited_keys=frozenset(), active=lambda: True, progress=lambda *args: None):
-    attempts, failed, completed = {}, {}, []
+    attempts, failed, completed, details = {}, {}, [], {}
     deadline = time.monotonic() + 90
     for _ in range(60):
         if not active():
-            return {"cancelled": True, "filled": completed, "failed": failed}
+            return {"cancelled": True, "filled": completed, "failed": failed, "failure_details": details}
         fields = browser.observe()
         if browser.barrier():
             break
@@ -45,21 +86,27 @@ def autofill(browser, state, resume, *, edited_keys=frozenset(), active=lambda: 
         # Upload first: ATS resume parsers may populate contact fields afterwards.
         for field in sorted(fields, key=lambda item: item["kind"] != "file"):
             key = field["key"]
-            if attempts.get(key, 0) >= 2:
+            if attempts.get(key, 0) >= (1 if state.get("automation_mode") == "hybrid" else 2):
                 continue
             value = desired_answer(field, state)
             # A website's preselected value must not override the candidate's
             # confirmed answer, especially remembered refusals of consent.
             if value is not None and matches(field, value):
-                failed.pop(key, None)
+                failed.pop(key, None); details.pop(key, None)
                 continue
             if value is not None and field.get("invalid") and matches({**field, "invalid":False}, value):
                 failed[key] = "; ".join(field.get("errors",[])) or "website_validation_error"
+                details[key] = failure("validation_error", failed[key])
                 continue # Rewriting a rejected value is not a repair strategy.
-            if field["kind"] == "file" and "resume" in field["label"].casefold():
-                if field["value"]:
+            kind=document_kind(field,state)
+            if kind=='resume':
+                if field["value"] and not state.get('document_refresh',{}).get(kind):
                     continue
                 value = resume()
+            elif kind=='cover_letter' and state.get('cover_letter'):
+                if field['value'] and not state.get('document_refresh',{}).get(kind):continue
+                from job_agent.pdf_rendering import render_letter_pdf
+                value = render_letter_pdf(state['cover_letter'])
             if value is not None:
                 if (state.get("automation_mode") == "hybrid" and value == state["profile"].get("phone")
                         and key not in state["answers"] and not active_decision(field,state)):
@@ -80,18 +127,24 @@ def autofill(browser, state, resume, *, edited_keys=frozenset(), active=lambda: 
         key = field["key"]
         attempts[key] = attempts.get(key, 0) + 1
         try:
-            browser.fill(field, value)
+            upload=document_kind(field,state)
+            target={**field,'upload_filename':'cover-letter.pdf' if upload=='cover_letter' else 'resume.pdf'} if upload else field
+            browser.fill(target, value)
             # Reading a fresh field is intentional: frameworks replace nodes.
             observed = browser.observe()
             current = next((item for item in observed if item["key"] == key), None)
             verified = (current is None or bool(current["value"])) if field["kind"] == "file" else current is not None and matches(current, value)
             if verified:
                 completed.append(key)
-                failed.pop(key, None)
+                failed.pop(key, None); details.pop(key, None)
+                if document_kind(field,state) and state.get('document_refresh'):
+                    state['document_refresh'][document_kind(field,state)]=False
             else:
                 failed[key] = "value_not_retained"
+                details[key] = failure("value_not_retained", "The control did not retain the supplied value.")
             progress(observed, "autofill", key, "verified" if verified else "not_retained")
         except Exception as exc:
-            failed[key] = type(exc).__name__
+            details[key] = failure_detail(exc)
+            failed[key] = details[key]["error_code"]
             progress(browser.observe(), "autofill", key, "needs_agent")
-    return {"filled": list(dict.fromkeys(completed)), "failed": failed}
+    return {"filled": list(dict.fromkeys(completed)), "failed": failed, "failure_details": details}

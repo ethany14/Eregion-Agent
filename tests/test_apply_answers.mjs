@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {AnswerDrafts,renderAnswerBatch} from '../web_app/apply-answers.js';
+import {AnswerDrafts,renderAnswerBatch,renderPendingQuestion} from '../web_app/apply-answers.js';
 
 class Element {
   constructor(tag,text=''){this.tag=tag;this.textContent=text;this.children=[];this.attrs={};this.events={};}
@@ -14,6 +14,30 @@ const el=(tag,text)=>new Element(tag,text);
 const button=(text,action)=>{const b=el('button',text);b.addEventListener('click',action);return b;};
 const fields=[{key:'a',label:'English?',kind:'select',options:[{label:'Yes',value:'1'},{label:'No',value:'2'}]},
   {key:'b',label:'Consent',kind:'checkbox'},{key:'c',label:'Discovery channel',kind:'text'}];
+
+test('pending batch remains answerable during browser work and keeps edits through polling',async()=>{
+  const drafts=new AnswerDrafts(),calls=[];
+  const item={run_id:'run',status:'running',fields:[],input_request:{id:'question-1',field_keys:['a','b'],fields:fields.slice(0,2)}};
+  const draw=()=>{const container=el('div');assert.equal(renderPendingQuestion({item,container,drafts,busy:false,reply:async body=>{calls.push(body);return true;},el,button}),true);return container;};
+  let form=draw().children[0];await form.querySelectorAll('button')[0].fire('click');
+  assert.equal(calls.length,0);
+  // An independent navigation changes the visible page, not the pending question.
+  item.fields=[{key:'different-page',kind:'text'}];form=draw().children[0];
+  const buttons=form.querySelectorAll('button');assert.equal(buttons[0].attrs['aria-pressed'],'true');
+  await buttons[3].fire('click');await form.fire('submit');await form.fire('submit');
+  assert.deepEqual(calls,[{request_id:'question-1',answers:{a:'Yes',b:false}}]);
+  item.input_request.id='question-2';form=draw().children[0];
+  assert.equal(form.querySelectorAll('button').at(-1).disabled,true);
+});
+
+test('general agent question points to chat while a pause hides its answer controls',()=>{
+  const item={run_id:'run',status:'needs_input',input_request:{id:'q',field_keys:[],fields:[]}},container=el('div');
+  const options={item,container,drafts:new AnswerDrafts(),busy:false,reply:()=>assert.fail(),el,button};
+  assert.equal(renderPendingQuestion(options),true);
+  assert.equal(container.children[0].textContent,'Reply in the chat below.');
+  item.pause_requested=true;
+  assert.equal(renderPendingQuestion({...options,container:el('div')}),false);
+});
 
 test('select all questions, then submit once including an explicit false',async()=>{
   const drafts=new AnswerDrafts(),container=el('div'),calls=[];

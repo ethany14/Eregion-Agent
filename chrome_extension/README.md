@@ -2,7 +2,7 @@
 
 The Chrome extension is intentionally small. It reads the job description from the page the user explicitly selected, leaves the extracted text editable, and asks the local JobHunterAgent API for a quick comparison with the default PDF resume stored by the web app.
 
-It shows a match score, matched/partial/missing counts, focused suggestions, and optional requirement details. Resume upload, saved jobs, conversations, materials, evidence, interviews, Memory, Skills, and workflow diagnostics live in the full web workspace at `http://localhost:8000/app`.
+It shows a match score, matched/partial/missing counts, focused suggestions, and optional requirement details. Resume upload, job review, materials, applications, and interview practice share the career chat at `http://localhost:8000/apply`. Opening a saved job starts a conversation with that job already attached.
 
 ## Run locally
 
@@ -11,7 +11,7 @@ It shows a match score, matched/partial/missing counts, focused suggestions, and
 .\.venv\Scripts\python.exe -m uvicorn api.main:app --host 127.0.0.1 --port 8000
 ```
 
-Open `http://localhost:8000/app`, go to **Settings**, and upload a text-based PDF resume. Then:
+Open `http://localhost:8000/apply`, select **＋ Resume**, and upload a text-based PDF resume. Then:
 
 1. Open `chrome://extensions`.
 2. Enable **Developer mode**.
@@ -20,7 +20,7 @@ Open `http://localhost:8000/app`, go to **Settings**, and upload a text-based PD
 5. Click the Northstar Job Lens toolbar icon.
 6. Select **Extract page**, review the title, company, and description, then select **Analyze fit**.
 
-The API URL is fixed to `http://localhost:8000`. The extension calls only `GET /health` and `POST /api/quick-analysis`.
+The API URL is fixed to `http://localhost:8000`. The Side Panel uses `GET /health`, `POST /api/workspaces`, and `POST /api/applications/{id}/analyze-with-resume`.
 
 ## Privacy and permissions
 

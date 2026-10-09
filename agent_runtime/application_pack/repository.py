@@ -337,6 +337,31 @@ class PackRepository:
             session.flush()
             return self._item(item)
 
+    @staticmethod
+    def _refresh_status(session, pack):
+        """Derive the package state from every item, including earlier failures."""
+        session.flush()
+        rows = session.scalars(select(ApplicationPackItemRow).where(
+            ApplicationPackItemRow.pack_id == pack.pack_id)).all()
+        statuses = {row.status for row in rows if not row.requires_manual_answer}
+        required = {"tailored_resume", "cover_letter"}
+        if required <= {row.artifact_type for row in rows} and statuses == {ItemStatus.APPROVED.value}:
+            pack.status = PackStatus.APPROVED.value
+            pack.completed_at = datetime.now(UTC)
+        else:
+            pack.completed_at = None
+            if ItemStatus.GENERATING.value in statuses:
+                pack.status = PackStatus.GENERATING.value
+            elif ItemStatus.VERIFYING.value in statuses:
+                pack.status = PackStatus.VERIFYING.value
+            elif ItemStatus.FAILED.value in statuses:
+                pack.status = PackStatus.FAILED.value
+            elif statuses & {ItemStatus.NEEDS_REVISION.value, ItemStatus.REJECTED.value}:
+                pack.status = PackStatus.NEEDS_REVISION.value
+            else:
+                pack.status = PackStatus.AWAITING_REVIEW.value
+        pack.error_code = "item_generation_failed" if ItemStatus.FAILED.value in statuses else None
+
     def verify(self, pack_id: str, item_id: str, *, expected_version: int,
                verification: ArtifactVerification) -> ApplicationPackItem:
         with self._factory.begin() as session:
@@ -351,7 +376,7 @@ class PackRepository:
             item.status = ItemStatus.AWAITING_REVIEW.value if verification.passed else ItemStatus.NEEDS_REVISION.value
             artifact.status = "verified" if verification.passed else "draft"
             artifact.verification_status = "passed" if verification.passed else "failed"
-            pack.status = PackStatus.AWAITING_REVIEW.value if verification.passed else PackStatus.NEEDS_REVISION.value
+            self._refresh_status(session, pack)
             self._event(session, pack, "ARTIFACT_VERIFIED", {"item_id": item_id,
                 "passed": verification.passed, "issue_count": len(verification.issues)})
             session.flush()
@@ -405,16 +430,7 @@ class PackRepository:
                          "block_reviews": [{"block_id": block_id,
                            "decision": "accepted" if approve else "rejected"}
                            for block_id in block_ids]}, idempotency_key)
-            rows = session.scalars(select(ApplicationPackItemRow).where(
-                ApplicationPackItemRow.pack_id == pack_id)).all()
-            required = {"tailored_resume", "cover_letter"}
-            if approve and required <= {row.artifact_type for row in rows} and all(
-                    row.status == ItemStatus.APPROVED.value or row.requires_manual_answer
-                    for row in rows):
-                pack.status = PackStatus.APPROVED.value
-                pack.completed_at = datetime.now(UTC)
-            elif not approve:
-                pack.status = PackStatus.NEEDS_REVISION.value
+            self._refresh_status(session, pack)
             session.flush()
             return self._item(item)
 
@@ -426,8 +442,7 @@ class PackRepository:
             self._advance_item(session, item, expected_version)
             self._advance_pack(session, pack, pack.version)
             item.status = ItemStatus.FAILED.value
-            pack.status = PackStatus.FAILED.value if item.artifact_type in {"tailored_resume", "cover_letter"} else pack.status
-            pack.error_code = "item_generation_failed"
+            self._refresh_status(session, pack)
             self._event(session, pack, "ITEM_FAILED", {"item_id": item_id})
             session.flush()
             return self._item(item)
@@ -447,7 +462,7 @@ class PackRepository:
                 return self._item(item)
             if item.version != expected_version: raise PackConflictError("Pack item version changed.")
             if item.status not in {ItemStatus.REJECTED.value, ItemStatus.FAILED.value,
-                                   ItemStatus.NEEDS_REVISION.value, ItemStatus.AWAITING_REVIEW.value}:
+                                   ItemStatus.NEEDS_REVISION.value, ItemStatus.AWAITING_REVIEW.value, ItemStatus.APPROVED.value}:
                 raise PackConflictError("Item is not ready for regeneration.")
             if item.requires_manual_answer or pack.status == PackStatus.STALE.value:
                 raise PackConflictError("This item requires a new Pack or manual answer.")
@@ -458,6 +473,7 @@ class PackRepository:
             item.verification_json = None
             item.regeneration_feedback = feedback
             pack.status = PackStatus.GENERATING.value
+            pack.completed_at = None
             self._event(session, pack, "ITEM_REGENERATE_REQUESTED",
                         {"item_id": item_id, "feedback": feedback}, idempotency_key)
             session.flush()

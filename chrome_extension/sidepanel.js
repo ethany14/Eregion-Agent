@@ -126,7 +126,7 @@ async function saveCurrentJob() {
   const saved = await saveWorkspace(workspacePayload());
   currentApplicationId = saved.application.application_id;
   elements.openApplication.hidden = false;
-  elements.saveJob.textContent = "Saved to workspace";
+  elements.saveJob.textContent = "Job saved";
   return saved;
 }
 function quickResultFromAnalysis(analysis) {
@@ -150,7 +150,7 @@ async function analyze() {
     const saved = await saveCurrentJob();
     const analysis = await analyzeApplication(saved.application.application_id, saved.application.version);
     render(quickResultFromAnalysis(analysis));
-    showMessage("Analysis complete and saved. Open this job in the full workspace for materials and Copilot.", "success");
+    showMessage("Analysis complete and saved. Open this job in career chat to continue.", "success");
   }
   catch (error) { showMessage(error.message); }
   finally { setBusy(false); }
@@ -158,13 +158,13 @@ async function analyze() {
 async function checkHealth() { try { await health(); elements.health.className = "online"; elements.health.title = "Backend online"; } catch (_error) { elements.health.className = "offline"; elements.health.title = "Backend unavailable"; } }
 
 elements.extract.addEventListener("click", extract); elements.analyze.addEventListener("click", analyze);
-elements.openWeb.addEventListener("click", () => chrome.tabs.create({ url: "http://localhost:8000/app" }));
+elements.openWeb.addEventListener("click", () => chrome.tabs.create({ url: "http://localhost:8000/apply" }));
 elements.openApplication.addEventListener("click", () => {
-  if (currentApplicationId) chrome.tabs.create({ url: `http://localhost:8000/app?application=${encodeURIComponent(currentApplicationId)}#jobs` });
+  if (currentApplicationId) chrome.tabs.create({ url: `http://localhost:8000/apply?application=${encodeURIComponent(currentApplicationId)}` });
 });
 elements.saveJob.addEventListener("click", async () => {
   if (busy) return; setBusy(true, "Saving…"); showMessage("");
-  try { await saveCurrentJob(); showMessage("Job saved. You can open it in the full workspace.", "success"); }
+  try { await saveCurrentJob(); showMessage("Job saved. You can open it in career chat.", "success"); }
   catch (error) { showMessage(error.message); }
   finally { setBusy(false); }
 });

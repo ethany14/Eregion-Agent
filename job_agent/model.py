@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+import hashlib
+import json
 from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any, TypeVar
@@ -101,6 +103,15 @@ def create_model(
             raise ValueError("LLM_MAX_RETRIES must be a non-negative integer.")
         options["max_retries"] = retries
     return model_factory(**options)
+
+
+def model_settings_fingerprint(*, env_path: Path = DEFAULT_ENV_PATH, environ=None) -> str:
+    """Opaque cache identity. Never return or log credentials or raw settings."""
+    settings = {**dotenv_values(env_path), **(os.environ if environ is None else environ)}
+    keys = ('LLM_MODEL_ID','LLM_BASE_URL','LLM_API_KEY','LLM_TIMEOUT','LLM_MAX_RETRIES',
+        'OPENAI_API_KEY','OPENAI_API_BASE','OPENAI_BASE_URL','OPENAI_ORG_ID')
+    return hashlib.sha256(json.dumps({key:optional_setting(settings,key) for key in keys},
+        sort_keys=True).encode()).hexdigest()
 
 
 def invoke_structured(

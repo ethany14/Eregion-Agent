@@ -12,3 +12,4 @@ __pycache__/
 .release-local/
 uploads/
 .browser-sessions/
+artifacts/browser-eval/

@@ -1,0 +1,68 @@
+/* Reading rhythm for chat messages, questions and interview feedback. */
+.message { margin: 0 0 34px; overflow-wrap: anywhere; }
+.message .speaker { display: none; }
+.message.user { display: flex; flex-direction: column; align-items: flex-end; }
+.message.user > p {
+  margin: 0; max-width: 82%; padding: 9px 16px; border-radius: 18px;
+  background: var(--soft); color: var(--ink); font-size: 15px; line-height: 1.6; white-space: pre-wrap;
+}
+.message.assistant { position: relative; }
+
+.message-body { min-width: 0; font-size: 15px; line-height: 1.75; color: var(--ink-2); overflow-wrap: anywhere; text-wrap: pretty; }
+.message-body > :first-child { margin-top: 0 !important; }
+.message-body > :last-child { margin-bottom: 0 !important; }
+.message .message-body p, .message-body p { margin: 0 0 14px; white-space: normal; }
+.message-body h3, .message-body h4 { font-weight: 500; line-height: 1.45; letter-spacing: -.01em; color: var(--ink); text-wrap: balance; }
+.message-body h3 { font-size: 18px; margin: 28px 0 10px; }
+.message-body h4 { font-size: 16px; margin: 24px 0 8px; }
+.message-body strong { font-weight: 600; color: var(--ink); }
+.message-body ul, .message-body ol { margin: 8px 0 18px; padding-left: 22px; }
+.message-body li { padding-left: 4px; margin: 6px 0; }
+.message-body li::marker { color: var(--faint); }
+.message-body li > p { margin-bottom: 6px; }
+.message-body li > p:last-child { margin-bottom: 0; }
+.message-body li ul, .message-body li ol { margin: 4px 0 8px; }
+.message-body a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; text-decoration-thickness: 1px; overflow-wrap: anywhere; }
+.message-body a:hover { text-decoration-color: currentColor; }
+.message-body :not(pre) > code {
+  font: 13px/1.6 var(--mono); padding: 1px 5px; border-radius: 5px; background: var(--soft); color: var(--ink);
+  box-decoration-break: clone; -webkit-box-decoration-break: clone;
+}
+.code-block { margin: 16px 0 20px; border-radius: 12px; overflow: hidden; background: var(--soft); }
+.code-language { padding: 8px 14px 0; font-size: 11.5px; color: var(--faint); }
+.message-body pre { margin: 0; padding: 14px 16px; overflow: auto; max-height: 420px; white-space: pre; overflow-wrap: normal; tab-size: 2; }
+.message-body pre code { font: 13px/1.7 var(--mono); color: var(--ink-2); }
+.message-body blockquote { margin: 16px 0 20px; padding: 2px 0 2px 16px; border-left: 2px solid var(--line-strong); color: var(--muted); }
+.message-body blockquote > p:last-child { margin-bottom: 0; }
+.message-body hr { border: 0; border-top: 1px solid var(--line); margin: 26px 0; }
+.message-table { max-width: 100%; overflow: auto; margin: 16px 0 22px; overscroll-behavior-x: contain; }
+.message-table table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.6; text-align: left; }
+.message-table th { font-weight: 400; font-size: 12.5px; color: var(--faint); }
+.message-table th, .message-table td { padding: 10px 14px 10px 0; border-bottom: 1px solid var(--line); min-width: 120px; vertical-align: top; }
+.message-table tr:last-child td { border-bottom: 0; }
+.task-list-item { list-style: none; position: relative; }
+.task-list-item > input { position: absolute; left: -20px; top: 7px; margin: 0; accent-color: var(--ink); }
+.message .message-body .plain-message { white-space: pre-wrap; }
+
+.message-copy {
+  display: inline-flex; margin: 10px 0 0; padding: 2px 0; border: 0; background: transparent;
+  font-size: 12px; line-height: 1.5; color: var(--faint); cursor: pointer;
+  opacity: 0; transition: opacity .15s;
+}
+.message.assistant:hover .message-copy, .message-copy:focus-visible { opacity: 1; }
+.message-copy:hover { color: var(--ink); }
+@media (hover: none) { .message-copy { opacity: 1; } }
+
+.decision .message-body { font-size: 14.5px; line-height: 1.7; }
+.decision .message-body h3, .decision .message-body h4 { font-size: 15px; }
+.career-interview .message-body { margin: 0 0 12px; }
+
+@media (max-width: 760px) {
+  .message-body { font-size: 14.5px; line-height: 1.8; }
+  .message-body h3 { font-size: 17px; margin-top: 24px; }
+  .message-body h4 { font-size: 15px; margin-top: 22px; }
+  .message-body ul, .message-body ol { padding-left: 20px; }
+  .message { margin-bottom: 28px; }
+  .message-table th, .message-table td { padding: 9px 12px 9px 0; }
+}
+@media (prefers-reduced-motion: reduce) { .message-copy { transition: none; } }

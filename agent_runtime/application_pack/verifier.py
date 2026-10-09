@@ -68,6 +68,7 @@ class ArtifactVerifier:
                expected_question: str | None = None,
                preferences: list[dict] | None = None,
                expected_role: str | None = None,
+               employer_context: str | None = None,
                resume_sentences: list[str] | None = None) -> ArtifactVerification:
         by_id = {item.evidence_id: item for item in evidence}
         by_version = {item.evidence_version_id: item for item in evidence}
@@ -207,11 +208,13 @@ class ArtifactVerifier:
             if valid_ids and block.evidence_ids and block.evidence_version_ids:
                 resolved = [by_id.get(value) or by_version.get(value) for value in block.evidence_ids]
                 valid_ids = {value.evidence_version_id for value in resolved} == set(block.evidence_version_ids)
+            # A verified role title (e.g. Intern 2027) is employer context, not a candidate metric.
+            candidate_text = block.text.replace(expected_role, "") if expected_role else block.text
             factual = block.block_type.value == "factual" or bool(re.search(
                 r"\b(years?|built|led|managed|developed|used|deployed|have|has|bring|possess|"
                 r"increased|reduced|experienced?|skilled|expert|proficient|proven|"
                 r"delivered|achieved|contributed|background|familiar|certified)\b|\d",
-                block.text, re.I))
+                candidate_text, re.I))
             if (block.evidence_ids or block.evidence_version_ids) and not valid_ids:
                 reason = "Citation does not resolve to a matching confirmed evidence version."
             elif factual and artifact_type != "tailored_resume" and not block.evidence_version_ids:
@@ -225,7 +228,7 @@ class ArtifactVerifier:
                     for item in citations):
                 if self._semantic_judge is not None:
                     semantic_candidates.append({"claim_id": block.block_id,
-                        "claim": block.text, "evidence": [
+                        "claim": block.text, "employer_context": employer_context, "evidence": [
                             {"claim": item.claim_text, "quote": item.exact_quote}
                             for item in citations]})
                     reason = None

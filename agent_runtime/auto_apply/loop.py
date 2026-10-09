@@ -6,8 +6,10 @@ from pathlib import Path
 import time
 from uuid import uuid4
 
+from agent_runtime.model_runtime import MODEL_PAYMENT_MESSAGE
+
 from .agent import HybridApplicationAgent
-from .autofill import autofill, desired_answer, matches
+from .autofill import autofill, desired_answer, matches, pending_documents
 from .browser import ApplicationBrowser, BrowserBlocked, form_digest
 from .contracts import PAUSED, TERMINAL
 from .repository import ApplyConflict, now
@@ -21,7 +23,7 @@ from .drafting import visible_drafts
 
 
 class ApplicationLoop:
-    def __init__(self, repository, *, browser_factory=ApplicationBrowser, agent_factory=HybridApplicationAgent, retry_delays=(1, 3)):
+    def __init__(self, repository, *, browser_factory=ApplicationBrowser, agent_factory=HybridApplicationAgent, retry_delays=(1, 3), max_model_calls=120, max_tool_calls=360):
         self.repository = repository
         self.browser_factory = browser_factory
         self.agent_factory = agent_factory
@@ -31,6 +33,7 @@ class ApplicationLoop:
         self.preview_times = {}
         self.closed = False
         self.retry_delays = retry_delays
+        self.max_model_calls,self.max_tool_calls=max_model_calls,max_tool_calls
         self.scheduled = {}
         self.session_store = BrowserSessionStore(Path(__file__).resolve().parents[2] / ".browser-sessions")
         restored = self.repository.recover()
@@ -73,6 +76,70 @@ class ApplicationLoop:
         with self.lock:
             return self.previews.get(run_id)
 
+    def set_browser_visible(self,run_id,visible,version):
+        """Only the user's window button invokes this; model tools cannot show Chrome."""
+        with self.lock:
+            state=self.repository.get(run_id)
+            if self.closed or state['version']!=version or state['status'] in TERMINAL|{'submitting'}:
+                raise ApplyConflict('The application changed or is submitting. Refresh before taking control.')
+            if run_id not in self.browsers:raise ApplyConflict('No application browser is open. Resume the task first.')
+            state=self.repository.save(state,status='needs_input',pause_requested=True,
+                chat_revision=state.get('chat_revision',0)+1,review_digest=None,retry_at=None,
+                message='Paused for browser control. Switching modes reloads the page; saved answers remain. Resume when ready.')
+            self.scheduled.pop(run_id,None)
+        def change():
+            latest=self.repository.get(run_id)
+            if not latest.get('pause_requested') or latest.get('chat_revision')!=state['chat_revision']:
+                raise ApplyConflict('The task changed. Pause before switching browser mode.')
+            browser=self.browsers.get(run_id)
+            if not browser or not hasattr(browser,'set_visible'):raise ApplyConflict('This browser does not support manual window control.')
+            browser.set_visible(visible)
+            self._capture_preview(run_id,browser)
+            return self.repository.get(run_id)
+        try:return self.executor.submit(change).result()
+        except BrowserBlocked as exc:raise ApplyConflict(str(exc)) from None
+
+    def browser_control(self, run_id, request, *, parent_scope=''):
+        from agent_runtime.browser.handoff import control_browser
+        with self.lock:
+            state = self.repository.get(run_id)
+            if self.closed or state['status'] in TERMINAL | {'submitting'}:
+                raise ApplyConflict('This application is closed or submitting.')
+            if run_id not in self.browsers:
+                raise ApplyConflict('No application browser is open. Resume the task first.')
+            if request.action == 'start':
+                if state['version'] != request.expected_version:
+                    raise ApplyConflict('The application changed. Refresh before taking control.')
+                state = self.repository.save(state, status='needs_input', pause_requested=True,
+                    chat_revision=state.get('chat_revision', 0)+1, review_digest=None, retry_at=None,
+                    message='Paused for browser control. Your current page is preserved. Resume when ready.')
+                self.scheduled.pop(run_id, None)
+            if not state.get('pause_requested'):
+                raise ApplyConflict('Pause the agent before controlling its browser.')
+            revision = state.get('chat_revision', 0)
+        def control():
+            latest = self.repository.get(run_id)
+            if (self.closed or not latest.get('pause_requested')
+                    or latest.get('chat_revision', 0) != revision
+                    or latest['status'] in TERMINAL | {'submitting'}):
+                raise ApplyConflict('The task resumed or changed. Take control again.')
+            browser = self.browsers.get(run_id)
+            if not browser:
+                raise ApplyConflict('The browser is no longer open.')
+            result = control_browser(browser, request, f'{parent_scope}:application:{run_id}:{revision}')
+            self.preview_times.pop(run_id, None)
+            self._capture_preview(run_id, browser)
+            return result
+        try:
+            return self.executor.submit(control).result()
+        except BrowserBlocked as exc:
+            raise ApplyConflict(str(exc)) from None
+        except ApplyConflict:
+            raise
+        except Exception:
+            # Playwright exceptions can contain typed input. Never return them.
+            raise ApplyConflict('Browser control could not complete. Refresh the view before trying again.') from None
+
     def account(self, run_id, request, *, switch=False):
         with self.lock:
             state = self.repository.get(run_id)
@@ -93,10 +160,12 @@ class ApplicationLoop:
             state = self._active(run_id)
             if state is None or state.get("pause_requested"): return
             browser = self.browsers[run_id]
+            options = {'model_factory':getattr(self.agent_factory(), 'model_factory', None),
+                'active':lambda:self._can_act(run_id), 'reserve':lambda kind:self._reserve(run_id,kind)}
             if switch:
-                authentication.switch_mode(browser, request.mode, request.origin)
+                authentication.switch_mode(browser, request.mode, request.origin, **options)
             else:
-                authentication.authenticate(browser, request, expected=expected, active=lambda: self._can_act(run_id))
+                authentication.authenticate(browser, request, expected=expected, **options)
             self._drive(run_id, None)
         except Exception as exc:
             browser = self.browsers.get(run_id)
@@ -119,8 +188,10 @@ class ApplicationLoop:
             fields = {f["key"]: f for f in state["fields"]}
             if request.field_key and request.field_key not in fields:
                 raise ApplyConflict("Choose a question from the current application.")
-            pause = request.text.strip().casefold() in {"pause", "stop", "暂停", "停止", "先暂停"}
-            resume = request.text.strip().casefold() in {"continue", "resume", "继续", "继续吧", "重试", "retry"}
+            from agent_runtime.task_control import requests_resume, requests_pause, resume_command_only
+            pause = requests_pause(request.text)
+            resume = requests_resume(request.text)
+            control_only = pause or (resume and resume_command_only(request.text))
             if not pause and not resume and not request.field_key and state.get("automation_mode", "autofill") != "hybrid":
                 raise ApplyConflict("General feedback requires Agent + autofill. In autofill-only mode, choose the question you are answering.")
             answers = {}
@@ -132,7 +203,10 @@ class ApplicationLoop:
                         raise ApplyConflict("Answer this checkbox with yes or no.")
                 answers[request.field_key] = answer
             message = {"id": request.message_id, "role": "user", "text": request.text,
-                "field_key": request.field_key, "control": pause or resume, "at": now()}
+                "field_key": request.field_key, "control": control_only, "at": now()}
+            input_request=state.get('input_request')
+            if input_request and not control_only:
+                message['in_reply_to']=input_request['id']
             if answers:
                 message["bound_answers"] = answers
                 message["binding_method"] = "explicit_field"
@@ -141,6 +215,7 @@ class ApplicationLoop:
             updated = self.repository.save(state,
                 status="needs_input" if pause else "queued" if was_paused else state["status"],
                 messages=[*state.get("messages", []), message][-100:], chat_revision=state.get("chat_revision", 0) + 1,
+                input_request=input_request if control_only else None,
                 answers={**state["answers"], **answers}, review_digest=None, pause_requested=pause,
                 retry_at=None, recovery_attempts=0, continuations=0,
                 visual_fallback=request.visual_fallback if request.visual_fallback is not None else state.get("visual_fallback", False),
@@ -156,6 +231,9 @@ class ApplicationLoop:
         with self.lock:
             state = self._active(run_id)
             if state is not None:
+                for old in reversed(state.get('messages', [])):
+                    if old.get('role') == 'user':break
+                    if old.get('role') == 'assistant' and old.get('text','').strip() == text.strip():return
                 message = {"id": str(uuid4()), "role": "assistant", "text": text, "at": now()}
                 self.repository.save(state, messages=[*state.get("messages", []), message][-100:])
 
@@ -170,12 +248,14 @@ class ApplicationLoop:
             state = self._active(run_id)
             if state is None or state.get("pause_requested") or state["status"] == "submitting": return False
             if state.get("automation_mode") != "hybrid": return False
-            if state.get("agent_calls", 0) - state.get("budget_model_base", 0) >= 40: return False
+            if state.get("agent_calls", 0) - state.get("budget_model_base", 0) >= self.max_model_calls: return False
+            if state.get('agent_tools',0)-state.get('budget_tool_base',0)>=self.max_tool_calls:return False
             attempts = state.get("recovery_attempts", 0)
-            if reason == "yielded" and progressed and state.get("continuations", 0) < 6:
+            if reason == "yielded":
                 delay = 0
-                message = "Making progress. Continuing with the remaining steps."
-            elif reason in {"validation_error", "model_error", "model_timeout", "model_rate_limited", "model_unavailable", "invalid_model_response", "browser_error", "yielded", "no_progress"} and attempts < len(self.retry_delays):
+                attempts=0
+                message = "Continuing from the saved decisions and current page."
+            elif reason in {"validation_error", "model_error", "model_timeout", "model_rate_limited", "model_unavailable", "invalid_model_response", "browser_error", "no_progress"} and attempts < len(self.retry_delays):
                 delay = self.retry_delays[attempts]
                 attempts += 1
                 message = "Recovering this step automatically. Your completed answers are saved."
@@ -183,7 +263,7 @@ class ApplicationLoop:
                 return False
             self.repository.save(state, status="queued", retry_at=time.time() + delay,
                 recovery_attempts=attempts, continuations=state.get("continuations", 0) + 1,
-                recovery_note=f"Previous step ended with {reason}. Inspect the latest state and change unsuccessful strategies.",
+                recovery_note=f"Previous step ended with {reason}. Observed progress: {progressed}. Inspect the latest state and change unsuccessful strategies.",
                 review_digest=None, message=message)
             self.scheduled[run_id] = (time.monotonic() + delay, state.get("chat_revision", 0))
             return True
@@ -241,7 +321,7 @@ class ApplicationLoop:
             self.repository.remember(state, recovered)
         return state
 
-    def start(self, request):
+    def start(self, request, *, material_refs=None):
         from .contracts import Candidate
         from .education import normalize_records
         import base64
@@ -251,9 +331,10 @@ class ApplicationLoop:
             profile=request.profile.model_dump()
             profile['education']=normalize_records(profile.get('education',[]))
             request=request.model_copy(update={'profile':Candidate.model_validate(profile)})
-            state, created = self.repository.create(request)
+            state, created = self.repository.create(request,material_refs=material_refs)
             if created:
-                self.repository.save_candidate(profile,resume=base64.b64decode(request.resume_base64),name=request.resume_name)
+                if request.save_as_default:
+                    self.repository.save_candidate(profile,resume=base64.b64decode(request.resume_base64),name=request.resume_name)
                 self.executor.submit(self._drive, state["run_id"], None)
             return state
 
@@ -274,9 +355,11 @@ class ApplicationLoop:
                 fields={f['key']:f for f in state['fields']}
                 messages=[*messages,{'id':str(uuid4()),'role':'user','at':now(),
                     'text':'\n'.join(f"{fields[k]['label']}: {('Yes' if v else 'No') if isinstance(v,bool) else v}" for k,v in request.answers.items()),
-                    'bound_answers':request.answers,'binding_method':'explicit_batch'}][-100:]
+                    'bound_answers':request.answers,'binding_method':'explicit_batch',
+                    'in_reply_to':(state.get('input_request') or {}).get('id')}][-100:]
             updated = self.repository.save(state, status="queued", answers={**state["answers"], **request.answers},
                 messages=messages,chat_revision=state.get('chat_revision',0)+bool(request.answers),
+                input_request=None,
                 review_digest=None if request.answers else state.get('review_digest'),
                 pause_requested=False,
                 recovery_attempts=0, continuations=0, retry_at=None,
@@ -308,6 +391,16 @@ class ApplicationLoop:
                 raise ApplyConflict("The attempt changed. Refresh before resuming.")
             updated = self.repository.reopen(state)
             self.executor.submit(self._finish_reopen, run_id, updated["chat_revision"])
+            return updated
+
+    def replace_materials(self, run_id, resume, cover_letter, *, profile=None, material_refs=None):
+        """Browser work remains serialized; no previous submission approval survives."""
+        with self.lock:
+            if self.closed:raise ApplyConflict('The application service is stopping.')
+            state = self.repository.get(run_id)
+            updated = self.repository.replace_documents(state,resume,cover_letter,profile=profile,material_refs=material_refs)
+            self.scheduled.pop(run_id,None)
+            self.executor.submit(self._finish_reopen,run_id,updated['chat_revision'])
             return updated
 
     def _finish_reopen(self, run_id, revision):
@@ -361,13 +454,98 @@ class ApplicationLoop:
             state = self._active(run_id)
             if state is None or state.get("pause_requested"):
                 return False
-            key, limit = ("agent_calls", 40) if kind == "model" else ("agent_tools", 120)
+            key, limit = ("agent_calls", self.max_model_calls) if kind == "model" else ("agent_tools", self.max_tool_calls)
             used = state.get(key, 0)
             base = state.get("budget_model_base" if kind == "model" else "budget_tool_base", 0)
             if used - base >= limit:
                 return False
             self.repository.save(state, **{key: used + 1})
             return True
+
+    def _agent_context(self,run_id):
+        state=self.repository.agent_context(run_id)
+        return {**state,'budget_remaining':{
+            'model_calls':max(0,self.max_model_calls-state.get('agent_calls',0)+state.get('budget_model_base',0)),
+            'tool_calls':max(0,self.max_tool_calls-state.get('agent_tools',0)+state.get('budget_tool_base',0))}}
+
+    @staticmethod
+    def _progress_digest(fields,page,state):
+        # Navigating, discovering a menu and binding an answer are progress even
+        # before an input's value changes. Operational counters are not progress.
+        payload=[form_digest(fields),page,state.get('answers'),state.get('field_decisions'),state.get('education_bindings')]
+        return hashlib.sha256(json.dumps(payload,sort_keys=True,default=str).encode()).hexdigest()
+
+    def _publish_question(self, run_id, text, keys, fields, revision):
+        with self.lock:
+            state = self._active(run_id)
+            if state is None or state.get('pause_requested'):
+                raise BrowserBlocked('Application paused or cancelled.')
+            if state.get('chat_revision', 0) != revision:
+                raise BrowserBlocked('New feedback arrived. Read it before asking another question.')
+            pending = state.get('input_request')
+            if pending:
+                return pending  # One batch, one reply; never overwrite or repeat it.
+            keys = list(dict.fromkeys(keys))
+            question = {'id':str(uuid4()), 'role':'assistant', 'text':text,
+                'question_keys':keys, 'at':now(), 'kind':'question'}
+            messages = list(state.get('messages',[]))
+            if messages and messages[-1].get('role') == 'assistant' and messages[-1].get('text') == text:
+                question['id'] = messages[-1]['id']
+                messages[-1] = question
+            else:
+                messages.append(question)
+            request = {'id':question['id'], 'text':text, 'field_keys':keys,
+                'fields':[f for f in fields if f['key'] in keys]}
+            self.repository.save(state, fields=fields, pending_fields=keys, input_request=request,
+                messages=messages[-100:], review_digest=None,
+                message='Your question is ready. I am continuing the independent steps.')
+            return request
+
+    def _pause_for_question(self, run_id, text, keys, fields, revision):
+        with self.lock:
+            state = self._active(run_id)
+            if state is None or state.get('pause_requested'):return
+            if state.get('chat_revision', 0) != revision:
+                self.executor.submit(self._drive, run_id, None)
+                return
+            self._publish_question(run_id, text, keys, fields, revision)
+            state = self.repository.get(run_id)
+            self.repository.save(state, status='needs_input', agent_reason='user_question', retry_at=None,
+                message='Waiting for your reply. Your completed work is saved.')
+
+    def reply_question(self, run_id, request):
+        """Answer a question while the worker runs, independent of polling versions."""
+        with self.lock:
+            state = self.repository.get(run_id)
+            previous = next((m for m in state.get('messages',[]) if m.get('in_reply_to') == request.request_id
+                and m.get('binding_method') == 'explicit_batch'), None)
+            if previous and previous.get('bound_answers') == request.answers:return state
+            pending = state.get('input_request')
+            if (self.closed or state['status'] in TERMINAL | {'submitting'} or state.get('reopening')
+                    or not pending or pending['id'] != request.request_id):
+                raise ApplyConflict('That question has already been answered or changed. Read the latest conversation.')
+            fields = {f['key']:f for f in pending.get('fields',[])}
+            if not request.answers or not set(request.answers).issubset(fields):
+                raise ApplyConflict('Answer fields from this question, or reply in chat.')
+            message = {'id':str(uuid4()), 'role':'user', 'at':now(), 'in_reply_to':pending['id'],
+                'bound_answers':request.answers, 'binding_method':'explicit_batch',
+                'text':'\n'.join(f"{fields[k]['label']}: {('Yes' if v else 'No') if isinstance(v,bool) else v}"
+                    for k,v in request.answers.items())}
+            paused = state.get('pause_requested',False)
+            needs_worker = state['status'] in PAUSED or run_id in self.scheduled
+            self.scheduled.pop(run_id, None)
+            updated = self.repository.save(state, status='needs_input' if paused else 'queued' if needs_worker else state['status'],
+                messages=[*state.get('messages',[]),message][-100:], chat_revision=state.get('chat_revision',0)+1,
+                answers={**state['answers'],**request.answers}, input_request=None, pending_fields=[], review_digest=None,
+                answer_sources={**state.get('answer_sources',{}),**{k:{'type':'chat','message_id':message['id']} for k in request.answers}},
+                retry_at=None, recovery_attempts=0, budget_model_base=state.get('agent_calls',0),
+                budget_tool_base=state.get('agent_tools',0), message='Your answers are saved. I will read them before the next action.')
+            # A pending question can refer to the previous page. Its frozen field
+            # labels preserve memory scope even after independent navigation.
+            self.repository.remember({**updated,'fields':list(fields.values())},request.answers)
+            if needs_worker and not paused:
+                self.executor.submit(self._drive,run_id,None,frozenset(request.answers))
+            return updated
 
     def _drive(self, run_id, approval, edited_keys=frozenset()):
         fields = None
@@ -394,6 +572,14 @@ class ApplicationLoop:
                 else:
                     browser = self.browser_factory(state["url"])
                 self.browsers[run_id] = browser
+                # Repeated controls can reuse their DOM IDs for another record.
+                # Preserve confirmed education answers by record/component and
+                # let the agent map the fresh page before filling them again.
+                from .education import new_browser_bindings
+                with self.lock:
+                    current = self._active(run_id)
+                    if current is None:return
+                    state = self.repository.save(current, **new_browser_bindings(current))
                 approval = None  # An approval never survives a new browser session.
             proof = browser.confirmation()
             if proof:
@@ -402,13 +588,13 @@ class ApplicationLoop:
                 self._close_browser(run_id)
                 return
             fields = browser.observe()
-            before_digest = form_digest(fields)
             barrier = browser.barrier()
             if barrier:
                 self._browser_handoff(run_id, barrier, fields)
                 return
             page = browser.page_state() if hasattr(browser, "page_state") else None
-            if not fields and not (page and page["controls"]):
+            before_digest=self._progress_digest(fields,page,state)
+            if not fields and not (page and (page.get('controls') or page.get('text'))) and state.get('automation_mode')!='hybrid':
                 raise BrowserBlocked("No supported application form is visible. Open the form in the browser, then continue.")
             with self.lock:
                 state = self._active(run_id)
@@ -431,6 +617,10 @@ class ApplicationLoop:
                     result = autofill(browser, current, lambda: self.repository.resume(run_id), edited_keys=edited_keys | chat_keys,
                         active=lambda: self._can_act(run_id) and self.repository.get(run_id).get("chat_revision", 0) == current.get("chat_revision", 0),
                         progress=lambda *args: self._progress(run_id, *args))
+                    with self.lock:
+                        latest=self.repository.get(run_id)
+                        if self._can_act(run_id) and latest.get('chat_revision',0)==current.get('chat_revision',0):
+                            self._checkpoint(run_id,document_refresh=current.get('document_refresh',{}))
                     fill_report.update(result)
                     return result
                 if state.get("automation_mode", "autofill") == "hybrid":
@@ -441,11 +631,12 @@ class ApplicationLoop:
                         active=lambda: self._can_act(run_id),
                         reserve=lambda kind: self._reserve(run_id, kind),
                         report=lambda *args: self._progress(run_id, *args),
-                        refresh=lambda: self.repository.agent_context(run_id), communicate=lambda text: self._say(run_id, text),
+                        refresh=lambda: self._agent_context(run_id), communicate=lambda text: self._say(run_id, text),
+                        publish_question=lambda text,keys,fields,revision: self._publish_question(run_id,text,keys,fields,revision),
                         accept_answer=lambda key, value, message_id: self._accept_chat_answer(run_id, key, value, message_id),
                         checkpoint=lambda **changes: self._checkpoint(run_id, **changes),
                         bind_answers=lambda items, revision: self._bind_answers(run_id, items, revision))
-                    if outcome["reason"] in {"model_error", "model_timeout", "model_unavailable", "model_rate_limited", "invalid_model_response"}:
+                    if outcome["reason"] in {"model_payment_required", "model_error", "model_timeout", "model_unavailable", "model_rate_limited", "invalid_model_response"}:
                         with self.lock:
                             current = self._active(run_id)
                             if current and current.get("chat_revision", 0) == initial_chat_revision:
@@ -472,6 +663,10 @@ class ApplicationLoop:
                 self.executor.submit(self._drive, run_id, None)
                 return
             fields = browser.observe()
+            if outcome.get('question'):
+                self._pause_for_question(run_id,outcome['question'],outcome.get('field_keys',[]),fields,
+                    outcome.get('chat_revision',initial_chat_revision))
+                return
             missing = [field for field in fields if (field["required"] and not field["value"]) or field.get("invalid") or
                 (state.get("consent_policy", "ask") == "ask" and is_consent(field) and field["key"] not in state["answers"])]
             for field in fields:
@@ -503,17 +698,26 @@ class ApplicationLoop:
             from .education import gaps as education_gaps
             if reason == 'ready' and education_gaps(state,fields,page,final=True):
                 reason='validation_error'
+            if reason=='ready' and pending_documents(state,fields):reason='document_upload_required'
             if reason == "ready" and page is not None and not page["can_submit"]:
                 reason = "navigation_required"
-            if reason != "ready" and self._schedule_recovery(run_id, reason, progressed=form_digest(fields) != before_digest):
+            if reason != "ready" and self._schedule_recovery(run_id, reason, progressed=self._progress_digest(fields,page,state) != before_digest):
+                return
+            if reason == 'yielded':
+                reason = 'agent_limit'
+            if state.get('input_request') and reason != 'ready':
+                pending = state['input_request']
+                self._pause_for_question(run_id,pending['text'],pending['field_keys'],fields,
+                    outcome.get('chat_revision',initial_chat_revision))
                 return
             if missing or reason != "ready":
-                if hasattr(browser, "enrich_options"):
+                if reason != "model_payment_required" and hasattr(browser, "enrich_options"):
                     fields = browser.enrich_options(fields, active=lambda: self._can_act(run_id))
                     latest = {f["key"]: f for f in fields}
                     missing = [latest.get(f["key"], f) for f in missing]
                 pending = list(dict.fromkeys([f["key"] for f in missing] + outcome.get("field_keys", [])))
-                messages = {"model_unavailable": "The configured AI model is unavailable. Check the model settings, or switch to autofill only.",
+                messages = {"model_payment_required": MODEL_PAYMENT_MESSAGE,
+                    "model_unavailable": "The configured AI model is unavailable. Check the model settings, or switch to autofill only.",
                     "model_rate_limited": "The AI service is busy. Your answers are saved; continue to retry.",
                     "model_error": "The AI tool call failed. You can retry or use autofill only.",
                     "invalid_model_response": "The configured model did not return a valid tool call. Use a model supporting tool calls.",
@@ -521,6 +725,7 @@ class ApplicationLoop:
                     "agent_limit": "The agent reached its bounded call limit. Completed fields are saved.",
                     "no_progress": "The agent stopped repeating an unsuccessful action. Check the highlighted control."}
                 messages["navigation_required"] = "This application has another step. Enable Agent + autofill, or continue in the browser and then send continue here."
+                messages['document_upload_required']='The selected resume or cover letter still needs uploading. Inspect the attachment control before reviewing this application.'
                 messages["validation_error"] = "The website still rejects a known answer or needs its final sub-option. Your facts are saved; check the current control or continue to retry."
                 with self.lock:
                     state = self._active(run_id)
@@ -529,7 +734,7 @@ class ApplicationLoop:
                         self.executor.submit(self._drive, run_id, None)
                         return
                     chat_messages = state.get("messages", [])
-                    if missing:
+                    if missing and reason not in {'no_progress','agent_limit','model_payment_required'}:
                         unknown = [f for f in missing if desired_answer(f, state) is None]
                         failed = [f for f in missing if desired_answer(f, state) is not None]
                         text, question_keys = input_prompt(unknown, failed, {f["key"]: desired_answer(f, state) for f in failed})
@@ -545,10 +750,11 @@ class ApplicationLoop:
                             "text": text, "question_keys": question_keys}][-100:]
                     self.repository.save(state, status="needs_input", fields=fields, pending_fields=pending,
                         review_digest=None, agent_reason=reason, messages=chat_messages,
+                        input_request=None,
                         message=messages.get(reason, "Completed fields are kept. Answer only the highlighted questions, then continue."))
                 return
             digest = self._review_digest(fields, page)
-            if not state["auto_submit"] and approval != digest:
+            if (not state["auto_submit"] or state.get("recovery_review_required")) and approval != digest:
                 with self.lock:
                     state = self._active(run_id)
                     if state is None or state.get("pause_requested"): return
@@ -570,7 +776,7 @@ class ApplicationLoop:
                 if current.get("chat_revision", 0) != outcome.get("chat_revision", initial_chat_revision):
                     self.executor.submit(self._drive, run_id, None)
                     return
-                self.repository.save(current, status="submitting", fields=fields,
+                self.repository.save(current, status="submitting", fields=fields, recovery_review_required=False,
                     message="Submitting once and waiting for the employer confirmation.")
             browser.submit()
             proof = browser.wait_confirmation()
@@ -618,7 +824,7 @@ class ApplicationLoop:
                 history = [*history, {"id":str(uuid4()), "role":"assistant", "text":message,
                     "at":now(), "question_keys":[]}][-100:]
             self.repository.save(state, status="needs_input", fields=fields, pending_fields=[],
-                review_digest=None, agent_reason="browser_handoff", account_request=account, messages=history, message=message)
+                input_request=None, review_digest=None, agent_reason="browser_handoff", account_request=account, messages=history, message=message)
 
     def close(self):
         with self.lock:

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import hashlib
+import json
 
 from agent_runtime.workspace.repository import JobWorkspaceRepository
 from agent_runtime.workspace.types import ApplicationStatus
@@ -27,6 +29,10 @@ class WorkspaceAnalysisService:
         self._fit_service = fit_service or FitAnalysisService()
         self._evidence = evidence
 
+    def cache_signature(self):
+        signature = getattr(self._fit_service,'cache_signature',None)
+        return signature() if callable(signature) else 'custom-fit-service'
+
     async def analyze(
         self,
         application_id: str,
@@ -43,6 +49,17 @@ class WorkspaceAnalysisService:
             from agent_runtime.workspace.errors import StaleApplicationError
 
             raise StaleApplicationError("The application version is stale.")
+
+        # The persisted result belongs to exact inputs and model/prompt/schema
+        # configuration, so a new chat or server process need not score it again.
+        cache_key = (hashlib.sha256(json.dumps([snapshot_id, resume_text,
+            self.cache_signature()], ensure_ascii=False).encode()).hexdigest()
+            if callable(getattr(self._fit_service, 'cache_signature', None)) else None)
+        cache_lookup = getattr(self._workspace, 'cached_fit_analysis', None)
+        cached = cache_lookup(application_id, cache_key) if cache_key and callable(cache_lookup) else None
+        if cached and current.status not in {ApplicationStatus.SAVED, ApplicationStatus.ANALYZING, ApplicationStatus.ANALYSIS_FAILED}:
+            logger.info('Reused saved fit analysis: application=%s model_calls=0', application_id)
+            return current, None, 'completed', cached
 
         analyzing = self._workspace.transition_status(
             application_id,
@@ -84,6 +101,9 @@ class WorkspaceAnalysisService:
                 match=result.skill_match,
                 expected_version=analyzing.version,
                 resume_text=resume_text, resume_id=resume_id,
+                analysis_cache_key=cache_key,
+                analysis_timing={"model_calls":result.model_calls, "latency_seconds":result.latency_seconds,
+                    "stage_seconds":result.stage_seconds, "cache_hits":result.cache_hits},
             )
             has_gaps = bool(
                 result.skill_match.missing_required_requirements

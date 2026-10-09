@@ -185,7 +185,7 @@ def test_disabling_visual_backup_removes_images_from_retained_model_history():
 
 
 def test_agent_stops_repeating_and_respects_budget():
-    model = ScriptModel([("autofill", {})] * 3)
+    model = ScriptModel([("autofill", {})] * 6)
     run = lambda reserve: HybridApplicationAgent(model_factory=lambda: model).run(RepairBrowser(), state(),
         autofill=lambda: {}, active=lambda: True, reserve=reserve, report=lambda *args: None)
     assert run(lambda kind: True)["reason"] == "no_progress"

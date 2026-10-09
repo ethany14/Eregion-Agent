@@ -22,9 +22,9 @@ def normalize_records(records):
     return result
 
 
-def date_parts(text):
+def date_parts(text, *, confirmed_quote=""):
     text=str(text).strip().casefold()
-    years=re.findall(r'\b(?:19|20)\d{2}\b',text)
+    years=list(dict.fromkeys(re.findall(r'\b(?:19|20)\d{2}\b',text)))
     result={'year':years[0]} if len(years)==1 else {}
     for month in range(1,13):
         if re.search(r'\b(?:'+calendar.month_name[month].lower()+'|'+calendar.month_abbr[month].lower()+r')\b',text):
@@ -33,18 +33,69 @@ def date_parts(text):
     reverse=re.fullmatch(r'(0?[1-9]|1[0-2])[-/]((?:19|20)\d{2})',text)
     if iso:result.update(year=iso[1],month=str(int(iso[2])))
     if reverse:result.update(year=reverse[2],month=str(int(reverse[1])))
+    # Full ISO dates are unambiguous. Slash dates require either an
+    # unambiguous day (>12) or a matching, explicitly written calendar date.
+    full_iso = re.fullmatch(r'((?:19|20)\d{2})-(\d{1,2})-(\d{1,2})', text)
+    numeric = re.fullmatch(r'(\d{1,2})/(\d{1,2})/((?:19|20)\d{2})', text)
+    candidates = []
+    if full_iso:candidates.append(tuple(map(int, full_iso.groups())))
+    if numeric:
+        first, second, year = map(int, numeric.groups())
+        if second > 12 or first == second:candidates.append((year, first, second))
+        elif first > 12:candidates.append((year, second, first))
+        else:
+            for month in range(1, 13):
+                name = calendar.month_name[month] + '|' + calendar.month_abbr[month]
+                for found in re.finditer(r'\b(?:'+name+r')\.?\s+(\d{1,2})(?:st|nd|rd|th)?[,]?\s+((?:19|20)\d{2})\b', confirmed_quote, re.I):
+                    day, quoted_year = map(int, found.groups())
+                    if quoted_year == year and (month,day) in {(first,second),(second,first)}:
+                        candidates.append((year, month, day))
+    valid = {(y,m,d) for y,m,d in candidates if 1 <= m <= 12 and 1 <= d <= calendar.monthrange(y,m)[1]}
+    if len(valid) == 1:
+        year,month,_ = valid.pop();result.update(year=str(year),month=str(month))
     return result
 
 
-def facts(profile):
+def facts(profile, overrides=None):
     result={}
     for record in profile.get('education',[]):
         values={k:record.get(k,'') for k in COMPONENTS[:6]}
+        confirmed = {component:item['value'] for component,item in (overrides or {}).get(record['id'], {}).items()
+            if component in COMPONENTS and item.get('value') is not None}
+        values.update({key:value for key,value in confirmed.items() if key in COMPONENTS[:6]})
         for part in ('start','end'):
-            values.update({f'{part}_{k}':v for k,v in date_parts(values[f'{part}_date']).items()})
+            source = (overrides or {}).get(record['id'], {}).get(f'{part}_date', {}).get('source', {})
+            values.update({f'{part}_{k}':v for k,v in date_parts(values[f'{part}_date'],
+                confirmed_quote=source.get('quote','')).items()})
+        values.update(confirmed)
         for component,value in values.items():
             if value:result[f"education:{record['id']}:{component}"]=value
     return result
+
+
+def new_browser_bindings(state):
+    """Retire DOM row identities; keep confirmed answers tied to their record.
+
+    Workday reuses education-N IDs for different rows after a new session.
+    Old field keys must never silently move an answer to a different school.
+    """
+    bindings = state.get('education_bindings', {})
+    overrides = {key:dict(value) for key,value in state.get('education_answer_overrides', {}).items()}
+    messages = {m['id']:i for i,m in enumerate(state.get('messages', [])) if m.get('id')}
+    for key, binding in bindings.items():
+        if key not in state.get('answers', {}):continue
+        record = overrides.setdefault(binding['education_id'], {})
+        source = state.get('answer_sources', {}).get(key, {})
+        previous = record.get(binding['component'], {})
+        if messages.get(previous.get('source', {}).get('message_id'), -1) > messages.get(source.get('message_id'), -1):continue
+        record[binding['component']] = {'value':state['answers'][key], 'source':source}
+    stale = set(bindings)
+    stale.update(key for key in state.get('answers', {}) if re.search(r':education-\d+--', key))
+    changes = {name:{key:value for key,value in state.get(name, {}).items() if key not in stale}
+        for name in ('answers','answer_sources','field_decisions','option_paths')}
+    return {**changes, 'education_bindings':{}, 'education_answer_overrides':overrides,
+        'review_fields':[], 'review_digest':None}
+
 
 
 def binding(field,state):
@@ -56,7 +107,7 @@ def binding(field,state):
 
 def bound_value(field,state):
     saved=binding(field,state)
-    return facts(state['profile']).get(saved['source_ref']) if saved else None
+    return facts(state['profile'], state.get('education_answer_overrides')).get(saved['source_ref']) if saved else None
 
 
 def repeatable(page):

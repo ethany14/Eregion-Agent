@@ -1,6 +1,6 @@
 """Public Job Workspace API contracts."""
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -106,6 +106,36 @@ class ApplicationDetail(PublicApplication):
     latest_missing_requirements: list[dict[str, Any]] = Field(default_factory=list)
     latest_tailored_resume: dict[str, Any] | None = None
     associated_runs: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class ApplicationOverviewItem(ApplicationSummary):
+    next_statuses: list[ApplicationStatus] = Field(default_factory=list)
+
+
+class FunnelStage(WorkspaceApiModel):
+    stage: Literal["saved", "analyzed", "applied", "interviewing", "offer"]
+    count: int
+
+
+class WeekCount(WorkspaceApiModel):
+    week_start: date
+    count: int
+
+
+class ApplicationTotals(WorkspaceApiModel):
+    tracked: int
+    applied: int
+    interviewing: int
+    offers: int
+    rejected: int
+    response_rate: int | None
+
+
+class ApplicationOverviewResponse(WorkspaceApiModel):
+    applications: list[ApplicationOverviewItem]
+    funnel: list[FunnelStage]
+    weekly: list[WeekCount]
+    totals: ApplicationTotals
 
 
 class ApplicationListResponse(WorkspaceApiModel):

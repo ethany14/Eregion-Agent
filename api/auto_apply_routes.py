@@ -3,8 +3,9 @@ from threading import Lock
 from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel, ConfigDict, Field
 
-from agent_runtime.auto_apply.contracts import ContinueApplication, StartApplication, VersionRequest, ChatRequest, ResumeProfileRequest, PreparationMessage, AccountCredentials, AccountMode, SavedCandidateRequest
+from agent_runtime.auto_apply.contracts import ReplyQuestion, ContinueApplication, StartApplication, VersionRequest, ChatRequest, ResumeProfileRequest, PreparationMessage, AccountCredentials, AccountMode, SavedCandidateRequest
 from agent_runtime.auto_apply.loop import ApplicationLoop
 from agent_runtime.auto_apply.repository import ApplyConflict, ApplyNotFound, ApplyRepository, DuplicateApplication
 
@@ -131,6 +132,28 @@ def preview(run_id: str, loop=Depends(service)):
         headers={"Cache-Control": "no-store"})
 
 
+class BrowserWindow(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    visible: bool
+    expected_version: int=Field(ge=1)
+
+
+@router.post('/{run_id}/browser-control')
+async def browser_control(run_id: str, request: Request, loop=Depends(service)):
+    from .browser_control import read_control_request
+    from fastapi.responses import JSONResponse
+    body = await read_control_request(request)
+    # Keep browser-worker waits off the event loop so the chat stays responsive.
+    from starlette.concurrency import run_in_threadpool
+    result = await run_in_threadpool(lambda: invoke(lambda: loop.browser_control(run_id, body)))
+    return JSONResponse(result, headers={'Cache-Control': 'no-store'})
+
+
+@router.post('/{run_id}/browser-window')
+def browser_window(run_id: str,body: BrowserWindow,loop=Depends(service)):
+    return invoke(lambda:loop.set_browser_visible(run_id,body.visible,body.expected_version))
+
+
 @router.get("/{run_id}/memory")
 def memory(run_id: str, loop=Depends(service)):
     return invoke(lambda: {"memories": loop.repository.memories(loop.repository.get(run_id)["profile"])})
@@ -148,6 +171,11 @@ def forget(run_id: str, memory_id: str, loop=Depends(service)):
 @router.get("/{run_id}")
 def get_attempt(run_id: str, loop=Depends(service)):
     return invoke(lambda: loop.repository.get(run_id))
+
+
+@router.post("/{run_id}/reply", status_code=202)
+def reply_question(run_id: str, body: ReplyQuestion, loop=Depends(service)):
+    return invoke(lambda: loop.reply_question(run_id, body))
 
 
 @router.post("/{run_id}/continue", status_code=202)

@@ -11,6 +11,19 @@ from job_agent.pdf_rendering import render_tailored_resume_pdf
 router = APIRouter(prefix="/api", tags=["application-pack"])
 
 
+@router.get('/packs/{pack_id}/items/{item_id}/cover-letter.pdf')
+def pack_cover_letter_pdf(pack_id: str,item_id: str,runtime: SessionRuntime = Depends(get_session_runtime)):
+    from agent_runtime.application_pack.rendering import render_cover_letter
+    from job_agent.pdf_rendering import render_letter_pdf
+    _,repository = _runtime(runtime)
+    item = repository.item(pack_id,item_id)
+    if item.artifact_type!='cover_letter':raise HTTPException(409,'Choose a cover-letter document.')
+    content = repository.artifact(pack_id,item_id)
+    if not content:raise HTTPException(409,'The document is not ready yet.')
+    return Response(content=render_letter_pdf(render_cover_letter(content)),media_type='application/pdf',
+        headers={'Content-Disposition':'attachment; filename="cover-letter.pdf"'})
+
+
 def _runtime(runtime: SessionRuntime):
     if runtime.pack_workflow is None or runtime.packs is None:
         raise RuntimeError("Application Pack runtime is unavailable.")

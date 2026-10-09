@@ -9,13 +9,16 @@ from agent_runtime.workspace.types import ApplicationStatus
 from api.workspace_dependencies import get_workspace_repository
 from api.workspace_schemas import (
     AnalyzeApplicationRequest, AnalyzeApplicationResponse, ApplicationArtifactsResponse,
-    ApplicationDetail, ApplicationEventsResponse, ApplicationListResponse, ApplicationSummary,
+    ApplicationDetail, ApplicationEventsResponse, ApplicationListResponse, ApplicationOverviewItem,
+    ApplicationOverviewResponse, ApplicationSummary,
     CreateApplicationRequest, CreateJobRequest, JobResponse, PublicApplication,
     PublicApplicationArtifact, PublicApplicationEvent, PublicJob, PublicJobSnapshot,
     SaveWorkspaceRequest, SaveWorkspaceResponse, TransitionApplicationRequest,
     UpdateApplicationRequest,
 )
 from api.services.workspace_service import WorkspaceAnalysisService
+from api.services.application_overview import overview as application_overview
+from agent_runtime.workspace.policy import ApplicationTransitionPolicy
 from agent_runtime.workspace.types import ArtifactType
 from agent_runtime.feedback.types import FeedbackSourceType
 from job_agent.pdf_rendering import render_tailored_resume_pdf
@@ -87,6 +90,28 @@ def list_applications(status_filter: ApplicationStatus | None = Query(default=No
             match_score=match.content.get("overall_score") if match else None))
     return ApplicationListResponse(applications=summaries,
         next_cursor=visible[-1].application_id if more and visible else None)
+
+
+# Declared before /applications/{application_id} so "overview" is not read as an ID.
+@router.get("/applications/overview", response_model=ApplicationOverviewResponse)
+def applications_overview(weeks: int = Query(default=10, ge=4, le=52),
+                          repository: JobWorkspaceRepository = Depends(get_workspace_repository)):
+    rows, cursor = [], None
+    while True:
+        page = repository.list_applications(limit=101, cursor=cursor)
+        rows += page[:100]
+        if len(page) <= 100:break
+        cursor = page[99].application_id
+    policy, items = ApplicationTransitionPolicy(), []
+    for item in rows:
+        job = repository.application_job(item.application_id)
+        match = next((entry for entry in reversed(repository.list_artifacts(item.application_id))
+                      if entry.artifact_type == ArtifactType.MATCH_REPORT), None)
+        items.append(ApplicationOverviewItem(**_application(item).model_dump(),
+            company=job.company, title=job.title, location=job.location,
+            match_score=match.content.get("overall_score") if match else None,
+            next_statuses=policy.targets(item.status)))
+    return ApplicationOverviewResponse(applications=items, **application_overview(items, weeks=weeks))
 
 
 @router.get("/applications/{application_id}", response_model=ApplicationDetail)

@@ -413,6 +413,24 @@ class JobWorkspaceRepository:
         return self._update_metadata(application_id, expected_version, "next_action",
             next_action, ApplicationEventType.NEXT_ACTION_UPDATED)
 
+    def record_browser_submission(self, application_id: str, *, run_id: str, confirmation: dict):
+        """Project a confirmed browser result without inventing intermediate analysis stages."""
+        if not run_id or not confirmation.get('text'):raise ValueError('A confirmed browser receipt is required.')
+        with self._session_factory.begin() as session:
+            row = session.get(ApplicationRow,application_id)
+            if row is None:raise ApplicationNotFoundError('The application was not found.')
+            if row.applied_at or ApplicationStatus(row.status) in {
+                ApplicationStatus.INTERVIEWING,ApplicationStatus.OFFER,ApplicationStatus.REJECTED,
+                ApplicationStatus.WITHDRAWN,ApplicationStatus.ARCHIVED}:return self._application(row)
+            now = datetime.now(UTC)
+            prior, sequence = row.status,row.event_sequence+1
+            self._conditional_update(session,row,row.version,{'status':ApplicationStatus.APPLIED.value,
+                'applied_at':now,'updated_at':now,'error_code':None,'version':row.version+1,'event_sequence':sequence})
+            session.add(self._event(row,sequence,ApplicationEventType.STATUS_CHANGED,
+                {'from_status':prior,'to_status':'applied','browser_run_id':run_id,'confirmation':confirmation},now))
+            session.flush();session.refresh(row)
+            return self._application(row)
+
     def update_deadline(self, application_id: str, *, deadline_at: datetime | None,
                         expected_version: int) -> ApplicationRecord:
         return self._update_metadata(application_id, expected_version, "deadline_at",
@@ -527,6 +545,20 @@ class JobWorkspaceRepository:
             row = session.get(ApplicationResumeSourceRow, artifact_id)
             return row.resume_text if row is not None else None
 
+    def cached_fit_analysis(self, application_id: str, cache_key: str):
+        """Reuse only the latest complete verified trio with exact input provenance."""
+        kinds = (ArtifactType.RESUME_ANALYSIS, ArtifactType.JOB_ANALYSIS, ArtifactType.MATCH_REPORT)
+        artifacts = self.list_artifacts(application_id)
+        latest = {kind:next((a for a in reversed(artifacts) if a.artifact_type == kind),None) for kind in kinds}
+        if any(a is None or a.status not in {ArtifactStatus.VERIFIED, ArtifactStatus.APPROVED}
+               or a.verification_status != 'passed' for a in latest.values()):return None
+        match = latest[ArtifactType.MATCH_REPORT]
+        if not match.created_by.startswith('fit-analysis:') or any(a.created_by != match.created_by for a in latest.values()):return None
+        for event in reversed(self.list_events(application_id)):
+            if event.event_type == ApplicationEventType.ARTIFACT_CREATED and event.payload.get('artifact_id') == match.artifact_id:
+                return list(latest.values()) if event.payload.get('analysis_cache_key') == cache_key else None
+        return None
+
     def project_fit_analysis(
         self,
         application_id: str,
@@ -539,6 +571,8 @@ class JobWorkspaceRepository:
         expected_version: int,
         resume_text: str,
         resume_id: str | None = None,
+        analysis_cache_key: str | None = None,
+        analysis_timing: dict | None = None,
     ) -> tuple[ApplicationRecord, list[ApplicationArtifactRecord]]:
         """Atomically publish analysis-only Job and match artifacts."""
         owner = f"fit-analysis:{analysis_id}"
@@ -595,6 +629,9 @@ class JobWorkspaceRepository:
                             "artifact_id": row.artifact_id,
                             "artifact_type": row.artifact_type,
                             "workflow_mode": "single_custom",
+                            **({"analysis_cache_key": analysis_cache_key,
+                                "analysis_timing": analysis_timing or {}}
+                               if row.artifact_type == ArtifactType.MATCH_REPORT.value and analysis_cache_key else {}),
                         },
                         now,
                     )

@@ -229,7 +229,7 @@ def test_chat_ui_restores_resume_edits_education_and_batches_answers(tmp_path):
         path=urlsplit(r.request.url).path
         if path=='/apply':return r.fulfill(content_type='text/html',body=(assets/'apply.html').read_text(encoding='utf-8'))
         if path.startswith('/web-assets/'):
-            target=assets/Path(path).name
+            target=assets/Path(path).relative_to('/web-assets')
             if target.exists():return r.fulfill(content_type='text/javascript' if target.suffix=='.js' else 'text/css',body=target.read_text(encoding='utf-8'))
         if path=='/api/auto-apply':return r.fulfill(json={'attempts':[attempt]})
         if path=='/api/auto-apply/candidate':
@@ -240,7 +240,7 @@ def test_chat_ui_restores_resume_edits_education_and_batches_answers(tmp_path):
             return r.fulfill(json=attempt)
         return r.fulfill(status=204)
     try:
-        browser.page.route('**/*',route);browser.page.goto('https://jobs.lever.co/apply')
+        browser.page.route('**/*',route);browser.page.goto('https://jobs.lever.co/apply?mode=application')
         browser.page.get_by_text('Saved.pdf',exact=False).wait_for()
         browser.page.get_by_role('button',name='Your details',exact=True).click()
         assert browser.page.locator('.education-record').count()==2
