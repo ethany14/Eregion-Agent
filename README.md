@@ -38,8 +38,8 @@ only needed for frontend tests.
 ### 1. Install
 
 ```sh
-git clone https://github.com/ethany14/JobHunterAgent.git
-cd JobHunterAgent
+git clone https://github.com/ethany14/Eregion-Agent.git
+cd Eregion-Agent
 ```
 
 Windows PowerShell:
