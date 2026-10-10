@@ -17,11 +17,10 @@ Then visit [localhost:4000](http://localhost:4000).
 
 1. In the repository on GitHub, open **Settings → Pages** and set **Source** to
    **GitHub Actions**.
-2. Open **Actions → Publish website → Run workflow**.
+2. Merge changes to `main`. Any change under `site/` publishes the site again, or
+   open **Actions → Publish website → Run workflow** to publish by hand.
 
-The site is published at `https://<owner>.github.io/<repository>/`. To republish
-on every change, add a `push` trigger for `site/**` to
-`.github/workflows/pages.yml`.
+The site is published at `https://<owner>.github.io/<repository>/`.
 
 ## Assets
 
