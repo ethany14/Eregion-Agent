@@ -9,7 +9,8 @@ The product and download page for Eregion, live at
 | `guide.html` | User guide: install, examples and walkthroughs, one topic at a time |
 | `docs.html` | Documentation: settings, Jev, browser options, data, updating, architecture |
 
-Guide and Docs share a side panel listing every topic from both pages. `script.js`
+Every page has a ☰ menu that opens a side panel with Home, every guide topic and
+every docs topic. Guide and Docs also keep that list beside the content. `script.js`
 shows the chosen topic (from the URL hash) with Previous/Next links; without
 JavaScript every topic is shown in sequence.
 

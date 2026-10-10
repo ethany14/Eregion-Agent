@@ -54,27 +54,33 @@
     if (heroDownload) heroDownload.textContent = `Download for ${names[detected]}`;
   }
 
+  // Site menu: a slide-out side panel with every page and topic.
+  const drawer = document.getElementById('drawer');
+  const drawerScrim = document.querySelector('.drawer-scrim');
+  const openers = [...document.querySelectorAll('.menu-btn, .side-toggle')];
+  const setMenu = open => {
+    if (!drawer) return;
+    drawer.classList.toggle('open', open);
+    drawerScrim.hidden = !open;
+    document.body.classList.toggle('menu-open', open);
+    for (const button of openers) button.setAttribute('aria-expanded', String(open));
+    if (open) drawer.querySelector('.drawer-close')?.focus();
+  };
+  for (const button of openers) button.addEventListener('click', () => setMenu(!drawer.classList.contains('open')));
+  drawerScrim?.addEventListener('click', () => setMenu(false));
+  drawer?.querySelector('.drawer-close')?.addEventListener('click', () => setMenu(false));
+  drawer?.addEventListener('click', event => { if (event.target.closest('a')) setMenu(false); });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape') setMenu(false); });
+
   // Guide and docs: show one topic at a time, chosen from the side panel.
   const article = document.querySelector('.pager');
   const sideLinks = [...document.querySelectorAll('.side a')];
   if (article && sideLinks.length) {
     const page = article.dataset.page;
     const sections = [...article.querySelectorAll(':scope > section')];
-    const side = document.getElementById('side');
-    const toggle = document.querySelector('.side-toggle');
-    const scrim = document.querySelector('.side-scrim');
     const current = document.querySelector('.side-current');
     const baseTitle = document.title;
-
-    const setMenu = open => {
-      side.classList.toggle('open', open);
-      toggle.setAttribute('aria-expanded', String(open));
-      scrim.hidden = !open;
-      document.body.classList.toggle('menu-open', open);
-    };
-    toggle.addEventListener('click', () => setMenu(!side.classList.contains('open')));
-    scrim.addEventListener('click', () => setMenu(false));
-    document.addEventListener('keydown', event => { if (event.key === 'Escape') setMenu(false); });
+    const drawerLinks = [...document.querySelectorAll('.drawer a[data-id]')];
 
     // Previous / next follow the side panel's order, across both pages.
     sections.forEach(section => {
@@ -98,7 +104,7 @@
     function show(id, scroll) {
       const section = sections.find(s => s.id === id) || sections[0];
       for (const s of sections) s.hidden = s !== section;
-      for (const link of sideLinks) {
+      for (const link of [...sideLinks, ...drawerLinks]) {
         const on = link.dataset.page === page && link.dataset.id === section.id;
         link.classList.toggle('on', on);
         if (on) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current');
@@ -113,7 +119,11 @@
     article.classList.add('paged');
     show(location.hash.slice(1), false);
     // The browser jumps to the hash target on load; start each topic at the top instead.
-    if (location.hash) requestAnimationFrame(() => window.scrollTo({ top: 0 }));
+    if (location.hash) {
+      const top = () => window.scrollTo({ top: 0 });
+      requestAnimationFrame(top);
+      window.addEventListener('load', () => setTimeout(top, 0), { once: true });
+    }
   }
 
   // Copy buttons fall back to selecting the text when the clipboard is unavailable.

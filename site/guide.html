@@ -51,6 +51,7 @@
   <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></symbol>
   <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
   <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
   <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
 </svg>
 
@@ -58,6 +59,7 @@
 
 <header class="nav" id="top">
   <div class="wrap nav-row">
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="drawer" aria-label="Open menu"><svg class="i" aria-hidden="true"><use href="#i-menu"/></svg></button>
     <a class="brand" href="index.html" aria-label="Eregion home"><svg class="mark" aria-hidden="true"><use href="#i-holly"/></svg><span>Eregion</span></a>
     <nav class="nav-links" aria-label="Pages">
       <a href="index.html">Home</a>
@@ -73,11 +75,52 @@
     </div>
   </div>
 </header>
+<div class="drawer-scrim" hidden></div>
+<nav class="drawer" id="drawer" aria-label="Site menu">
+  <div class="drawer-head">
+    <a class="brand" href="index.html"><svg class="mark" aria-hidden="true"><use href="#i-holly"/></svg><span>Eregion</span></a>
+    <button class="drawer-close" type="button" aria-label="Close menu"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+  </div>
+  <a class="drawer-page" href="index.html"><svg class="i" aria-hidden="true"><use href="#i-holly"/></svg>Home</a>
+  <ol class="drawer-sub">
+    <li><a href="index.html#road">How it works</a></li>
+    <li><a href="index.html#workspace">Workspace</a></li>
+    <li><a href="index.html#jev">Speed</a></li>
+    <li><a href="index.html#local">Privacy</a></li>
+    <li><a href="index.html#download">Download</a></li>
+  </ol>
+  <a class="drawer-page" href="guide.html" aria-current="page"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>User guide</a>
+  <ol class="drawer-sub">
+          <li><a href="guide.html#install" data-page="guide.html" data-id="install">Install</a></li>
+          <li><a href="guide.html#profile" data-page="guide.html" data-id="profile">Set up your profile</a></li>
+          <li><a href="guide.html#find" data-page="guide.html" data-id="find">Find and compare roles</a></li>
+          <li><a href="guide.html#alerts" data-page="guide.html" data-id="alerts">Automatic job search</a></li>
+          <li><a href="guide.html#materials" data-page="guide.html" data-id="materials">Materials</a></li>
+          <li><a href="guide.html#apply" data-page="guide.html" data-id="apply">Applications</a></li>
+          <li><a href="guide.html#lookout" data-page="guide.html" data-id="lookout">Take over the browser</a></li>
+          <li><a href="guide.html#memory" data-page="guide.html" data-id="memory">Saved answers</a></li>
+          <li><a href="guide.html#interview" data-page="guide.html" data-id="interview">Interview practice</a></li>
+          <li><a href="guide.html#road" data-page="guide.html" data-id="road">Track applications</a></li>
+          <li><a href="guide.html#lens" data-page="guide.html" data-id="lens">Eregion Lens</a></li>
+          <li><a href="guide.html#troubleshoot" data-page="guide.html" data-id="troubleshoot">Troubleshooting</a></li>
+  </ol>
+  <a class="drawer-page" href="docs.html"><svg class="i" aria-hidden="true"><use href="#i-wrench"/></svg>Documentation</a>
+  <ol class="drawer-sub">
+          <li><a href="docs.html#model" data-page="docs.html" data-id="model">Model connection</a></li>
+          <li><a href="docs.html#jev" data-page="docs.html" data-id="jev">Jev fast scoring</a></li>
+          <li><a href="docs.html#browser" data-page="docs.html" data-id="browser">Browser and workers</a></li>
+          <li><a href="docs.html#data" data-page="docs.html" data-id="data">Data and privacy</a></li>
+          <li><a href="docs.html#limits" data-page="docs.html" data-id="limits">Good to know</a></li>
+          <li><a href="docs.html#update" data-page="docs.html" data-id="update">Updating</a></li>
+          <li><a href="docs.html#architecture" data-page="docs.html" data-id="architecture">How it works</a></li>
+          <li><a href="docs.html#develop" data-page="docs.html" data-id="develop">Development</a></li>
+  </ol>
+  <a class="drawer-page" href="https://github.com/ethany14/Eregion-Agent"><svg class="i" aria-hidden="true"><use href="#i-gh"/></svg>GitHub</a>
+</nav>
 
 <main id="main" class="doc">
   <div class="wrap doc-layout">
-    <button class="side-toggle" type="button" aria-expanded="false" aria-controls="side"><svg class="i" aria-hidden="true"><use href="#i-menu"/></svg><span class="side-toggle-label">Contents</span><span class="side-current"></span></button>
-    <div class="side-scrim" hidden></div>
+    <button class="side-toggle" type="button" aria-expanded="false" aria-controls="drawer"><svg class="i" aria-hidden="true"><use href="#i-menu"/></svg><span class="side-toggle-label">Contents</span><span class="side-current"></span></button>
     <nav class="side" id="side" aria-label="Guide and documentation">
       <p class="side-group here">User guide</p>
       <ol>
