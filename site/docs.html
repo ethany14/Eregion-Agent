@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Eregion Docs</title>
+<meta name="description" content="Configuration, optional Jev scoring, browser settings, data and privacy, updating and architecture for Eregion.">
+<meta property="og:title" content="Eregion Docs">
+<meta property="og:description" content="Configuration, optional Jev scoring, browser settings, data and privacy, updating and architecture for Eregion.">
+<meta property="og:image" content="assets/screens/road-night.webp">
+<link rel="icon" href="assets/holly.svg" type="image/svg+xml">
+<script>
+  // Apply a saved Day/Night choice before first paint.
+  try { const t = localStorage.getItem('eregion.site-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IM+Fell+English+SC&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-holly" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17C13.6 14.8 10.6 15 9.6 12.8 7.6 13.4 6 11.6 4.4 12.4 5.6 9.8 3.8 8.2 5 6.6 7 7.4 8.4 5.4 10.6 6.6 11 4.4 13.4 4 14.6 5.4 14 8 16.2 9.6 15.6 12.2S16.8 14.2 15 17Z"/><path d="M15 17 7 8.6"/><path d="M17 17c2.2-1.2 2.4-4.2 4.6-5-.4-2 1.4-3.4.8-5 2.4 1.4 4.2-.2 5.6 1.2-.8 1.9 1.2 3.4 0 5.4 2 .6 2.2 3 .8 4-2.4-.8-4.2 1.2-6.6.4-1.8 1.2-3.6-.2-5.2-1z"/><path d="M17 17l8.6-7"/></g><g class="berries"><circle cx="13.2" cy="22" r="2.3"/><circle cx="18.2" cy="22.6" r="2.3"/><circle cx="15.8" cy="26.6" r="2.3"/></g></symbol>
+  <symbol id="i-chronicle" viewBox="0 0 24 24"><path d="M4 5.5C6.5 4.5 9.5 4.5 12 6c2.5-1.5 5.5-1.5 8-.5V19c-2.5-1-5.5-1-8 .5-2.5-1.5-5.5-1.5-8-.5z"/><path d="M12 6v13.5"/></symbol>
+  <symbol id="i-council" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="4" r="1.5"/><circle cx="19" cy="9" r="1.5"/><circle cx="17" cy="18" r="1.5"/><circle cx="7" cy="18" r="1.5"/><circle cx="5" cy="9" r="1.5"/></symbol>
+  <symbol id="i-road" viewBox="0 0 24 24"><path d="M4 20c4-1 3-6 8-7s5-6 8-8" stroke-dasharray="2 2.6"/><circle cx="4" cy="20" r="1.5"/><circle cx="12" cy="13" r="1.5"/><path d="M20 2.5v5M17.5 5h5"/></symbol>
+  <symbol id="i-forge" viewBox="0 0 24 24"><path d="M3 9h12a4 4 0 0 0 4-3v5h-3l-2 3v2h3v3H7v-3h3v-2l-3-3H3z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-lookout" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M15 4v16"/></symbol>
+  <symbol id="i-beacon" viewBox="0 0 24 24"><path d="M12 3c1.5 3.2 5 4.8 5 9.2A5 5 0 0 1 7 12.2C7 10 8.4 8.6 9.4 7.4c.3 1.6 1 2.4 2 2.8C11 7.6 11.2 5.2 12 3Z"/><path d="M8 21h8M10 17.5l-1 3.5M14 17.5l1 3.5"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-seal" viewBox="0 0 24 24"><circle cx="12" cy="10" r="6"/><path d="M12 6.5v7M8.5 10h7" stroke-width="1.2"/><path d="m8.5 15-1.5 6 5-2 5 2-1.5-6"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M15 8l2 2"/></symbol>
+  <symbol id="i-hand" viewBox="0 0 24 24"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12M11 11V4.5a1.5 1.5 0 0 1 3 0V12M14 11V6.5a1.5 1.5 0 0 1 3 0V14c0 4-2.5 7-6 7-2.5 0-4-1.2-5.5-3.5L3.7 14.6a1.5 1.5 0 0 1 2.5-1.6L8 15"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-lens" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 4v5M12 15v5"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-gh" viewBox="0 0 24 24"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-ithil" viewBox="0 0 24 24"><path d="M15.5 4.2A8 8 0 1 0 19.8 15 6.6 6.6 0 0 1 15.5 4.2Z"/><path d="M18.5 3.5v3M17 5h3" stroke-width="1.3"/></symbol>
+  <symbol id="i-anor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+  <symbol id="i-memory" viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/><path d="M9 9h6v6H9zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.5 5.5a4 4 0 0 0 5 5L12 18l-3 3-3-3 3-3 7.5-7.5"/><path d="M14.5 5.5 17 3"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5C6.5 4.5 9.5 4.5 12 6c2.5-1.5 5.5-1.5 8-.5V19c-2.5-1-5.5-1-8 .5-2.5-1.5-5.5-1.5-8-.5z"/><path d="M12 6v13.5"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
+  <symbol id="i-restore" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v4h4"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+</svg>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav" id="top">
+  <div class="wrap nav-row">
+    <a class="brand" href="index.html" aria-label="Eregion home"><svg class="mark" aria-hidden="true"><use href="#i-holly"/></svg><span>Eregion</span></a>
+    <nav class="nav-links" aria-label="Pages">
+      <a href="index.html">Home</a>
+      <a href="guide.html">Guide</a>
+      <a href="docs.html" aria-current="page">Docs</a>
+    </nav>
+    <div class="nav-end">
+      <div class="theme-toggle" role="group" aria-label="Theme">
+        <button class="night" type="button" aria-pressed="true" aria-label="Night theme" title="Night"><svg aria-hidden="true"><use href="#i-ithil"/></svg></button>
+        <button class="day" type="button" aria-pressed="false" aria-label="Day theme" title="Day"><svg aria-hidden="true"><use href="#i-anor"/></svg></button>
+      </div>
+      <a class="btn btn-primary btn-sm hide-sm" href="index.html#download"><svg class="i" aria-hidden="true"><use href="#i-dl"/></svg>Download</a>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="doc">
+  <header class="doc-hero">
+    <div class="wrap">
+      <p class="eyebrow">Documentation</p>
+      <h1>Settings and<br><em>how it works.</em></h1>
+      <p class="lede">Everything you can configure, what stays on your computer, and how the agent is built.</p>
+    </div>
+  </header>
+  <div class="wrap doc-layout">
+    <nav class="toc" aria-label="On this page">
+      <p class="toc-title">On this page</p>
+      <ol>
+          <li><a href="#model">Model connection</a></li>
+          <li><a href="#jev">Jev fast scoring</a></li>
+          <li><a href="#browser">Browser and workers</a></li>
+          <li><a href="#data">Data and privacy</a></li>
+          <li><a href="#limits">Good to know</a></li>
+          <li><a href="#update">Updating</a></li>
+          <li><a href="#architecture">How it works</a></li>
+          <li><a href="#develop">Development</a></li>
+      </ol>
+    </nav>
+    <div class="prose">
+
+      <section id="model">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-key"/></svg>Model connection</h2>
+        <p>Eregion reads <code>.env</code> in the project folder. Variables set in your shell override it. Restart the server after changing settings.</p>
+        <div class="table-wrap"><table><thead><tr><th>Variable</th><th>Default</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>LLM_MODEL_ID</code></td><td>Required</td><td>Main model for chat, planning, writing and verification</td></tr>
+<tr><td><code>LLM_API_KEY</code></td><td>Provider default</td><td>API credential for your provider</td></tr>
+<tr><td><code>LLM_BASE_URL</code></td><td>Client default</td><td>Custom OpenAI-compatible endpoint</td></tr>
+<tr><td><code>LLM_TIMEOUT</code></td><td>45 s</td><td>Timeout for one provider request</td></tr>
+<tr><td><code>LLM_MAX_RETRIES</code></td><td>0</td><td>Client retry setting</td></tr>
+<tr><td><code>LLM_FAST_MODEL_ID</code></td><td>Main model</td><td>Optional model for routine actions</td></tr>
+<tr><td><code>LLM_EXTRACTION_MODEL_ID</code></td><td>Main model</td><td>Optional model for extraction and matching</td></tr>
+<tr><td><code>LLM_AGENT_REASONING</code></td><td>Unset</td><td><code>none</code> to <code>high</code>, if your provider supports it</td></tr>
+<tr><td><code>LLM_EXTRACTION_REASONING</code></td><td>Unset</td><td>Same, for the extraction model</td></tr>
+</tbody></table></div>
+        <p>The model must support tool calling and structured output. Visual browser backup also needs image input.</p>
+      </section>
+
+      <section id="jev">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-bolt"/></svg>Jev fast fit scoring</h2>
+        <p>Optional. With Jev on, fit scoring uses Typesafe's Jev decision model alone, batches up to eight jobs, and caches decisions on your computer. Conversation and writing still use your main model.</p>
+        <figure class="speed-chart">
+        <figcaption><b>Time to score fit</b><span>Recorded test runs · seconds, same scale</span></figcaption>
+        <div class="bars" role="img" aria-label="Main model only, cold: 32 to 49 seconds. Three jobs with Jev, separately: 4.6 seconds. Three jobs in one Jev batch: 2.0 seconds. Same three jobs from cache: 0.15 seconds.">
+          <div class="bar-row" title="Main model only, cold fit analysis: 32–49 s">
+            <span class="bar-label">Main model only</span>
+            <span class="bar-track"><i class="bar main" style="width:64%"></i><i class="bar main-range" style="width:34%"></i></span>
+            <span class="bar-value">32–49 s</span>
+          </div>
+          <div class="bar-row" title="Three jobs scored separately with Jev, cold: 4.6 s">
+            <span class="bar-label">Jev, 3 jobs separately</span>
+            <span class="bar-track"><i class="bar jev" style="width:9.2%"></i></span>
+            <span class="bar-value">4.6 s</span>
+          </div>
+          <div class="bar-row" title="Three jobs in one Jev batch, cold: 2.0 s">
+            <span class="bar-label">Jev, 3 jobs in one batch</span>
+            <span class="bar-track"><i class="bar jev" style="width:4%"></i></span>
+            <span class="bar-value strong">2.0 s</span>
+          </div>
+          <div class="bar-row" title="Same three jobs again from the local cache: 0.15 s">
+            <span class="bar-label">Same jobs, from cache</span>
+            <span class="bar-track"><i class="bar jev" style="width:0.3%"></i></span>
+            <span class="bar-value strong">0.15 s</span>
+          </div>
+          <div class="bar-axis" aria-hidden="true"><span></span><span class="ticks-row"><b>0</b><b>10</b><b>20</b><b>30</b><b>40</b><b>50</b></span><span></span></div>
+        </div>
+        <p class="fine">Small synthetic runs on different days and inputs, so an indication rather than a controlled comparison. <a href="https://github.com/ethany14/Eregion-Agent/blob/main/docs/jev-benchmark.md">Full measurements</a></p>
+      </figure>
+        <pre class="code"><code>TYPESAFE_API_KEY=your-typesafe-key
+TYPESAFE_BASE_URL=https://api.typesafe.ai
+TYPESAFE_DEFAULT_MODEL=jev-latest
+TYPESAFE_ENABLED=true
+TYPESAFE_CAREER_ENABLED=false</code></pre>
+        <div class="table-wrap"><table><thead><tr><th>Variable</th><th>Default</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>TYPESAFE_ENABLED</code></td><td>false</td><td>Jev fit scoring for chat, quick analysis and saved jobs, plus option mapping and job screening</td></tr>
+<tr><td><code>TYPESAFE_CAREER_ENABLED</code></td><td>false</td><td>Also memory, question and evidence helpers. Needs the switch above</td></tr>
+<tr><td><code>TYPESAFE_FIT_MODEL</code></td><td>jev-1.13.0</td><td>Exact Jev release for fit scoring</td></tr>
+<tr><td><code>TYPESAFE_FIT_TIMEOUT</code></td><td>12 s</td><td>Per fit request, 0.1–60 s, no automatic paid retries</td></tr>
+<tr><td><code>TYPESAFE_FIT_CACHE_PATH</code></td><td>Next to the database</td><td>Local decision cache</td></tr>
+</tbody></table></div>
+        <ul class="ticks">
+          <li>Decisive answers are cached for 24 hours, uncertain ones for 5 minutes</li>
+          <li>Undecided requirements stay unresolved and the score becomes a range</li>
+          <li>No fallback to the main model: if Typesafe fails, scoring fails</li>
+          <li>Sends extracted resume text, the job description and scoped facts. Inputs over 60,000 bytes are rejected, not truncated</li>
+        </ul>
+      </section>
+
+      <section id="browser">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-lookout"/></svg>Browser and workers</h2>
+        <p>These are read from the <b>shell environment</b>, not <code>.env</code>. Set them before running migrations and the server.</p>
+        <div class="table-wrap"><table><thead><tr><th>Variable</th><th>Default</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>JOB_AGENT_DATABASE_URL</code></td><td>sqlite:///./job_agent.db</td><td>Database for the server and migrations</td></tr>
+<tr><td><code>JOB_AGENT_APPLY_WORKERS</code></td><td>3</td><td>Application workers, 1–8</td></tr>
+<tr><td><code>JOB_AGENT_MAX_OPEN_APPLICATIONS</code></td><td>6</td><td>Unfinished applications allowed at once</td></tr>
+<tr><td><code>JOB_AGENT_HIDDEN_BROWSER</code></td><td>offscreen</td><td><code>offscreen</code> or <code>headless</code> Chrome</td></tr>
+<tr><td><code>JOB_AGENT_BROWSER_CHANNEL</code></td><td>chrome</td><td>Playwright channel; the default uses installed Chrome</td></tr>
+<tr><td><code>JOB_AGENT_ANALYSIS_WARMUP</code></td><td>1</td><td>Pre-analyse an uploaded resume; <code>0</code> turns it off</td></tr>
+<tr><td><code>JOB_AGENT_ALLOWED_HOSTS</code></td><td>Loopback only</td><td>Extra accepted Host names. Not authentication</td></tr>
+</tbody></table></div>
+        <pre class="code"><code># macOS / Linux: headless Chrome, two workers
+export JOB_AGENT_HIDDEN_BROWSER=headless
+export JOB_AGENT_APPLY_WORKERS=2
+python -m uvicorn api.main:app --host 127.0.0.1 --port 8000</code></pre>
+      </section>
+
+      <section id="data">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg>Data and privacy</h2>
+        <p>The local database holds your details, conversations, evidence, application state and model-usage records. Treat it as personal data, and stop the server before copying it as a backup.</p>
+        <ul class="ticks">
+          <li>The server listens on 127.0.0.1 only. It is a single-user app with no sign-in</li>
+          <li>Model requests contain the resume, job, answer or document content a task needs</li>
+          <li>On Windows, site logins are kept with DPAPI encryption, scoped to you and the site</li>
+          <li>Screenshots reach your model only when visual browser backup is on</li>
+        </ul>
+      </section>
+
+      <section id="limits">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-flag"/></svg>Good to know</h2>
+        <dl class="facts">
+          <div><dt>Some sites need you</dt><dd>Login walls, unusual widgets, MFA and CAPTCHA can pause the agent.</dd></div>
+          <div><dt>Scores describe evidence</dt><dd>A match score reflects your resume, not an employer's decision.</dd></div>
+          <div><dt>Review before you send</dt><dd>Materials are checked against sources; read them anyway.</dd></div>
+          <div><dt>Text PDFs only</dt><dd>Scanned resumes need text extraction first.</dd></div>
+        </dl>
+      </section>
+
+      <section id="update">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-restore"/></svg>Updating</h2>
+        <p>Stop the server and back up your data, then from the project folder:</p>
+        <pre class="code"><code>git pull --ff-only
+python -m pip install -r requirements.txt
+python -m alembic upgrade head
+python -m uvicorn api.main:app --host 127.0.0.1 --port 8000</code></pre>
+        <p>Reload the Eregion Lens extension after updating. Never delete the database to fix a migration error.</p>
+      </section>
+
+      <section id="architecture">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-council"/></svg>How it works inside</h2>
+        <p>One shared decision loop chooses tools and the order of work. Domain services own your facts, document checks, browser state and final submission.</p>
+        <div class="arch" role="img" aria-label="Chat and scheduled searches feed the task loop, which drives the shared agent loop. The loop calls your model and the career tools: search, fit scoring, materials, interviews and application workers. Application workers drive Chrome. State and usage are stored in the local database.">
+          <div class="arch-row"><span class="node in">Chat &amp; scheduled searches</span></div>
+          <div class="arch-down"></div>
+          <div class="arch-row"><span class="node core">Task loop</span><span class="arch-arrow"></span><span class="node core">Shared agent loop</span><span class="arch-arrow"></span><span class="node model">Your model</span></div>
+          <div class="arch-down"></div>
+          <div class="arch-row wrap-row"><span class="node">Search</span><span class="node">Fit scoring</span><span class="node">Materials</span><span class="node">Interviews</span><span class="node">Application workers</span></div>
+          <div class="arch-down"></div>
+          <div class="arch-row"><span class="node out">Chrome</span><span class="node out">Local database</span></div>
+        </div>
+        <p>Read the <a href="https://github.com/ethany14/Eregion-Agent/blob/main/docs/agent-loop.md">architecture notes</a> for the loop, context and persistence details.</p>
+      </section>
+
+      <section id="develop">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-wrench"/></svg>Development</h2>
+        <pre class="code"><code>python -m pytest -q
+node --test "tests/*.mjs"</code></pre>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Full guide</th><th>Covers</th></tr></thead>
+          <tbody>
+            <tr><td><a href="https://github.com/ethany14/Eregion-Agent/blob/main/docs/usage.md">Using Eregion</a></td><td>Daily workflow, approvals, saved answers, alerts and recovery</td></tr>
+            <tr><td><a href="https://github.com/ethany14/Eregion-Agent/blob/main/docs/configuration.md">Configuration</a></td><td>Every setting, browser options, data and updates</td></tr>
+            <tr><td><a href="https://github.com/ethany14/Eregion-Agent/blob/main/docs/agent-loop.md">Agent architecture</a></td><td>Loop, evidence, context, persistence and browser workers</td></tr>
+            <tr><td><a href="https://github.com/ethany14/Eregion-Agent/blob/main/docs/jev-benchmark.md">Jev and performance</a></td><td>Measurements, caveats and how to reproduce them</td></tr>
+            <tr><td><a href="https://github.com/ethany14/Eregion-Agent/blob/main/docs/development.md">Development</a></td><td>Repository layout, checks and contributing</td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-row">
+    <div class="footer-brand">
+      <a class="brand" href="index.html"><svg class="mark" aria-hidden="true"><use href="#i-holly"/></svg><span>Eregion</span></a>
+      <p>A little less paperwork. A step closer.</p>
+      <p class="legal">Free and open source under the <a href="https://github.com/ethany14/Eregion-Agent/blob/main/LICENSE">MIT License</a>.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <a href="index.html">Home</a>
+      <a href="guide.html">User guide</a>
+      <a href="docs.html">Documentation</a>
+      <a href="index.html#download">Download</a>
+      <a href="https://github.com/ethany14/Eregion-Agent">GitHub</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

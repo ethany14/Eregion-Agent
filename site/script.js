@@ -54,6 +54,22 @@
     if (heroDownload) heroDownload.textContent = `Download for ${names[detected]}`;
   }
 
+  // Highlight the table-of-contents entry for the section being read.
+  const tocLinks = [...document.querySelectorAll('.toc a')];
+  if (tocLinks.length && 'IntersectionObserver' in window) {
+    const byId = new Map(tocLinks.map(link => [link.hash.slice(1), link]));
+    const observer = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        for (const link of tocLinks) link.classList.toggle('on', link === byId.get(entry.target.id));
+      }
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    for (const id of byId.keys()) {
+      const section = document.getElementById(id);
+      if (section) observer.observe(section);
+    }
+  }
+
   // Copy buttons fall back to selecting the text when the clipboard is unavailable.
   document.addEventListener('click', async event => {
     const button = event.target.closest('.copy');

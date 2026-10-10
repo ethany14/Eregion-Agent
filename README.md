@@ -17,7 +17,7 @@
 
 <p align="center">
   <b><a href="#get-started">Get started</a></b> ·
-  <a href="docs/usage.md">User guide</a> ·
+  <a href="https://ethany14.github.io/Eregion-Agent/guide.html">User guide</a> ·
   <a href="docs/configuration.md">Configuration</a> ·
   <a href="docs/agent-loop.md">Architecture</a> ·
   <b><a href="https://ethany14.github.io/Eregion-Agent/">Website</a></b>
@@ -102,11 +102,11 @@ waits for an answer. You can correct it, pause it, or take control of its browse
     </td>
     <td width="50%" valign="top">
       <picture>
-        <source media="(prefers-color-scheme: light)" srcset="site/assets/screens/phone-light.webp">
-        <img src="site/assets/screens/phone-night.webp" alt="Eregion on a phone-width screen." width="46%">
+        <source media="(prefers-color-scheme: light)" srcset="site/assets/screens/chat-light.webp">
+        <img src="site/assets/screens/chat-night.webp" alt="Council: a conversation with a 91/100 match card for a Product Analyst role.">
       </picture>
       <h3>💬 Council</h3>
-      Your conversations with the agent, in folders, pinned or archived. Works at phone width too.
+      Your conversations with the agent, in folders, pinned or archived.
     </td>
   </tr>
 </table>
