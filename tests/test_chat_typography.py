@@ -117,6 +117,8 @@ def test_chat_markdown_readability_copy_and_untrusted_content(tmp_path,width):
 '''
         item['messages']=[{'id':'unsafe','role':'assistant','text':hostile}]
         item['input_request']=None
+        item['version'] += 1  # The API increments version when messages change.
+        page.route('http://localhost/api/career/tasks/typography-test',lambda route:route.fulfill(json=item))
         expect(body).to_contain_text('Safe & visible',timeout=6000)
         assert page.evaluate('window.unsafeMarkdown') is None
         expect(body.locator('script,img,iframe,object,svg')).to_have_count(0)

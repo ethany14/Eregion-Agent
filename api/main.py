@@ -4,8 +4,11 @@ from contextlib import asynccontextmanager
 from collections.abc import Callable
 from typing import Any
 
+import os
+
 import anyio
 from fastapi import FastAPI, Request
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
@@ -31,6 +34,15 @@ from api.auto_apply_routes import router as auto_apply_router
 from api.career_routes import router as career_router, groups_router as career_groups_router
 from api.material_routes import router as material_router
 from api.job_alert_routes import router as job_alert_router
+
+
+LOCAL_HOSTS = ("localhost", "127.0.0.1", "testserver")
+
+
+def allowed_hosts() -> list[str]:
+    """Loopback names by default; JOB_AGENT_ALLOWED_HOSTS adds comma-separated names."""
+    extra = [host.strip() for host in os.getenv("JOB_AGENT_ALLOWED_HOSTS", "").split(",") if host.strip()]
+    return [*LOCAL_HOSTS, *extra]
 
 
 def chat_redirect(request: Request) -> RedirectResponse:
@@ -93,7 +105,7 @@ def create_app(
                 application.state.session_runtime = None
 
     application = FastAPI(
-        title="JobHunterAgent API",
+        title="eregion API",
         version="0.5.0",
         description=(
             "Evidence-grounded resume tailoring and persistent local agent sessions. "
@@ -125,6 +137,10 @@ def create_app(
     from api.skill_evolution_routes import router as skill_evolution_router
     application.include_router(skill_evolution_router)
     install_error_handlers(application)
+    # DNS rebinding sends a page's own hostname to this local server. Reject
+    # every Host except loopback names so remote pages cannot read candidate
+    # data or drive applications through it.
+    application.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts())
 
     web_root = Path(__file__).resolve().parent.parent / "web_app"
     if web_root.exists():

@@ -10,6 +10,7 @@ from api.db import Base
 class ApplicationPackRow(Base):
     __tablename__ = "application_packs"
     pack_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    perf_summary_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     workflow_mode: Mapped[str] = mapped_column(String(32), nullable=False, default="single_custom")
     application_id: Mapped[str] = mapped_column(ForeignKey("applications.application_id"), nullable=False, index=True)
     snapshot_id: Mapped[str] = mapped_column(ForeignKey("job_snapshots.snapshot_id"), nullable=False)

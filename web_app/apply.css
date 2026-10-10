@@ -1,4 +1,4 @@
-/* Northstar web app. Colors come from tokens.css; this file is layout and components. */
+/* eregion web app. Colors come from tokens.css; this file is layout and components. */
 
 /* Job discovery uses the same cards in chat and optional scheduled digests. */
 .recommendation-reason { margin-top: 20px; }
@@ -231,6 +231,17 @@ details.card.folded > summary .ok { color: var(--good); font-size: 13px; }
 .review-row .k { flex: 1; color: var(--muted); }
 .review-row .v { text-align: right; color: var(--ink); max-width: 55%; }
 .review-row .flag { display: block; font-size: 12px; color: var(--signal); margin-top: 2px; }
+.memory-approvals { margin: 14px 0 4px; padding-top: 12px; border-top: 1px solid var(--line); }
+.memory-approvals .eyebrow { margin-bottom: 4px; }
+.memory-approvals .hint { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
+.approval-controls { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 6px; font-size: 12.5px; color: var(--muted); }
+.remember-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.remember-toggle input { accent-color: var(--ink); margin: 0; }
+.memory-scope { font: inherit; font-size: 12.5px; color: var(--ink); background: var(--soft); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 3px 6px; }
+.memory-scope:disabled { opacity: .5; }
+.answer .memory-scope { margin-top: 6px; }
+.saved-answers { margin: 12px 0 4px; }
+.saved-answers > summary { cursor: pointer; font-size: 13px; color: var(--muted); }
 .lock-note { margin-left: auto; font-size: 13px; color: var(--faint); }
 
 /* ---------- Questions ---------- */
@@ -345,7 +356,10 @@ dialog h3 { margin: 22px 0 8px; font-size: 14px; font-weight: 500; }
 dialog p { margin: 0 0 10px; font-size: 13.5px; line-height: 1.6; color: var(--muted); }
 dialog .eyebrow { margin-bottom: 4px; }
 #profile-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0; }
-#profile-fields label, #account-form > label, .education-record label {
+#standard-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0 20px; }
+#standard-fields select { width: 100%; padding: 10px 12px; border: 0; border-radius: 10px; background: var(--soft); font: inherit; font-size: 14px; color: var(--ink); outline: 0; }
+#standard-fields select:focus { box-shadow: 0 0 0 1.5px var(--ink); background: var(--raised); }
+#profile-fields label, #standard-fields label, #account-form > label, .education-record label {
   display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: var(--muted);
 }
 #account-form > label { margin: 16px 0; }
@@ -389,7 +403,7 @@ dialog input:focus { box-shadow: 0 0 0 1.5px var(--ink); background: var(--raise
   .welcome h2 { font-size: 25px; }
   .composer-wrap { padding-bottom: 12px; }
   .conversation.is-empty .composer-wrap { padding-bottom: 6vh; }
-  #profile-fields { grid-template-columns: 1fr; }
+  #profile-fields, #standard-fields { grid-template-columns: 1fr; }
   .feedback { gap: 24px; }
   #apply-error { width: calc(100% - 32px); }
 }

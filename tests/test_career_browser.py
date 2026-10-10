@@ -55,7 +55,11 @@ def test_rendered_browser_evidence_flows_into_saved_job(career):
     from agent_runtime.browser.manager import BrowsingManager
     from test_general_browser import LocalWebBrowser
     c=career
-    manager=BrowsingManager(factory=LocalWebBrowser);c.harness._browsing=manager
+    class JobBrowser(LocalWebBrowser):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.page.locator('body').evaluate("e => e.appendChild(Object.assign(document.createElement('p'),{textContent:'Software engineer: build Python services, analyze data, collaborate with customers, and maintain reliable production systems.'}))")
+    manager=BrowsingManager(factory=JobBrowser);c.harness._browsing=manager
     try:
         opened=execute(c,'browser_open',url='https://first.example/job')
         load=next(control for control in opened['controls'] if control['label']=='Load content')

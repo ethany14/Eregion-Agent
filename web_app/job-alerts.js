@@ -62,7 +62,7 @@ export async function jobAlertsPage(ctx,container,header){
   }
   function draw(){
     body.replaceChildren();
-    body.append(el('p','Ask in chat whenever you want a fresh search. Add a schedule only when you want Northstar to look for new roles regularly.','alerts-intro'));
+    body.append(el('p','Ask in chat whenever you want a fresh search. Add a schedule only when you want eregion to look for new roles regularly.','alerts-intro'));
     const actions=el('div','','alerts-toolbar');
     actions.append(button('New schedule',()=>edit(),data.schedules.length?'text-button':'primary-button'),
       button(stored('northstar.jobNotifications')==='on'?'Turn off browser notifications':'Enable browser notifications',notificationPermission),

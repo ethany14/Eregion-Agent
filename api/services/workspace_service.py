@@ -103,7 +103,9 @@ class WorkspaceAnalysisService:
                 resume_text=resume_text, resume_id=resume_id,
                 analysis_cache_key=cache_key,
                 analysis_timing={"model_calls":result.model_calls, "latency_seconds":result.latency_seconds,
-                    "stage_seconds":result.stage_seconds, "cache_hits":result.cache_hits},
+                    "stage_seconds":result.stage_seconds, "cache_hits":result.cache_hits,
+                    "main_model_calls":result.main_model_calls, "fast_model_calls":result.fast_model_calls,
+                    "decision_routing":result.decision_routing},
             )
             has_gaps = bool(
                 result.skill_match.missing_required_requirements

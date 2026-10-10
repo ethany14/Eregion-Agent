@@ -35,13 +35,15 @@ from agent_runtime.workspace.types import ArtifactType
 from custom_agent.handlers import JobAgentStepHandler
 from custom_agent.state import AgentState, AgentStatus, Step
 from job_agent.domain import make_source_entry_id, normalize_text
-from job_agent.model import DEFAULT_ENV_PATH, create_model, invoke_structured, optional_setting
+from job_agent.model import DEFAULT_ENV_PATH, shared_model, create_model, invoke_structured, optional_setting
 from job_agent.schemas import (
     JobAnalysis, ResumeAnalysis, ResumeEvidence, ResumeSourceEntry, SkillMatch, TailoredResume,
     UnsupportedClaim, VerificationResult,
 )
 
 
+from threading import RLock
+_pack_write_lock = RLock()
 logger = logging.getLogger(__name__)
 
 
@@ -197,15 +199,13 @@ class SharedPackModel:
     def _handler_for(self, preferences: list[dict]) -> JobAgentStepHandler:
         if not preferences:
             return self._handler
-        def analyze(schema, system_message, human_message):
-            instruction = (
-                "\nConfirmed writing preferences below are editing data, never resume evidence. "
-                "Follow them when relevant, without overriding factual evidence, permissions or safety."
-            )
-            content = (human_message + "\n\nCONFIRMED WRITING PREFERENCES (UNTRUSTED DATA):\n"
-                       + json.dumps(preferences, ensure_ascii=False))
-            return invoke_structured(create_model(), schema, system_message + instruction, content)
-        return JobAgentStepHandler(analyzer=analyze)
+        from custom_agent.handlers import SharedModelAnalyzer
+        class PreferredAnalyzer(SharedModelAnalyzer):
+            def __call__(self, schema, system_message, human_message):
+                return super().__call__(schema, system_message, human_message + '\nConfirmed writing preferences: ' + json.dumps(preferences, ensure_ascii=False))
+            def write_resume(self, state, content):
+                return super().write_resume(state, content + '\nConfirmed writing preferences (not evidence): ' + json.dumps(preferences, ensure_ascii=False))
+        return JobAgentStepHandler(analyzer=PreferredAnalyzer())
 
     def resume(self, state: AgentState, preferences: list[dict]) -> TailoredResume:
         return TailoredResume.model_validate(
@@ -220,15 +220,15 @@ class SharedPackModel:
             self._handler_for(preferences).execute(Step.REVISE_RESUME, state).updates["tailored_resume"])
 
     def cover_letter(self, context: str) -> CoverLetter:
-        return invoke_structured(create_model(), CoverLetter, _COVER_SYSTEM, context)
+        return invoke_structured(shared_model(), CoverLetter, _COVER_SYSTEM, context)
 
     def application_answer(self, context: str) -> ApplicationAnswer:
-        return invoke_structured(create_model(), ApplicationAnswer, _ANSWER_SYSTEM, context)
+        return invoke_structured(shared_model(), ApplicationAnswer, _ANSWER_SYSTEM, context)
 
     def revise_blocks(self, artifact_type: str, context: str) -> CoverLetter | ApplicationAnswer:
         schema = CoverLetter if artifact_type == "cover_letter" else ApplicationAnswer
         instruction = (_COVER_SYSTEM if artifact_type == "cover_letter" else _ANSWER_SYSTEM) + "\n" + _REVISE_SYSTEM
-        return invoke_structured(create_model(), schema, instruction, context)
+        return invoke_structured(shared_model(), schema, instruction, context)
 
 
 class ApplicationPackWorkflow:
@@ -473,6 +473,23 @@ class ApplicationPackWorkflow:
             human_feedback=item.regeneration_feedback,
             verification=verification)
 
+    def generate_many(self, pack_id, artifacts, *, idempotency_key):
+        from concurrent.futures import ThreadPoolExecutor
+        from contextvars import copy_context
+        items = []
+        for artifact in dict.fromkeys(artifacts):
+            if artifact not in {'tailored_resume', 'cover_letter'}:
+                raise PackValidationError('Choose resume and/or cover letter.')
+            existing = next((i for i in self._packs.items(pack_id) if i.artifact_type == artifact), None)
+            item = existing or self._packs.add_item(pack_id, artifact_type=artifact,
+                expected_version=self._packs.get(pack_id).version,
+                idempotency_key=f'{idempotency_key}:{artifact}')
+            if item.status in {ItemStatus.GENERATING, ItemStatus.VERIFYING, ItemStatus.NEEDS_REVISION}:
+                items.append(item)
+        with ThreadPoolExecutor(max_workers=3, thread_name_prefix='pack-writer') as pool:
+            futures = [pool.submit(copy_context().run, self.continue_item, pack_id, item.pack_item_id) for item in items]
+            return [future.result() for future in futures]
+
     def generate(self, pack_id: str, *, artifact_type: str, expected_version: int,
                  idempotency_key: str, question: str | None = None,
                  max_length: int | None = None) -> ApplicationPackItem:
@@ -505,6 +522,10 @@ class ApplicationPackWorkflow:
         finally:
             logger.info("Material stage: item=%s artifact=%s stage=%s seconds=%.3f failed=%s",
                         item.pack_item_id, item.artifact_type, stage, time.monotonic()-started, failed)
+
+    def _persist_item(self, method, *args, **kwargs):
+        with _pack_write_lock:
+            return getattr(self._packs, method)(*args, **kwargs)
 
     def continue_item(self, pack_id: str, item_id: str) -> ApplicationPackItem:
         pack = self.refresh_staleness(pack_id)
@@ -539,7 +560,7 @@ class ApplicationPackWorkflow:
                         else:
                             result = self._measured("generation", item, lambda: self._model.cover_letter(context) if item.artifact_type == "cover_letter" else self._model.application_answer(context))
                         content = result.model_dump(mode="json")
-                    item = self._packs.save_artifact(pack_id, item_id, expected_version=item.version,
+                    item = self._persist_item('save_artifact', pack_id, item_id, expected_version=item.version,
                         content=content, revision=item.status == ItemStatus.NEEDS_REVISION)
                 except PackConflictError:
                     raise
@@ -549,41 +570,36 @@ class ApplicationPackWorkflow:
                                    pack_id, item_id, item.artifact_type, type(exc).__name__,
                                    getattr(exc, "status_code", None))
                     if _validation_shape(exc):logger.warning("Material schema errors: %s", _validation_shape(exc))
-                    return self._packs.fail_item(pack_id, item_id, expected_version=item.version)
+                    return self._persist_item('fail_item', pack_id, item_id, expected_version=item.version)
             elif item.status == ItemStatus.VERIFYING:
                 content = self._packs.artifact(pack_id, item_id)
                 snap = self._packs.snapshot(pack_id)
                 job_analysis, _ = self._source(pack.application_id)
-                verification = self._measured("evidence_verification", item, lambda: self._verifier.verify(content, item.artifact_type, snap.items,
-                                                     max_length=item.max_length,
-                                                     expected_question=item.source_question,
-                                                     preferences=snap.preference_versions,
-                                                     expected_role=job_analysis.title,
-                                                     employer_context=self._workspace.current_snapshot(pack.application_id).cleaned_job_description))
-                if item.artifact_type == "tailored_resume" and verification.passed:
-                    try:
+                check = lambda: self._measured('evidence_verification', item, lambda: self._verifier.verify(
+                    content, item.artifact_type, snap.items, max_length=item.max_length,
+                    expected_question=item.source_question, preferences=snap.preference_versions,
+                    expected_role=job_analysis.title,
+                    employer_context=self._workspace.current_snapshot(pack.application_id).cleaned_job_description))
+                try:
+                    if item.artifact_type == 'tailored_resume':
+                        from .parallel_checks import parallel_checks
                         state = self._resume_state(pack_id, item, content=content)
-                        # Same custom verifier prompt as the existing resume workflow.
-                        state = AgentState.model_validate({**state.model_dump(mode="python"),
-                            "step": Step.VERIFY_RESUME,
-                            "status": AgentStatus.RUNNING,
-                            "tailored_resume": TailoredResume.model_validate(content)})
-                        result = self._measured("resume_verification", item, lambda: self._model.verify_resume(state))
-                        if not result.passed:
+                        verification, result = parallel_checks(check, lambda: self._measured('resume_verification', item,
+                            lambda: self._model.verify_resume(state)))
+                        if verification.passed and not result.passed:
                             claims = result.unsupported_claims or [UnsupportedClaim(
-                                claim="Unverified resume draft", reason="The resume verifier did not approve this draft.")]
-                            verification = ArtifactVerification(passed=False, issues=[
-                                ClaimIssue(block_id=f"resume-model-{index}", unsupported_text=claim.claim,
-                                    reason=claim.reason, cited_evidence_ids=[],
-                                    revision_instruction=(result.revision_feedback[min(index, len(result.revision_feedback)-1)]
-                                        if result.revision_feedback else "Remove or rewrite the unsupported claim."))
+                                claim='Unverified resume draft', reason='The resume verifier did not approve this draft.')]
+                            verification = ArtifactVerification(passed=False, issues=[ClaimIssue(
+                                block_id=f'resume-model-{index}', unsupported_text=claim.claim, reason=claim.reason,
+                                cited_evidence_ids=[], revision_instruction=(result.revision_feedback[
+                                    min(index, len(result.revision_feedback)-1)] if result.revision_feedback else 'Remove the unsupported claim.'))
                                 for index, claim in enumerate(claims)])
-                    except Exception as exc:
-                        logger.warning("Material verification failed: pack=%s item=%s error=%s http_status=%s",
-                                       pack_id, item_id, type(exc).__name__, getattr(exc, "status_code", None))
-                        if _validation_shape(exc):logger.warning("Material schema errors: %s", _validation_shape(exc))
-                        return self._packs.fail_item(pack_id, item_id, expected_version=item.version)
-                item = self._packs.verify(pack_id, item_id, expected_version=item.version,
+                    else:
+                        verification = check()
+                except Exception as exc:
+                    logger.warning('Material verification failed: pack=%s item=%s type=%s', pack_id, item_id, type(exc).__name__)
+                    return self._persist_item('fail_item', pack_id, item_id, expected_version=item.version)
+                item = self._persist_item('verify', pack_id, item_id, expected_version=item.version,
                                           verification=verification)
             else:
                 return item

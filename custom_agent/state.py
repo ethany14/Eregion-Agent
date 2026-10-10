@@ -73,7 +73,7 @@ class AgentState(BaseModel):
 
     revision_feedback: list[str] = Field(default_factory=list)
     revision_count: int = Field(default=0, ge=0)
-    max_revisions: int = Field(default=3, ge=0, le=3)
+    max_revisions: int = Field(default=1, ge=0, le=3)
     approved: bool | None = None
     human_feedback: str | None = None
     error_message: str | None = None

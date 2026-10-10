@@ -119,7 +119,8 @@ def test_legacy_submission_history_is_fenced_without_new_marker():
     assert not can_reopen({"status":"failed", "confirmation":{"text":"Received"}})
 
 
-def test_reopening_reserves_capacity_and_restart_leaves_resumable_pause(database):
+def test_reopening_reserves_capacity_and_restart_leaves_resumable_pause(database, monkeypatch):
+    monkeypatch.setenv("JOB_AGENT_MAX_OPEN_APPLICATIONS", "3")
     repo = ApplyRepository(database.session_factory)
     state, _ = repo.create(request())
     state = repo.save(state, status="cancelled")

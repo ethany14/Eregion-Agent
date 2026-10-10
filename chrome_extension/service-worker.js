@@ -59,7 +59,7 @@ chrome.action.onClicked.addListener((tab) => {
       console.error("Could not remember the selected job tab.", saveResult.reason);
     }
     if (openResult.status === "rejected") {
-      console.error("Could not open the Job Agent side panel.", openResult.reason);
+      console.error("Could not open the eregion side panel.", openResult.reason);
     }
   });
 });

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Northstar Job Lens",
+  "name": "eregion Job Lens",
   "description": "Extract the current job and get a focused resume match analysis.",
   "version": "0.2.2",
   "minimum_chrome_version": "116",

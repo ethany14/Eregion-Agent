@@ -42,6 +42,8 @@ class QuickAnalysisResponse(ResumeApiModel):
     status: Literal["completed"]
     resume_id: str
     model_calls: int = Field(ge=0)
+    main_model_calls: int = Field(default=0, ge=0)
+    fast_model_calls: int = Field(default=0, ge=0)
     latency_seconds: float = Field(ge=0)
     match_score: float
     matched_requirements: list[dict[str, Any]]

@@ -97,7 +97,7 @@ def test_reply_while_agent_runs_invalidates_stale_action_and_resumes_once(databa
             assert len(snapshots) == 5
             assert not any('STALE QUESTION' in m['text'] for m in done['messages'])
             assert len([m for m in done['messages'] if m.get('in_reply_to') == payload['request_id']]) == 1
-            assert snapshots[3]['sources']['answer:Referral'] == 'LinkedIn'
+            assert next(f['value'] for f in snapshots[3]['facts'] if f['ref'] == 'answer:Referral') == 'LinkedIn'
             assert browser.submissions == 0
     finally:
         release.set()
@@ -150,19 +150,18 @@ def test_failure_history_survives_worker_slices_and_allows_new_strategy():
     callbacks = dict(autofill=lambda:{},active=lambda:True,reserve=lambda kind:True,report=lambda *a:None,
         checkpoint=lambda **changes:saved.update(changes),refresh=lambda:saved)
     assert HybridApplicationAgent(model_factory=lambda:failed).run(browser,saved,**callbacks)['reason'] == 'model_error'
-    assert saved['decision_history'][0]['result']['error']
+    assert next(h for h in saved['decision_history'] if h['tool'] == 'choose_option')['result']['error']
 
     class Recover(ScriptModel):
         def invoke(self,messages,tools):
             snapshot = json.loads(next(m.content for m in reversed(messages) if isinstance(m,HumanMessage)))
-            assert snapshot['decision_history'][0]['tool'] == 'choose_option'
-            assert 'error' in snapshot['decision_history'][0]['result']
+            assert any(isinstance(m,ToolMessage) and m.name == 'choose_option' and 'error' in json.loads(m.content) for m in messages) or any(h['tool'] == 'choose_option' and 'error' in h.get('result', {}) for h in snapshot['decision_history'])
             return super().invoke(messages,tools)
 
     recovered = Recover([('ask_user',{'text':'This control is not a dropdown. Can you confirm its intended value?', 'field_keys':[]})])
     result = HybridApplicationAgent(model_factory=lambda:recovered).run(browser,saved,**callbacks)
     assert result['question'].startswith('This control')
-    assert len(saved['decision_history']) == 2
+    assert len([h for h in saved['decision_history'] if not h['tool'].startswith('host:')]) == 2
 
 
 def test_multiple_tool_calls_get_feedback_without_executing_stale_mutation():
@@ -202,14 +201,22 @@ def test_repeated_action_feedback_leaves_room_for_model_to_change_strategy():
         ('ask_user',{'text':'The control did not change after two attempts. Can you check whether an overlay is open?', 'field_keys':[]})])
     result = HybridApplicationAgent(model_factory=lambda:model).run(browser,state(),
         autofill=lambda:fills.append(1) or {},active=lambda:True,reserve=lambda kind:True,report=lambda *a:None)
-    assert len(fills) == 2
+    assert len(fills) == 3  # Initial host pass plus two model retries.
     assert result['reason'] == 'needs_input' and result['question'].startswith('The control')
 
 
 def test_plain_text_question_is_not_duplicated_by_host(database):
     class QuestionModel:
-        def invoke(self,messages,tools):return AIMessage(content='Which office should I choose?')
-    loop = ApplicationLoop(ApplyRepository(database.session_factory),browser_factory=FakeBrowser,
+        calls = 0
+        def invoke(self,messages,tools):
+            self.calls += 1
+            if self.calls == 1:
+                return AIMessage(content='Which office should I choose?')
+            return AIMessage(content='',tool_calls=[{'id':'office-question','name':'ask_user',
+                'args':{'text':'Which office should I choose?','field_keys':['Office']}}])
+    browser = FakeBrowser('')
+    browser.fields.append(field('Office'))
+    loop = ApplicationLoop(ApplyRepository(database.session_factory),browser_factory=lambda _:browser,
         agent_factory=factory(QuestionModel()))
     try:
         saved = wait(loop,loop.start(request(automation_mode='hybrid'))['run_id'])

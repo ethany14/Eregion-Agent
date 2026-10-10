@@ -28,7 +28,9 @@ class IsolatedBrowser(ApplicationBrowser):
 
 @pytest.mark.skipif(os.getenv('JOB_AGENT_BROWSER_TESTS')!='1',reason='Offline Chrome opt-in')
 @pytest.mark.parametrize('purpose',['browse','application'])
-def test_default_is_headless_and_only_explicit_handoff_requests_a_window(purpose):
+def test_default_is_headless_and_only_explicit_handoff_requests_a_window(purpose,monkeypatch):
+    # The relaunch path; the default off-screen window moves instead (see test_auto_apply_reliability).
+    monkeypatch.setenv('JOB_AGENT_HIDDEN_BROWSER','headless')
     b=IsolatedBrowser(purpose=purpose)
     try:
         assert b.headless and b.launch_modes==[True]
@@ -50,7 +52,8 @@ def test_default_is_headless_and_only_explicit_handoff_requests_a_window(purpose
 
 
 @pytest.mark.skipif(os.getenv('JOB_AGENT_BROWSER_TESTS')!='1',reason='Offline Chrome opt-in')
-def test_failed_window_launch_keeps_original_browser_alive():
+def test_failed_window_launch_keeps_original_browser_alive(monkeypatch):
+    monkeypatch.setenv('JOB_AGENT_HIDDEN_BROWSER','headless')
     b=IsolatedBrowser()
     try:
         old=b.browser

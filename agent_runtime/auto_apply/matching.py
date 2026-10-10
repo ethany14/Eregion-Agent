@@ -159,10 +159,70 @@ def search_text(label, value):
     return str(value)
 
 
+def salary_units(value):
+    """Keep explicit units; a bare dollar sign is not evidence of US dollars."""
+    text = str(value).casefold()
+    currencies = set(re.findall(r"\b(?:usd|eur|gbp|cad|aud|nzd|sgd|hkd|cny|rmb|jpy|inr|chf|sek|nok|dkk|pln|brl|mxn|zar|aed)\b", text))
+    aliases = {"us dollars": "usd", "u.s. dollars": "usd", "united states dollars": "usd",
+               "canadian dollars": "cad", "australian dollars": "aud", "euros": "eur", "euro": "eur",
+               "pounds sterling": "gbp", "us$": "usd", "ca$": "cad", "a$": "aud", "€": "eur", "£": "gbp"}
+    currencies.update(code for alias, code in aliases.items() if re.search(r"(?<!\w)" + re.escape(alias), text))
+    if "rmb" in currencies:
+        currencies.remove("rmb")
+        currencies.add("cny")
+    if "$" in text and not currencies:
+        currencies.add("dollar_unspecified")
+    periods = set()
+    for period, pattern in {
+        "year": r"\b(?:annual(?:ly)?|year(?:ly)?|annum|yr)\b|\bp\.a\.",
+        "month": r"\b(?:month(?:ly)?|mo)\b", "week": r"\b(?:week(?:ly)?|wk)\b",
+        "hour": r"\b(?:hour(?:ly)?|hr)\b", "day": r"\b(?:day|daily)\b",
+    }.items():
+        if re.search(pattern, text):
+            periods.add(period)
+    # Multiple/conflicting units must never turn into a single reusable amount.
+    return {"currency": "+".join(sorted(currencies)), "period": "+".join(sorted(periods))}
+
+
+def salary_compatible(question, value, target):
+    from .standard import topic
+    if topic(clean(question)) != "salary" and topic(clean(target)) != "salary":
+        return True
+    if topic(clean(question)) != "salary" or topic(clean(target)) != "salary":
+        return False
+    source, answer, destination = salary_units(question), salary_units(value), salary_units(target)
+    for dimension in ("currency", "period"):
+        stated, supplied, needed = source[dimension], answer[dimension], destination[dimension]
+        if any("+" in unit for unit in (stated, supplied, needed)):
+            return False
+        if dimension == "currency" and supplied == "dollar_unspecified" and stated in {"usd", "cad", "aud", "nzd", "sgd", "hkd"}:
+            supplied = stated
+        if stated and supplied and stated != supplied:
+            return False
+        actual = supplied or stated
+        if needed and actual != needed:
+            return False
+        # A generic destination can retain units explicitly written in the
+        # answer, but cannot recover units omitted from a bare numeric answer.
+        if actual and not needed and not supplied:
+            return False
+    return True
+
+
 def question_identity(label):
     """Reuse only equivalent intent; preserve country, time scope and negation."""
+    from .standard import topic
     text = clean(label)
-    if re.search(r"\d|\b(spouse|partner|dependent|family|hours|permanent|temporary|temporarily|internship|student)\b", text):
+    if re.search(r"\b(spouse|partner|dependent|family)\b", text):
+        return "exact:" + text
+    # Common questions share one identity across wordings (e.g. desired salary).
+    standard = topic(text)
+    if standard:
+        if standard == "salary":
+            units = salary_units(label)
+            return "standard:salary" + "".join(f"|{key}={value}" for key, value in units.items() if value)
+        return "standard:" + standard
+    if re.search(r"\d|\b(hours|permanent|temporary|temporarily|internship|student)\b", text):
         return "exact:" + text
     for name, aliases in COUNTRIES.items():
         for alias in sorted((name, *aliases), key=len, reverse=True):

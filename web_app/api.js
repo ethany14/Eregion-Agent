@@ -23,7 +23,7 @@ async function request(path, options = {}) {
   } catch (error) {
     if (error?.name === "AbortError") throw new ApiError("The request timed out.");
     if (error instanceof ApiError) throw error;
-    throw new ApiError("Cannot reach the local JobHunterAgent backend.");
+    throw new ApiError("Cannot reach the local eregion backend.");
   } finally { clearTimeout(timer); }
 }
 

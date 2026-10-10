@@ -82,7 +82,7 @@ def autofill(browser, state, resume, *, edited_keys=frozenset(), active=lambda: 
         fields = browser.observe()
         if browser.barrier():
             break
-        pending = None
+        pending = []
         # Upload first: ATS resume parsers may populate contact fields afterwards.
         for field in sorted(fields, key=lambda item: item["kind"] != "file"):
             key = field["key"]
@@ -119,32 +119,44 @@ def autofill(browser, state, resume, *, edited_keys=frozenset(), active=lambda: 
                 if (field.get("choice_control") and field["kind"] not in {"select", "radio", "combobox"}
                         and not field.get("options") and state.get("automation_mode") == "hybrid"):
                     continue
-                pending = field, value
-                break
-        if pending is None or time.monotonic() > deadline:
+                plain = field['kind'] in {'text', 'email', 'tel', 'url', 'textarea', 'number', 'search'} and not field.get('choice_control')
+                if not plain and pending:
+                    break
+                pending.append((field, value, plain))
+                if not plain:
+                    break
+        if not pending or time.monotonic() > deadline:
             break
-        field, value = pending
-        key = field["key"]
-        attempts[key] = attempts.get(key, 0) + 1
-        try:
-            upload=document_kind(field,state)
-            target={**field,'upload_filename':'cover-letter.pdf' if upload=='cover_letter' else 'resume.pdf'} if upload else field
-            browser.fill(target, value)
-            # Reading a fresh field is intentional: frameworks replace nodes.
-            observed = browser.observe()
-            current = next((item for item in observed if item["key"] == key), None)
-            verified = (current is None or bool(current["value"])) if field["kind"] == "file" else current is not None and matches(current, value)
+        attempted = []
+        for field, value, plain in pending:
+            if not active():
+                break
+            key = field['key']
+            attempts[key] = attempts.get(key, 0) + 1
+            try:
+                upload = document_kind(field, state)
+                target = {**field, 'upload_filename': 'cover-letter.pdf' if upload == 'cover_letter' else 'resume.pdf'} if upload else field
+                if plain and hasattr(browser, 'fill_plain'):
+                    browser.fill_plain(target, value)
+                else:
+                    browser.fill(target, value)
+                attempted.append((field, value))
+            except Exception as exc:
+                details[key] = failure_detail(exc)
+                failed[key] = details[key]['error_code']
+        observed = browser.observe()
+        current_fields = {f['key']: f for f in observed}
+        for field, value in attempted:
+            key = field['key']
+            current = current_fields.get(key)
+            verified = (current is None or bool(current['value'])) if field['kind'] == 'file' else current is not None and matches(current, value)
             if verified:
                 completed.append(key)
                 failed.pop(key, None); details.pop(key, None)
-                if document_kind(field,state) and state.get('document_refresh'):
-                    state['document_refresh'][document_kind(field,state)]=False
+                if document_kind(field, state) and state.get('document_refresh'):
+                    state['document_refresh'][document_kind(field, state)] = False
             else:
-                failed[key] = "value_not_retained"
-                details[key] = failure("value_not_retained", "The control did not retain the supplied value.")
-            progress(observed, "autofill", key, "verified" if verified else "not_retained")
-        except Exception as exc:
-            details[key] = failure_detail(exc)
-            failed[key] = details[key]["error_code"]
-            progress(browser.observe(), "autofill", key, "needs_agent")
+                failed[key] = 'value_not_retained'
+                details[key] = failure('value_not_retained', 'The control did not retain the supplied value.')
+        progress(observed, 'autofill', None, 'needs_agent' if failed else 'verified')
     return {"filled": list(dict.fromkeys(completed)), "failed": failed, "failure_details": details}

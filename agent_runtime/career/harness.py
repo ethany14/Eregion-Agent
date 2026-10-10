@@ -32,6 +32,8 @@ TOOLS = [
         {'query':TEXT,'location':TEXT,'boards':{'type':'array','maxItems':5,'items':{'type':'object',
             'properties':{'platform':{'type':'string','enum':['greenhouse','lever']},'company':TEXT},
             'required':['platform','company'],'additionalProperties':False}},'limit':{'type':'integer','minimum':1,'maximum':20}},['query']),
+    function('screen_jobs','Quickly rank a batch of actually observed job links against a short search query. Use after browser search to choose which descriptions to read and score. Advisory only; cannot replace score_job or establish eligibility. Unknowns remain available to you.',
+        {'urls':{'type':'array','minItems':1,'maxItems':20,'items':TEXT},'query':TEXT}),
     function('read_job','Capture the current browser job description before importing it. On a split results/detail page supply the observed detail region_ref and observation_id to exclude other jobs. URL may be the current page or its matching canonical posting link. Uses HTTP only for pages not open in the browser.',
         {'url':TEXT,'region_ref':TEXT,'observation_id':TEXT},['url']),
     function('import_job','Save a retrieved job or job text explicitly supplied in a user message. Returns application_id.',
@@ -65,11 +67,16 @@ TOOLS = [
 
 class CareerHarness:
     tools, prompt = [*TOOLS,*BROWSER_TOOLS],SYSTEM
+    # These reads do not alter browser observation tokens or external state.
+    batchable_tools = frozenset({'list_jobs', 'inspect_job', 'inspect_materials', 'inspect_interview'})
 
     def available_tools(self,state):
+        from agent_runtime.fast_decisions import configured_decisions
         tools=[t for t in self.tools if state.get('visual_fallback') or t['function']['name'] not in VISUAL_NAMES]
+        if not configured_decisions().enabled:
+            tools = [t for t in tools if t['function']['name'] != 'screen_jobs']
         if self.recommendation_run(state):
-            allowed=BROWSER_NAMES|{'search_jobs','read_job','import_job','inspect_job','score_job','recommend_job'}
+            allowed=BROWSER_NAMES|{'search_jobs','screen_jobs','read_job','import_job','inspect_job','score_job','recommend_job'}
             return [t for t in tools if t['function']['name'] in allowed]
         return tools
 
@@ -84,6 +91,12 @@ class CareerHarness:
         self.runtime,self.applications,self.repository = runtime,applications,repository
         self.discovery = discovery or JobDiscovery()
         from api.services.workspace_service import WorkspaceAnalysisService
+        if fit_service is None and getattr(runtime, 'database', None):
+            from agent_runtime.analysis_cache import AnalysisCache
+            from agent_runtime.memory.policy import LocalOwnerResolver
+            from api.services.fit_analysis_service import FitAnalysisService
+            fit_service = FitAnalysisService(analysis_cache=AnalysisCache(runtime.database.session_factory,
+                owner=(getattr(runtime, 'owner_resolver', None) or LocalOwnerResolver()).resolve().owner_id))
         self.analysis = WorkspaceAnalysisService(runtime.workspace,fit_service,evidence=runtime.evidence)
         self._resume_cache = (None,'')
         self._resume_issue = None
@@ -171,7 +184,7 @@ class CareerHarness:
                 value = item.model_dump(mode='json')
                 items.append({k:value[k] for k in ('pack_item_id','artifact_type','status','version','revision_count') if k in value})
                 continue
-            content = self.runtime.packs.artifact(pack_id,item.pack_item_id)
+            content = self.runtime.packs.artifact(pack_id,item.pack_item_id) if item.status.value in {'awaiting_review', 'approved'} else None
             text = (render_tailored_resume_text(content) if item.artifact_type=='tailored_resume'
                 else render_cover_letter(content) if item.artifact_type=='cover_letter' else json.dumps(content)) if content else ''
             items.append({**item.model_dump(mode='json'),'text':text[:30000]})
@@ -264,7 +277,29 @@ class CareerHarness:
             summary={k:result.get(k) for k in ('url','heading','title','blocked','tabs','observation_id')}
             self.repository.change(task_id,browser=summary,active_browser='research')
             return result
-        if name=='search_jobs':return self.discovery.search(**args)
+        if name=='search_jobs':
+            result = self.discovery.search(**args)
+            jobs = result.get('jobs', [])
+            self.repository.change(task_id, lambda s: {'search_candidates': dict(list({
+                **s.get('search_candidates', {}), **{j['url']: j for j in jobs}}.items())[-60:])})
+            from agent_runtime.fast_decisions import configured_decisions
+            if jobs and configured_decisions().enabled:
+                screened = self.screen(task_id, state, jobs, args['query'] + ' ' + args.get('location', ''))
+                result.update(screened)
+            return result
+        if name=='screen_jobs':
+            candidates = {**state.get('search_candidates', {}), **state.get('retrieved_jobs', {})}
+            observed = self._browsing.inspect(task_id) if self._browsing else None
+            if observed and not observed.get('blocked'):
+                for control in observed.get('controls', []):
+                    url = control.get('href')
+                    if url and url.startswith('https://'):
+                        candidates.setdefault(url, {'url':url,'title':control.get('label',''),
+                                                   'context':control.get('context','')})
+            urls = list(dict.fromkeys(args['urls']))
+            if not 1 <= len(urls) <= 20 or any(url not in candidates for url in urls):
+                raise ValueError('Screen only links from observed browser/search results or retrieved jobs.')
+            return self.screen(task_id, state, [candidates[url] for url in urls], args['query'])
         if name=='read_job':
             observed = self._browsing.inspect(task_id) if self._browsing else None
             from agent_runtime.auto_apply.contracts import public_https_url
@@ -360,11 +395,7 @@ class CareerHarness:
             pack = rt.pack_workflow.create(app.application_id,expected_version=app.version,
                 idempotency_key=key,scope_to_inputs=True)
             self.repository.link(task_id,'packs',pack.pack_id)
-            for artifact in dict.fromkeys(artifacts):
-                existing = next((i for i in rt.packs.items(pack.pack_id) if i.artifact_type==artifact),None)
-                if existing:continue
-                rt.pack_workflow.generate(pack.pack_id,artifact_type=artifact,
-                    expected_version=rt.packs.get(pack.pack_id).version,idempotency_key=f'{key}:{artifact}')
+            rt.pack_workflow.generate_many(pack.pack_id, artifacts, idempotency_key=key)
             return self.materials(pack.pack_id)
         if name=='inspect_materials':return self.materials(args['pack_id'])
         if name=='revise_material':
@@ -422,6 +453,35 @@ class CareerHarness:
                 getattr(rt.mock_interviewer,args['action'])(current.mock_interview_id,expected_version=current.version,idempotency_key=key)
             return self.interview(current.mock_interview_id)
         raise ValueError('Unknown career capability.')
+
+    def screen(self, task_id, state, jobs, query):
+        from agent_runtime.career.screening import screen_jobs
+        from agent_runtime.fast_decisions import FastDecisions, configured_decisions
+        if not isinstance(query, str) or not 0 < len(query) <= 3000:
+            raise ValueError('Use a concise search preference query.')
+        revision = state.get('chat_revision', 0)
+        service = configured_decisions()
+        # An auxiliary budget per user turn prevents a cheap tool becoming an
+        # unlimited provider loop. It does not consume the main reasoning budget.
+        allowed = [False]
+        def reserve(current):
+            count = current.get('fast_screen_calls', 0) if current.get('fast_screen_revision') == revision else 0
+            if (current.get('chat_revision', 0) != revision or current.get('pause_requested')
+                    or current.get('status') in {'completed','cancelled'} or count >= 20):
+                return {}
+            allowed[0] = True
+            return {'fast_screen_revision': revision, 'fast_screen_calls': count + 1}
+        if service.enabled:
+            self.repository.change(task_id, reserve)
+            if not allowed[0]:
+                service = FastDecisions()
+        result = screen_jobs(jobs, query, decisions=service)
+        latest = self.repository.get(task_id)
+        if latest.get('chat_revision', 0) != revision or latest.get('pause_requested'):
+            return {'stale': True, 'next': 'Read the latest user request before screening again.'}
+        self.repository.change(task_id, lambda s: {'fast_decisions': [
+            *s.get('fast_decisions', []), {'purpose':'job_screening', **result['fast_decision']}][-30:]})
+        return result
 
     def open_application_url(self,state,args,key):
         from agent_runtime.auto_apply.contracts import posting

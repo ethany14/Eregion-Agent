@@ -21,7 +21,7 @@ from agent_runtime.tools.messages import AgentMessage
 
 @dataclass(frozen=True)
 class SchedulerConfig:
-    max_concurrent_tasks: int = 2
+    max_concurrent_tasks: int = 4
     lease_seconds: float = 120
     heartbeat_seconds: float = 10
     poll_seconds: float = 0.5
@@ -188,7 +188,16 @@ class AgentTaskScheduler:
             if result.awaiting_approval or result.awaiting_input:
                 return self.tasks.pause(task.task_id, attempt_id, approval=result.awaiting_approval,
                     summary=result.summary, pause_metadata=result.pause_metadata)
-            return self.tasks.complete(task.task_id, attempt_id, result)
+            completed = self.tasks.complete(task.task_id, attempt_id, result)
+            if task.task_type == 'pack_assembler':
+                from .performance import record_pack_performance
+                try:
+                    record_pack_performance(self.tasks.sessions, task.root_task_id)
+                except Exception as error:
+                    # A metrics failure must not rewrite a completed task.
+                    import logging
+                    logging.getLogger(__name__).warning('Pack timing could not be saved: %s', type(error).__name__)
+            return completed
         except LeaseConflictError:
             return self.tasks.require(task.task_id)
         except Exception as exc:

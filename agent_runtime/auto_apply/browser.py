@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import ipaddress
 import json
+import logging
 import os
 import re
 import socket
@@ -33,9 +34,11 @@ SCAN = r"""() => {
   };
   const label = el => clean([...new Set(Array.from(el.labels || []).map(x => clean(x.textContent)))].join(' ') ||
     el.closest('[data-automation-id^="formField-"]')?.querySelector('label')?.textContent ||
+    // An explicit reference names the control better than the nearest label,
+    // which can belong to a sibling field. Skip a self-reference (its value).
+    (el.getAttribute('aria-labelledby') || '').split(' ').filter(id => id && id !== el.id).map(id => document.getElementById(id)?.textContent || '').join(' ').trim() ||
     (el.matches('button[aria-haspopup="listbox"]') && nearbyLabel(el)) ||
     el.getAttribute('aria-label') ||
-    (el.getAttribute('aria-labelledby') || '').split(' ').map(id => document.getElementById(id)?.textContent || '').join(' ') ||
     el.closest('.application-question')?.querySelector('.application-label')?.textContent || nearbyLabel(el) || el.name || el.id);
   const root = [...document.querySelectorAll('[role="dialog"], dialog[open]')].filter(visible).at(-1) || document;
   document.querySelectorAll('[data-northstar-field]').forEach(el => el.removeAttribute('data-northstar-field'));
@@ -52,6 +55,7 @@ SCAN = r"""() => {
     const hiddenField = kind !== 'file' && (!visible(el) || el.closest('[aria-hidden="true"]'));
     if(hiddenField && kind === 'radio')continue;
     if (kind === 'file' && !el.closest('form, #application, .application-form, [data-automation-id], [role="form"], [role="tabpanel"], [data-field-path]')) continue;
+    if (kind === 'file' && el.closest('form, [role="form"], [role="tabpanel"]') && !visible(el.closest('form, [role="form"], [role="tabpanel"]'))) continue;
     if (kind === 'file' && !label(el)) continue; // Ignore an unlabelled resume-autofill dropzone.
     const id = `ns-${index}`; el.setAttribute('data-northstar-field', id);
     const wrapper = el.closest('[data-automation-id^="formField-"], .application-question, .form-field, .field, [data-field-path]');
@@ -176,12 +180,15 @@ SCAN = r"""() => {
 OPTION_SCAN = r"""els => {
   const clean = value => (value || '').replace(/\s+/g, ' ').trim();
   const members = new Set(els);
+  // An explicit accessible name excludes decorative text such as a hidden
+  // "Select" affordance inside the option row.
+  const name = el => clean(el.getAttribute('aria-label')) || clean(el.innerText);
   return els.map((el, index) => {
-    const text = clean(el.innerText);
+    const text = name(el);
     // Nested wrappers describe the same choice. Keep the outer clickable node,
     // but retain distinct nested tree choices with different text.
     for (let parent = el.parentElement; parent; parent = parent.parentElement) {
-      if (members.has(parent) && text && clean(parent.innerText) === text) return null;
+      if (members.has(parent) && text && name(parent) === text) return null;
     }
     return {index, label:text || clean(el.getAttribute('aria-label')),
       value:clean(el.getAttribute('data-value')) || clean(el.querySelector('[class*="canonicalSchoolResultName"]')?.textContent) || text || clean(el.getAttribute('aria-label')),
@@ -192,6 +199,34 @@ OPTION_SCAN = r"""els => {
 }"""
 
 _playwright_runtime = local()
+MAX_FIELDS = 400
+# A hidden browser is a real Chrome window placed off-screen by default. Sites
+# treat headless Chrome as automation far more often; JOB_AGENT_HIDDEN_BROWSER=
+# headless restores the previous behaviour.
+OFFSCREEN = {"left": -32000, "top": -32000}
+ON_SCREEN = {"left": 80, "top": 60, "width": 1280, "height": 900}
+TRUSTED_NAVIGATION_SECONDS = 10
+IDENTITY_PROVIDERS = re.compile(r"(?:^|\.)(?:accounts\.google\.com|login\.microsoftonline\.com|login\.live\.com|"
+    r"okta\.com|oktapreview\.com|onelogin\.com|auth0\.com|appleid\.apple\.com|linkedin\.com)$")
+CONFIRMATION_TEXT = re.compile(r"application (?:has been |was |is )?(?:submitted|received)\b|"
+    r"thank(?:s| you) for (?:applying|your application|submitting)|we(?:'ve|’ve| have) received your application|"
+    r"successfully (?:submitted|applied)|your application (?:has been|was) (?:sent|submitted|received)", re.I)
+SUBMISSION_ERROR = re.compile(r"\b(?:error|failed|failure|unsuccessful|unable to|could not|couldn't|try again)\b|"
+    r"\b(?:not|never)\s+(?:\w+\s+){0,4}(?:submitted|received|sent|completed?|applied)\b", re.I)
+
+
+_warned = set()
+
+
+def _warn_once(message, *args):
+    if message not in _warned:
+        _warned.add(message)
+        logging.getLogger(__name__).warning(message, *args)
+
+
+def hidden_mode():
+    mode = os.getenv("JOB_AGENT_HIDDEN_BROWSER", "offscreen").strip().casefold()
+    return mode if mode in {"offscreen", "headless"} else "offscreen"
 
 
 def _acquire_playwright(start):
@@ -208,7 +243,7 @@ def _release_playwright(instance):
     if getattr(_playwright_runtime, 'instance', None) is not instance:
         return
     _playwright_runtime.users -= 1
-    if _playwright_runtime.users == 0:
+    if _playwright_runtime.users == 0 and not getattr(_playwright_runtime, 'pooled', False):
         _playwright_runtime.instance = None
         instance.stop()
 
@@ -247,6 +282,7 @@ class ApplicationBrowser:
         self._dns_cache, self._last_session_save = {}, 0
         self._page_context = None
         self._document_url = None
+        self._trusted_until, self._offscreen = 0, False
         try:
             self.browser = self._launch(self.headless)
             login_state = session_store.load(owner_key, self.session_site) if session_store and owner_key else None
@@ -255,6 +291,7 @@ class ApplicationBrowser:
             self.context.set_default_timeout(8000)
             self.context.route("**/*", self._guard_request)
             self.page = self.context.new_page()
+            self._anchor = self.page  # The application tab; popups fall back to it.
             self.context.on("page", self._popup)
             try:self.page.goto(self.url, wait_until="domcontentloaded", timeout=30_000)
             except Exception as exc:
@@ -267,7 +304,7 @@ class ApplicationBrowser:
                 self.page.locator('input:not([type="hidden"]), textarea, select, [role="combobox"], button, a[href]').first.wait_for(state="attached", timeout=15_000)
             except PlaywrightTimeout:
                 pass  # Keep the page available for challenge/manual inspection.
-            self.page.wait_for_timeout(350)
+            self._settle()
         except BaseException:
             self.close()
             raise
@@ -277,13 +314,37 @@ class ApplicationBrowser:
         self.option_cache.clear()
 
     def _launch(self, headless):
-        return self.playwright.chromium.launch(
-            channel=os.getenv('JOB_AGENT_BROWSER_CHANNEL','chrome'),headless=headless)
+        channel = os.getenv('JOB_AGENT_BROWSER_CHANNEL','chrome')
+        self._offscreen = bool(headless and hidden_mode() == 'offscreen')
+        actual_headless = headless and not self._offscreen
+        key = (channel, actual_headless, self._offscreen)
+        pool = getattr(_playwright_runtime, 'browsers', None)
+        if pool is not None and key in pool and pool[key].is_connected():
+            return pool[key]
+        browser = self.playwright.chromium.launch(channel=channel, headless=actual_headless,
+            **({'args': [f"--window-position={OFFSCREEN['left']},{OFFSCREEN['top']}", '--window-size=1280,900']} if self._offscreen else {}))
+        if pool is not None:
+            pool[key] = browser
+        return browser
+
+    def _place_window(self, visible):
+        """Move the off-screen window into view (or back) without reloading the page."""
+        cdp = self.context.new_cdp_session(self.page)
+        try:
+            window = cdp.send("Browser.getWindowForTarget")["windowId"]
+            cdp.send("Browser.setWindowBounds", {"windowId": window, "bounds": {"windowState": "normal"}})
+            cdp.send("Browser.setWindowBounds", {"windowId": window, "bounds": dict(ON_SCREEN if visible else OFFSCREEN)})
+        except Exception:
+            raise BrowserBlocked("Could not move the browser window. Retry from Agent activity.") from None
+        finally:
+            try:cdp.detach()
+            except Exception:pass
 
     def set_visible(self, visible):
-        """User-only handoff. Relaunch with session state, without replaying actions.
+        """User-only handoff. Move an off-screen window, or relaunch a headless one.
 
-        Chrome cannot change headless mode in place. Current URLs, cookies, local
+        An off-screen window keeps its page as is. Headless Chrome cannot change
+        mode in place, so it relaunches with session state without replaying actions. Current URLs, cookies, local
         storage and session storage are retained; unsaved DOM/file inputs are not.
         The caller must pause/fence the agent and invalidate submission review.
         """
@@ -293,6 +354,11 @@ class ApplicationBrowser:
             if visible:self.page.bring_to_front()  # Only an explicit UI action may focus Chrome.
             return
         self._check_page()
+        if self._offscreen:
+            self._place_window(visible)
+            self.headless = not visible
+            if visible:self.page.bring_to_front()
+            return
         pages=[]
         for page in self.context.pages:
             if page.is_closed() or page.url=='about:blank':continue
@@ -327,16 +393,20 @@ class ApplicationBrowser:
                 if selected:active=page
             if active is None:raise BrowserBlocked('The current browser tab could not be restored.')
         except Exception:
-            if replacement:replacement.close()
+            if 'context' in locals():context.close()
+            if replacement and not _pooled_browser(replacement):replacement.close()
             raise BrowserBlocked('Could not switch browser mode. The original session is still available; retry from Agent activity.') from None
-        previous=self.browser
+        previous, previous_context = self.browser, self.context
         self.browser,self.context,self.page=replacement,context,active
+        self._anchor=active
         self.headless=not visible
         self.scope=active
         self.context.on('page',self._popup)
         self.option_cache.clear();self.choice_fields.clear();self._choice_queries.clear()
         self._option_owner,self._page_context,self._document_url,self._preferred_frame=None,None,None,None
-        previous.close()
+        previous_context.close()
+        if not _pooled_browser(previous):
+            previous.close()
         if visible:active.bring_to_front()
 
     def save_login_state(self, *, force=False):
@@ -346,8 +416,11 @@ class ApplicationBrowser:
         try:
             state = self.context.storage_state()
             self.session_store.save(self.owner_key, self.session_site, state)
+        except OSError as exc:
+            # Browsing still works; sign-ins just are not kept between sessions.
+            _warn_once("Browser sign-ins are not saved between sessions: %s", exc)
         except Exception:
-            pass  # Browsing still works if secure local persistence is unavailable.
+            pass
 
     def _public_host(self, host):
         if host not in self._dns_cache:
@@ -372,14 +445,42 @@ class ApplicationBrowser:
             try:top_level = route.request.frame.parent_frame is None
             except Exception:top_level = True # A popup's request can precede frame creation.
             if top_level:
+                # A page reached from a control the agent just clicked, or by the
+                # user in the visible window, may move to another public HTTPS
+                # site (company career page -> ATS, script redirects).
+                if (self.purpose != 'browse' and host not in self.navigation_hosts and not blocked
+                        and url.scheme == "https" and self._trusted_navigation() and self._public_host(host)):
+                    self.navigation_hosts.add(host)
                 blocked = blocked or url.scheme != "https" or (self.purpose != 'browse' and host not in self.navigation_hosts)
         if blocked or url.scheme not in {"http", "https"} or not self._public_host(host):
             route.abort()
         else:
             route.continue_()
 
+    def _trusted_navigation(self):
+        return time.monotonic() < self._trusted_until or not self.headless
+
+    def _allowed_page(self, page):
+        return self.purpose == 'browse' or urlsplit(page.url).hostname in self.navigation_hosts
+
+    def _live_page(self):
+        """Keep working in an open application tab when a popup closes or leaves the site."""
+        page = self.page
+        if not page.is_closed() and page is not getattr(self, '_anchor', page) and page.url == 'about:blank':
+            try:page.wait_for_url(lambda url: url != 'about:blank', timeout=5000)
+            except Exception:pass
+        if not page.is_closed() and (page is getattr(self, '_anchor', page) or self._allowed_page(page)):
+            return page
+        candidates = [p for p in self.context.pages if not p.is_closed() and p.url != 'about:blank' and self._allowed_page(p)]
+        if not candidates:
+            return None if page.is_closed() else page
+        self.page = candidates[-1]
+        self.option_cache.clear(); self._choice_queries.clear()
+        self._option_owner, self._preferred_frame = None, None
+        return self.page
+
     def _check_page(self):
-        if self.page.is_closed():
+        if self._live_page() is None or self.page.is_closed():
             raise BrowserBlocked("The browser was closed. Continue to reopen the application.")
         allowed = self.navigation_hosts
         if urlsplit(self.page.url).hostname not in allowed and self.purpose != 'browse':
@@ -404,8 +505,8 @@ class ApplicationBrowser:
             self.option_cache.clear()
             self._choice_queries.clear()
 
-    def page_state(self):
-        fields = self.observe()
+    def page_state(self, fields=None):
+        fields = self.observe() if fields is None else fields
         raw = self.scope.evaluate(PAGE_SCAN)
         self._page_context = page_state(raw, url=self.page.url, fields=fields)
         return self._page_context
@@ -424,8 +525,9 @@ class ApplicationBrowser:
             # career site to its ATS. Never grant a model-supplied arbitrary URL.
             self.navigation_hosts.add(urlsplit(url).hostname)
         locator = self.scope.locator(f'[data-northstar-action="{target["id"]}"]')
+        self._trusted_until = time.monotonic() + TRUSTED_NAVIGATION_SECONDS
         locator.click(timeout=8000)
-        self.page.wait_for_timeout(400)
+        self._settle()
         if self.platform == "workday" and "/apply/" in self.page.url:
             # Workday's route shell renders before its account/application step.
             # Wait for that step, not the always-present header Sign In button.
@@ -440,7 +542,7 @@ class ApplicationBrowser:
     def observe(self):
         self._check_page()
         fields = self.scope.evaluate(SCAN)
-        if len(fields) > 100:
+        if len(fields) > MAX_FIELDS:
             raise BrowserBlocked("This form has too many controls for this release. Complete it manually.")
         for field in fields:
             if field["key"] in self.choice_fields:
@@ -456,8 +558,9 @@ class ApplicationBrowser:
         return fields
 
     def pump(self):
-        if self.is_open():
-            self.page.wait_for_timeout(50)
+        page = self._live_page() if self.is_open() else None
+        if page is not None and not page.is_closed():
+            page.wait_for_timeout(50)
 
     def field(self, key):
         field = next((item for item in self.observe() if item["key"] == key), None)
@@ -516,7 +619,7 @@ class ApplicationBrowser:
             previous = next((item for item in self.observe() if item['key'] == self._option_owner), None)
             if previous and self._option_locator(previous).count():
                 self.locate(previous).press('Escape')
-                self.page.wait_for_timeout(150)
+                self._settle()
                 if self._option_locator(previous).count():
                     raise BrowserBlocked('The previous dropdown is still open. Close it before opening another field.', code='dom_interaction_failed')
         field = self.field(key)
@@ -537,12 +640,13 @@ class ApplicationBrowser:
         if field["kind"] not in {"combobox", "location", "text", "search", "tel"}:
             return []
         locator = self.locate(field)
+        editable = locator.evaluate("e => e.matches('input,textarea') || e.isContentEditable") and locator.is_editable()
         # Some searchable pickers explicitly advertise Enter as the search key.
         # Filling their input alone only changes the query, not the option list.
         enter_search = bool(field.get("choice_control") and
                             locator.get_attribute("enterkeyhint") == "search")
         # A second click closes an open React Select before a search can run.
-        if query is None and key in self._choice_queries and locator.is_editable():
+        if query is None and key in self._choice_queries and editable:
             locator.fill("")
             self._choice_queries.pop(key,None)
             if enter_search:
@@ -556,7 +660,7 @@ class ApplicationBrowser:
             else:
                 self.click_field(key)
         self._option_owner = key
-        if query and locator.is_editable():
+        if query and editable:
             locator.fill(str(query))
             self._choice_queries[key] = str(query)
             if enter_search:
@@ -575,11 +679,20 @@ class ApplicationBrowser:
         self.option_cache[key] = items
         return items
 
+    def current_options(self, key):
+        """Read the currently open menu without resetting its search or category."""
+        field = self.field(key)
+        if field['kind'] in {'select', 'radio'}:
+            return field.get('options', [])
+        if self._option_owner != key:
+            return []
+        return self._read_options(key, self._option_locator(field))
+
     def explore_option(self, key, label):
         query = self._choice_queries.get(key)
         self.choose_option(key, label)
         if query is not None: self._choice_queries[key] = query
-        self.page.wait_for_timeout(200)
+        self._settle()
         # Read the new level without clicking the field again (which can close
         # the popup or jump back to its root).
         return self._read_options(key, self._option_locator(self.field(key)))
@@ -599,20 +712,57 @@ class ApplicationBrowser:
             raise BrowserBlocked("The option changed or is ambiguous. Inspect the field again.", code='options_changed')
         options.nth(matching[0][0]).click(timeout=5000)
         if not matching[0][1]['expandable']: self._choice_queries.pop(key,None)
-        self.page.wait_for_timeout(150)
+        self._settle()
+
+    def _settle(self, timeout=1500):
+        """Wait for a short quiet DOM interval, bounded even on animated pages."""
+        started = time.monotonic()
+        try:
+            self.page.wait_for_load_state('domcontentloaded', timeout=timeout)
+            remaining = max(1, timeout - int((time.monotonic() - started) * 1000))
+            self.page.evaluate("""timeout => new Promise(resolve => {
+                let quiet, deadline;
+                const finish = () => { observer.disconnect(); clearTimeout(quiet); clearTimeout(deadline); resolve(); };
+                const observer = new MutationObserver(records => {
+                    if (records.every(r => r.type === 'attributes' && r.attributeName.startsWith('data-northstar-'))) return;
+                    clearTimeout(quiet); quiet = setTimeout(finish, 150);
+                });
+                observer.observe(document.documentElement, {subtree:true, childList:true, attributes:true, characterData:true});
+                quiet = setTimeout(finish, 150); deadline = setTimeout(finish, timeout);
+            })""", remaining)
+        except Exception:
+            pass  # Navigation/replaced documents are inspected by the next action.
+
+    def fill_plain(self, field, value):
+        """Fill one already observed ordinary input; the caller verifies the pass."""
+        self._check_page()
+        locator = self.locate(field)
+        if not locator.evaluate("e => (e.matches('textarea') || e.matches('input:not([type=password]):not([type=hidden]):not([type=file]):not([type=checkbox]):not([type=radio])')) && e.getAttribute('role') !== 'combobox'"):
+            raise BrowserBlocked('The control changed; observe it before filling.', code='stale_observation')
+        locator.fill(str(value), timeout=5000)
+        locator.press('Tab')
 
     def type_field(self, key, value):
         field = self.field(key)
         if field["kind"] not in {"text", "email", "tel", "url", "textarea", "number", "search", "combobox", "location"}:
             raise BrowserBlocked("This field does not accept text.")
         locator = self.locate(field)
-        locator.fill("")
-        locator.press_sequentially(str(value), delay=10, timeout=8000)
+        if field.get('choice_control') or field['kind'] in {'combobox', 'location'}:
+            locator.fill('')
+            locator.press_sequentially(str(value), delay=0, timeout=8000)
+        else:
+            locator.fill(str(value), timeout=8000)
         if field.get("choice_control") or field["kind"] in {"combobox","location"}:
             self._choice_queries[key] = str(value)
         if field["kind"] not in {"combobox", "location"}:
             locator.press("Tab")
-        self.page.wait_for_timeout(150)
+            # A few controls commit only after physical key events. Retain the
+            # fast fill path, then fall back when the site discards that value.
+            if not field.get('choice_control') and locator.input_value() != str(value):
+                locator.fill('')
+                locator.press_sequentially(str(value), delay=0, timeout=8000)
+                locator.press('Tab')
+        self._settle()
 
     def press_key(self, key, value):
         if value not in {"ArrowDown", "ArrowUp", "Escape", "Tab"}:
@@ -642,9 +792,14 @@ class ApplicationBrowser:
         return self.observe()
 
     def is_open(self):
-        return not self.page.is_closed()
+        return any(not page.is_closed() for page in self.context.pages)
 
     def barrier(self):
+        host = urlsplit(self.page.url).hostname or ""
+        if self.purpose != 'browse' and IDENTITY_PROVIDERS.search(host):
+            # The agent never enters identity-provider credentials.
+            return (f"This application uses {host} sign-in. Complete it with Control browser in Agent activity, "
+                "then send continue here.")
         verification = self.verification_barrier()
         if verification:return verification
         from .authentication import context
@@ -728,10 +883,27 @@ class ApplicationBrowser:
             locator.press("Tab")
         else:
             raise BrowserBlocked("Complete this control in the browser, then continue.", code='dom_interaction_failed')
-        self.page.wait_for_timeout(200)
+        self._settle()
 
-    def confirmation(self):
+    def confirmation(self, *, after_submit=False):
         self._check_page()
+        fields = self.observe()
+        raw = self.scope.evaluate(PAGE_SCAN)
+        page = page_state(raw, url=self.page.url, fields=fields)
+        text = raw["text"]
+        # Polite text and a success-looking URL are not proof while an
+        # application can still be sent, has validation errors, or remains editable.
+        if SUBMISSION_ERROR.search(text):
+            return None
+        if any(SUBMISSION_ERROR.search(error) or not CONFIRMATION_TEXT.search(error)
+               for error in raw.get("errors", [])):
+            return None
+        if any(c["kind"] == "submit" or (c.get("submits_form") and c["kind"] == "guarded"
+               and c["label"].strip().casefold() != "search") for c in page["controls"]):
+            return None  # Includes a disabled button while a request is in flight.
+        if any(f.get("invalid") or (f["kind"] != "search" and (f.get("required") or f.get("value")))
+               for f in fields):
+            return None
         selectors = ('#application_confirmation, .application-confirmation, .application-success, '
                      '[data-testid="application-confirmation"], [data-automation-id="applicationConfirmation"], '
                      '[data-automation-id="applicationSubmitted"], [data-automation-id="successMessage"]')
@@ -740,9 +912,14 @@ class ApplicationBrowser:
             for index in range(matches.count()):
                 element = matches.nth(index)
                 if element.is_visible():
-                    text = element.inner_text().strip()
-                    if re.search(r"application (?:has been |was )?(?:submitted|received)|thank you for applying", text, re.I):
-                        return {"url": self.page.url, "text": text[:400]}
+                    message = element.inner_text().strip()
+                    if CONFIRMATION_TEXT.search(message) and not SUBMISSION_ERROR.search(message):
+                        return {"url": self.page.url, "text": message[:400]}
+        if after_submit:
+            match = CONFIRMATION_TEXT.search(text)
+            if match:
+                start = max(0, match.start() - 120) if match else 0
+                return {"url": self.page.url, "text": " ".join(text[start:start + 400].split())}
         return None
 
     def submit(self):
@@ -756,9 +933,9 @@ class ApplicationBrowser:
 
     def wait_confirmation(self):
         import time
-        deadline = time.monotonic() + 15
+        deadline = time.monotonic() + 45
         while time.monotonic() < deadline:
-            proof = self.confirmation()
+            proof = self.confirmation(after_submit=True)
             if proof:
                 return proof
             self.page.wait_for_timeout(500)
@@ -767,12 +944,15 @@ class ApplicationBrowser:
     def close(self):
         if getattr(self, '_closed', False):
             return
-        self._closed = True
         try:
             if self.browser is not None:
                 self.save_login_state(force=True)
-                self.browser.close()
+                if hasattr(self, 'context'):
+                    self.context.close()
+                if not _pooled_browser(self.browser):
+                    self.browser.close()
         finally:
+            self._closed = True
             _release_playwright(self.playwright)
 
 
@@ -780,3 +960,24 @@ def form_digest(fields):
     return hashlib.sha256(json.dumps([
         {key: field.get(key) for key in ("key", "label", "kind", "value", "required", "options")}
         for field in fields], sort_keys=True).encode()).hexdigest()
+
+
+def _pooled_browser(browser):
+    return browser in getattr(_playwright_runtime, 'browsers', {}).values()
+
+def start_worker_browsers():
+    _playwright_runtime.pooled = True
+    _playwright_runtime.browsers = {}
+
+def stop_worker_browsers():
+    for browser in getattr(_playwright_runtime, 'browsers', {}).values():
+        try:
+            browser.close()
+        except Exception:
+            pass
+    _playwright_runtime.browsers = {}
+    instance = getattr(_playwright_runtime, 'instance', None)
+    if instance:
+        instance.stop()
+    _playwright_runtime.instance, _playwright_runtime.users = None, 0
+    _playwright_runtime.pooled = False

@@ -1,0 +1,73 @@
+{
+  "kind": "live-model-fit-tailor",
+  "runs": [
+    {
+      "case": 1,
+      "error_type": "OpenAITimeoutError"
+    },
+    {
+      "case": 2,
+      "fit_seconds": 217.482,
+      "fit_stages": {
+        "resume": 92.873,
+        "job": 115.075,
+        "match": 102.395
+      },
+      "fit_cache_hits": [],
+      "score": 47.7,
+      "restart_fit_seconds": 0.032,
+      "restart_model_calls": 0,
+      "tailor_analysis_model_calls": 0,
+      "error_type": "OpenAITimeoutError",
+      "tailor_stages": {
+        "write_resume": 53.384,
+        "verify_resume": 62.321
+      },
+      "tailor_stages_source": "Successful stage lines in bench.log; later revision timed out."
+    },
+    {
+      "case": 3,
+      "error_type": "OpenAITimeoutError"
+    }
+  ],
+  "model_calls": {
+    "ResumeAnalysis": 2,
+    "JobAnalysis": 3,
+    "SkillAssessment": 5,
+    "ResumeSelection": 1,
+    "VerificationResult": 1,
+    "TailoredResume": 1
+  },
+  "date": "2026-10-09",
+  "application_smoke": {
+    "kind": "real configured model + Chrome, intercepted synthetic two-page form",
+    "baseline_seconds": 26.27,
+    "after_seconds": 19.07,
+    "baseline_model_reservations": 6,
+    "after_model_reservations": 3,
+    "after_tool_reservations": 5,
+    "final_submit_clicks": 0,
+    "after_a1_only_seconds": 29.38,
+    "notes": "Single paired smoke, not a median or a live employer ATS benchmark. Reservations include answer verification; provider latency varies."
+  },
+  "acceptance": {
+    "three_live_ats_baselines": "not measured in this pass",
+    "three_completed_fit_tailor_runs": false,
+    "cold_fit_target_met": false,
+    "restart_cache_no_analysis_calls": true,
+    "tailor_reuses_fit_analysis": true
+  },
+  "validation": {
+    "full_suite": {
+      "passed": 1138,
+      "skipped": 2,
+      "subtests_passed": 12,
+      "seconds": 562.69,
+      "browser_tests": true,
+      "model_network": "blocked for scripted suite; real model benchmark separate"
+    },
+    "later_focused_checks": "passed: pack timing, model tier, cache-hit counts, dynamic field batching, replacement revision and recovery",
+    "ui": "1440px and 390px, light and dark, visually inspected",
+    "syntax_and_added_whitespace": "passed"
+  }
+}

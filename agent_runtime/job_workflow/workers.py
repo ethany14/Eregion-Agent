@@ -426,14 +426,18 @@ class ArtifactVerifierWorker:
             verdict = ArtifactVerification.model_validate(prior["verification"])
         else:
             job_data = _one(context, "job_analysis")
-            verdict = self._verifier.verify(content, kind, snapshot.items,
-                max_length=task.input_spec.get("max_length"),
-                expected_question=task.input_spec.get("question"),
+            check = lambda: self._verifier.verify(content, kind, snapshot.items,
+                max_length=task.input_spec.get('max_length'), expected_question=task.input_spec.get('question'),
                 preferences=snapshot.preference_versions,
-                expected_role=job_data.get("title") if isinstance(job_data, dict) else None)
+                expected_role=job_data.get('title') if isinstance(job_data, dict) else None)
+            if kind == 'tailored_resume':
+                from agent_runtime.application_pack.parallel_checks import parallel_checks
+                verdict, llm_verdict = parallel_checks(check, lambda: invoke_model(self._model.verify_resume,
+                    _writer_state(task, context, current=content)))
+            else:
+                verdict = check()
         if kind == "tailored_resume" and verdict.passed and not (
                 prior and prior["source_content_hash"] == content_hash and prior["verification"]["passed"]):
-            llm_verdict = invoke_model(self._model.verify_resume, _writer_state(task, context, current=content))
             if not llm_verdict.passed:
                 from agent_runtime.application_pack.types import ClaimIssue
                 verdict = ArtifactVerification(passed=False, issues=[ClaimIssue(
@@ -442,7 +446,10 @@ class ArtifactVerifierWorker:
                     revision_instruction=llm_verdict.revision_feedback[
                         min(index, len(llm_verdict.revision_feedback) - 1)]
                         if llm_verdict.revision_feedback else "Remove the unsupported claim.")
-                    for index, claim in enumerate(llm_verdict.unsupported_claims)])
+                    for index, claim in enumerate(llm_verdict.unsupported_claims)] or [ClaimIssue(
+                        block_id='model-quality', reason='The model verifier rejected this draft.',
+                        unsupported_text='', cited_evidence_ids=[],
+                        revision_instruction='; '.join(llm_verdict.revision_feedback) or 'Revise the draft to meet the writing requirements.')])
         report = {"artifact_key": key, "artifact_type": kind,
                   "source_content_hash": content_hash,
                   "verification": verdict.model_dump(mode="json")}
@@ -471,9 +478,14 @@ class ArtifactRevisionWorker:
         elif kind == "tailored_resume":
             snapshot = GenerationEvidenceSnapshot.model_validate(
                 _one(context, "generation_evidence_snapshot"))
-            revised = TailoredResume.model_validate(invoke_model(self._model.revise_resume,
-                _writer_state(task, context, current=current, report=verdict),
-                snapshot.preference_versions)).model_dump(mode="json")
+            from job_agent.resume_selection import remove_unsupported
+            import re
+            state = _writer_state(task, context, current=current, report=verdict)
+            factual_only = all(re.search(r'unsupported|evidence|not supported|not entailed', i.reason, re.I)
+                and not re.search(r'structure|section|length|header|preference|paragraph', i.reason, re.I) for i in verdict.issues)
+            repaired = remove_unsupported(state) if factual_only else None
+            revised = (repaired if repaired is not None else TailoredResume.model_validate(
+                invoke_model(self._model.revise_resume, state, snapshot.preference_versions))).model_dump(mode='json')
             summary = "Resume revised from verification feedback."
         else:
             prompt = _writing_context(task, context) + "\nCurrent artifact: " + json.dumps(

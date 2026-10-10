@@ -1,12 +1,12 @@
-# Harness comparison: JobHunterAgent and learn-claude-code
+# Harness comparison: eregion and learn-claude-code
 
 This note records the September 2026 review of
 [shareAI-lab/learn-claude-code](https://github.com/shareAI-lab/learn-claude-code).
-The upstream repository is a teaching harness. JobHunterAgent keeps its
+The upstream repository is a teaching harness. eregion keeps its
 domain-specific persistence, evidence, approval, and recovery contracts rather
 than copying the tutorial runtime.
 
-| Harness capability | JobHunterAgent equivalent | Decision |
+| Harness capability | eregion equivalent | Decision |
 | --- | --- | --- |
 | One model/tool loop | `ToolCallingLoop` plus `SessionCoordinator` | Keep the provider-independent loop and durable step boundaries. |
 | Tool registry | `ToolRegistry` and built-in/MCP registration | Keep dependency injection and explicit allowlists. |
@@ -38,7 +38,7 @@ during recovery.
 
 ## Deliberate differences
 
-JobHunterAgent is a persistent, evidence-sensitive application rather than a
+eregion is a persistent, evidence-sensitive application rather than a
 disposable coding CLI. Tool outputs remain untrusted data. Memory does not become
 resume evidence. Skills cannot expand permissions. Approvals survive restarts and
 are bound to tool version and canonical arguments. External side effects retain

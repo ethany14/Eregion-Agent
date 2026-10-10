@@ -25,6 +25,7 @@ class Database:
 
     def create_all_for_tests(self) -> None:
         # Importing registers model metadata on Base before create_all runs.
+        import agent_runtime.analysis_cache  # noqa: F401
         import api.models  # noqa: F401
         import agent_runtime.models  # noqa: F401
         import agent_runtime.sessions.models  # noqa: F401
@@ -76,7 +77,10 @@ def create_database(
         def enable_foreign_keys(dbapi_connection, _) -> None:
             cursor = dbapi_connection.cursor()
             cursor.execute("PRAGMA foreign_keys=ON")
-            cursor.execute("PRAGMA busy_timeout=2000")
+            # WAL lets readers (UI polling) proceed while a run writes, and the
+            # longer timeout absorbs short write bursts from concurrent runs.
+            cursor.execute("PRAGMA journal_mode=WAL")
+            cursor.execute("PRAGMA busy_timeout=10000")
             cursor.close()
     database = Database(
         engine=engine,

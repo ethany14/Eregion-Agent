@@ -25,6 +25,8 @@ const newDraft=()=>({id:crypto.randomUUID(),url:'',messages:[],field:null,lastTe
 let draft=newDraft(),profile={},resume=null,selected=null,current=null,attempts=[],groups=[],epoch=0,serial=0,poll=null,view='chat';
 let chatBusy=false,actionBusy=false,extracting=false,starting=false,extractionVersion=0,previewUrl=null,logSignature='',actionSignature='',failedMessage=null;
 const optimistic=new Map();
+// Review approvals survive polling: run_id -> {remember:{key:bool}, scopes:{key:'global'|'employer'}}.
+const memoryChoices=new Map();
 let careerSignature='',visualPreferenceRun=null,restoring=true,candidateWrites=Promise.resolve();
 let defaultVisualFallback=false;
 try{defaultVisualFallback=localStorage.getItem('northstar.visualFallback')==='true';}catch{/* Storage is optional. */}
@@ -93,10 +95,28 @@ function autoOpenWorkspace(item){
 function select(id){showView('chat');selected=id;current=attempts.find(a=>a.run_id===id)||null;epoch++;logSignature='';actionSignature='';$('#chat-text').value='';$('#history-panel').classList.remove('open');$('#browser-preview').hidden=true;$('#preview-placeholder').hidden=false;error();render();refresh();}
 async function openExisting(id){const item=await request(`/${id}`);attempts=[item,...attempts.filter(a=>a.run_id!==id)];select(id);}
 function reset(url=''){showView('chat');selected=null;current=null;epoch++;draft=newDraft();draft.url=url;logSignature='';actionSignature='';failedMessage=null;$('#chat-text').value='';$('#history-panel').classList.remove('open');$('#browser-preview').hidden=true;$('#preview-placeholder').hidden=false;error();restoring=true;render();if(url)addDraft('user',url);restoreCandidate();}
-async function refresh(){
+let historyRefreshedAt=0;
+async function refresh({background=false}={}){
   clearTimeout(poll);const ticket=++serial;
-  try{const result=await request();if(ticket!==serial)return;attempts=result.attempts;groups=result.groups||[];current=selected?attempts.find(a=>a.run_id===selected)||null:null;render();if(current&&!$('#browser-panel').hidden)await refreshPreview(current);}
-  catch(e){if(ticket===serial)error(e.message);}finally{if(ticket===serial)poll=setTimeout(refresh,2000);}
+  try{
+    // Refresh the active conversation promptly without rebuilding every saved
+    // document/interview on each tick. Explicit actions always refresh the list.
+    const full=!background||!careerMode||!selected||Date.now()-historyRefreshedAt>=10000;
+    if(full){
+      const result=await request();if(ticket!==serial)return;
+      attempts=result.attempts;groups=result.groups||[];historyRefreshedAt=Date.now();
+    }else{
+      const item=await request(`/${selected}`);if(ticket!==serial)return;
+      attempts=attempts.map(a=>a.run_id===item.run_id?item:a);
+    }
+    current=selected?attempts.find(a=>a.run_id===selected)||null:null;render();
+    // A slow screenshot must not postpone chat updates.
+    if(current&&!$('#browser-panel').hidden)void refreshPreview(current);
+  }catch(e){if(ticket===serial)error(e.message);}
+  finally{if(ticket===serial){
+    const active=current&&(busyStatuses.has(current.status)||busyStatuses.has(current.task_status));
+    poll=setTimeout(()=>refresh({background:true}),active?750:2000);
+  }}
 }
 const PAGE_VIEWS=new Set(['applications','materials','archived','trash','alerts']);
 function showView(name,{push=true}={}){
@@ -296,7 +316,7 @@ function render(){
   const messages=current?[...(current.messages||[]),...local.filter(m=>!current.messages?.some(s=>s.id===m.id))]:draft.messages;
   $('#welcome').hidden=Boolean(current||messages.length);
   const signature=JSON.stringify(messages);
-  if(signature!==logSignature){logSignature=signature;const s=$('#chat-scroll'),near=s.scrollHeight-s.scrollTop-s.clientHeight<120;$('#agent-messages').replaceChildren();for(const m of messages){const bubble=el('div','',`message ${m.role}`);bubble.dataset.messageId=m.id;bubble.append(el('span',m.role==='user'?'You':'Northstar','speaker'));const body=m.role==='assistant'?renderMarkdown(m.text):el('p',m.text);bubble.append(body);if(m.role==='assistant'){const copy=button('Copy',async()=>{try{await navigator.clipboard.writeText(body.innerText);copy.textContent='Copied';}catch{copy.textContent='Select text to copy';}setTimeout(()=>{copy.textContent='Copy';},1800);},'message-copy');copy.setAttribute('aria-label','Copy reply');bubble.append(copy);}$('#agent-messages').append(bubble);}if(near)requestAnimationFrame(bottom);}
+  if(signature!==logSignature){logSignature=signature;const s=$('#chat-scroll'),near=s.scrollHeight-s.scrollTop-s.clientHeight<120;$('#agent-messages').replaceChildren();for(const m of messages){const bubble=el('div','',`message ${m.role}`);bubble.dataset.messageId=m.id;bubble.append(el('span',m.role==='user'?'You':'eregion','speaker'));const body=m.role==='assistant'?renderMarkdown(m.text):el('p',m.text);bubble.append(body);if(m.role==='assistant'){const copy=button('Copy',async()=>{try{await navigator.clipboard.writeText(body.innerText);copy.textContent='Copied';}catch{copy.textContent='Select text to copy';}setTimeout(()=>{copy.textContent='Copy';},1800);},'message-copy');copy.setAttribute('aria-label','Copy reply');bubble.append(copy);}$('#agent-messages').append(bubble);}if(near)requestAnimationFrame(bottom);}
   renderHeader(messages);
   $('#pause-agent').hidden=!current||terminal.has(current.status)||current.status==='submitting';$('#pause-agent').textContent=current?.pause_requested?'Resume':'Pause';$('#pause-agent').disabled=actionBusy||current?.reopening;
   $('#send-message').disabled=chatBusy||starting||restoring||current?.reopening||current?.status==='submitting';$('#attach-resume').disabled=extracting||restoring;$('#profile-toggle').disabled=extracting||restoring;
@@ -342,7 +362,13 @@ function decisions(){
       }
       box.append(list);
     }
-    const actions=el('div','','actions'),submit=button('Submit application',()=>act('continue',{confirm_submit:true},id),'primary-button');submit.disabled=chatBusy||actionBusy;
+    const approvals=item.pending_approvals||[],choices=memoryChoices.get(id)||{remember:{},scopes:{}};memoryChoices.set(id,choices);
+    const reused=all.filter(f=>item.answer_sources?.[f.key]?.type==='memory');
+    if(approvals.length)box.append(memoryApprovals(approvals,choices));
+    if(reused.length){const saved=el('details','','saved-answers');saved.append(el('summary',`Filled from your saved answers (${reused.length})`));const list=el('div','','review-list');for(const f of reused){const row=el('div','','review-row');row.append(el('span',f.label,'k'),el('span',typeof f.value==='boolean'?(f.value?'Yes':'No'):String(f.value||'Not filled'),'v'));list.append(row);}saved.append(list);box.append(saved);}
+    const actions=el('div','','actions'),submit=button('Submit application',()=>act('continue',{confirm_submit:true,
+      remember:Object.fromEntries(approvals.map(a=>[a.key,choices.remember[a.key]??true])),
+      memory_scopes:Object.fromEntries(approvals.map(a=>[a.key,choices.scopes[a.key]||a.scope]))},id),'primary-button');submit.disabled=chatBusy||actionBusy;
     actions.append(submit,button('Review answers',()=>{workspace();$('#answer-list').parentElement.open=true;}),el('span','Submits once','lock-note'));
     box.append(actions);container.append(box);return;
   }
@@ -354,6 +380,24 @@ function decisions(){
     if(!keys.length){const box=el('div','','decision');box.append(el('p',item.message));const actions=el('div','','actions');actions.append(button('Try again',()=>send('continue')));if(!item.career||item.application_run_id||item.browser)actions.append(button('Open browser',()=>workspace()));box.append(actions);container.append(box);}
   }
 }
+function memoryApprovals(approvals,choices){
+  // Approve once: checked answers are reused automatically on later applications.
+  const section=el('div','','memory-approvals');
+  section.append(el('p',`New ${approvals.length===1?'answer':'answers'} from our chat`,'eyebrow'),el('p','Checked answers are reused automatically next time, so you only approve them once.','hint'));
+  const list=el('div','','review-list');
+  for(const a of approvals){
+    const row=el('div','','review-row approval-row'),value=el('span',typeof a.value==='boolean'?(a.value?'Yes':'No'):String(a.value),'v');
+    const keep=el('label','','remember-toggle'),box=el('input');box.type='checkbox';box.checked=choices.remember[a.key]??true;
+    box.addEventListener('change',()=>{choices.remember[a.key]=box.checked;scope.disabled=!box.checked;});
+    keep.append(box,el('span','Remember'));
+    const scope=el('select','','memory-scope');scope.setAttribute('aria-label',`Where to reuse ${a.label}`);
+    for(const [v,t] of [['global','All jobs'],['employer','This employer only']]){const o=el('option',t);o.value=v;scope.append(o);}
+    scope.value=choices.scopes[a.key]||a.scope;scope.disabled=!box.checked;scope.addEventListener('change',()=>{choices.scopes[a.key]=scope.value;});
+    const controls=el('span','','approval-controls');controls.append(keep,scope);value.append(controls);
+    row.append(el('span',a.label,'k'),value);list.append(row);
+  }
+  section.append(list);return section;
+}
 function renderWorkspace(){
   $('#task-plan').replaceChildren();$('#browser-actions').replaceChildren();$('#answer-list').replaceChildren();
   const canControl=current&&(!current.career||current.application_run_id||current.browser)&&!terminal.has(current.status)&&current.status!=='submitting';
@@ -362,13 +406,15 @@ function renderWorkspace(){
   $('#cancel-attempt').hidden=!current||terminal.has(current.status)||current.status==='submitting';
   $('#browser-caption').textContent=current?`${browserHost(current)||company(current)} · live view`:'The browser will appear here.';
   const now=$('#workspace-now');now.hidden=!current;if(current)now.textContent=current.message||statusText(current);
+  const perf=current?.perf_summary,summary=$('#perf-summary');summary.hidden=!perf;summary.textContent=perf?`${perf.model_calls} model calls · ${Math.round(perf.model_seconds)} s model · ${Math.round(perf.browser_seconds)} s browser`:'';
   if(!current)return;
   for(const step of current.task_plan||[])$('#task-plan').append(el('li',step));if(!current.task_plan?.length)$('#task-plan').append(el('li',current.status==='awaiting_review'?'Review the completed application':current.message));
   for(const a of [...(current.actions||[])].slice(-20).reverse())$('#browser-actions').append(el('li',`${toolNames[a.tool]||a.tool} · ${a.label} · ${a.outcome}`));
   const answers=new Map((current.review_fields||[]).map(f=>[f.key,f]));for(const f of current.fields)answers.set(f.key,f);
   for(const f of answers.values()){const row=el('div','','answer');row.append(el('strong',f.label),el('p',typeof f.value==='boolean'?(f.value?'Yes':'No'):String(f.value||'Not filled')));const decision=current.field_decisions?.[f.key];if(decision?.mode==='default')row.append(el('small',`Agent default: ${decision.reason}`));if(!terminal.has(current.status)&&current.status!=='submitting'&&f.kind!=='file')row.append(button('Correct in chat',()=>{$('#chat-text').value=`For “${f.label}”, use `;$('#chat-text').focus();},'quiet-button'));$('#answer-list').append(row);}
 }
-async function refreshPreview(item){if(terminal.has(item.status)&&!item.browser||(item.career&&!item.application_run_id&&!item.browser))return;try{const r=await fetch(item.preview_url||`/api/auto-apply/${item.application_run_id||item.run_id}/preview`,{cache:'no-store',signal:AbortSignal.timeout(5000)});if(r.status!==200)return;const blob=await r.blob();if(current?.run_id!==item.run_id)return;if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=URL.createObjectURL(blob);$('#browser-preview').src=previewUrl;$('#browser-preview').hidden=false;$('#preview-placeholder').hidden=true;}catch{/* A preview delay does not stop the task. */}}
+let previewPending=false;
+async function refreshPreview(item){if(previewPending)return;if(terminal.has(item.status)&&!item.browser||(item.career&&!item.application_run_id&&!item.browser))return;previewPending=true;try{const r=await fetch(item.preview_url||`/api/auto-apply/${item.application_run_id||item.run_id}/preview`,{cache:'no-store',signal:AbortSignal.timeout(5000)});if(r.status!==200)return;const blob=await r.blob();if(current?.run_id!==item.run_id)return;if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=URL.createObjectURL(blob);$('#browser-preview').src=previewUrl;$('#browser-preview').hidden=false;$('#preview-placeholder').hidden=true;}catch{/* A preview delay does not stop the task. */}finally{previewPending=false;}}
 async function encode(file){if(!(file instanceof File)||!file.size||file.size>10*1024*1024)throw new Error('Attach a PDF resume no larger than 10 MB.');const bytes=new Uint8Array(await file.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));return btoa(binary);}
 $('#resume-file').addEventListener('change',async event=>{
   const file=event.target.files[0];if(!file)return;const taskId=current?.career?current.run_id:null;if(current&&!current.career)reset();draft.id=crypto.randomUUID();draft.payload=null;const version=++extractionVersion,id=draft.id;extracting=true;error();addDraft('user',`Attached ${file.name}`);
@@ -458,7 +504,24 @@ function educationEditor(record={}){
 $('#profile-toggle').addEventListener('click',()=>{
   $('#profile-fields').replaceChildren();for(const [key,label]of Object.entries(labels)){if(['school','degree'].includes(key)&&profile.education?.length)continue;const row=el('label',label),input=el('input');input.name=key;input.value=profile[key]||'';input.type=key==='email'?'email':'text';row.append(input);$('#profile-fields').append(row);}
   $('#education-fields').replaceChildren();for(const record of profile.education||[])educationEditor(record);$('#profile-dialog').showModal();
+  loadStandardAnswers();
 });
+async function loadStandardAnswers(){
+  // Approved once here, then reused on every application without asking.
+  const box=$('#standard-fields');box.replaceChildren();
+  try{const{answers}=await request('/standard-answers');for(const item of answers){
+    const row=el('label',item.question);let input;
+    if(item.kind==='yes_no'){input=el('select');for(const [v,t] of [['','Ask me'],['Yes','Yes'],['No','No']]){const o=el('option',t);o.value=v;input.append(o);}}
+    else{input=el('input');input.type='text';input.placeholder='Ask me';}
+    input.value=typeof item.value==='boolean'?(item.value?'Yes':'No'):String(item.value||'');input.dataset.topic=item.topic;input.dataset.originalValue=input.value.trim();row.append(input);box.append(row);}
+  }catch(e){box.append(el('p','Standard answers are unavailable right now.'));}
+}
+async function saveStandardAnswers(){
+  const inputs=[...$('#standard-fields').querySelectorAll('[data-topic]')].filter(i=>i.value.trim()!==i.dataset.originalValue);if(!inputs.length)return;
+  const saved=inputs.map(i=>[i,i.value.trim()]);
+  await request('/standard-answers',{answers:Object.fromEntries(saved.map(([i,value])=>[i.dataset.topic,value]))},'PUT');
+  for(const [input,value] of saved)input.dataset.originalValue=value;
+}
 $('#add-education').addEventListener('click',()=>educationEditor());
 $('#profile-close').addEventListener('click',()=>$('#profile-dialog').close());
 $('#profile-form').addEventListener('submit',async event=>{
@@ -467,9 +530,9 @@ $('#profile-form').addEventListener('submit',async event=>{
   const education=[...form.querySelectorAll('.education-record')].map(row=>({id:row.dataset.id,...Object.fromEntries([...row.querySelectorAll('[data-component]')].map(i=>[i.dataset.component,i.value.trim()]))}));
   const hadEducation=Boolean(profile.education?.length);profile={...profile,...Object.fromEntries(new FormData(form)),education};
   if(education.length){profile.school=education[0].school;profile.degree=education[0].degree;}else if(hadEducation){profile.school='';profile.degree='';}
-  try{const result=await persistCandidate();profile=result.profile;saveVisualPreference(visualFallback);$('#profile-dialog').close();await resourceChanged('I updated my saved candidate details. Use the current details.',current?.career?current.run_id:null,{visual_fallback:visualFallback});if(!current){draft.id=crypto.randomUUID();draft.payload=null;ask('Your details are saved for future applications.');advance();}}catch(e){error(e.message);}finally{save.disabled=false;}
+  try{const result=await persistCandidate();profile=result.profile;await saveStandardAnswers();saveVisualPreference(visualFallback);$('#profile-dialog').close();await resourceChanged('I updated my saved candidate details. Use the current details.',current?.career?current.run_id:null,{visual_fallback:visualFallback});if(!current){draft.id=crypto.randomUUID();draft.payload=null;ask('Your details are saved for future applications.');advance();}}catch(e){error(e.message);}finally{save.disabled=false;}
 });
-$('#answer-memory').addEventListener('toggle',async()=>{if(!$('#answer-memory').open||!current||(current.career&&!current.application_run_id))return;const id=current.run_id;try{const{memories}=await request(`/${id}/memory`);if(current?.run_id!==id)return;$('#memory-list').replaceChildren();if(!memories.length)$('#memory-list').append(el('p','No answers remembered yet.'));for(const m of memories){const row=el('div','','answer');row.append(el('strong',m.question),el('p',String(m.value)),button('Forget',async()=>{try{await request(`/${id}/memory/${m.memory_id}`,undefined,'DELETE');row.remove();}catch(e){error(e.message);}},'quiet-button'));$('#memory-list').append(row);}}catch(e){error(e.message);}});
+$('#answer-memory').addEventListener('toggle',async()=>{if(!$('#answer-memory').open||!current||(current.career&&!current.application_run_id))return;const id=current.run_id;try{const{memories}=await request(`/${id}/memory`);if(current?.run_id!==id)return;$('#memory-list').replaceChildren();if(!memories.length)$('#memory-list').append(el('p','No answers remembered yet.'));for(const m of memories){const row=el('div','','answer'),scope=el('select','','memory-scope');scope.setAttribute('aria-label',`Where to reuse ${m.question}`);for(const [v,t] of [['global','All jobs'],['employer','This employer only']]){const o=el('option',t);o.value=v;scope.append(o);}scope.value=m.scope||'global';scope.addEventListener('change',async()=>{try{await request(`/${id}/memory/${m.memory_id}`,{scope:scope.value},'PATCH');}catch(e){error(e.message);scope.value=m.scope||'global';}});row.append(el('strong',m.question),el('p',typeof m.value==='boolean'?(m.value?'Yes':'No'):String(m.value)),scope,button('Forget',async()=>{try{await request(`/${id}/memory/${m.memory_id}`,undefined,'DELETE');row.remove();}catch(e){error(e.message);}},'quiet-button'));$('#memory-list').append(row);}}catch(e){error(e.message);}});
 async function restoreCandidate(){
   const version=extractionVersion;
   try{

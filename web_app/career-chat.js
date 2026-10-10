@@ -76,7 +76,7 @@ export function renderCareerResults({container,item,el,button,send,review,busy=f
   for(const pack of item.materials||[]){for(const material of pack.items||[]){
     const stale=pack.status==='stale',folded=material.status==='approved'&&!stale;
     const title=materialTitles[material.artifact_type]||'Document';
-    const status=stale?'Needs updating':(materialStatus[material.status]||'Preparing');
+    const status=stale?'Needs updating':(materialStatus[material.status]||({generating:`Writing ${title.toLowerCase()}…`,verifying:`Checking ${title.toLowerCase()}…`,needs_revision:'Refining supported claims…'}[material.status]||'Preparing'));
     const card=el(folded?'details':'article','',folded?'card folded career-material':'card career-material');
     if(folded){const summary=el('summary');summary.append(el('span',title),el('span',`Approved · v${material.version||1}`,'ok'));card.append(summary);}
     else card.append(el('p',`Version ${material.version||1} · ${status}`,'eyebrow'),el('h3',title));
@@ -93,7 +93,7 @@ export function renderCareerResults({container,item,el,button,send,review,busy=f
     if(material.status==='awaiting_review'&&!stale){
       const approve=button('Approve this version',()=>review(pack,material,true),'primary-button');approve.disabled=busy;actions.append(approve);
     }
-    const revise=button('Request changes',()=>send(`I want to revise this ${title.toLowerCase()}. Ask me what I would like to change.`,{pack_id:pack.pack_id,item_id:material.pack_item_id},item.run_id));revise.disabled=busy;actions.append(revise);
+    const revise=button('Request changes',()=>send(`I want to revise this ${title.toLowerCase()}. Ask me what I would like to change.`,{pack_id:pack.pack_id,item_id:material.pack_item_id},item.run_id));revise.disabled=busy||['generating','verifying'].includes(material.status);actions.append(revise);
     if(material.artifact_type==='tailored_resume'&&material.text)actions.append(link('Download PDF',`/api/packs/${pack.pack_id}/items/${material.pack_item_id}/resume.pdf`));
     if(material.artifact_type==='cover_letter'&&material.text)actions.append(link('Download PDF',`/api/packs/${pack.pack_id}/items/${material.pack_item_id}/cover-letter.pdf`));
     card.append(actions);container.append(card);

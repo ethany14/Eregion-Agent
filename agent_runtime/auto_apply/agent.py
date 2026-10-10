@@ -6,13 +6,15 @@ budgets and completion. Submission is deliberately outside this tool set.
 from __future__ import annotations
 from agent_runtime.telemetry import history_context
 
+import re
 from uuid import uuid4
 
 from agent_runtime.model_runtime import model_timeout
 
 from .browser import BrowserBlocked
+from .errors import failure
 from .contracts import normalized_label
-from .matching import resolve_option, search_text, boolean_answer, is_consent
+from .matching import resolve_option, search_text, boolean_answer, is_consent, clean, equivalent
 from .autofill import desired_answer, matches, pending_documents
 from .decisions import active_decision, protected, preserves_format, signature, source_value
 from .contracts import candidate_answer
@@ -98,16 +100,69 @@ TOOLS = [
          {"field_keys": {"type": "array", "items": TEXT}}),
 ]
 TOOLS.extend(item for item in BROWSER_TOOLS if item['function']['name'] not in BROWSER_VISUAL_NAMES)
+# Still executable for saved runs and scripted callers, but not offered to the model:
+# a legacy duplicate of record_answers, and two browser tools that application mode
+# always refuses (choices and checkboxes need grounded field tools).
+HIDDEN_TOOLS = {"observe", "use_chat_answer", "browser_select", "browser_check"}
+# Snapshot size: long option lists are previewed until the agent inspects the field.
+OPTION_PREVIEW = 25
+NARRATIVE = re.compile(r"\b(describe|explain|share|example|why|what|how|motivat\w*|summari\w*)\b|"
+    r"tell us|tell me|cover letter|additional information|介绍|描述|经历|项目|简述|说明", re.I)
+
+
+OTHER_PARTY = re.compile(r"\b(company|employer|organi[sz]ation|business|reference|referee|referr\w*|emergency|"
+    r"manager|supervisor|recruiter|hiring|spouse|partner|parent|guardian|relative|contact person|"
+    r"school|university|college|institution|job|position|title|user ?name|account)\b")
+
+
+def grounded(field, quote, value, options):
+    """A recorded chat answer must be what the quote says, not merely cite a message."""
+    q, v = clean(quote), clean(value)
+    if not q or not v:
+        return False
+    if boolean_answer(value) is not None:
+        # Nonliteral statements need a question-aware semantic check before
+        # recording; word count says nothing about the meaning of Yes or No.
+        return boolean_answer(quote) is boolean_answer(value)
+    if len(q) < 2:
+        return False
+    if f" {v} " in f" {q} ":
+        return True
+    chosen = resolve_option(field["label"], value, options) if options else None
+    if chosen is not None and resolve_option(field["label"], quote, options) == chosen:
+        return True
+    if equivalent(field["label"], quote, {"label": value, "value": value}):
+        return True
+    # A normalized value may expand what the user wrote ("Ithaca" -> "Ithaca,
+    # New York, United States") if it keeps a distinctive word they used.
+    # Interpreted answers stay pending until the user approves them at review.
+    words = set(v.split())
+    if any(len(word) >= 3 and word in words for word in q.split()):
+        return True
+    # Translation into one of the observed options ("领英" -> "LinkedIn").
+    return chosen is not None and bool(re.search(r"[^\x00-\x7f]", quote))
 
 
 class ConfiguredToolModel:
     def __init__(self):
-        from job_agent.model import create_model
-        self.model = create_model()
+        from job_agent.model import shared_model
+        self.model = shared_model(purpose='agent')
+        self.fast_model = shared_model(purpose='fast')
         self.timeout = model_timeout(self.model)
 
     def invoke(self, messages, tools):
         return self.model.bind_tools(tools).invoke(messages, timeout=self.timeout, max_tokens=2400)
+
+    def invoke_turn(self, messages, tools, snapshot):
+        complex_turn = (snapshot.get('recovery') or snapshot.get('runtime_feedback') or
+            any(f.get('kind') == 'textarea' for f in snapshot.get('fields', [])) or
+            any(h.get('failed') or h.get('error_code') for h in snapshot.get('decision_history', [])))
+        model = self.model if complex_turn else self.fast_model
+        return model.bind_tools(tools).invoke(messages, timeout=self.timeout, max_tokens=2400)
+
+    def verify_answers(self, answers):
+        from .grounding import verify_boolean_answers
+        return verify_boolean_answers(self.model, answers, timeout=self.timeout)
 
 
 class HybridApplicationAgent:
@@ -139,11 +194,23 @@ class AgentTools:
         self.visual = None
         self.visual_field_key = None
         self.browsing = None
+        self.verify_answers = None
+        self.verified_answers = set()
+        self.fast_choices = None
+        self.fast_option_attempts = set()
+        self._cached_fields = None
 
     def observe(self):
         if self.refresh: self.state = self.refresh()
-        self.fields = self.browser.observe()
-        self.page_context = self.browser.page_state() if hasattr(self.browser, "page_state") else None
+        import time
+        cached = self._cached_fields
+        self._cached_fields = None
+        self.fields = cached[1] if cached and time.monotonic() - cached[0] < .3 else self.browser.observe()
+        if hasattr(self.browser, 'page_state'):
+            from .browser import ApplicationBrowser
+            self.page_context = self.browser.page_state(fields=self.fields) if isinstance(self.browser, ApplicationBrowser) else self.browser.page_state()
+        else:
+            self.page_context = None
         if repeatable_education(self.page_context) and self.state['profile'].get('education') and not self.state.get('education_required'):
             self._save_decisions(education_required=True)
         self._reconcile_paths()
@@ -155,41 +222,62 @@ class AgentTools:
         sources.update(education_facts(self.state['profile'], self.state.get('education_answer_overrides')))
         if self.state.get('cover_letter'):sources['material:cover_letter'] = self.state['cover_letter']
         sources.update({f"answer:{key}": value for key, value in self.state["answers"].items()})
+        # The resume text is only needed to draft open-ended answers.
+        resume = self.state.get('resume_context', {}) or {}
+        if resume.get('text') and not (self.state.get('answer_drafts') or any(
+                f["kind"] == "textarea" or NARRATIVE.search(f["label"]) for f in self.fields)):
+            resume = {**{k: v for k, v in resume.items() if k != 'text'},
+                'text_omitted': 'Included when this page has an open-ended question.'}
+        page = self.page_context
+        if page and self.fields and len(page.get("text", "")) > 2000:
+            page = {**page, "text": page["text"][:2000], "text_truncated": True}
+        def options(field):
+            values = field.get("options", [])
+            limit = 300 if field["key"] in self.observed_options or len(values) <= OPTION_PREVIEW else OPTION_PREVIEW
+            return values[:limit]
+        from .memory import compatible
+        unresolved = [f for f in self.fields if f['key'] not in completed_keys]
+        memories = [{k: item.get(k) for k in ('memory_id', 'question', 'value')}
+            for item in self.state.get('remembered_answers', [])
+            if any(compatible(item, f, self.state) for f in unresolved)][:10]
+        if page:
+            page = {**page, 'controls': [{**c, 'section': str(c.get('section', ''))[:80]}
+                for c in page.get('controls', []) if not c.get('disabled') and c.get('kind') not in {'field', 'unavailable'}][:40]}
         return {"observation_id": self.observation_id, "autofill_called": self.autofill_called,
             'pending_document_uploads':pending_documents(self.state,self.fields),
             'document_bindings':self.state.get('document_bindings',{}),
             "visual_fallback":bool(self.state.get("visual_fallback")),
             "screen":self.visual.screen if self.visual else None,
-            "page": self.page_context,
-            'education':self.state['profile'].get('education',[]),'education_bindings':self.state.get('education_bindings',{}),
+            "page": page,
+            'education_bindings':self.state.get('education_bindings',{}),
             'education_gaps':education_gaps(self.state,self.fields,self.page_context),
-            'remembered_answers':self.state.get('remembered_answers',[]) if self.state.get('reuse_answers',True) else [],
-            'resume_context':self.state.get('resume_context', {}),
+            'remembered_answers':memories if self.state.get('reuse_answers',True) else [],
+            'resume_context':resume,
             'answer_drafts':visible_drafts(self.state, self.fields),
             "field_decisions":self.state.get("field_decisions", {}), "option_paths":self.state.get("option_paths", {}),
             "task": {"url": self.state.get("url"), "goal": "Complete this application using confirmed candidate facts, then return for review."},
             "task_plan": self.state.get("task_plan", []), "approach": self.state.get("approach", ""),
-            'decision_history':history_context(self.state.get('decision_history',[])),
+            'decision_history':application_history(self.state.get('decision_history',[])),
             'input_request':self.state.get('input_request'), 'budget_remaining':self.state.get('budget_remaining'),
             "page_history":self.state.get("page_history", []),
             "previous_page_answers":[{"label":f["label"], "value":f["value"]} for f in self.state.get("review_fields", [])],
-            "recent_actions": self.state.get("actions", [])[-12:],
             "last_tool_result": self.state.get("last_tool_result"), "recovery": self.state.get("recovery_note"),
             "chat_revision": self.state.get("chat_revision", 0), "completed_fields": completed_keys,
             "user_messages": [{"id": m["id"], "role": m["role"], "text": m["text"], "field_key": m.get("field_key"),
                 "bound_answers": m.get("bound_answers"), "binding_method": m.get("binding_method"),
-                "question_keys": m.get("question_keys"), 'in_reply_to':m.get('in_reply_to')} for m in self.state.get("messages", [])[-40:]],
-            "answer_sources": self.state.get("answer_sources", {}),
-            "sources": {key: value[:2000] if isinstance(value, str) else value for key, value in sources.items()},
-            "fields": [{"key": f["key"], "label": f["label"][:250], "kind": f["kind"],
+                "question_keys": m.get("question_keys"), 'in_reply_to':m.get('in_reply_to')} for m in self.state.get("messages", [])[-20:]],
+            "facts": [{'ref': key, 'value': value[:2000] if isinstance(value, str) else value,
+                'origin': self.state.get('answer_sources', {}).get(key.removeprefix('answer:'), {})
+                    if key.startswith('answer:') else key.split(':', 1)[0]} for key, value in sources.items()],
+            "fields": [{"key": f["key"], "label": f["label"][:250], "value": f["value"], "done": True} if f["key"] in completed_keys else {"key": f["key"], "label": f["label"][:250], "kind": f["kind"],
                 "required": f["required"], "invalid": f.get("invalid", False),
                 "choice_control":f.get("choice_control", False), "group":f.get("group", ""),
                 "search_text":f.get("search_text", ""), "section":f.get("section", ""),
                 "help":f.get("help", ""), "errors":f.get("errors", []), "constraints":f.get("constraints", {}),
                 "value": f["value"][:2000] if isinstance(f["value"], str) else f["value"],
                 "option_count": len(f.get("options", [])),
-                "options_truncated": len(f.get("options", [])) > 300,
-                "options": [{"label": o["label"][:200], "value": o["value"][:200], "expandable":o.get("expandable",False), "disabled":o.get("disabled",False)} for o in f.get("options", [])[:300]]} for f in self.fields]}
+                "options_truncated": len(options(f)) < len(f.get("options", [])),
+                "options": [{"label": o["label"][:200], "value": o["value"][:200], "expandable":o.get("expandable",False), "disabled":o.get("disabled",False)} for o in options(f)]} for f in self.fields]}
 
     def source(self, field, reference):
         if reference == 'material:cover_letter':
@@ -224,7 +312,11 @@ class AgentTools:
         hints = {"first_name": ("name", "given", "prénom", "nombre"), "last_name": ("name", "family", "surname", "nom", "apellido"),
             "email": ("email", "e-mail", "mail"), "phone": ("phone", "mobile", "telephone", "tel"),
             "linkedin": ("linkedin",), "github": ("github",), "website": ("website", "portfolio", "homepage")}
-        if field["kind"] in {"checkbox", "radio", "select", "combobox", "location"} or not any(word in label for word in hints.get(key, ())):
+        # Whole words only ("tel" is not "tell us"), and never another person's
+        # or organisation's details ("Company name", "Reference email").
+        if (field["kind"] in {"checkbox", "radio", "select", "combobox", "location"}
+                or OTHER_PARTY.search(label)
+                or not any(re.search(rf"(?<![\w-]){re.escape(word)}(?![\w-])", label) for word in hints.get(key, ()))):
             raise BrowserBlocked("This question requires an explicit answer, not an inferred profile fact.", code='source_required')
         return self.state["profile"][key]
 
@@ -254,14 +346,20 @@ class AgentTools:
             return {"saved": True}
         if name == "autofill":
             self.autofill_called = True
-            result = self.autofill()
+            from .fast_options import fill_options
+            result = self.autofill() or {}
+            fast_filled = fill_options(self)
+            result['filled'] = list(dict.fromkeys([*result.get('filled', []), *fast_filled]))
+            for key in fast_filled:
+                result.get('failed', {}).pop(key, None)
+                result.get('failure_details', {}).pop(key, None)
             self.failed_fields = set(result.get("failed", {}))
             if not result.get('filled') and not result.get('failed'):
                 result = {**result, 'unchanged':True,
                     'next':'No additional fields can be bulk-filled from the current bindings. Inspect remaining gaps, bind the appropriate confirmed source, or call ready_for_review if complete. Do not repeat autofill until inputs or the page change.'}
             return result
         if name == "observe":
-            return self.observe()
+            return {"refreshed": True, "next": "Use the observation in this turn."}
         if name == "say":
             if not isinstance(args["text"], str) or not 0 < len(args["text"]) <= 1500:
                 raise BrowserBlocked("Keep chat messages short.")
@@ -302,6 +400,9 @@ class AgentTools:
             return {'question':request['text'],'field_keys':request['field_keys'],
                 'request_id':request['id'],'waiting_for_user':True}
         if name == "ready_for_review":
+            if any(is_consent(f) and self.state.get('consent_policy', 'ask') == 'ask'
+                   and f['key'] not in self.state['answers'] for f in self.fields):
+                raise BrowserBlocked('Confirm consent answers before review.', code='input_pending')
             if pending_documents(self.state,self.fields):
                 raise BrowserBlocked('Upload the selected documents before review. Bind an unfamiliar file control with bind_document, then use autofill.', code='document_pending')
             if self.state.get("input_request"):
@@ -338,6 +439,7 @@ class AgentTools:
             history = [*self.state.get("page_history", []), {"url":self.page_context["url"], "heading":self.page_context["heading"]}][-20:]
             review = {f["key"]:f for f in self.state.get("review_fields", [])}
             review.update({f["key"]:f for f in self.fields})
+            self.state.update(page_history=history, review_fields=list(review.values()))
             if self.checkpoint: self.checkpoint(page_history=history, review_fields=list(review.values()))
             self.browser.click_page_action(control)
             self.visual_field_key = None
@@ -399,6 +501,11 @@ class AgentTools:
         if name == "inspect_field":
             options = self.browser.inspect_options(key)
             self.observed_options[key] = options
+            if not options and self.state.get("visual_fallback"):
+                # The menu may render rows the DOM does not expose as options.
+                # Report a DOM failure so the runner attaches a screenshot.
+                return {**failure("dom_interaction_failed", "No options could be read from this control's DOM."),
+                    "field_key": key, "options": []}
             return self._option_page(options, args)
         if name == "search_options":
             query = search_text(field["label"], self.source(field, args["source_ref"]))
@@ -724,7 +831,8 @@ class AgentTools:
         fields = {f["key"]: f for f in self.fields}
         messages = self.state.get("messages", [])
         order = {m["id"]: i for i, m in enumerate(messages)}
-        prepared, seen = [], set()
+        prepared, seen, semantic = [], set(), []
+        revision = self.state.get("chat_revision", 0)
         for item in items:
             if not isinstance(item, dict) or set(item) != {"field_key", "message_id", "quote", "value"}:
                 raise BrowserBlocked("Each answer needs a field, source message, literal quote and value.")
@@ -737,6 +845,13 @@ class AgentTools:
                 raise BrowserBlocked("Cite a literal quote from the user's message.")
             if not isinstance(value, str) or not value.strip() or len(value) > 2000:
                 raise BrowserBlocked("Supply a bounded, nonempty field value.")
+            if boolean_answer(value) is not None and boolean_answer(quote) is None:
+                evidence = (field["label"], quote, value)
+                if evidence not in self.verified_answers:
+                    semantic.append(evidence)
+            elif not grounded(field, quote, value, self.observed_options.get(key) or field.get("options", [])):
+                raise BrowserBlocked("The value must be stated in the quoted part of the user's message. "
+                    "Quote their words for this answer, or ask them if they did not give it.", code="quote_mismatch")
             if message.get("field_key") and message["field_key"] != key:
                 raise BrowserBlocked("That explicit field reply belongs to another question.")
             previous = self.state.get("answer_sources", {}).get(key, {})
@@ -766,10 +881,35 @@ class AgentTools:
                     # belongs to the next browser decision, not answer ingestion.
             seen.add(key)
             prepared.append({**item, "value": value})
+        if semantic:
+            if self.verify_answers is None:
+                raise BrowserBlocked("This nonliteral Yes/No answer needs semantic verification before filling.", code="quote_mismatch")
+            checks = self.verify_answers([{"question": label, "quote": quote, "proposed": value}
+                                          for label, quote, value in semantic])
+            if len(checks) != len(semantic) or any(check is not True for check in checks):
+                raise BrowserBlocked("The quoted statement does not support the proposed Yes/No answer to this question. "
+                    "Re-read its negation and scope, correct the interpretation, and retry. "
+                    "Ask the user only if the statement is ambiguous.", code="quote_mismatch")
+            if not self.active() or (self.refresh and self.refresh().get("chat_revision", 0) != revision):
+                raise BrowserBlocked("The conversation changed during verification. Read the latest reply.", code="stale_observation")
+            self.verified_answers.update(semantic)
         if self.bind_answers:
-            self.bind_answers(prepared, self.state.get("chat_revision", 0))
+            self.bind_answers(prepared, revision)
         else:
             for item in prepared:
                 if self.accept_answer: self.accept_answer(item["field_key"], item["value"], item["message_id"])
         self.state["answers"].update({item["field_key"]: item["value"] for item in prepared})
         return {"saved": [item["field_key"] for item in prepared], "next": "autofill"}
+
+
+def application_history(history):
+    result = []
+    recent = history[-8:]
+    for index, row in enumerate(recent):
+        if index < len(recent) - 3:
+            data = row.get('result') or {}
+            result.append({'tool': row.get('tool'), 'field_key': row.get('arguments', {}).get('field_key'),
+                'error_code': data.get('error_code'), 'next': data.get('next')})
+        else:
+            result.extend(history_context([row]))
+    return result

@@ -1,5 +1,6 @@
 """Resume, aliases, durable memory and conversation steering without external calls."""
 import base64
+import json
 from io import BytesIO
 from threading import Event
 
@@ -198,12 +199,13 @@ def test_new_chat_invalidates_an_inflight_model_action():
                 saved["chat_revision"] += 1
                 return AIMessage(content="", tool_calls=[{"name":"autofill", "args":{}, "id":"stale"}])
             observed.append(messages[-1].content)
-            return AIMessage(content="", tool_calls=[{"name":"request_input", "args":{"field_keys":[]}, "id":"fresh"}])
+            return AIMessage(content="", tool_calls=[{"name":"ask_user", "args":{
+                "text":"Which answer should I use now?", "field_keys":[]}, "id":"fresh"}])
     fills = []
     result = HybridApplicationAgent(model_factory=Model).run(browser, saved, autofill=lambda: fills.append(1),
         active=lambda: True, reserve=lambda kind: True, report=lambda *args: None, refresh=lambda: saved)
-    assert not fills and result["reason"] == "needs_input"
-    assert '"chat_revision": 1' in observed[0]
+    assert fills == [1] and result["reason"] == "needs_input"  # only the initial host pass
+    assert json.loads(observed[0])["chat_revision"] == 1
 
 
 def test_general_chat_answer_is_literal_grounded_and_persisted():
@@ -243,7 +245,10 @@ def test_agent_reads_general_feedback_and_answers_in_real_loop(database):
         assert review["status"] == "awaiting_review", review["message"]
         assert browser.fields[-1]["value"] == "No"
         assert any(m["text"].startswith("I will use") for m in review["messages"])
-        assert loop.repository.memories(review["profile"])[0]["value"] == "No"
+        # The model chose which field the reply answers, so it is reused on later
+        # applications only after the user approves it at review.
+        assert loop.repository.memories(review["profile"]) == []
+        assert [a["key"] for a in review["pending_approvals"]] == ["Do you need sponsorship?"]
     finally:
         loop.close()
 

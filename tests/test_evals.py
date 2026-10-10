@@ -281,7 +281,6 @@ def test_reflection_evaluation_uses_custom_verifier_and_reviser(monkeypatch):
         VerificationResult(passed=False, unsupported_claims=[UnsupportedClaim(
             claim=case["injected_claims"][0], reason="No source evidence.")],
             revision_feedback=["Remove the unsupported claim."]),
-        revised,
         VerificationResult(passed=True, unsupported_claims=[], revision_feedback=[]),
     ])
     calls = []
@@ -296,4 +295,4 @@ def test_reflection_evaluation_uses_custom_verifier_and_reviser(monkeypatch):
     assert result.revision_successful
     assert result.revision_count == 1
     assert result.remaining_unsupported_claims == 0
-    assert calls == [VerificationResult, TailoredResume, VerificationResult]
+    assert calls == [VerificationResult, VerificationResult]  # Factual-only repair uses source evidence in code.

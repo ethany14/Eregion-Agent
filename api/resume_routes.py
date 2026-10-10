@@ -40,7 +40,13 @@ def get_fit_analysis_service(request: Request) -> FitAnalysisService:
         with _fit_service_lock:
             service = getattr(request.app.state, "fit_analysis_service", None)
             if service is None:
-                service = FitAnalysisService()
+                from agent_runtime.analysis_cache import AnalysisCache
+                runtime = getattr(request.app.state, 'session_runtime', None)
+                from agent_runtime.memory.policy import LocalOwnerResolver
+                cache = AnalysisCache(runtime.database.session_factory,
+                    owner=(getattr(runtime, 'owner_resolver', None) or LocalOwnerResolver()).resolve().owner_id
+                ) if getattr(runtime, 'database', None) else None
+                service = FitAnalysisService(analysis_cache=cache)
                 request.app.state.fit_analysis_service = service
     return service
 
@@ -144,6 +150,9 @@ async def upload_resume(
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ResumeConflictError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+    from agent_runtime.analysis_cache import warm_resume
+    if getattr(runtime, 'database', None):
+        warm_resume(runtime.database.session_factory, text, owner=owner_id)
     return _public(value)
 
 
@@ -224,6 +233,7 @@ async def quick_analysis(
     return QuickAnalysisResponse(
         analysis_id=result.analysis_id, status="completed", resume_id=resume.resume_id,
         model_calls=result.model_calls, latency_seconds=result.latency_seconds,
+        main_model_calls=result.main_model_calls, fast_model_calls=result.fast_model_calls,
         match_score=float(skill_match.get("overall_score") or 0),
         matched_requirements=grouped["matched"], partial_requirements=grouped["partial"],
         missing_requirements=missing, confirmation_requirements=confirmations,

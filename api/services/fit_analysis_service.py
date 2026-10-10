@@ -23,7 +23,7 @@ from job_agent.prompts import JOB_PROMPT, MATCH_PROMPT, RESUME_PROMPT, PROMPT_VE
 from job_agent.schemas import JobAnalysis, ResumeAnalysis, SkillAssessment, SkillMatch, SCHEMA_VERSION
 
 logger = logging.getLogger(__name__)
-FIT_ANALYSIS_VERSION = 'parallel-evidence-v1'
+FIT_ANALYSIS_VERSION = 'parallel-evidence-v2'
 
 
 class _AnalysisCache:
@@ -78,6 +78,9 @@ class FitAnalysisResult(BaseModel):
     job_analysis: JobAnalysis
     skill_match: SkillMatch
     model_calls: int = Field(default=3, ge=0)
+    main_model_calls: int = Field(default=3, ge=0)
+    fast_model_calls: int = Field(default=0, ge=0)
+    decision_routing: list[dict] = Field(default_factory=list)
     latency_seconds: float = Field(ge=0)
     stage_seconds: dict[str, float] = Field(default_factory=dict)
     cache_hits: list[str] = Field(default_factory=list)
@@ -101,8 +104,9 @@ class FitAnalysisService:
         timer: Callable[[], float] = perf_counter,
         cache_size: int = 128,
         cache_namespace: Callable[[], str] | None = None,
+        analysis_cache=None,
     ) -> None:
-        self._handler = handler or JobAgentStepHandler()
+        self._handler = handler or JobAgentStepHandler(analysis_cache=analysis_cache)
         self._timer = timer
         self._cache = _AnalysisCache(cache_size)
         self._namespace = cache_namespace or getattr(
@@ -144,6 +148,9 @@ class FitAnalysisService:
             analysis_id=state.run_id,
             **{key: data[key] for key in ('resume_analysis', 'job_analysis', 'skill_match')},
             model_calls=0 if reused else data['model_calls'],
+            main_model_calls=0 if reused else data['main_model_calls'],
+            fast_model_calls=0 if reused else data['fast_model_calls'],
+            decision_routing=[] if reused else data['decision_routing'],
             stage_seconds={} if reused else data['stage_seconds'],
             cache_hits=['resume', 'job', 'match'] if reused else data['cache_hits'],
             latency_seconds=max(0, self._timer() - started),
@@ -175,7 +182,10 @@ class FitAnalysisService:
 
         def extract(kind, key, compute):
             started = perf_counter()
-            value, reused = self._cache.get((kind, namespace, key), compute)
+            from agent_runtime.analysis_cache import cache_events
+            with cache_events() as events:
+                value, reused = self._cache.get((kind, namespace, key), compute)
+            reused = reused or any(e['kind'] == kind and e['hit'] for e in events)
             return value, reused, round(perf_counter() - started, 3)
 
         # These inputs are independent. Each branch gets its own state and model
@@ -191,15 +201,25 @@ class FitAnalysisService:
             'job_analysis': job_result,
         })
         started = perf_counter()
-        matched = self._step(Step.MATCH_SKILLS, state)
+        from agent_runtime.fast_decisions import capture_routing
+        from agent_runtime.analysis_cache import cache_events
+        with capture_routing() as routing, cache_events() as events:
+            matched = self._step(Step.MATCH_SKILLS, state)
+        match_hit = any(e['kind'] == 'match' and e['hit'] for e in events)
+        match_records = [r for r in routing if r['purpose'] == 'skill_evidence']
+        main_calls = 0 if match_hit else (match_records[-1]['main_model_calls'] if match_records else 1)
+        main_calls += int(not resume_hit) + int(not job_hit)
+        fast_calls = sum(r['requests'] for r in routing)
         if matched.skill_match is None:
             raise RuntimeError('Skill match is missing.')
         return {
             'resume_analysis': resume_result,
             'job_analysis': job_result,
             'skill_match': matched.skill_match,
-            'model_calls': 1 + int(not resume_hit) + int(not job_hit),
-            'cache_hits': [kind for kind, hit in (('resume', resume_hit), ('job', job_hit)) if hit],
+            'model_calls': main_calls + fast_calls,
+            'main_model_calls': main_calls, 'fast_model_calls': fast_calls,
+            'decision_routing': routing,
+            'cache_hits': [kind for kind, hit in (('resume', resume_hit), ('job', job_hit), ('match', match_hit)) if hit],
             'stage_seconds': {
                 'resume': resume_seconds,
                 'job': job_seconds,

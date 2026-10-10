@@ -187,7 +187,8 @@ def test_idempotency_and_stale_version(database):
     with pytest.raises(ApplyConflict): repo.save(state, status="submitting")
 
 
-def test_capacity_does_not_break_idempotent_replay(database):
+def test_capacity_does_not_break_idempotent_replay(database, monkeypatch):
+    monkeypatch.setenv("JOB_AGENT_MAX_OPEN_APPLICATIONS", "3")
     repo = ApplyRepository(database.session_factory)
     state, _ = repo.create(request())
     for index in range(2):

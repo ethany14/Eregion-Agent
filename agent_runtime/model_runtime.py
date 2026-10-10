@@ -21,6 +21,17 @@ class ModelFailure:
     retryable: bool
     error_type: str
     status: int | None = None
+    retry_after: float | None = None
+
+
+def retry_after(error):
+    """Seconds from a provider's Retry-After header, when it sent one."""
+    headers = getattr(getattr(error, "response", None), "headers", None) or {}
+    try:
+        value = float(headers.get("retry-after") or headers.get("Retry-After"))
+    except (TypeError, ValueError, AttributeError):
+        return None
+    return value if 0 < value <= 3600 else None
 
 
 def model_failure(error):
@@ -37,7 +48,7 @@ def model_failure(error):
     if status == 402:
         return ModelFailure("model_payment_required", False, name, status)
     if status == 429:
-        return ModelFailure("model_rate_limited", True, name, status)
+        return ModelFailure("model_rate_limited", True, name, status, retry_after(error))
     if isinstance(error, ConnectionError) or "connection" in name.casefold() or (status and status >= 500):
         return ModelFailure("model_unavailable", True, name, status)
     return ModelFailure("model_error", False, name, status)

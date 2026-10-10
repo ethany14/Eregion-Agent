@@ -1,0 +1,4273 @@
+{
+  "date": "2026-10-09",
+  "synthetic_only": true,
+  "main_model": "muse-spark-1.3-contributor",
+  "jev_model": "jev-1.13.0",
+  "method": "Real configured APIs; cache disabled; order alternated. No pytest.",
+  "summary": [
+    {
+      "task": "简单技能匹配（固定证据）",
+      "n_per_mode": 2,
+      "main_median_seconds": 20.444,
+      "jev_median_seconds": 1.275,
+      "reduction_percent": 93.8
+    },
+    {
+      "task": "复杂要求混合匹配（固定证据）",
+      "n_per_mode": 2,
+      "main_median_seconds": 37.079,
+      "jev_median_seconds": 17.032,
+      "reduction_percent": 54.1
+    },
+    {
+      "task": "中英跨语种匹配（固定证据）",
+      "n_per_mode": 2,
+      "main_median_seconds": 14.206,
+      "jev_median_seconds": 5.428,
+      "reduction_percent": 61.8
+    },
+    {
+      "task": "申请问题分类",
+      "n_per_mode": 7,
+      "main_median_seconds": 5.537,
+      "jev_median_seconds": 0.675,
+      "reduction_percent": 87.8
+    },
+    {
+      "task": "记忆相关性筛选",
+      "n_per_mode": 6,
+      "main_median_seconds": 6.38,
+      "jev_median_seconds": 0.612,
+      "reduction_percent": 90.4
+    },
+    {
+      "task": "完整 analyze 冷启动（原始耗时）",
+      "n_per_mode": 2,
+      "main_median_seconds": 48.594,
+      "jev_median_seconds": 41.855,
+      "reduction_percent": 13.9
+    }
+  ],
+  "match": {
+    "synthetic_only": true,
+    "repeats": 2,
+    "main_model": "muse-spark-1.3-contributor",
+    "jev_model": "jev-latest",
+    "cache": "disabled for fit; explicitly cleared before every Jev trial",
+    "trials": [
+      {
+        "suite": "match",
+        "case": "simple",
+        "mode": "main",
+        "repeat": 0,
+        "seconds": 20.154,
+        "actual": [
+          "matched",
+          "matched",
+          "matched",
+          "matched",
+          "missing",
+          "missing"
+        ],
+        "expected": [
+          "matched",
+          "matched",
+          "matched",
+          "matched",
+          "missing",
+          "missing"
+        ],
+        "correct": true,
+        "score": 66.7,
+        "match": {
+          "matches": [
+            {
+              "requirement_id": "r0",
+              "job_skill": "Python",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Resume explicitly states Python use in multiple contexts, fully supporting the Python requirement with no duration minimum.",
+              "supported_years": 1.0,
+              "resume_evidence": [
+                "Built Python REST APIs with FastAPI and PostgreSQL.",
+                "Built a scikit-learn demand forecasting prototype with Python.",
+                "Used Python for one year in an academic project."
+              ],
+              "confidence": 1.0
+            },
+            {
+              "requirement_id": "r1",
+              "job_skill": "SQL",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Resume explicitly states wrote SQL queries, fully supporting the SQL requirement.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Wrote SQL queries and dashboards in Tableau for weekly reporting."
+              ],
+              "confidence": 1.0
+            },
+            {
+              "requirement_id": "r2",
+              "job_skill": "Git",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Resume explicitly states used Git to ship data services, fully supporting the Git requirement.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Used Git and Docker to ship data services."
+              ],
+              "confidence": 1.0
+            },
+            {
+              "requirement_id": "r3",
+              "job_skill": "Docker",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Resume explicitly states used Docker to ship data services, fully supporting the Docker requirement.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Used Git and Docker to ship data services."
+              ],
+              "confidence": 1.0
+            },
+            {
+              "requirement_id": "r4",
+              "job_skill": "Power BI",
+              "requirement_level": "required",
+              "match_status": "missing",
+              "match_reason": "The resume evidence does not explicitly mention power bi.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 0.0
+            },
+            {
+              "requirement_id": "r5",
+              "job_skill": "Kubernetes",
+              "requirement_level": "required",
+              "match_status": "missing",
+              "match_reason": "No Kubernetes evidence in resume. Docker use alone does not prove Kubernetes.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 1.0
+            }
+          ],
+          "explanation": "Matched 4 of 6 required skills based on direct resume evidence. Python, SQL, Git, and Docker are explicitly stated. Power BI has no evidence; Tableau is present but per rules does not prove Power BI. Kubernetes has no evidence; Docker alone does not prove Kubernetes.",
+          "recommendations": [
+            "Add verifiable Power BI experience, projects, or training if applicable, as Tableau alone does not satisfy the Power BI requirement.",
+            "Add verifiable Kubernetes experience or training if applicable, distinguishing it from Docker use.",
+            "If applicable, add explicit duration statements for SQL, Git, and Docker to strengthen future duration-based requirements."
+          ],
+          "missing_required_requirements": [
+            {
+              "canonical_name": "Power BI",
+              "original_text": "Power BI",
+              "minimum_years": null
+            },
+            {
+              "canonical_name": "Kubernetes",
+              "original_text": "Kubernetes",
+              "minimum_years": null
+            }
+          ],
+          "missing_preferred_requirements": [],
+          "overall_score": 66.7,
+          "score_breakdown": {
+            "required_score": 66.7,
+            "preferred_score": null,
+            "overall_score": 66.7
+          },
+          "confirmation_requirements": []
+        },
+        "valid_quotes": true,
+        "routing": []
+      },
+      {
+        "suite": "match",
+        "case": "simple",
+        "mode": "jev",
+        "repeat": 0,
+        "seconds": 1.318,
+        "actual": [
+          "matched",
+          "matched",
+          "matched",
+          "matched",
+          "missing",
+          "missing"
+        ],
+        "expected": [
+          "matched",
+          "matched",
+          "matched",
+          "matched",
+          "missing",
+          "missing"
+        ],
+        "correct": true,
+        "score": 66.7,
+        "match": {
+          "matches": [
+            {
+              "requirement_id": "r0",
+              "job_skill": "Python",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Supported by the cited resume evidence.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Built Python REST APIs with FastAPI and PostgreSQL."
+              ],
+              "confidence": 1.0
+            },
+            {
+              "requirement_id": "r1",
+              "job_skill": "SQL",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Supported by the cited resume evidence.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Wrote SQL queries and dashboards in Tableau for weekly reporting."
+              ],
+              "confidence": 0.99
+            },
+            {
+              "requirement_id": "r2",
+              "job_skill": "Git",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Supported by the cited resume evidence.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Used Git and Docker to ship data services."
+              ],
+              "confidence": 0.99
+            },
+            {
+              "requirement_id": "r3",
+              "job_skill": "Docker",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Supported by the cited resume evidence.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Used Git and Docker to ship data services."
+              ],
+              "confidence": 0.99
+            },
+            {
+              "requirement_id": "r4",
+              "job_skill": "Power BI",
+              "requirement_level": "required",
+              "match_status": "missing",
+              "match_reason": "The resume evidence does not explicitly mention power bi.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 0.0
+            },
+            {
+              "requirement_id": "r5",
+              "job_skill": "Kubernetes",
+              "requirement_level": "required",
+              "match_status": "missing",
+              "match_reason": "No supporting evidence was found in the resume.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 0.97
+            }
+          ],
+          "explanation": "Resume evidence supports 4 requirements fully and 0 partially; 2 lack evidence and 0 require confirmation. The score uses the existing required/preferred weighting.",
+          "recommendations": [
+            "Add a concrete example of Power BI if you have that experience.",
+            "Add a concrete example of Kubernetes if you have that experience."
+          ],
+          "missing_required_requirements": [
+            {
+              "canonical_name": "Power BI",
+              "original_text": "Power BI",
+              "minimum_years": null
+            },
+            {
+              "canonical_name": "Kubernetes",
+              "original_text": "Kubernetes",
+              "minimum_years": null
+            }
+          ],
+          "missing_preferred_requirements": [],
+          "overall_score": 66.7,
+          "score_breakdown": {
+            "required_score": 66.7,
+            "preferred_score": null,
+            "overall_score": 66.7
+          },
+          "confirmation_requirements": []
+        },
+        "valid_quotes": true,
+        "routing": [
+          {
+            "purpose": "skill_evidence_verify",
+            "status": "ok",
+            "seconds": 0.626,
+            "model": "jev-1.13.0",
+            "input_tokens": 449,
+            "cached": false,
+            "requests": 1
+          },
+          {
+            "purpose": "skill_evidence",
+            "status": "ok",
+            "seconds": 0.691,
+            "model": "jev-1.13.0",
+            "input_tokens": 2388,
+            "cached": false,
+            "requests": 1,
+            "accepted": 6,
+            "deferred": 0,
+            "main_model_calls": 0
+          }
+        ]
+      },
+      {
+        "suite": "match",
+        "case": "complex",
+        "mode": "main",
+        "repeat": 0,
+        "seconds": 33.591,
+        "actual": [
+          "matched",
+          "partial",
+          "partial",
+          "needs_confirmation",
+          "missing"
+        ],
+        "expected": [
+          "matched",
+          "partial",
+          "partial",
+          "needs_confirmation",
+          "missing"
+        ],
+        "correct": true,
+        "score": 50.0,
+        "match": {
+          "matches": [
+            {
+              "requirement_id": "r0",
+              "job_skill": "Python",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Resume explicitly documents Python use for REST APIs and scikit-learn prototype, fully satisfying the Python skill requirement.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Built Python REST APIs with FastAPI and PostgreSQL.",
+                "Built a scikit-learn demand forecasting prototype with Python."
+              ],
+              "confidence": 0.95
+            },
+            {
+              "requirement_id": "r1",
+              "job_skill": "At least five years of professional Python experience",
+              "requirement_level": "required",
+              "match_status": "partial",
+              "match_reason": "Only explicit duration is one year in an academic project, which is less than 5 years and not professional; other Python evidence states no duration.",
+              "supported_years": 1.0,
+              "resume_evidence": [
+                "Used Python for one year in an academic project."
+              ],
+              "confidence": 0.9
+            },
+            {
+              "requirement_id": "r2",
+              "job_skill": "Completed master degree in Statistics",
+              "requirement_level": "required",
+              "match_status": "partial",
+              "match_reason": "Resume shows Master of Science in Statistics as currently pursuing with expected graduation 2028, which is in-progress and cannot satisfy a completed-degree requirement.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Master of Science in Statistics, currently pursuing; expected graduation 2028."
+              ],
+              "confidence": 0.9
+            },
+            {
+              "requirement_id": "r3",
+              "job_skill": "Authorized to work in Canada",
+              "requirement_level": "required",
+              "match_status": "needs_confirmation",
+              "match_reason": "This requirement must be confirmed by the user.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 0.0
+            },
+            {
+              "requirement_id": "r4",
+              "job_skill": "Claude Code",
+              "requirement_level": "required",
+              "match_status": "missing",
+              "match_reason": "The resume evidence does not explicitly mention claude code.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 0.0
+            }
+          ],
+          "explanation": "Assessment based only on supplied resume evidence. Python skill is fully supported. Five-year professional Python duration is not supported (only 1 year academic stated). Statistics master's is in-progress with future graduation, not completed. Canada work authorization requires user confirmation. No evidence for Claude Code.",
+          "recommendations": [
+            "Provide verifiable evidence of professional Python experience duration to address the 5-year requirement, if applicable.",
+            "Complete the Master of Science in Statistics or update status once completed; provide completion evidence.",
+            "Confirm authorization to work in Canada through user confirmation.",
+            "Gain and document hands-on experience with Claude Code if required for the role."
+          ],
+          "missing_required_requirements": [
+            {
+              "canonical_name": "At least five years of professional Python experience",
+              "original_text": "At least five years of professional Python experience",
+              "minimum_years": 5
+            },
+            {
+              "canonical_name": "Completed master degree in Statistics",
+              "original_text": "Completed master degree in Statistics",
+              "minimum_years": null
+            },
+            {
+              "canonical_name": "Claude Code",
+              "original_text": "Claude Code",
+              "minimum_years": null
+            }
+          ],
+          "missing_preferred_requirements": [],
+          "overall_score": 50.0,
+          "score_breakdown": {
+            "required_score": 50.0,
+            "preferred_score": null,
+            "overall_score": 50.0
+          },
+          "confirmation_requirements": [
+            {
+              "requirement_id": "r3",
+              "requirement_group_id": "r3",
+              "canonical_name": "Authorized to work in Canada",
+              "display_name": "Authorized to work in Canada",
+              "original_text": "Authorized to work in Canada",
+              "source_text": "Authorized to work in Canada",
+              "atomic_text": "Authorized to work in Canada",
+              "category": "eligibility",
+              "verification_mode": "user_confirmation",
+              "level": "required",
+              "minimum_years": null
+            }
+          ]
+        },
+        "valid_quotes": true,
+        "routing": []
+      },
+      {
+        "suite": "match",
+        "case": "complex",
+        "mode": "jev",
+        "repeat": 0,
+        "seconds": 17.053,
+        "actual": [
+          "matched",
+          "partial",
+          "partial",
+          "needs_confirmation",
+          "missing"
+        ],
+        "expected": [
+          "matched",
+          "partial",
+          "partial",
+          "needs_confirmation",
+          "missing"
+        ],
+        "correct": true,
+        "score": 50.0,
+        "match": {
+          "matches": [
+            {
+              "requirement_id": "r0",
+              "job_skill": "Python",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Supported by the cited resume evidence.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Built Python REST APIs with FastAPI and PostgreSQL."
+              ],
+              "confidence": 1.0
+            },
+            {
+              "requirement_id": "r1",
+              "job_skill": "At least five years of professional Python experience",
+              "requirement_level": "required",
+              "match_status": "partial",
+              "match_reason": "Resume shows Python development but the only explicit duration is 'one year in an academic project', which does not meet 5 years of professional experience.",
+              "supported_years": 1.0,
+              "resume_evidence": [
+                "Built Python REST APIs with FastAPI and PostgreSQL.",
+                "Built a scikit-learn demand forecasting prototype with Python.",
+                "Used Python for one year in an academic project."
+              ],
+              "confidence": 0.85
+            },
+            {
+              "requirement_id": "r2",
+              "job_skill": "Completed master degree in Statistics",
+              "requirement_level": "required",
+              "match_status": "partial",
+              "match_reason": "Resume states Master of Science in Statistics is currently pursuing with expected graduation 2028, which does not satisfy a completed-degree requirement.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Master of Science in Statistics, currently pursuing; expected graduation 2028."
+              ],
+              "confidence": 0.9
+            },
+            {
+              "requirement_id": "r3",
+              "job_skill": "Authorized to work in Canada",
+              "requirement_level": "required",
+              "match_status": "needs_confirmation",
+              "match_reason": "This requirement must be confirmed by the user.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 1.0
+            },
+            {
+              "requirement_id": "r4",
+              "job_skill": "Claude Code",
+              "requirement_level": "required",
+              "match_status": "missing",
+              "match_reason": "The resume evidence does not explicitly mention claude code.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 0.0
+            }
+          ],
+          "explanation": "Resume evidence supports 1 requirements fully and 2 partially; 1 lack evidence and 1 require confirmation. The score uses the existing required/preferred weighting.",
+          "recommendations": [
+            "Clarify and document any additional professional Python experience with explicit years/dates to address the 5-year requirement.",
+            "Complete the Master of Science in Statistics and update resume with conferral date to meet the completed-degree requirement.",
+            "Add a concrete example of At least five years of professional Python experience if you have that experience.",
+            "Add a concrete example of Completed master degree in Statistics if you have that experience.",
+            "Confirm Authorized to work in Canada before applying.",
+            "Add a concrete example of Claude Code if you have that experience."
+          ],
+          "missing_required_requirements": [
+            {
+              "canonical_name": "At least five years of professional Python experience",
+              "original_text": "At least five years of professional Python experience",
+              "minimum_years": 5
+            },
+            {
+              "canonical_name": "Completed master degree in Statistics",
+              "original_text": "Completed master degree in Statistics",
+              "minimum_years": null
+            },
+            {
+              "canonical_name": "Claude Code",
+              "original_text": "Claude Code",
+              "minimum_years": null
+            }
+          ],
+          "missing_preferred_requirements": [],
+          "overall_score": 50.0,
+          "score_breakdown": {
+            "required_score": 50.0,
+            "preferred_score": null,
+            "overall_score": 50.0
+          },
+          "confirmation_requirements": [
+            {
+              "requirement_id": "r3",
+              "requirement_group_id": "r3",
+              "canonical_name": "Authorized to work in Canada",
+              "display_name": "Authorized to work in Canada",
+              "original_text": "Authorized to work in Canada",
+              "source_text": "Authorized to work in Canada",
+              "atomic_text": "Authorized to work in Canada",
+              "category": "eligibility",
+              "verification_mode": "user_confirmation",
+              "level": "required",
+              "minimum_years": null
+            }
+          ]
+        },
+        "valid_quotes": true,
+        "routing": [
+          {
+            "purpose": "skill_evidence_verify",
+            "status": "ok",
+            "seconds": 0.628,
+            "model": "jev-1.13.0",
+            "input_tokens": 449,
+            "cached": false,
+            "requests": 1
+          },
+          {
+            "purpose": "skill_evidence",
+            "status": "ok",
+            "seconds": 0.655,
+            "model": "jev-1.13.0",
+            "input_tokens": 1071,
+            "cached": false,
+            "requests": 1,
+            "accepted": 3,
+            "deferred": 2,
+            "main_model_calls": 1
+          }
+        ]
+      },
+      {
+        "suite": "match",
+        "case": "translation",
+        "mode": "main",
+        "repeat": 0,
+        "seconds": 14.932,
+        "actual": [
+          "matched",
+          "matched",
+          "missing"
+        ],
+        "expected": [
+          "matched",
+          "matched",
+          "missing"
+        ],
+        "correct": true,
+        "score": 66.7,
+        "match": {
+          "matches": [
+            {
+              "requirement_id": "r0",
+              "job_skill": "使用 Python 构建 API",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Resume explicitly states 'Built Python REST APIs with FastAPI and PostgreSQL', which fully satisfies building APIs with Python.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Built Python REST APIs with FastAPI and PostgreSQL."
+              ],
+              "confidence": 0.95
+            },
+            {
+              "requirement_id": "r1",
+              "job_skill": "使用 SQL 查询数据",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Resume explicitly states writing SQL queries, which fully satisfies querying data with SQL.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Wrote SQL queries and dashboards in Tableau for weekly reporting."
+              ],
+              "confidence": 0.95
+            },
+            {
+              "requirement_id": "r2",
+              "job_skill": "熟悉 Power BI",
+              "requirement_level": "required",
+              "match_status": "missing",
+              "match_reason": "The resume evidence does not explicitly mention power bi.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 0.0
+            }
+          ],
+          "explanation": "Matched 2 of 3 required skills. Python API building and SQL querying are explicitly supported by resume evidence. Power BI has no supporting evidence; Tableau experience does not satisfy Power BI per tool-equivalence rules.",
+          "recommendations": [
+            "Add explicit Power BI evidence if applicable, such as reports, datasets, or DAX work, without conflating Tableau experience.",
+            "Retain distinct evidence for Python APIs and SQL queries as currently stated to preserve clear matches."
+          ],
+          "missing_required_requirements": [
+            {
+              "canonical_name": "熟悉 Power BI",
+              "original_text": "熟悉 Power BI",
+              "minimum_years": null
+            }
+          ],
+          "missing_preferred_requirements": [],
+          "overall_score": 66.7,
+          "score_breakdown": {
+            "required_score": 66.7,
+            "preferred_score": null,
+            "overall_score": 66.7
+          },
+          "confirmation_requirements": []
+        },
+        "valid_quotes": true,
+        "routing": []
+      },
+      {
+        "suite": "match",
+        "case": "translation",
+        "mode": "jev",
+        "repeat": 0,
+        "seconds": 0.681,
+        "actual": [
+          "matched",
+          "matched",
+          "missing"
+        ],
+        "expected": [
+          "matched",
+          "matched",
+          "missing"
+        ],
+        "correct": true,
+        "score": 66.7,
+        "match": {
+          "matches": [
+            {
+              "requirement_id": "r0",
+              "job_skill": "使用 Python 构建 API",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Supported by the cited resume evidence.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Built Python REST APIs with FastAPI and PostgreSQL."
+              ],
+              "confidence": 0.99
+            },
+            {
+              "requirement_id": "r1",
+              "job_skill": "使用 SQL 查询数据",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Supported by the cited resume evidence.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Wrote SQL queries and dashboards in Tableau for weekly reporting."
+              ],
+              "confidence": 0.99
+            },
+            {
+              "requirement_id": "r2",
+              "job_skill": "熟悉 Power BI",
+              "requirement_level": "required",
+              "match_status": "missing",
+              "match_reason": "The resume evidence does not explicitly mention power bi.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 0.0
+            }
+          ],
+          "explanation": "Resume evidence supports 2 requirements fully and 0 partially; 1 lack evidence and 0 require confirmation. The score uses the existing required/preferred weighting.",
+          "recommendations": [
+            "Add a concrete example of 熟悉 Power BI if you have that experience."
+          ],
+          "missing_required_requirements": [
+            {
+              "canonical_name": "熟悉 Power BI",
+              "original_text": "熟悉 Power BI",
+              "minimum_years": null
+            }
+          ],
+          "missing_preferred_requirements": [],
+          "overall_score": 66.7,
+          "score_breakdown": {
+            "required_score": 66.7,
+            "preferred_score": null,
+            "overall_score": 66.7
+          },
+          "confirmation_requirements": []
+        },
+        "valid_quotes": true,
+        "routing": [
+          {
+            "purpose": "skill_evidence",
+            "status": "ok",
+            "seconds": 0.681,
+            "model": "jev-1.13.0",
+            "input_tokens": 1440,
+            "cached": false,
+            "requests": 1,
+            "accepted": 3,
+            "deferred": 0,
+            "main_model_calls": 0
+          }
+        ]
+      },
+      {
+        "suite": "match",
+        "case": "simple",
+        "mode": "jev",
+        "repeat": 1,
+        "seconds": 1.232,
+        "actual": [
+          "matched",
+          "matched",
+          "matched",
+          "matched",
+          "missing",
+          "missing"
+        ],
+        "expected": [
+          "matched",
+          "matched",
+          "matched",
+          "matched",
+          "missing",
+          "missing"
+        ],
+        "correct": true,
+        "score": 66.7,
+        "match": {
+          "matches": [
+            {
+              "requirement_id": "r0",
+              "job_skill": "Python",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Supported by the cited resume evidence.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Built Python REST APIs with FastAPI and PostgreSQL."
+              ],
+              "confidence": 1.0
+            },
+            {
+              "requirement_id": "r1",
+              "job_skill": "SQL",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Supported by the cited resume evidence.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Wrote SQL queries and dashboards in Tableau for weekly reporting."
+              ],
+              "confidence": 0.98
+            },
+            {
+              "requirement_id": "r2",
+              "job_skill": "Git",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Supported by the cited resume evidence.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Used Git and Docker to ship data services."
+              ],
+              "confidence": 0.99
+            },
+            {
+              "requirement_id": "r3",
+              "job_skill": "Docker",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Supported by the cited resume evidence.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Used Git and Docker to ship data services."
+              ],
+              "confidence": 0.98
+            },
+            {
+              "requirement_id": "r4",
+              "job_skill": "Power BI",
+              "requirement_level": "required",
+              "match_status": "missing",
+              "match_reason": "The resume evidence does not explicitly mention power bi.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 0.0
+            },
+            {
+              "requirement_id": "r5",
+              "job_skill": "Kubernetes",
+              "requirement_level": "required",
+              "match_status": "missing",
+              "match_reason": "No supporting evidence was found in the resume.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 0.97
+            }
+          ],
+          "explanation": "Resume evidence supports 4 requirements fully and 0 partially; 2 lack evidence and 0 require confirmation. The score uses the existing required/preferred weighting.",
+          "recommendations": [
+            "Add a concrete example of Power BI if you have that experience.",
+            "Add a concrete example of Kubernetes if you have that experience."
+          ],
+          "missing_required_requirements": [
+            {
+              "canonical_name": "Power BI",
+              "original_text": "Power BI",
+              "minimum_years": null
+            },
+            {
+              "canonical_name": "Kubernetes",
+              "original_text": "Kubernetes",
+              "minimum_years": null
+            }
+          ],
+          "missing_preferred_requirements": [],
+          "overall_score": 66.7,
+          "score_breakdown": {
+            "required_score": 66.7,
+            "preferred_score": null,
+            "overall_score": 66.7
+          },
+          "confirmation_requirements": []
+        },
+        "valid_quotes": true,
+        "routing": [
+          {
+            "purpose": "skill_evidence_verify",
+            "status": "ok",
+            "seconds": 0.604,
+            "model": "jev-1.13.0",
+            "input_tokens": 449,
+            "cached": false,
+            "requests": 1
+          },
+          {
+            "purpose": "skill_evidence",
+            "status": "ok",
+            "seconds": 0.627,
+            "model": "jev-1.13.0",
+            "input_tokens": 2388,
+            "cached": false,
+            "requests": 1,
+            "accepted": 6,
+            "deferred": 0,
+            "main_model_calls": 0
+          }
+        ]
+      },
+      {
+        "suite": "match",
+        "case": "simple",
+        "mode": "main",
+        "repeat": 1,
+        "seconds": 20.734,
+        "actual": [
+          "matched",
+          "matched",
+          "matched",
+          "matched",
+          "missing",
+          "missing"
+        ],
+        "expected": [
+          "matched",
+          "matched",
+          "matched",
+          "matched",
+          "missing",
+          "missing"
+        ],
+        "correct": true,
+        "score": 66.7,
+        "match": {
+          "matches": [
+            {
+              "requirement_id": "r0",
+              "job_skill": "Python",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Resume explicitly states building Python REST APIs and a Python prototype, directly supporting the Python requirement.",
+              "supported_years": 1.0,
+              "resume_evidence": [
+                "Built Python REST APIs with FastAPI and PostgreSQL.",
+                "Built a scikit-learn demand forecasting prototype with Python.",
+                "Used Python for one year in an academic project."
+              ],
+              "confidence": 0.95
+            },
+            {
+              "requirement_id": "r1",
+              "job_skill": "SQL",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Resume explicitly states writing SQL queries, directly supporting the SQL requirement with no duration required.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Wrote SQL queries and dashboards in Tableau for weekly reporting."
+              ],
+              "confidence": 0.9
+            },
+            {
+              "requirement_id": "r2",
+              "job_skill": "Git",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Resume explicitly states use of Git to ship data services, directly supporting the Git requirement.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Used Git and Docker to ship data services."
+              ],
+              "confidence": 0.9
+            },
+            {
+              "requirement_id": "r3",
+              "job_skill": "Docker",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Resume explicitly states use of Docker to ship data services, directly supporting the Docker requirement.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Used Git and Docker to ship data services."
+              ],
+              "confidence": 0.9
+            },
+            {
+              "requirement_id": "r4",
+              "job_skill": "Power BI",
+              "requirement_level": "required",
+              "match_status": "missing",
+              "match_reason": "The resume evidence does not explicitly mention power bi.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 0.0
+            },
+            {
+              "requirement_id": "r5",
+              "job_skill": "Kubernetes",
+              "requirement_level": "required",
+              "match_status": "missing",
+              "match_reason": "No resume evidence mentions Kubernetes. Docker experience does not imply Kubernetes and there is no other supporting evidence.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 0.95
+            }
+          ],
+          "explanation": "Compared 6 required skills against resume evidence. Python, SQL, Git, and Docker are directly supported by explicit resume statements. Power BI has no support because Tableau is not interchangeable per rules. Kubernetes has no support; Docker does not imply Kubernetes.",
+          "recommendations": [
+            "Add verifiable Power BI experience or training if pursued, as Tableau does not count toward Power BI.",
+            "Add verifiable Kubernetes experience or training if pursued, as Docker alone does not demonstrate Kubernetes.",
+            "If applicable, add explicit evidence with durations for SQL, Git, and Docker to strengthen future duration-based requirements."
+          ],
+          "missing_required_requirements": [
+            {
+              "canonical_name": "Power BI",
+              "original_text": "Power BI",
+              "minimum_years": null
+            },
+            {
+              "canonical_name": "Kubernetes",
+              "original_text": "Kubernetes",
+              "minimum_years": null
+            }
+          ],
+          "missing_preferred_requirements": [],
+          "overall_score": 66.7,
+          "score_breakdown": {
+            "required_score": 66.7,
+            "preferred_score": null,
+            "overall_score": 66.7
+          },
+          "confirmation_requirements": []
+        },
+        "valid_quotes": true,
+        "routing": []
+      },
+      {
+        "suite": "match",
+        "case": "complex",
+        "mode": "jev",
+        "repeat": 1,
+        "seconds": 17.011,
+        "actual": [
+          "matched",
+          "partial",
+          "partial",
+          "needs_confirmation",
+          "missing"
+        ],
+        "expected": [
+          "matched",
+          "partial",
+          "partial",
+          "needs_confirmation",
+          "missing"
+        ],
+        "correct": true,
+        "score": 50.0,
+        "match": {
+          "matches": [
+            {
+              "requirement_id": "r0",
+              "job_skill": "Python",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Supported by the cited resume evidence.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Built Python REST APIs with FastAPI and PostgreSQL."
+              ],
+              "confidence": 1.0
+            },
+            {
+              "requirement_id": "r1",
+              "job_skill": "At least five years of professional Python experience",
+              "requirement_level": "required",
+              "match_status": "partial",
+              "match_reason": "Resume shows Python use (REST APIs, scikit-learn prototype) but the only explicit duration is one year in an academic project, which does not support five years of professional experience.",
+              "supported_years": 1.0,
+              "resume_evidence": [
+                "Built Python REST APIs with FastAPI and PostgreSQL.",
+                "Built a scikit-learn demand forecasting prototype with Python.",
+                "Used Python for one year in an academic project."
+              ],
+              "confidence": 0.7
+            },
+            {
+              "requirement_id": "r2",
+              "job_skill": "Completed master degree in Statistics",
+              "requirement_level": "required",
+              "match_status": "partial",
+              "match_reason": "Resume lists Master of Science in Statistics as currently pursuing with expected graduation 2028, which does not satisfy a completed-degree requirement.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Master of Science in Statistics, currently pursuing; expected graduation 2028."
+              ],
+              "confidence": 0.9
+            },
+            {
+              "requirement_id": "r3",
+              "job_skill": "Authorized to work in Canada",
+              "requirement_level": "required",
+              "match_status": "needs_confirmation",
+              "match_reason": "This requirement must be confirmed by the user.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 1.0
+            },
+            {
+              "requirement_id": "r4",
+              "job_skill": "Claude Code",
+              "requirement_level": "required",
+              "match_status": "missing",
+              "match_reason": "The resume evidence does not explicitly mention claude code.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 0.0
+            }
+          ],
+          "explanation": "Resume evidence supports 1 requirements fully and 2 partially; 1 lack evidence and 1 require confirmation. The score uses the existing required/preferred weighting.",
+          "recommendations": [
+            "Provide explicit employment dates and details to document professional Python experience totaling at least five years, if applicable.",
+            "Complete the Master of Science in Statistics degree and update resume with conferral date to meet the completed-education requirement.",
+            "Add a concrete example of At least five years of professional Python experience if you have that experience.",
+            "Add a concrete example of Completed master degree in Statistics if you have that experience.",
+            "Confirm Authorized to work in Canada before applying.",
+            "Add a concrete example of Claude Code if you have that experience."
+          ],
+          "missing_required_requirements": [
+            {
+              "canonical_name": "At least five years of professional Python experience",
+              "original_text": "At least five years of professional Python experience",
+              "minimum_years": 5
+            },
+            {
+              "canonical_name": "Completed master degree in Statistics",
+              "original_text": "Completed master degree in Statistics",
+              "minimum_years": null
+            },
+            {
+              "canonical_name": "Claude Code",
+              "original_text": "Claude Code",
+              "minimum_years": null
+            }
+          ],
+          "missing_preferred_requirements": [],
+          "overall_score": 50.0,
+          "score_breakdown": {
+            "required_score": 50.0,
+            "preferred_score": null,
+            "overall_score": 50.0
+          },
+          "confirmation_requirements": [
+            {
+              "requirement_id": "r3",
+              "requirement_group_id": "r3",
+              "canonical_name": "Authorized to work in Canada",
+              "display_name": "Authorized to work in Canada",
+              "original_text": "Authorized to work in Canada",
+              "source_text": "Authorized to work in Canada",
+              "atomic_text": "Authorized to work in Canada",
+              "category": "eligibility",
+              "verification_mode": "user_confirmation",
+              "level": "required",
+              "minimum_years": null
+            }
+          ]
+        },
+        "valid_quotes": true,
+        "routing": [
+          {
+            "purpose": "skill_evidence_verify",
+            "status": "ok",
+            "seconds": 0.607,
+            "model": "jev-1.13.0",
+            "input_tokens": 449,
+            "cached": false,
+            "requests": 1
+          },
+          {
+            "purpose": "skill_evidence",
+            "status": "ok",
+            "seconds": 0.623,
+            "model": "jev-1.13.0",
+            "input_tokens": 1071,
+            "cached": false,
+            "requests": 1,
+            "accepted": 3,
+            "deferred": 2,
+            "main_model_calls": 1
+          }
+        ]
+      },
+      {
+        "suite": "match",
+        "case": "complex",
+        "mode": "main",
+        "repeat": 1,
+        "seconds": 40.566,
+        "actual": [
+          "matched",
+          "partial",
+          "partial",
+          "needs_confirmation",
+          "missing"
+        ],
+        "expected": [
+          "matched",
+          "partial",
+          "partial",
+          "needs_confirmation",
+          "missing"
+        ],
+        "correct": true,
+        "score": 50.0,
+        "match": {
+          "matches": [
+            {
+              "requirement_id": "r0",
+              "job_skill": "Python",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Resume explicitly shows Python use in REST APIs and scikit-learn prototype, fully supporting the Python skill requirement.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Built Python REST APIs with FastAPI and PostgreSQL.",
+                "Built a scikit-learn demand forecasting prototype with Python."
+              ],
+              "confidence": 0.95
+            },
+            {
+              "requirement_id": "r1",
+              "job_skill": "At least five years of professional Python experience",
+              "requirement_level": "required",
+              "match_status": "partial",
+              "match_reason": "Only explicit duration evidence is one year in an academic project, which is less than the required five years and not professional; other Python evidence states no duration.",
+              "supported_years": 1.0,
+              "resume_evidence": [
+                "Used Python for one year in an academic project.",
+                "Built Python REST APIs with FastAPI and PostgreSQL."
+              ],
+              "confidence": 0.8
+            },
+            {
+              "requirement_id": "r2",
+              "job_skill": "Completed master degree in Statistics",
+              "requirement_level": "required",
+              "match_status": "partial",
+              "match_reason": "Resume shows Master of Science in Statistics as currently pursuing with expected graduation 2028, which is in-progress and cannot satisfy a completed-degree requirement.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Master of Science in Statistics, currently pursuing; expected graduation 2028."
+              ],
+              "confidence": 0.85
+            },
+            {
+              "requirement_id": "r3",
+              "job_skill": "Authorized to work in Canada",
+              "requirement_level": "required",
+              "match_status": "needs_confirmation",
+              "match_reason": "This requirement must be confirmed by the user.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 0.0
+            },
+            {
+              "requirement_id": "r4",
+              "job_skill": "Claude Code",
+              "requirement_level": "required",
+              "match_status": "missing",
+              "match_reason": "The resume evidence does not explicitly mention claude code.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 0.0
+            }
+          ],
+          "explanation": "Assessment based only on supplied resume evidence. Python skill is directly supported. Five-year professional Python is only weakly supported by one year academic evidence. Master's in Statistics is in-progress, not completed. Work authorization requires user confirmation. No evidence mentions Claude Code.",
+          "recommendations": [
+            "Document additional professional Python experience with explicit durations to address the 5-year requirement.",
+            "Complete the Master of Science in Statistics and provide evidence of completion.",
+            "Complete user confirmation for authorization to work in Canada.",
+            "Gain hands-on experience with Claude Code and add explicit resume evidence if applicable."
+          ],
+          "missing_required_requirements": [
+            {
+              "canonical_name": "At least five years of professional Python experience",
+              "original_text": "At least five years of professional Python experience",
+              "minimum_years": 5
+            },
+            {
+              "canonical_name": "Completed master degree in Statistics",
+              "original_text": "Completed master degree in Statistics",
+              "minimum_years": null
+            },
+            {
+              "canonical_name": "Claude Code",
+              "original_text": "Claude Code",
+              "minimum_years": null
+            }
+          ],
+          "missing_preferred_requirements": [],
+          "overall_score": 50.0,
+          "score_breakdown": {
+            "required_score": 50.0,
+            "preferred_score": null,
+            "overall_score": 50.0
+          },
+          "confirmation_requirements": [
+            {
+              "requirement_id": "r3",
+              "requirement_group_id": "r3",
+              "canonical_name": "Authorized to work in Canada",
+              "display_name": "Authorized to work in Canada",
+              "original_text": "Authorized to work in Canada",
+              "source_text": "Authorized to work in Canada",
+              "atomic_text": "Authorized to work in Canada",
+              "category": "eligibility",
+              "verification_mode": "user_confirmation",
+              "level": "required",
+              "minimum_years": null
+            }
+          ]
+        },
+        "valid_quotes": true,
+        "routing": []
+      },
+      {
+        "suite": "match",
+        "case": "translation",
+        "mode": "jev",
+        "repeat": 1,
+        "seconds": 10.176,
+        "actual": [
+          "matched",
+          "matched",
+          "missing"
+        ],
+        "expected": [
+          "matched",
+          "matched",
+          "missing"
+        ],
+        "correct": true,
+        "score": 66.7,
+        "match": {
+          "matches": [
+            {
+              "requirement_id": "r0",
+              "job_skill": "使用 Python 构建 API",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Supported by the cited resume evidence.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Built Python REST APIs with FastAPI and PostgreSQL."
+              ],
+              "confidence": 0.99
+            },
+            {
+              "requirement_id": "r1",
+              "job_skill": "使用 SQL 查询数据",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Supported by the cited resume evidence.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Wrote SQL queries and dashboards in Tableau for weekly reporting."
+              ],
+              "confidence": 0.99
+            },
+            {
+              "requirement_id": "r2",
+              "job_skill": "熟悉 Power BI",
+              "requirement_level": "required",
+              "match_status": "missing",
+              "match_reason": "The resume evidence does not explicitly mention power bi.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 0.0
+            }
+          ],
+          "explanation": "Resume evidence supports 2 requirements fully and 0 partially; 1 lack evidence and 0 require confirmation. The score uses the existing required/preferred weighting.",
+          "recommendations": [
+            "If you have Power BI experience, add an explicit bullet stating Power BI tasks and duration",
+            "Leverage existing Tableau and SQL dashboard experience while clarifying Power BI proficiency status and willingness to train if needed",
+            "Add a concrete example of 熟悉 Power BI if you have that experience."
+          ],
+          "missing_required_requirements": [
+            {
+              "canonical_name": "熟悉 Power BI",
+              "original_text": "熟悉 Power BI",
+              "minimum_years": null
+            }
+          ],
+          "missing_preferred_requirements": [],
+          "overall_score": 66.7,
+          "score_breakdown": {
+            "required_score": 66.7,
+            "preferred_score": null,
+            "overall_score": 66.7
+          },
+          "confirmation_requirements": []
+        },
+        "valid_quotes": true,
+        "routing": [
+          {
+            "purpose": "skill_evidence",
+            "status": "ok",
+            "seconds": 0.629,
+            "model": "jev-1.13.0",
+            "input_tokens": 1440,
+            "cached": false,
+            "requests": 1,
+            "accepted": 2,
+            "deferred": 1,
+            "main_model_calls": 1
+          }
+        ]
+      },
+      {
+        "suite": "match",
+        "case": "translation",
+        "mode": "main",
+        "repeat": 1,
+        "seconds": 13.479,
+        "actual": [
+          "matched",
+          "matched",
+          "missing"
+        ],
+        "expected": [
+          "matched",
+          "matched",
+          "missing"
+        ],
+        "correct": true,
+        "score": 66.7,
+        "match": {
+          "matches": [
+            {
+              "requirement_id": "r0",
+              "job_skill": "使用 Python 构建 API",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Resume explicitly states building Python REST APIs with FastAPI, fully satisfying the requirement to build APIs with Python.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Built Python REST APIs with FastAPI and PostgreSQL."
+              ],
+              "confidence": 0.95
+            },
+            {
+              "requirement_id": "r1",
+              "job_skill": "使用 SQL 查询数据",
+              "requirement_level": "required",
+              "match_status": "matched",
+              "match_reason": "Resume explicitly states writing SQL queries, fully satisfying the SQL querying requirement.",
+              "supported_years": null,
+              "resume_evidence": [
+                "Wrote SQL queries and dashboards in Tableau for weekly reporting."
+              ],
+              "confidence": 0.95
+            },
+            {
+              "requirement_id": "r2",
+              "job_skill": "熟悉 Power BI",
+              "requirement_level": "required",
+              "match_status": "missing",
+              "match_reason": "The resume evidence does not explicitly mention power bi.",
+              "supported_years": null,
+              "resume_evidence": [],
+              "confidence": 0.0
+            }
+          ],
+          "explanation": "Assessed 3 required skills from resume evidence: 2 matched (Python API building, SQL querying) with direct explicit evidence, 1 missing (Power BI) with no supporting evidence as Tableau cannot substitute for Power BI.",
+          "recommendations": [
+            "Gain hands-on experience with Power BI and add explicit project evidence using Power BI for reporting or dashboards.",
+            "If any Power BI exposure exists, add exact resume statements describing Power BI use to address the missing required skill."
+          ],
+          "missing_required_requirements": [
+            {
+              "canonical_name": "熟悉 Power BI",
+              "original_text": "熟悉 Power BI",
+              "minimum_years": null
+            }
+          ],
+          "missing_preferred_requirements": [],
+          "overall_score": 66.7,
+          "score_breakdown": {
+            "required_score": 66.7,
+            "preferred_score": null,
+            "overall_score": 66.7
+          },
+          "confirmation_requirements": []
+        },
+        "valid_quotes": true,
+        "routing": []
+      }
+    ],
+    "summary": {
+      "match": {
+        "main": {
+          "n": 6,
+          "median_seconds": 20.444,
+          "total_seconds": 143.456
+        },
+        "jev": {
+          "n": 6,
+          "median_seconds": 5.747,
+          "total_seconds": 47.471
+        }
+      }
+    }
+  },
+  "memory": {
+    "synthetic_only": true,
+    "repeats": 2,
+    "main_model": "muse-spark-1.3-contributor",
+    "jev_model": "jev-latest",
+    "cache": "disabled for fit; explicitly cleared before every Jev trial",
+    "trials": [
+      {
+        "suite": "memory",
+        "case": "find_jobs",
+        "mode": "main",
+        "repeat": 0,
+        "seconds": 7.499,
+        "actual": [
+          "m0",
+          "m1"
+        ],
+        "expected": [
+          "m0",
+          "m1"
+        ],
+        "correct": true,
+        "main_calls": 1,
+        "routing": []
+      },
+      {
+        "suite": "memory",
+        "case": "find_jobs",
+        "mode": "jev",
+        "repeat": 0,
+        "seconds": 0.591,
+        "actual": [
+          "m0",
+          "m1"
+        ],
+        "expected": [
+          "m0",
+          "m1"
+        ],
+        "correct": true,
+        "main_calls": 0,
+        "routing": [
+          {
+            "purpose": "memory_relevance",
+            "status": "ok",
+            "seconds": 0.59,
+            "model": "jev-1.13.0",
+            "input_tokens": 1325,
+            "cached": false,
+            "requests": 1,
+            "accepted": 6,
+            "deferred": 0
+          }
+        ]
+      },
+      {
+        "suite": "memory",
+        "case": "draft",
+        "mode": "main",
+        "repeat": 0,
+        "seconds": 9.686,
+        "actual": [
+          "m2"
+        ],
+        "expected": [
+          "m2"
+        ],
+        "correct": true,
+        "main_calls": 1,
+        "routing": []
+      },
+      {
+        "suite": "memory",
+        "case": "draft",
+        "mode": "jev",
+        "repeat": 0,
+        "seconds": 5.829,
+        "actual": [
+          "m2"
+        ],
+        "expected": [
+          "m2"
+        ],
+        "correct": true,
+        "main_calls": 1,
+        "routing": [
+          {
+            "purpose": "memory_relevance",
+            "status": "ok",
+            "seconds": 0.585,
+            "model": "jev-1.13.0",
+            "input_tokens": 1342,
+            "cached": false,
+            "requests": 1,
+            "accepted": 5,
+            "deferred": 1
+          }
+        ]
+      },
+      {
+        "suite": "memory",
+        "case": "interview",
+        "mode": "main",
+        "repeat": 0,
+        "seconds": 6.556,
+        "actual": [
+          "m3"
+        ],
+        "expected": [
+          "m3"
+        ],
+        "correct": true,
+        "main_calls": 1,
+        "routing": []
+      },
+      {
+        "suite": "memory",
+        "case": "interview",
+        "mode": "jev",
+        "repeat": 0,
+        "seconds": 0.59,
+        "actual": [
+          "m3"
+        ],
+        "expected": [
+          "m3"
+        ],
+        "correct": true,
+        "main_calls": 0,
+        "routing": [
+          {
+            "purpose": "memory_relevance",
+            "status": "ok",
+            "seconds": 0.59,
+            "model": "jev-1.13.0",
+            "input_tokens": 1346,
+            "cached": false,
+            "requests": 1,
+            "accepted": 6,
+            "deferred": 0
+          }
+        ]
+      },
+      {
+        "suite": "memory",
+        "case": "find_jobs",
+        "mode": "jev",
+        "repeat": 1,
+        "seconds": 0.612,
+        "actual": [
+          "m0",
+          "m1"
+        ],
+        "expected": [
+          "m0",
+          "m1"
+        ],
+        "correct": true,
+        "main_calls": 0,
+        "routing": [
+          {
+            "purpose": "memory_relevance",
+            "status": "ok",
+            "seconds": 0.612,
+            "model": "jev-1.13.0",
+            "input_tokens": 1325,
+            "cached": false,
+            "requests": 1,
+            "accepted": 6,
+            "deferred": 0
+          }
+        ]
+      },
+      {
+        "suite": "memory",
+        "case": "find_jobs",
+        "mode": "main",
+        "repeat": 1,
+        "seconds": 6.205,
+        "actual": [
+          "m0",
+          "m1"
+        ],
+        "expected": [
+          "m0",
+          "m1"
+        ],
+        "correct": true,
+        "main_calls": 1,
+        "routing": []
+      },
+      {
+        "suite": "memory",
+        "case": "draft",
+        "mode": "jev",
+        "repeat": 1,
+        "seconds": 6.65,
+        "actual": [
+          "m2"
+        ],
+        "expected": [
+          "m2"
+        ],
+        "correct": true,
+        "main_calls": 1,
+        "routing": [
+          {
+            "purpose": "memory_relevance",
+            "status": "ok",
+            "seconds": 0.641,
+            "model": "jev-1.13.0",
+            "input_tokens": 1342,
+            "cached": false,
+            "requests": 1,
+            "accepted": 5,
+            "deferred": 1
+          }
+        ]
+      },
+      {
+        "suite": "memory",
+        "case": "draft",
+        "mode": "main",
+        "repeat": 1,
+        "seconds": 6.149,
+        "actual": [
+          "m2"
+        ],
+        "expected": [
+          "m2"
+        ],
+        "correct": true,
+        "main_calls": 1,
+        "routing": []
+      },
+      {
+        "suite": "memory",
+        "case": "interview",
+        "mode": "jev",
+        "repeat": 1,
+        "seconds": 0.612,
+        "actual": [
+          "m3"
+        ],
+        "expected": [
+          "m3"
+        ],
+        "correct": true,
+        "main_calls": 0,
+        "routing": [
+          {
+            "purpose": "memory_relevance",
+            "status": "ok",
+            "seconds": 0.612,
+            "model": "jev-1.13.0",
+            "input_tokens": 1346,
+            "cached": false,
+            "requests": 1,
+            "accepted": 6,
+            "deferred": 0
+          }
+        ]
+      },
+      {
+        "suite": "memory",
+        "case": "interview",
+        "mode": "main",
+        "repeat": 1,
+        "seconds": 5.125,
+        "actual": [
+          "m3"
+        ],
+        "expected": [
+          "m3"
+        ],
+        "correct": true,
+        "main_calls": 1,
+        "routing": []
+      }
+    ],
+    "summary": {
+      "memory": {
+        "main": {
+          "n": 6,
+          "median_seconds": 6.38,
+          "total_seconds": 41.22
+        },
+        "jev": {
+          "n": 6,
+          "median_seconds": 0.612,
+          "total_seconds": 14.884
+        }
+      }
+    }
+  },
+  "question_trials": [
+    {
+      "suite": "question",
+      "case": "motivation",
+      "mode": "main",
+      "repeat": 0,
+      "seconds": 7.39,
+      "actual": "motivation",
+      "expected": [
+        "motivation"
+      ],
+      "correct": true,
+      "main_calls": 1,
+      "routing": []
+    },
+    {
+      "suite": "question",
+      "case": "motivation",
+      "mode": "jev",
+      "repeat": 0,
+      "seconds": 0.675,
+      "actual": "motivation",
+      "expected": [
+        "motivation"
+      ],
+      "correct": true,
+      "main_calls": 0,
+      "routing": [
+        {
+          "purpose": "question_category",
+          "status": "ok",
+          "seconds": 0.675,
+          "model": "jev-1.13.0",
+          "input_tokens": 532,
+          "cached": false,
+          "requests": 1,
+          "accepted": 1,
+          "deferred": 0
+        }
+      ]
+    },
+    {
+      "suite": "question",
+      "case": "experience",
+      "mode": "main",
+      "repeat": 0,
+      "seconds": 8.537,
+      "actual": "experience",
+      "expected": [
+        "experience"
+      ],
+      "correct": true,
+      "main_calls": 1,
+      "routing": []
+    },
+    {
+      "suite": "question",
+      "case": "experience",
+      "mode": "jev",
+      "repeat": 0,
+      "seconds": 0.637,
+      "actual": "experience",
+      "expected": [
+        "experience"
+      ],
+      "correct": true,
+      "main_calls": 0,
+      "routing": [
+        {
+          "purpose": "question_category",
+          "status": "ok",
+          "seconds": 0.637,
+          "model": "jev-1.13.0",
+          "input_tokens": 529,
+          "cached": false,
+          "requests": 1,
+          "accepted": 1,
+          "deferred": 0
+        }
+      ]
+    },
+    {
+      "suite": "question",
+      "case": "company",
+      "mode": "main",
+      "repeat": 0,
+      "seconds": 6.045,
+      "actual": "company_interest",
+      "expected": [
+        "company_interest"
+      ],
+      "correct": true,
+      "main_calls": 1,
+      "routing": []
+    },
+    {
+      "suite": "question",
+      "case": "company",
+      "mode": "jev",
+      "repeat": 0,
+      "seconds": 0.732,
+      "actual": "company_interest",
+      "expected": [
+        "company_interest"
+      ],
+      "correct": true,
+      "main_calls": 0,
+      "routing": [
+        {
+          "purpose": "question_category",
+          "status": "ok",
+          "seconds": 0.732,
+          "model": "jev-1.13.0",
+          "input_tokens": 532,
+          "cached": false,
+          "requests": 1,
+          "accepted": 1,
+          "deferred": 0
+        }
+      ]
+    },
+    {
+      "suite": "question",
+      "case": "permission",
+      "mode": "main",
+      "repeat": 0,
+      "seconds": 5.451,
+      "actual": "legal_or_identity",
+      "expected": [
+        "legal_or_identity"
+      ],
+      "correct": true,
+      "main_calls": 1,
+      "routing": []
+    },
+    {
+      "suite": "question",
+      "case": "permission",
+      "mode": "jev",
+      "repeat": 0,
+      "seconds": 0.668,
+      "actual": "legal_or_identity",
+      "expected": [
+        "legal_or_identity"
+      ],
+      "correct": true,
+      "main_calls": 0,
+      "routing": [
+        {
+          "purpose": "question_category",
+          "status": "ok",
+          "seconds": 0.668,
+          "model": "jev-1.13.0",
+          "input_tokens": 531,
+          "cached": false,
+          "requests": 1,
+          "accepted": 1,
+          "deferred": 0
+        }
+      ]
+    },
+    {
+      "suite": "question",
+      "case": "logistics",
+      "mode": "main",
+      "repeat": 0,
+      "seconds": 4.779,
+      "actual": "logistics",
+      "expected": [
+        "logistics"
+      ],
+      "correct": true,
+      "main_calls": 1,
+      "routing": []
+    },
+    {
+      "suite": "question",
+      "case": "logistics",
+      "mode": "jev",
+      "repeat": 0,
+      "seconds": 0.655,
+      "actual": "logistics",
+      "expected": [
+        "logistics"
+      ],
+      "correct": true,
+      "main_calls": 0,
+      "routing": [
+        {
+          "purpose": "question_category",
+          "status": "ok",
+          "seconds": 0.655,
+          "model": "jev-1.13.0",
+          "input_tokens": 534,
+          "cached": false,
+          "requests": 1,
+          "accepted": 1,
+          "deferred": 0
+        }
+      ]
+    },
+    {
+      "suite": "question",
+      "case": "ambiguous",
+      "mode": "main",
+      "repeat": 0,
+      "seconds": 5.348,
+      "actual": "unknown",
+      "expected": [
+        "unknown"
+      ],
+      "correct": true,
+      "main_calls": 1,
+      "routing": []
+    },
+    {
+      "suite": "question",
+      "case": "ambiguous",
+      "mode": "jev",
+      "repeat": 0,
+      "seconds": 5.396,
+      "actual": "unknown",
+      "expected": [
+        "unknown"
+      ],
+      "correct": true,
+      "main_calls": 1,
+      "routing": [
+        {
+          "purpose": "question_category",
+          "status": "ok",
+          "seconds": 0.684,
+          "model": "jev-1.13.0",
+          "input_tokens": 526,
+          "cached": false,
+          "requests": 1,
+          "accepted": 0,
+          "deferred": 1
+        }
+      ]
+    },
+    {
+      "suite": "question",
+      "case": "indirect_consent",
+      "mode": "main",
+      "repeat": 0,
+      "seconds": 5.537,
+      "actual": "legal_or_identity",
+      "expected": [
+        "legal_or_identity"
+      ],
+      "correct": true,
+      "main_calls": 1,
+      "routing": []
+    },
+    {
+      "suite": "question",
+      "case": "indirect_consent",
+      "mode": "jev",
+      "repeat": 0,
+      "seconds": 0.678,
+      "actual": "legal_or_identity",
+      "expected": [
+        "legal_or_identity"
+      ],
+      "correct": true,
+      "main_calls": 0,
+      "routing": [
+        {
+          "purpose": "question_category",
+          "status": "ok",
+          "seconds": 0.678,
+          "model": "jev-1.13.0",
+          "input_tokens": 533,
+          "cached": false,
+          "requests": 1,
+          "accepted": 1,
+          "deferred": 0
+        }
+      ]
+    }
+  ],
+  "full_pipeline": {
+    "synthetic_only": true,
+    "repeats": 2,
+    "main_model": "muse-spark-1.3-contributor",
+    "jev_model": "jev-latest",
+    "cache": "disabled for fit; explicitly cleared before every Jev trial",
+    "trials": [
+      {
+        "suite": "fit_e2e",
+        "case": "synthetic_backend",
+        "mode": "main",
+        "repeat": 0,
+        "seconds": 53.616,
+        "result": {
+          "analysis_id": "analysis-53651320-fd98-443f-935b-1b077acf0cc0",
+          "status": "completed",
+          "resume_analysis": {
+            "summary": "Python and SQL developer focused on data tools.",
+            "skills": [
+              "Python",
+              "SQL",
+              "PostgreSQL",
+              "FastAPI",
+              "Git",
+              "Docker",
+              "Tableau",
+              "scikit-learn"
+            ],
+            "evidence": [
+              {
+                "evidence_id": "EXP-f39b1110cb5d",
+                "source_section": "Summary",
+                "exact_text": "Python and SQL developer focused on data tools.",
+                "source_entry_id": "SRC-455c397a6588"
+              },
+              {
+                "evidence_id": "EXP-f934e8ca5e9b",
+                "source_section": "Experience",
+                "exact_text": "Example Lab - Software Developer",
+                "source_entry_id": "SRC-7e3526865166"
+              },
+              {
+                "evidence_id": "EXP-5dd29b4a237a",
+                "source_section": "Experience",
+                "exact_text": "Built Python REST APIs with FastAPI and PostgreSQL.",
+                "source_entry_id": "SRC-7e3526865166"
+              },
+              {
+                "evidence_id": "EXP-6183757b1916",
+                "source_section": "Experience",
+                "exact_text": "Wrote SQL queries and dashboards in Tableau for weekly reporting.",
+                "source_entry_id": "SRC-7e3526865166"
+              },
+              {
+                "evidence_id": "EXP-70e098566f92",
+                "source_section": "Experience",
+                "exact_text": "Used Git and Docker to ship data services.",
+                "source_entry_id": "SRC-7e3526865166"
+              },
+              {
+                "evidence_id": "EXP-6d3496f317b9",
+                "source_section": "Projects",
+                "exact_text": "Forecast Demo",
+                "source_entry_id": "SRC-8f3c7339f7da"
+              },
+              {
+                "evidence_id": "EXP-fd2d558694bf",
+                "source_section": "Projects",
+                "exact_text": "Built a scikit-learn demand forecasting prototype with Python.",
+                "source_entry_id": "SRC-8f3c7339f7da"
+              },
+              {
+                "evidence_id": "EXP-ce09ba4be73d",
+                "source_section": "Education",
+                "exact_text": "Example University - Bachelor of Science in Computer Science, completed 2023.",
+                "source_entry_id": "SRC-e854c6bfa32c"
+              },
+              {
+                "evidence_id": "EXP-7199ff2b1b05",
+                "source_section": "Skills",
+                "exact_text": "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn.",
+                "source_entry_id": "SRC-776efaa29c6b"
+              }
+            ],
+            "education": [
+              "Bachelor of Science in Computer Science, Example University, completed 2023."
+            ],
+            "source_entries": [
+              {
+                "source_entry_id": "SRC-455c397a6588",
+                "entry_type": "summary",
+                "heading": null,
+                "organization": null,
+                "location": null,
+                "start_date": null,
+                "end_date": null,
+                "evidence_ids": [
+                  "EXP-f39b1110cb5d"
+                ]
+              },
+              {
+                "source_entry_id": "SRC-7e3526865166",
+                "entry_type": "experience",
+                "heading": "Software Developer",
+                "organization": "Example Lab",
+                "location": null,
+                "start_date": null,
+                "end_date": null,
+                "evidence_ids": [
+                  "EXP-f934e8ca5e9b",
+                  "EXP-5dd29b4a237a",
+                  "EXP-6183757b1916",
+                  "EXP-70e098566f92"
+                ]
+              },
+              {
+                "source_entry_id": "SRC-8f3c7339f7da",
+                "entry_type": "project",
+                "heading": "Forecast Demo",
+                "organization": null,
+                "location": null,
+                "start_date": null,
+                "end_date": null,
+                "evidence_ids": [
+                  "EXP-6d3496f317b9",
+                  "EXP-fd2d558694bf"
+                ]
+              },
+              {
+                "source_entry_id": "SRC-e854c6bfa32c",
+                "entry_type": "education",
+                "heading": "Bachelor of Science in Computer Science",
+                "organization": "Example University",
+                "location": null,
+                "start_date": null,
+                "end_date": "2023",
+                "evidence_ids": [
+                  "EXP-ce09ba4be73d"
+                ]
+              },
+              {
+                "source_entry_id": "SRC-776efaa29c6b",
+                "entry_type": "skills",
+                "heading": null,
+                "organization": null,
+                "location": null,
+                "start_date": null,
+                "end_date": null,
+                "evidence_ids": [
+                  "EXP-7199ff2b1b05"
+                ]
+              }
+            ]
+          },
+          "job_analysis": {
+            "title": "Synthetic Junior Backend Developer",
+            "summary": "Junior Backend Developer role at Example Test Company requiring Python, SQL, Git, and Docker, with FastAPI and Kubernetes preferred, focused on building data services and collaborating with the engineering team.",
+            "requirements": [
+              {
+                "requirement_id": "REQ-e3cf95092c77",
+                "requirement_group_id": "REQG-30bb8490c395",
+                "canonical_name": "python",
+                "display_name": "Python",
+                "original_text": "Python",
+                "source_text": "Required skills: Python; SQL; Git; Docker.",
+                "atomic_text": "Python",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-bff2bc9ebdaa",
+                "requirement_group_id": "REQG-30bb8490c395",
+                "canonical_name": "sql",
+                "display_name": "SQL",
+                "original_text": "SQL",
+                "source_text": "Required skills: Python; SQL; Git; Docker.",
+                "atomic_text": "SQL",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-01c5b21220f6",
+                "requirement_group_id": "REQG-30bb8490c395",
+                "canonical_name": "git",
+                "display_name": "Git",
+                "original_text": "Git",
+                "source_text": "Required skills: Python; SQL; Git; Docker.",
+                "atomic_text": "Git",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-9bb997af322e",
+                "requirement_group_id": "REQG-30bb8490c395",
+                "canonical_name": "docker",
+                "display_name": "Docker",
+                "original_text": "Docker",
+                "source_text": "Required skills: Python; SQL; Git; Docker.",
+                "atomic_text": "Docker",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-5bf9bfa267f5",
+                "requirement_group_id": "REQG-82ce9325d6d7",
+                "canonical_name": "fastapi",
+                "display_name": "FastAPI",
+                "original_text": "FastAPI",
+                "source_text": "Preferred skills: FastAPI; Kubernetes.",
+                "atomic_text": "FastAPI",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "preferred",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-ff038a804f54",
+                "requirement_group_id": "REQG-82ce9325d6d7",
+                "canonical_name": "kubernetes",
+                "display_name": "Kubernetes",
+                "original_text": "Kubernetes",
+                "source_text": "Preferred skills: FastAPI; Kubernetes.",
+                "atomic_text": "Kubernetes",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "preferred",
+                "minimum_years": null
+              }
+            ],
+            "responsibilities": [
+              "Build data services",
+              "Collaborate with the engineering team"
+            ]
+          },
+          "skill_match": {
+            "matches": [
+              {
+                "requirement_id": "REQ-e3cf95092c77",
+                "job_skill": "python",
+                "requirement_level": "required",
+                "match_status": "matched",
+                "match_reason": "Resume explicitly lists Python in skills and describes building Python REST APIs and a Python prototype.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Built Python REST APIs with FastAPI and PostgreSQL.",
+                  "Built a scikit-learn demand forecasting prototype with Python.",
+                  "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+                ],
+                "confidence": 1.0
+              },
+              {
+                "requirement_id": "REQ-bff2bc9ebdaa",
+                "job_skill": "sql",
+                "requirement_level": "required",
+                "match_status": "matched",
+                "match_reason": "Resume explicitly lists SQL and describes writing SQL queries for reporting.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Wrote SQL queries and dashboards in Tableau for weekly reporting.",
+                  "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+                ],
+                "confidence": 1.0
+              },
+              {
+                "requirement_id": "REQ-01c5b21220f6",
+                "job_skill": "git",
+                "requirement_level": "required",
+                "match_status": "matched",
+                "match_reason": "Resume explicitly lists Git and describes using Git to ship data services.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Used Git and Docker to ship data services.",
+                  "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+                ],
+                "confidence": 1.0
+              },
+              {
+                "requirement_id": "REQ-9bb997af322e",
+                "job_skill": "docker",
+                "requirement_level": "required",
+                "match_status": "matched",
+                "match_reason": "Resume explicitly lists Docker and describes using Docker to ship data services.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Used Git and Docker to ship data services.",
+                  "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+                ],
+                "confidence": 1.0
+              },
+              {
+                "requirement_id": "REQ-5bf9bfa267f5",
+                "job_skill": "fastapi",
+                "requirement_level": "preferred",
+                "match_status": "matched",
+                "match_reason": "Resume explicitly lists FastAPI and describes building Python REST APIs with FastAPI.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Built Python REST APIs with FastAPI and PostgreSQL.",
+                  "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+                ],
+                "confidence": 1.0
+              },
+              {
+                "requirement_id": "REQ-ff038a804f54",
+                "job_skill": "kubernetes",
+                "requirement_level": "preferred",
+                "match_status": "missing",
+                "match_reason": "No resume evidence mentions Kubernetes; skills list and experience do not include it.",
+                "supported_years": null,
+                "resume_evidence": [],
+                "confidence": 1.0
+              }
+            ],
+            "explanation": "Candidate meets all 4 required skills (Python, SQL, Git, Docker) with direct resume evidence and 1 of 2 preferred skills (FastAPI). Kubernetes has no supporting evidence in the resume.",
+            "recommendations": [
+              "Gain hands-on exposure to Kubernetes, such as deploying the existing Dockerized FastAPI service to a local cluster, and add explicit Kubernetes evidence to the resume if pursued.",
+              "Retain explicit tool names and project details on resume to preserve clear evidence for Python, SQL, Git, Docker, and FastAPI."
+            ],
+            "missing_required_requirements": [],
+            "missing_preferred_requirements": [
+              {
+                "canonical_name": "kubernetes",
+                "original_text": "Kubernetes",
+                "minimum_years": null
+              }
+            ],
+            "overall_score": 83.3,
+            "score_breakdown": {
+              "required_score": 100.0,
+              "preferred_score": 50.0,
+              "overall_score": 83.3
+            },
+            "confirmation_requirements": []
+          },
+          "model_calls": 3,
+          "main_model_calls": 3,
+          "fast_model_calls": 0,
+          "decision_routing": [],
+          "latency_seconds": 53.6163610000076,
+          "stage_seconds": {
+            "resume": 19.549,
+            "job": 40.328,
+            "match": 13.281
+          },
+          "cache_hits": []
+        },
+        "score": 83.3,
+        "main_calls": 3,
+        "fast_calls": 0,
+        "routing": []
+      },
+      {
+        "suite": "fit_e2e",
+        "case": "synthetic_backend",
+        "mode": "jev",
+        "repeat": 0,
+        "seconds": 45.885,
+        "result": {
+          "analysis_id": "analysis-6fb6bb3a-ca5f-4c48-9c4a-464afaba5dfd",
+          "status": "completed",
+          "resume_analysis": {
+            "summary": "Python and SQL developer focused on data tools.",
+            "skills": [
+              "Python",
+              "SQL",
+              "PostgreSQL",
+              "FastAPI",
+              "Git",
+              "Docker",
+              "Tableau",
+              "scikit-learn"
+            ],
+            "evidence": [
+              {
+                "evidence_id": "EXP-f39b1110cb5d",
+                "source_section": "Summary",
+                "exact_text": "Python and SQL developer focused on data tools.",
+                "source_entry_id": "SRC-455c397a6588"
+              },
+              {
+                "evidence_id": "EXP-f934e8ca5e9b",
+                "source_section": "Experience",
+                "exact_text": "Example Lab - Software Developer",
+                "source_entry_id": "SRC-7e3526865166"
+              },
+              {
+                "evidence_id": "EXP-5dd29b4a237a",
+                "source_section": "Experience",
+                "exact_text": "Built Python REST APIs with FastAPI and PostgreSQL.",
+                "source_entry_id": "SRC-7e3526865166"
+              },
+              {
+                "evidence_id": "EXP-6183757b1916",
+                "source_section": "Experience",
+                "exact_text": "Wrote SQL queries and dashboards in Tableau for weekly reporting.",
+                "source_entry_id": "SRC-7e3526865166"
+              },
+              {
+                "evidence_id": "EXP-70e098566f92",
+                "source_section": "Experience",
+                "exact_text": "Used Git and Docker to ship data services.",
+                "source_entry_id": "SRC-7e3526865166"
+              },
+              {
+                "evidence_id": "EXP-6d3496f317b9",
+                "source_section": "Projects",
+                "exact_text": "Forecast Demo",
+                "source_entry_id": "SRC-8f3c7339f7da"
+              },
+              {
+                "evidence_id": "EXP-fd2d558694bf",
+                "source_section": "Projects",
+                "exact_text": "Built a scikit-learn demand forecasting prototype with Python.",
+                "source_entry_id": "SRC-8f3c7339f7da"
+              },
+              {
+                "evidence_id": "EXP-ce09ba4be73d",
+                "source_section": "Education",
+                "exact_text": "Example University - Bachelor of Science in Computer Science, completed 2023.",
+                "source_entry_id": "SRC-e854c6bfa32c"
+              },
+              {
+                "evidence_id": "EXP-7199ff2b1b05",
+                "source_section": "Skills",
+                "exact_text": "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn.",
+                "source_entry_id": "SRC-776efaa29c6b"
+              }
+            ],
+            "education": [
+              "Example University - Bachelor of Science in Computer Science, completed 2023."
+            ],
+            "source_entries": [
+              {
+                "source_entry_id": "SRC-455c397a6588",
+                "entry_type": "summary",
+                "heading": null,
+                "organization": null,
+                "location": null,
+                "start_date": null,
+                "end_date": null,
+                "evidence_ids": [
+                  "EXP-f39b1110cb5d"
+                ]
+              },
+              {
+                "source_entry_id": "SRC-7e3526865166",
+                "entry_type": "experience",
+                "heading": "Software Developer",
+                "organization": "Example Lab",
+                "location": null,
+                "start_date": null,
+                "end_date": null,
+                "evidence_ids": [
+                  "EXP-f934e8ca5e9b",
+                  "EXP-5dd29b4a237a",
+                  "EXP-6183757b1916",
+                  "EXP-70e098566f92"
+                ]
+              },
+              {
+                "source_entry_id": "SRC-8f3c7339f7da",
+                "entry_type": "project",
+                "heading": "Forecast Demo",
+                "organization": null,
+                "location": null,
+                "start_date": null,
+                "end_date": null,
+                "evidence_ids": [
+                  "EXP-6d3496f317b9",
+                  "EXP-fd2d558694bf"
+                ]
+              },
+              {
+                "source_entry_id": "SRC-e854c6bfa32c",
+                "entry_type": "education",
+                "heading": "Bachelor of Science in Computer Science",
+                "organization": "Example University",
+                "location": null,
+                "start_date": null,
+                "end_date": "2023",
+                "evidence_ids": [
+                  "EXP-ce09ba4be73d"
+                ]
+              },
+              {
+                "source_entry_id": "SRC-776efaa29c6b",
+                "entry_type": "skills",
+                "heading": null,
+                "organization": null,
+                "location": null,
+                "start_date": null,
+                "end_date": null,
+                "evidence_ids": [
+                  "EXP-7199ff2b1b05"
+                ]
+              }
+            ]
+          },
+          "job_analysis": {
+            "title": "Junior Backend Developer",
+            "summary": "Junior Backend Developer role requiring Python, SQL, Git, and Docker, with FastAPI and Kubernetes as preferred skills. Involves building data services and collaborating with the engineering team.",
+            "requirements": [
+              {
+                "requirement_id": "REQ-e3cf95092c77",
+                "requirement_group_id": "REQG-30bb8490c395",
+                "canonical_name": "python",
+                "display_name": "Python",
+                "original_text": "Python",
+                "source_text": "Required skills: Python; SQL; Git; Docker.",
+                "atomic_text": "Python",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-bff2bc9ebdaa",
+                "requirement_group_id": "REQG-30bb8490c395",
+                "canonical_name": "sql",
+                "display_name": "SQL",
+                "original_text": "SQL",
+                "source_text": "Required skills: Python; SQL; Git; Docker.",
+                "atomic_text": "SQL",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-01c5b21220f6",
+                "requirement_group_id": "REQG-30bb8490c395",
+                "canonical_name": "git",
+                "display_name": "Git",
+                "original_text": "Git",
+                "source_text": "Required skills: Python; SQL; Git; Docker.",
+                "atomic_text": "Git",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-9bb997af322e",
+                "requirement_group_id": "REQG-30bb8490c395",
+                "canonical_name": "docker",
+                "display_name": "Docker",
+                "original_text": "Docker",
+                "source_text": "Required skills: Python; SQL; Git; Docker.",
+                "atomic_text": "Docker",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-5bf9bfa267f5",
+                "requirement_group_id": "REQG-82ce9325d6d7",
+                "canonical_name": "fastapi",
+                "display_name": "FastAPI",
+                "original_text": "FastAPI",
+                "source_text": "Preferred skills: FastAPI; Kubernetes.",
+                "atomic_text": "FastAPI",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "preferred",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-ff038a804f54",
+                "requirement_group_id": "REQG-82ce9325d6d7",
+                "canonical_name": "kubernetes",
+                "display_name": "Kubernetes",
+                "original_text": "Kubernetes",
+                "source_text": "Preferred skills: FastAPI; Kubernetes.",
+                "atomic_text": "Kubernetes",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "preferred",
+                "minimum_years": null
+              }
+            ],
+            "responsibilities": [
+              "Build data services",
+              "Collaborate with the engineering team"
+            ]
+          },
+          "skill_match": {
+            "matches": [
+              {
+                "requirement_id": "REQ-e3cf95092c77",
+                "job_skill": "python",
+                "requirement_level": "required",
+                "match_status": "matched",
+                "match_reason": "Supported by the cited resume evidence.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Python and SQL developer focused on data tools."
+                ],
+                "confidence": 1.0
+              },
+              {
+                "requirement_id": "REQ-bff2bc9ebdaa",
+                "job_skill": "sql",
+                "requirement_level": "required",
+                "match_status": "matched",
+                "match_reason": "Supported by the cited resume evidence.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Python and SQL developer focused on data tools."
+                ],
+                "confidence": 0.98
+              },
+              {
+                "requirement_id": "REQ-01c5b21220f6",
+                "job_skill": "git",
+                "requirement_level": "required",
+                "match_status": "matched",
+                "match_reason": "Supported by the cited resume evidence.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Used Git and Docker to ship data services."
+                ],
+                "confidence": 1.0
+              },
+              {
+                "requirement_id": "REQ-9bb997af322e",
+                "job_skill": "docker",
+                "requirement_level": "required",
+                "match_status": "matched",
+                "match_reason": "Supported by the cited resume evidence.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Used Git and Docker to ship data services."
+                ],
+                "confidence": 1.0
+              },
+              {
+                "requirement_id": "REQ-5bf9bfa267f5",
+                "job_skill": "fastapi",
+                "requirement_level": "preferred",
+                "match_status": "matched",
+                "match_reason": "Supported by the cited resume evidence.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Built Python REST APIs with FastAPI and PostgreSQL."
+                ],
+                "confidence": 1.0
+              },
+              {
+                "requirement_id": "REQ-ff038a804f54",
+                "job_skill": "kubernetes",
+                "requirement_level": "preferred",
+                "match_status": "missing",
+                "match_reason": "No supporting evidence was found in the resume.",
+                "supported_years": null,
+                "resume_evidence": [],
+                "confidence": 0.98
+              }
+            ],
+            "explanation": "Resume evidence supports 5 requirements fully and 0 partially; 1 lack evidence and 0 require confirmation. The score uses the existing required/preferred weighting.",
+            "recommendations": [
+              "Add a concrete example of kubernetes if you have that experience."
+            ],
+            "missing_required_requirements": [],
+            "missing_preferred_requirements": [
+              {
+                "canonical_name": "kubernetes",
+                "original_text": "Kubernetes",
+                "minimum_years": null
+              }
+            ],
+            "overall_score": 83.3,
+            "score_breakdown": {
+              "required_score": 100.0,
+              "preferred_score": 50.0,
+              "overall_score": 83.3
+            },
+            "confirmation_requirements": []
+          },
+          "model_calls": 4,
+          "main_model_calls": 2,
+          "fast_model_calls": 2,
+          "decision_routing": [
+            {
+              "purpose": "skill_evidence_verify",
+              "status": "ok",
+              "seconds": 0.616,
+              "model": "jev-1.13.0",
+              "input_tokens": 1196,
+              "cached": false,
+              "requests": 1
+            },
+            {
+              "purpose": "skill_evidence",
+              "status": "ok",
+              "seconds": 0.735,
+              "model": "jev-1.13.0",
+              "input_tokens": 2720,
+              "cached": false,
+              "requests": 1,
+              "accepted": 6,
+              "deferred": 0,
+              "main_model_calls": 0
+            }
+          ],
+          "latency_seconds": 45.88451060000807,
+          "stage_seconds": {
+            "resume": 26.273,
+            "job": 44.528,
+            "match": 1.352
+          },
+          "cache_hits": []
+        },
+        "score": 83.3,
+        "main_calls": 2,
+        "fast_calls": 2,
+        "routing": []
+      },
+      {
+        "suite": "fit_e2e",
+        "case": "synthetic_backend",
+        "mode": "jev",
+        "repeat": 1,
+        "seconds": 37.824,
+        "result": {
+          "analysis_id": "analysis-2a2eb6fa-00dd-4a19-953d-fa3958600384",
+          "status": "completed",
+          "resume_analysis": {
+            "summary": "Python and SQL developer focused on data tools.",
+            "skills": [
+              "Python",
+              "SQL",
+              "PostgreSQL",
+              "FastAPI",
+              "Git",
+              "Docker",
+              "Tableau",
+              "scikit-learn"
+            ],
+            "evidence": [
+              {
+                "evidence_id": "EXP-f39b1110cb5d",
+                "source_section": "Summary",
+                "exact_text": "Python and SQL developer focused on data tools.",
+                "source_entry_id": "SRC-455c397a6588"
+              },
+              {
+                "evidence_id": "EXP-5dd29b4a237a",
+                "source_section": "Experience",
+                "exact_text": "Built Python REST APIs with FastAPI and PostgreSQL.",
+                "source_entry_id": "SRC-37167eaffbe0"
+              },
+              {
+                "evidence_id": "EXP-6183757b1916",
+                "source_section": "Experience",
+                "exact_text": "Wrote SQL queries and dashboards in Tableau for weekly reporting.",
+                "source_entry_id": "SRC-37167eaffbe0"
+              },
+              {
+                "evidence_id": "EXP-70e098566f92",
+                "source_section": "Experience",
+                "exact_text": "Used Git and Docker to ship data services.",
+                "source_entry_id": "SRC-37167eaffbe0"
+              },
+              {
+                "evidence_id": "EXP-fd2d558694bf",
+                "source_section": "Projects",
+                "exact_text": "Built a scikit-learn demand forecasting prototype with Python.",
+                "source_entry_id": "SRC-bc850007d944"
+              },
+              {
+                "evidence_id": "EXP-ce09ba4be73d",
+                "source_section": "Education",
+                "exact_text": "Example University - Bachelor of Science in Computer Science, completed 2023.",
+                "source_entry_id": "SRC-e854c6bfa32c"
+              },
+              {
+                "evidence_id": "EXP-7199ff2b1b05",
+                "source_section": "Skills",
+                "exact_text": "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn.",
+                "source_entry_id": "SRC-776efaa29c6b"
+              }
+            ],
+            "education": [
+              "Example University - Bachelor of Science in Computer Science, completed 2023."
+            ],
+            "source_entries": [
+              {
+                "source_entry_id": "SRC-455c397a6588",
+                "entry_type": "summary",
+                "heading": null,
+                "organization": null,
+                "location": null,
+                "start_date": null,
+                "end_date": null,
+                "evidence_ids": [
+                  "EXP-f39b1110cb5d"
+                ]
+              },
+              {
+                "source_entry_id": "SRC-37167eaffbe0",
+                "entry_type": "experience",
+                "heading": "Software Developer",
+                "organization": "Example Lab",
+                "location": null,
+                "start_date": null,
+                "end_date": null,
+                "evidence_ids": [
+                  "EXP-5dd29b4a237a",
+                  "EXP-6183757b1916",
+                  "EXP-70e098566f92"
+                ]
+              },
+              {
+                "source_entry_id": "SRC-bc850007d944",
+                "entry_type": "project",
+                "heading": "Forecast Demo",
+                "organization": null,
+                "location": null,
+                "start_date": null,
+                "end_date": null,
+                "evidence_ids": [
+                  "EXP-fd2d558694bf"
+                ]
+              },
+              {
+                "source_entry_id": "SRC-e854c6bfa32c",
+                "entry_type": "education",
+                "heading": "Bachelor of Science in Computer Science",
+                "organization": "Example University",
+                "location": null,
+                "start_date": null,
+                "end_date": "2023",
+                "evidence_ids": [
+                  "EXP-ce09ba4be73d"
+                ]
+              },
+              {
+                "source_entry_id": "SRC-776efaa29c6b",
+                "entry_type": "skills",
+                "heading": null,
+                "organization": null,
+                "location": null,
+                "start_date": null,
+                "end_date": null,
+                "evidence_ids": [
+                  "EXP-7199ff2b1b05"
+                ]
+              }
+            ]
+          },
+          "job_analysis": {
+            "title": "Junior Backend Developer",
+            "summary": "Junior Backend Developer role focused on building data services and collaborating with the engineering team. Requires Python, SQL, Git, and Docker; FastAPI and Kubernetes are preferred.",
+            "requirements": [
+              {
+                "requirement_id": "REQ-e3cf95092c77",
+                "requirement_group_id": "REQG-30bb8490c395",
+                "canonical_name": "python",
+                "display_name": "Python",
+                "original_text": "Python",
+                "source_text": "Required skills: Python; SQL; Git; Docker.",
+                "atomic_text": "Python",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-bff2bc9ebdaa",
+                "requirement_group_id": "REQG-30bb8490c395",
+                "canonical_name": "sql",
+                "display_name": "SQL",
+                "original_text": "SQL",
+                "source_text": "Required skills: Python; SQL; Git; Docker.",
+                "atomic_text": "SQL",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-01c5b21220f6",
+                "requirement_group_id": "REQG-30bb8490c395",
+                "canonical_name": "git",
+                "display_name": "Git",
+                "original_text": "Git",
+                "source_text": "Required skills: Python; SQL; Git; Docker.",
+                "atomic_text": "Git",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-9bb997af322e",
+                "requirement_group_id": "REQG-30bb8490c395",
+                "canonical_name": "docker",
+                "display_name": "Docker",
+                "original_text": "Docker",
+                "source_text": "Required skills: Python; SQL; Git; Docker.",
+                "atomic_text": "Docker",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-5bf9bfa267f5",
+                "requirement_group_id": "REQG-82ce9325d6d7",
+                "canonical_name": "fastapi",
+                "display_name": "FastAPI",
+                "original_text": "FastAPI",
+                "source_text": "Preferred skills: FastAPI; Kubernetes.",
+                "atomic_text": "FastAPI",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "preferred",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-ff038a804f54",
+                "requirement_group_id": "REQG-82ce9325d6d7",
+                "canonical_name": "kubernetes",
+                "display_name": "Kubernetes",
+                "original_text": "Kubernetes",
+                "source_text": "Preferred skills: FastAPI; Kubernetes.",
+                "atomic_text": "Kubernetes",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "preferred",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-55fab9eb37ab",
+                "requirement_group_id": "REQG-500e0cde6067",
+                "canonical_name": "build_data_services",
+                "display_name": "Build data services",
+                "original_text": "Build data services",
+                "source_text": "Build data services and collaborate with the engineering team.",
+                "atomic_text": "Build data services",
+                "category": "responsibility",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-2b8b79286de3",
+                "requirement_group_id": "REQG-500e0cde6067",
+                "canonical_name": "collaborate_with_engineering_team",
+                "display_name": "Collaborate with the engineering team",
+                "original_text": "collaborate with the engineering team",
+                "source_text": "Build data services and collaborate with the engineering team.",
+                "atomic_text": "collaborate with the engineering team",
+                "category": "responsibility",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              }
+            ],
+            "responsibilities": [
+              "Build data services",
+              "Collaborate with the engineering team"
+            ]
+          },
+          "skill_match": {
+            "matches": [
+              {
+                "requirement_id": "REQ-e3cf95092c77",
+                "job_skill": "python",
+                "requirement_level": "required",
+                "match_status": "matched",
+                "match_reason": "Supported by the cited resume evidence.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+                ],
+                "confidence": 1.0
+              },
+              {
+                "requirement_id": "REQ-bff2bc9ebdaa",
+                "job_skill": "sql",
+                "requirement_level": "required",
+                "match_status": "matched",
+                "match_reason": "Supported by the cited resume evidence.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+                ],
+                "confidence": 1.0
+              },
+              {
+                "requirement_id": "REQ-01c5b21220f6",
+                "job_skill": "git",
+                "requirement_level": "required",
+                "match_status": "matched",
+                "match_reason": "Supported by the cited resume evidence.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Used Git and Docker to ship data services."
+                ],
+                "confidence": 1.0
+              },
+              {
+                "requirement_id": "REQ-9bb997af322e",
+                "job_skill": "docker",
+                "requirement_level": "required",
+                "match_status": "matched",
+                "match_reason": "Supported by the cited resume evidence.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Used Git and Docker to ship data services."
+                ],
+                "confidence": 0.98
+              },
+              {
+                "requirement_id": "REQ-5bf9bfa267f5",
+                "job_skill": "fastapi",
+                "requirement_level": "preferred",
+                "match_status": "matched",
+                "match_reason": "Supported by the cited resume evidence.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Built Python REST APIs with FastAPI and PostgreSQL."
+                ],
+                "confidence": 1.0
+              },
+              {
+                "requirement_id": "REQ-ff038a804f54",
+                "job_skill": "kubernetes",
+                "requirement_level": "preferred",
+                "match_status": "missing",
+                "match_reason": "No supporting evidence was found in the resume.",
+                "supported_years": null,
+                "resume_evidence": [],
+                "confidence": 0.95
+              },
+              {
+                "requirement_id": "REQ-55fab9eb37ab",
+                "job_skill": "build_data_services",
+                "requirement_level": "required",
+                "match_status": "matched",
+                "match_reason": "Resume explicitly states shipping data services and building Python REST APIs with FastAPI and PostgreSQL, which fully satisfies building data services.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Used Git and Docker to ship data services.",
+                  "Built Python REST APIs with FastAPI and PostgreSQL."
+                ],
+                "confidence": 0.95
+              },
+              {
+                "requirement_id": "REQ-2b8b79286de3",
+                "job_skill": "collaborate_with_engineering_team",
+                "requirement_level": "required",
+                "match_status": "missing",
+                "match_reason": "No resume evidence mentions collaboration, teamwork, or working with an engineering team.",
+                "supported_years": null,
+                "resume_evidence": [],
+                "confidence": 0.9
+              }
+            ],
+            "explanation": "Resume evidence supports 6 requirements fully and 0 partially; 2 lack evidence and 0 require confirmation. The score uses the existing required/preferred weighting.",
+            "recommendations": [
+              "Add a resume bullet describing collaboration with engineers, code reviews, or team workflows if applicable.",
+              "Clarify role in shipping data services to show team context and collaboration.",
+              "Add a concrete example of kubernetes if you have that experience.",
+              "Add a concrete example of Collaborate with the engineering team if you have that experience."
+            ],
+            "missing_required_requirements": [
+              {
+                "canonical_name": "collaborate_with_engineering_team",
+                "original_text": "collaborate with the engineering team",
+                "minimum_years": null
+              }
+            ],
+            "missing_preferred_requirements": [
+              {
+                "canonical_name": "kubernetes",
+                "original_text": "Kubernetes",
+                "minimum_years": null
+              }
+            ],
+            "overall_score": 70.0,
+            "score_breakdown": {
+              "required_score": 75.0,
+              "preferred_score": 50.0,
+              "overall_score": 70.0
+            },
+            "confirmation_requirements": []
+          },
+          "model_calls": 5,
+          "main_model_calls": 3,
+          "fast_model_calls": 2,
+          "decision_routing": [
+            {
+              "purpose": "skill_evidence_verify",
+              "status": "ok",
+              "seconds": 0.644,
+              "model": "jev-1.13.0",
+              "input_tokens": 1224,
+              "cached": false,
+              "requests": 1
+            },
+            {
+              "purpose": "skill_evidence",
+              "status": "ok",
+              "seconds": 0.627,
+              "model": "jev-1.13.0",
+              "input_tokens": 2445,
+              "cached": false,
+              "requests": 1,
+              "accepted": 6,
+              "deferred": 2,
+              "main_model_calls": 1
+            }
+          ],
+          "latency_seconds": 37.824358400001074,
+          "stage_seconds": {
+            "resume": 18.795,
+            "job": 25.701,
+            "match": 12.118
+          },
+          "cache_hits": []
+        },
+        "score": 70.0,
+        "main_calls": 3,
+        "fast_calls": 2,
+        "routing": []
+      },
+      {
+        "suite": "fit_e2e",
+        "case": "synthetic_backend",
+        "mode": "main",
+        "repeat": 1,
+        "seconds": 43.572,
+        "result": {
+          "analysis_id": "analysis-b058223c-acf0-4b41-a1ca-4dbe1a3c5b2f",
+          "status": "completed",
+          "resume_analysis": {
+            "summary": "Python and SQL developer focused on data tools.",
+            "skills": [
+              "Python",
+              "SQL",
+              "PostgreSQL",
+              "FastAPI",
+              "Git",
+              "Docker",
+              "Tableau",
+              "scikit-learn"
+            ],
+            "evidence": [
+              {
+                "evidence_id": "EXP-f39b1110cb5d",
+                "source_section": "Summary",
+                "exact_text": "Python and SQL developer focused on data tools.",
+                "source_entry_id": "SRC-455c397a6588"
+              },
+              {
+                "evidence_id": "EXP-5dd29b4a237a",
+                "source_section": "Experience",
+                "exact_text": "Built Python REST APIs with FastAPI and PostgreSQL.",
+                "source_entry_id": "SRC-37167eaffbe0"
+              },
+              {
+                "evidence_id": "EXP-6183757b1916",
+                "source_section": "Experience",
+                "exact_text": "Wrote SQL queries and dashboards in Tableau for weekly reporting.",
+                "source_entry_id": "SRC-37167eaffbe0"
+              },
+              {
+                "evidence_id": "EXP-70e098566f92",
+                "source_section": "Experience",
+                "exact_text": "Used Git and Docker to ship data services.",
+                "source_entry_id": "SRC-37167eaffbe0"
+              },
+              {
+                "evidence_id": "EXP-fd2d558694bf",
+                "source_section": "Projects",
+                "exact_text": "Built a scikit-learn demand forecasting prototype with Python.",
+                "source_entry_id": "SRC-bc850007d944"
+              },
+              {
+                "evidence_id": "EXP-ce09ba4be73d",
+                "source_section": "Education",
+                "exact_text": "Example University - Bachelor of Science in Computer Science, completed 2023.",
+                "source_entry_id": "SRC-e854c6bfa32c"
+              },
+              {
+                "evidence_id": "EXP-7199ff2b1b05",
+                "source_section": "Skills",
+                "exact_text": "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn.",
+                "source_entry_id": "SRC-776efaa29c6b"
+              }
+            ],
+            "education": [
+              "Bachelor of Science in Computer Science, Example University, completed 2023"
+            ],
+            "source_entries": [
+              {
+                "source_entry_id": "SRC-455c397a6588",
+                "entry_type": "summary",
+                "heading": null,
+                "organization": null,
+                "location": null,
+                "start_date": null,
+                "end_date": null,
+                "evidence_ids": [
+                  "EXP-f39b1110cb5d"
+                ]
+              },
+              {
+                "source_entry_id": "SRC-37167eaffbe0",
+                "entry_type": "experience",
+                "heading": "Software Developer",
+                "organization": "Example Lab",
+                "location": null,
+                "start_date": null,
+                "end_date": null,
+                "evidence_ids": [
+                  "EXP-5dd29b4a237a",
+                  "EXP-6183757b1916",
+                  "EXP-70e098566f92"
+                ]
+              },
+              {
+                "source_entry_id": "SRC-bc850007d944",
+                "entry_type": "project",
+                "heading": "Forecast Demo",
+                "organization": null,
+                "location": null,
+                "start_date": null,
+                "end_date": null,
+                "evidence_ids": [
+                  "EXP-fd2d558694bf"
+                ]
+              },
+              {
+                "source_entry_id": "SRC-e854c6bfa32c",
+                "entry_type": "education",
+                "heading": "Bachelor of Science in Computer Science",
+                "organization": "Example University",
+                "location": null,
+                "start_date": null,
+                "end_date": "2023",
+                "evidence_ids": [
+                  "EXP-ce09ba4be73d"
+                ]
+              },
+              {
+                "source_entry_id": "SRC-776efaa29c6b",
+                "entry_type": "skills",
+                "heading": null,
+                "organization": null,
+                "location": null,
+                "start_date": null,
+                "end_date": null,
+                "evidence_ids": [
+                  "EXP-7199ff2b1b05"
+                ]
+              }
+            ]
+          },
+          "job_analysis": {
+            "title": "Junior Backend Developer",
+            "summary": "Junior Backend Developer role focused on building data services and collaborating with the engineering team, requiring Python, SQL, Git, and Docker with preferred FastAPI and Kubernetes experience.",
+            "requirements": [
+              {
+                "requirement_id": "REQ-e3cf95092c77",
+                "requirement_group_id": "REQG-30bb8490c395",
+                "canonical_name": "python",
+                "display_name": "Python",
+                "original_text": "Python",
+                "source_text": "Required skills: Python; SQL; Git; Docker.",
+                "atomic_text": "Python",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-bff2bc9ebdaa",
+                "requirement_group_id": "REQG-30bb8490c395",
+                "canonical_name": "sql",
+                "display_name": "SQL",
+                "original_text": "SQL",
+                "source_text": "Required skills: Python; SQL; Git; Docker.",
+                "atomic_text": "SQL",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-01c5b21220f6",
+                "requirement_group_id": "REQG-30bb8490c395",
+                "canonical_name": "git",
+                "display_name": "Git",
+                "original_text": "Git",
+                "source_text": "Required skills: Python; SQL; Git; Docker.",
+                "atomic_text": "Git",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-9bb997af322e",
+                "requirement_group_id": "REQG-30bb8490c395",
+                "canonical_name": "docker",
+                "display_name": "Docker",
+                "original_text": "Docker",
+                "source_text": "Required skills: Python; SQL; Git; Docker.",
+                "atomic_text": "Docker",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "required",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-5bf9bfa267f5",
+                "requirement_group_id": "REQG-82ce9325d6d7",
+                "canonical_name": "fastapi",
+                "display_name": "FastAPI",
+                "original_text": "FastAPI",
+                "source_text": "Preferred skills: FastAPI; Kubernetes.",
+                "atomic_text": "FastAPI",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "preferred",
+                "minimum_years": null
+              },
+              {
+                "requirement_id": "REQ-ff038a804f54",
+                "requirement_group_id": "REQG-82ce9325d6d7",
+                "canonical_name": "kubernetes",
+                "display_name": "Kubernetes",
+                "original_text": "Kubernetes",
+                "source_text": "Preferred skills: FastAPI; Kubernetes.",
+                "atomic_text": "Kubernetes",
+                "category": "skill",
+                "verification_mode": "resume_evidence",
+                "level": "preferred",
+                "minimum_years": null
+              }
+            ],
+            "responsibilities": [
+              "Build data services",
+              "Collaborate with the engineering team"
+            ]
+          },
+          "skill_match": {
+            "matches": [
+              {
+                "requirement_id": "REQ-e3cf95092c77",
+                "job_skill": "python",
+                "requirement_level": "required",
+                "match_status": "matched",
+                "match_reason": "Resume explicitly describes candidate as Python developer and cites building Python REST APIs and a Python prototype.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Python and SQL developer focused on data tools.",
+                  "Built Python REST APIs with FastAPI and PostgreSQL.",
+                  "Built a scikit-learn demand forecasting prototype with Python."
+                ],
+                "confidence": 0.95
+              },
+              {
+                "requirement_id": "REQ-bff2bc9ebdaa",
+                "job_skill": "sql",
+                "requirement_level": "required",
+                "match_status": "matched",
+                "match_reason": "Resume explicitly describes SQL developer focus and cites writing SQL queries plus SQL in skills list.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Python and SQL developer focused on data tools.",
+                  "Wrote SQL queries and dashboards in Tableau for weekly reporting.",
+                  "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+                ],
+                "confidence": 0.95
+              },
+              {
+                "requirement_id": "REQ-01c5b21220f6",
+                "job_skill": "git",
+                "requirement_level": "required",
+                "match_status": "matched",
+                "match_reason": "Resume explicitly states use of Git to ship data services and lists Git in skills.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Used Git and Docker to ship data services.",
+                  "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+                ],
+                "confidence": 0.9
+              },
+              {
+                "requirement_id": "REQ-9bb997af322e",
+                "job_skill": "docker",
+                "requirement_level": "required",
+                "match_status": "matched",
+                "match_reason": "Resume explicitly states use of Docker to ship data services and lists Docker in skills.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Used Git and Docker to ship data services.",
+                  "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+                ],
+                "confidence": 0.9
+              },
+              {
+                "requirement_id": "REQ-5bf9bfa267f5",
+                "job_skill": "fastapi",
+                "requirement_level": "preferred",
+                "match_status": "matched",
+                "match_reason": "Resume explicitly cites building REST APIs with FastAPI and lists FastAPI in skills.",
+                "supported_years": null,
+                "resume_evidence": [
+                  "Built Python REST APIs with FastAPI and PostgreSQL.",
+                  "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+                ],
+                "confidence": 0.95
+              },
+              {
+                "requirement_id": "REQ-ff038a804f54",
+                "job_skill": "kubernetes",
+                "requirement_level": "preferred",
+                "match_status": "missing",
+                "match_reason": "No resume evidence mentions Kubernetes; missing means no support found, not proof candidate lacks it.",
+                "supported_years": null,
+                "resume_evidence": [],
+                "confidence": 1.0
+              }
+            ],
+            "explanation": "Resume provides direct evidence for Python, SQL, Git, Docker, and FastAPI through experience and skills listings. Kubernetes has no supporting evidence and is therefore missing. No evidence states explicit years of experience, so supported_years is null for all requirements.",
+            "recommendations": [
+              "Add any Kubernetes exposure, training, or certification if applicable, as no evidence was found.",
+              "Add explicit durations and dates for Python, SQL, Git, Docker, and FastAPI experience to support future year-based requirements.",
+              "Describe backend data-service scope, scale, and collaboration contributions to strengthen fit for building data services."
+            ],
+            "missing_required_requirements": [],
+            "missing_preferred_requirements": [
+              {
+                "canonical_name": "kubernetes",
+                "original_text": "Kubernetes",
+                "minimum_years": null
+              }
+            ],
+            "overall_score": 83.3,
+            "score_breakdown": {
+              "required_score": 100.0,
+              "preferred_score": 50.0,
+              "overall_score": 83.3
+            },
+            "confirmation_requirements": []
+          },
+          "model_calls": 3,
+          "main_model_calls": 3,
+          "fast_model_calls": 0,
+          "decision_routing": [],
+          "latency_seconds": 43.57144619998871,
+          "stage_seconds": {
+            "resume": 22.334,
+            "job": 23.443,
+            "match": 20.123
+          },
+          "cache_hits": []
+        },
+        "score": 83.3,
+        "main_calls": 3,
+        "fast_calls": 0,
+        "routing": []
+      }
+    ],
+    "summary": {
+      "fit_e2e": {
+        "main": {
+          "n": 2,
+          "median_seconds": 48.594,
+          "total_seconds": 97.188
+        },
+        "jev": {
+          "n": 2,
+          "median_seconds": 41.855,
+          "total_seconds": 83.709
+        }
+      }
+    }
+  },
+  "exact_extraction_crosscheck": [
+    {
+      "repeat": 0,
+      "requirements": 6,
+      "main_seconds": 16.57,
+      "main_score": 83.3,
+      "jev_score": 83.3,
+      "same_statuses": true,
+      "main_match": {
+        "matches": [
+          {
+            "requirement_id": "REQ-e3cf95092c77",
+            "job_skill": "python",
+            "requirement_level": "required",
+            "match_status": "matched",
+            "match_reason": "Resume explicitly lists Python in skills and describes building Python REST APIs and a Python prototype, fully supporting the requirement.",
+            "supported_years": null,
+            "resume_evidence": [
+              "Built Python REST APIs with FastAPI and PostgreSQL.",
+              "Built a scikit-learn demand forecasting prototype with Python.",
+              "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+            ],
+            "confidence": 1.0
+          },
+          {
+            "requirement_id": "REQ-bff2bc9ebdaa",
+            "job_skill": "sql",
+            "requirement_level": "required",
+            "match_status": "matched",
+            "match_reason": "Resume explicitly lists SQL and describes writing SQL queries for reporting, fully supporting the requirement.",
+            "supported_years": null,
+            "resume_evidence": [
+              "Wrote SQL queries and dashboards in Tableau for weekly reporting.",
+              "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement_id": "REQ-01c5b21220f6",
+            "job_skill": "git",
+            "requirement_level": "required",
+            "match_status": "matched",
+            "match_reason": "Resume explicitly lists Git and states use of Git to ship data services, fully supporting the requirement.",
+            "supported_years": null,
+            "resume_evidence": [
+              "Used Git and Docker to ship data services.",
+              "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement_id": "REQ-9bb997af322e",
+            "job_skill": "docker",
+            "requirement_level": "required",
+            "match_status": "matched",
+            "match_reason": "Resume explicitly lists Docker and states use of Docker to ship data services, fully supporting the requirement.",
+            "supported_years": null,
+            "resume_evidence": [
+              "Used Git and Docker to ship data services.",
+              "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement_id": "REQ-5bf9bfa267f5",
+            "job_skill": "fastapi",
+            "requirement_level": "preferred",
+            "match_status": "matched",
+            "match_reason": "Resume explicitly lists FastAPI and describes building Python REST APIs with FastAPI, fully supporting the preferred requirement.",
+            "supported_years": null,
+            "resume_evidence": [
+              "Built Python REST APIs with FastAPI and PostgreSQL.",
+              "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement_id": "REQ-ff038a804f54",
+            "job_skill": "kubernetes",
+            "requirement_level": "preferred",
+            "match_status": "missing",
+            "match_reason": "No resume evidence mentions Kubernetes. Docker experience is not interchangeable with Kubernetes.",
+            "supported_years": null,
+            "resume_evidence": [],
+            "confidence": 0.95
+          }
+        ],
+        "explanation": "Candidate fully meets 4/4 required skills (Python, SQL, Git, Docker) and 1/2 preferred skills (FastAPI) with direct resume evidence. Kubernetes has no supporting evidence and is marked missing. No durations were stated in evidence, so supported_years is null for all.",
+        "recommendations": [
+          "Address the Kubernetes gap through training or hands-on practice with deployments, pods, and services, as no evidence was found.",
+          "If applicable, clarify any container orchestration exposure in future applications, without conflating Docker with Kubernetes.",
+          "Continue to highlight FastAPI and data services experience as directly relevant to the Junior Backend Developer role."
+        ],
+        "missing_required_requirements": [],
+        "missing_preferred_requirements": [
+          {
+            "canonical_name": "kubernetes",
+            "original_text": "Kubernetes",
+            "minimum_years": null
+          }
+        ],
+        "overall_score": 83.3,
+        "score_breakdown": {
+          "required_score": 100.0,
+          "preferred_score": 50.0,
+          "overall_score": 83.3
+        },
+        "confirmation_requirements": []
+      }
+    },
+    {
+      "repeat": 1,
+      "requirements": 8,
+      "main_seconds": 15.419,
+      "main_score": 70.0,
+      "jev_score": 70.0,
+      "same_statuses": true,
+      "main_match": {
+        "matches": [
+          {
+            "requirement_id": "REQ-e3cf95092c77",
+            "job_skill": "python",
+            "requirement_level": "required",
+            "match_status": "matched",
+            "match_reason": "Resume explicitly lists Python and describes building Python REST APIs and a Python prototype.",
+            "supported_years": null,
+            "resume_evidence": [
+              "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn.",
+              "Built Python REST APIs with FastAPI and PostgreSQL.",
+              "Built a scikit-learn demand forecasting prototype with Python."
+            ],
+            "confidence": 1.0
+          },
+          {
+            "requirement_id": "REQ-bff2bc9ebdaa",
+            "job_skill": "sql",
+            "requirement_level": "required",
+            "match_status": "matched",
+            "match_reason": "Resume explicitly lists SQL and describes writing SQL queries for reporting.",
+            "supported_years": null,
+            "resume_evidence": [
+              "Wrote SQL queries and dashboards in Tableau for weekly reporting.",
+              "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+            ],
+            "confidence": 1.0
+          },
+          {
+            "requirement_id": "REQ-01c5b21220f6",
+            "job_skill": "git",
+            "requirement_level": "required",
+            "match_status": "matched",
+            "match_reason": "Resume explicitly lists Git and states use of Git to ship data services.",
+            "supported_years": null,
+            "resume_evidence": [
+              "Used Git and Docker to ship data services.",
+              "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+            ],
+            "confidence": 1.0
+          },
+          {
+            "requirement_id": "REQ-9bb997af322e",
+            "job_skill": "docker",
+            "requirement_level": "required",
+            "match_status": "matched",
+            "match_reason": "Resume explicitly lists Docker and states use of Docker to ship data services.",
+            "supported_years": null,
+            "resume_evidence": [
+              "Used Git and Docker to ship data services.",
+              "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+            ],
+            "confidence": 1.0
+          },
+          {
+            "requirement_id": "REQ-5bf9bfa267f5",
+            "job_skill": "fastapi",
+            "requirement_level": "preferred",
+            "match_status": "matched",
+            "match_reason": "Resume explicitly lists FastAPI and describes building Python REST APIs with FastAPI.",
+            "supported_years": null,
+            "resume_evidence": [
+              "Built Python REST APIs with FastAPI and PostgreSQL.",
+              "Python, SQL, PostgreSQL, FastAPI, Git, Docker, Tableau, scikit-learn."
+            ],
+            "confidence": 1.0
+          },
+          {
+            "requirement_id": "REQ-ff038a804f54",
+            "job_skill": "kubernetes",
+            "requirement_level": "preferred",
+            "match_status": "missing",
+            "match_reason": "No resume evidence mentions Kubernetes. Docker experience does not prove Kubernetes.",
+            "supported_years": null,
+            "resume_evidence": [],
+            "confidence": 1.0
+          },
+          {
+            "requirement_id": "REQ-55fab9eb37ab",
+            "job_skill": "build_data_services",
+            "requirement_level": "required",
+            "match_status": "matched",
+            "match_reason": "Resume states shipping data services and building Python REST APIs with PostgreSQL, directly supporting building data services.",
+            "supported_years": null,
+            "resume_evidence": [
+              "Used Git and Docker to ship data services.",
+              "Built Python REST APIs with FastAPI and PostgreSQL."
+            ],
+            "confidence": 0.9
+          },
+          {
+            "requirement_id": "REQ-2b8b79286de3",
+            "job_skill": "collaborate_with_engineering_team",
+            "requirement_level": "required",
+            "match_status": "missing",
+            "match_reason": "No resume evidence mentions collaboration, teamwork, or working with an engineering team.",
+            "supported_years": null,
+            "resume_evidence": [],
+            "confidence": 1.0
+          }
+        ],
+        "explanation": "Candidate fully meets 6 of 8 requirements including Python, SQL, Git, Docker, FastAPI, and building data services with direct resume evidence. Kubernetes and collaboration with the engineering team have no supporting resume evidence.",
+        "recommendations": [
+          "Add any Kubernetes experience, training, or related container orchestration work if applicable, as no evidence was found.",
+          "Add specific evidence of collaboration with engineering teams, such as team projects, code reviews, or cross-functional work.",
+          "Include durations or dates for Python, SQL, Git, Docker, and FastAPI use if you want to demonstrate depth of experience."
+        ],
+        "missing_required_requirements": [
+          {
+            "canonical_name": "collaborate_with_engineering_team",
+            "original_text": "collaborate with the engineering team",
+            "minimum_years": null
+          }
+        ],
+        "missing_preferred_requirements": [
+          {
+            "canonical_name": "kubernetes",
+            "original_text": "Kubernetes",
+            "minimum_years": null
+          }
+        ],
+        "overall_score": 70.0,
+        "score_breakdown": {
+          "required_score": 75.0,
+          "preferred_score": 50.0,
+          "overall_score": 70.0
+        },
+        "confirmation_requirements": []
+      }
+    }
+  ],
+  "quality_holdouts": [
+    {
+      "case": "negation",
+      "deferred": false,
+      "adopted_status": "missing",
+      "safe": true,
+      "routing": [
+        {
+          "purpose": "skill_evidence",
+          "status": "ok",
+          "seconds": 0.64,
+          "model": "jev-1.13.0",
+          "input_tokens": 481,
+          "cached": false,
+          "requests": 1,
+          "accepted": 1,
+          "deferred": 0,
+          "main_model_calls": 0
+        }
+      ]
+    },
+    {
+      "case": "scope",
+      "deferred": true,
+      "adopted_status": null,
+      "safe": true,
+      "routing": [
+        {
+          "purpose": "skill_evidence",
+          "status": "ok",
+          "seconds": 0.601,
+          "model": "jev-1.13.0",
+          "input_tokens": 490,
+          "cached": false,
+          "requests": 1,
+          "accepted": 0,
+          "deferred": 1,
+          "main_model_calls": 1
+        }
+      ]
+    },
+    {
+      "case": "compound",
+      "deferred": true,
+      "adopted_status": null,
+      "safe": true,
+      "routing": [
+        {
+          "purpose": "skill_evidence",
+          "status": "ok",
+          "seconds": 0.572,
+          "model": "jev-1.13.0",
+          "input_tokens": 487,
+          "cached": false,
+          "requests": 1,
+          "accepted": 0,
+          "deferred": 1,
+          "main_model_calls": 1
+        }
+      ]
+    },
+    {
+      "case": "ownership",
+      "deferred": true,
+      "adopted_status": null,
+      "safe": true,
+      "routing": [
+        {
+          "purpose": "skill_evidence",
+          "status": "ok",
+          "seconds": 0.549,
+          "model": "jev-1.13.0",
+          "input_tokens": 493,
+          "cached": false,
+          "requests": 1,
+          "accepted": 0,
+          "deferred": 1,
+          "main_model_calls": 1
+        }
+      ]
+    },
+    {
+      "case": "different_tool",
+      "deferred": false,
+      "adopted_status": "missing",
+      "safe": true,
+      "routing": [
+        {
+          "purpose": "skill_evidence",
+          "status": "ok",
+          "seconds": 0.65,
+          "model": "jev-1.13.0",
+          "input_tokens": 483,
+          "cached": false,
+          "requests": 1,
+          "accepted": 1,
+          "deferred": 0,
+          "main_model_calls": 0
+        }
+      ]
+    },
+    {
+      "case": "translation",
+      "deferred": false,
+      "adopted_status": "matched",
+      "safe": true,
+      "routing": [
+        {
+          "purpose": "skill_evidence",
+          "status": "ok",
+          "seconds": 0.64,
+          "model": "jev-1.13.0",
+          "input_tokens": 490,
+          "cached": false,
+          "requests": 1,
+          "accepted": 1,
+          "deferred": 0,
+          "main_model_calls": 0
+        }
+      ]
+    },
+    {
+      "case": "injection",
+      "deferred": false,
+      "adopted_status": "missing",
+      "safe": true,
+      "routing": [
+        {
+          "purpose": "skill_evidence",
+          "status": "ok",
+          "seconds": 0.633,
+          "model": "jev-1.13.0",
+          "input_tokens": 497,
+          "cached": false,
+          "requests": 1,
+          "accepted": 1,
+          "deferred": 0,
+          "main_model_calls": 0
+        }
+      ]
+    },
+    {
+      "case": "polite_consent",
+      "category": "legal_or_identity",
+      "safe": true,
+      "routing": [
+        {
+          "purpose": "question_category",
+          "status": "ok",
+          "seconds": 0.611,
+          "model": "jev-1.13.0",
+          "input_tokens": 534,
+          "cached": false,
+          "requests": 1,
+          "accepted": 1,
+          "deferred": 0
+        }
+      ]
+    },
+    {
+      "case": "sponsorship",
+      "category": "legal_or_identity",
+      "safe": true,
+      "routing": [
+        {
+          "purpose": "question_category",
+          "status": "ok",
+          "seconds": 0.67,
+          "model": "jev-1.13.0",
+          "input_tokens": 534,
+          "cached": false,
+          "requests": 1,
+          "accepted": 1,
+          "deferred": 0
+        }
+      ]
+    },
+    {
+      "case": "identity",
+      "category": "legal_or_identity",
+      "safe": true,
+      "routing": [
+        {
+          "purpose": "question_category",
+          "status": "ok",
+          "seconds": 0.576,
+          "model": "jev-1.13.0",
+          "input_tokens": 528,
+          "cached": false,
+          "requests": 1,
+          "accepted": 1,
+          "deferred": 0
+        }
+      ]
+    },
+    {
+      "case": "instruction_in_field",
+      "category": "legal_or_identity",
+      "safe": true,
+      "routing": [
+        {
+          "purpose": "question_category",
+          "status": "ok",
+          "seconds": 0.644,
+          "model": "jev-1.13.0",
+          "input_tokens": 538,
+          "cached": false,
+          "requests": 1,
+          "accepted": 1,
+          "deferred": 0
+        }
+      ]
+    },
+    {
+      "case": "chinese_consent",
+      "category": "legal_or_identity",
+      "safe": true,
+      "routing": [
+        {
+          "purpose": "question_category",
+          "status": "ok",
+          "seconds": 0.633,
+          "model": "jev-1.13.0",
+          "input_tokens": 541,
+          "cached": false,
+          "requests": 1,
+          "accepted": 1,
+          "deferred": 0
+        }
+      ]
+    }
+  ],
+  "browser_fault_regression": {
+    "provider": {
+      "http_429": {
+        "first": "http_429",
+        "second": "cooldown",
+        "calls": 1,
+        "cached": false
+      },
+      "http_401": {
+        "first": "http_401",
+        "second": "cooldown",
+        "calls": 1,
+        "cached": false
+      },
+      "timeout": {
+        "first": "timeout",
+        "second": "cooldown",
+        "calls": 1,
+        "cached": false
+      },
+      "invalid_response": {
+        "first": "invalid_response",
+        "second": "cooldown",
+        "calls": 1,
+        "cached": false
+      },
+      "ok": {
+        "first": "ok",
+        "second": "ok",
+        "calls": 1,
+        "cached": true
+      }
+    },
+    "browser": {
+      "stale_reply": {
+        "values": {
+          "school": "",
+          "consent": ""
+        },
+        "filled": 0,
+        "fast_calls": 1,
+        "submit_clicks": 0
+      },
+      "changed_options": {
+        "values": {
+          "school": "",
+          "consent": ""
+        },
+        "filled": 0,
+        "fast_calls": 3,
+        "submit_clicks": 0
+      },
+      "added_ambiguous_option": {
+        "values": {
+          "school": "",
+          "consent": ""
+        },
+        "filled": 0,
+        "fast_calls": 3,
+        "submit_clicks": 0
+      },
+      "paused": {
+        "values": {
+          "school": "",
+          "consent": ""
+        },
+        "filled": 0,
+        "fast_calls": 1,
+        "submit_clicks": 0
+      },
+      "provider_failure": {
+        "values": {
+          "school": "",
+          "consent": ""
+        },
+        "filled": 0,
+        "fast_calls": 1,
+        "submit_clicks": 0
+      },
+      "success": {
+        "values": {
+          "school": "gt",
+          "consent": ""
+        },
+        "filled": 1,
+        "fast_calls": 1,
+        "submit_clicks": 0
+      }
+    }
+  },
+  "caveat": "Full pipeline trial Jev repeat=1 extracted 8 requirements versus 6 in other trials; raw wall-time medians are not evidence of equivalent-work speedup. Cross-check identical extractions separately.",
+  "existing_capabilities_live": {
+    "application": {
+      "result": {
+        "field_keys": [],
+        "reason": "ready",
+        "chat_revision": 0
+      },
+      "values": {
+        "school": "gatech",
+        "degree": "meng",
+        "referral": "li"
+      },
+      "submit_clicks": 0,
+      "seconds": 17.408,
+      "counts": {
+        "model": 4,
+        "tool": 3
+      },
+      "actions": [
+        {
+          "tool": "record_answers",
+          "status": "completed"
+        },
+        {
+          "tool": "autofill",
+          "status": "completed"
+        },
+        {
+          "tool": "ready_for_review",
+          "status": "completed"
+        }
+      ],
+      "timings": {
+        "observation": {
+          "count": 3,
+          "seconds": 0.044,
+          "failures": 0
+        },
+        "model": {
+          "count": 3,
+          "seconds": 12.756,
+          "failures": 0
+        },
+        "tool:record_answers": {
+          "count": 1,
+          "seconds": 0.002,
+          "failures": 0
+        },
+        "fast_options": {
+          "count": 1,
+          "seconds": 0.723,
+          "failures": 0
+        },
+        "tool:autofill": {
+          "count": 1,
+          "seconds": 1.546,
+          "failures": 0
+        },
+        "tool:ready_for_review": {
+          "count": 1,
+          "seconds": 0.006,
+          "failures": 0
+        }
+      }
+    },
+    "screening": {
+      "status": "completed",
+      "seconds": 10.61,
+      "fast_decisions": [
+        {
+          "purpose": "job_screening",
+          "status": "ok",
+          "seconds": 0.634,
+          "model": "jev-1.13.0",
+          "input_tokens": 967,
+          "cached": false,
+          "requests": 1
+        }
+      ],
+      "messages": [
+        "Got it — I'll pull that listing to shortlist entry-level remote Python roles.",
+        "I found three listings — I'll shortlist them for entry-level remote Python fit.",
+        "Preliminary relevance only — no imports or detailed scoring done:\n\n**Query:** entry-level Python backend jobs, remote in the United States\n\nFrom https://example.invalid/jobs — 3 links screened:\n\n- **Strong:** Junior Python Backend Engineer — https://example.invalid/jobs/python\n  - Context: Remote, United States. Entry level Python APIs and SQL.\n  - Confidence 0.97, advisory only\n\n- **Unknown:** Software Engineer — https://example.invalid/jobs/unknown\n  - Context: Location and requirements not stated.\n  - Confidence 0.95, advisory only — would need manual inspection\n\n- **Weak:** Senior Tax Accountant — https://example.invalid/jobs/tax\n  - Context: London. Onsite. Ten years corporate tax experience.\n  - Confidence 1.0, advisory only\n\nThese are fast-model priorities only, not verified match scores or eligibility."
+      ],
+      "tools": [
+        "browser_open",
+        "screen_jobs"
+      ]
+    }
+  }
+}

@@ -190,7 +190,7 @@ def test_browser_exposes_relationships_errors_and_can_revalidate_after_correctio
         assert not result['verified'] # This website clears errors only on Next.
         snap=s.observe();control=next(c for c in snap['page']['controls'] if c['kind']=='next')
         s.execute('click_page_action',{'observation_id':snap['observation_id'],'control_id':control['id']})
-        snap=s.observe();assert not next(f for f in snap['fields'] if f['key']==number['key'])['invalid']
+        snap=s.observe();assert not next(f for f in snap['fields'] if f['key']==number['key']).get('invalid',False)
         assert b.page.evaluate('window.nextClicks')==1
         assert snap['page']['can_submit']
     finally:b.close()

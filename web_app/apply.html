@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Northstar · Career agent</title>
+<title>eregion · Career agent</title>
 <link rel="stylesheet" href="/web-assets/tokens.css?v=v2-20261008">
-<link rel="stylesheet" href="/web-assets/apply.css?v=local-browser-control-20261009">
+<link rel="stylesheet" href="/web-assets/apply.css?v=standard-answers-20261009">
 <link rel="stylesheet" href="/web-assets/chat-typography.css?v=v2-20261008">
 </head>
 <body>
@@ -35,7 +35,7 @@
 
 <main class="agent-shell">
   <aside class="history" id="history-panel">
-    <a class="brand" href="/apply"><svg class="i" aria-hidden="true"><use href="#i-mark"/></svg>Northstar</a>
+    <a class="brand" href="/apply"><svg class="i" aria-hidden="true"><use href="#i-mark"/></svg>eregion</a>
     <button id="new-chat" class="new-chat" type="button" aria-keyshortcuts="Control+K Meta+K" title="New conversation (Ctrl+K)"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg><span>New application</span></button>
     <nav id="side-nav" class="side-nav" aria-label="Workspace" hidden>
       <a href="?view=applications" data-view="applications"><svg class="i" aria-hidden="true"><use href="#i-brief"/></svg>Applications</a>
@@ -109,7 +109,8 @@
       <img id="browser-preview" alt="Live browser view" hidden>
       <p id="preview-placeholder" class="empty-preview">A live view appears here when I open a page.</p>
     </div>
-    <p id="workspace-now" class="workspace-now" hidden></p>
+    <p id="perf-summary" class="sub" hidden></p>
+      <p id="workspace-now" class="workspace-now" hidden></p>
     <details open><summary>Plan</summary><ol id="task-plan" class="plan"></ol></details>
     <details><summary>Recent actions</summary><ol id="browser-actions" class="log"></ol></details>
     <details><summary>Application answers</summary><div id="answer-list"></div></details>
@@ -163,6 +164,9 @@
     <h3>Education history</h3>
     <div id="education-fields"></div>
     <button type="button" id="add-education" class="text-button">＋ Add education</button>
+    <h3>Standard answers</h3>
+    <p>Answer these once and they are filled in on every application. Leave one blank to be asked each time.</p>
+    <div id="standard-fields"></div>
     <label class="check-row"><input id="reuse-answers" type="checkbox" checked> Remember answers to similar application questions</label>
     <label class="check-row"><input id="visual-fallback" type="checkbox"> Visual browser backup: send screenshots to the model and let it operate difficult controls</label>
     <p class="fine-print">Consent is asked the first time, then remembered for equivalent questions. Applications are reviewed before submission.</p>
@@ -186,6 +190,6 @@
   </form>
 </dialog>
 
-<script type="module" src="/web-assets/apply.js?v=local-browser-control-20261009"></script>
+<script type="module" src="/web-assets/apply.js?v=eregion-20261009"></script>
 </body>
 </html>

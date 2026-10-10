@@ -1,4 +1,4 @@
-# Northstar frontend conventions
+# eregion frontend conventions
 
 The user established the current frontend redesign as the style to continue on
 2026-10-08. Extend this design when adding or fixing features.

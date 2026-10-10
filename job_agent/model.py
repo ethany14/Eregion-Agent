@@ -65,11 +65,13 @@ def create_model(
     env_path: Path = DEFAULT_ENV_PATH,
     environ: Mapping[str, str] | None = None,
     model_factory: Callable[..., Any] = ProviderCompatibleChatOpenAI,
+    purpose: str | None = None,
 ) -> Any:
     """Create the configured chat model with environment values taking priority."""
     environment = os.environ if environ is None else environ
     settings = {**dotenv_values(env_path), **environment}
-    model_id = optional_setting(settings, "LLM_MODEL_ID")
+    key = {'fast': 'LLM_FAST_MODEL_ID', 'extraction': 'LLM_EXTRACTION_MODEL_ID'}.get(purpose)
+    model_id = (optional_setting(settings, key) if key else None) or optional_setting(settings, "LLM_MODEL_ID")
     if not model_id:
         raise ValueError("Set LLM_MODEL_ID in the environment or project's .env file.")
     options: dict[str, Any] = {
@@ -102,13 +104,19 @@ def create_model(
         if retries < 0:
             raise ValueError("LLM_MAX_RETRIES must be a non-negative integer.")
         options["max_retries"] = retries
+    reasoning_key = 'LLM_EXTRACTION_REASONING' if purpose == 'extraction' else 'LLM_AGENT_REASONING' if purpose in {'agent', 'fast'} else None
+    reasoning = optional_setting(settings, reasoning_key) if reasoning_key else None
+    if reasoning:
+        if reasoning not in {'none', 'minimal', 'low', 'medium', 'high'}:
+            raise ValueError(f'{reasoning_key} has an unsupported reasoning level.')
+        options['reasoning_effort'] = reasoning
     return model_factory(**options)
 
 
 def model_settings_fingerprint(*, env_path: Path = DEFAULT_ENV_PATH, environ=None) -> str:
     """Opaque cache identity. Never return or log credentials or raw settings."""
     settings = {**dotenv_values(env_path), **(os.environ if environ is None else environ)}
-    keys = ('LLM_MODEL_ID','LLM_BASE_URL','LLM_API_KEY','LLM_TIMEOUT','LLM_MAX_RETRIES',
+    keys = ('LLM_FAST_MODEL_ID', 'LLM_EXTRACTION_MODEL_ID', 'LLM_AGENT_REASONING', 'LLM_EXTRACTION_REASONING', 'LLM_MODEL_ID','LLM_BASE_URL','LLM_API_KEY','LLM_TIMEOUT','LLM_MAX_RETRIES',
         'OPENAI_API_KEY','OPENAI_API_BASE','OPENAI_BASE_URL','OPENAI_ORG_ID')
     return hashlib.sha256(json.dumps({key:optional_setting(settings,key) for key in keys},
         sort_keys=True).encode()).hexdigest()
@@ -160,3 +168,18 @@ def _invoke_structured(model, schema, system_message, human_message, config):
     if isinstance(result, schema):
         return result
     return schema.model_validate(result)
+
+
+from collections import OrderedDict
+from threading import RLock
+_clients, _clients_lock = OrderedDict(), RLock()
+
+def shared_model(*, env_path=DEFAULT_ENV_PATH, purpose=None):
+    key = (model_settings_fingerprint(env_path=env_path), purpose, create_model)
+    with _clients_lock:
+        if key not in _clients:
+            _clients[key] = create_model(env_path=env_path, purpose=purpose)
+            while len(_clients) > 8:
+                _clients.popitem(last=False)
+        _clients.move_to_end(key)
+        return _clients[key]

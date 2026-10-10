@@ -5,7 +5,7 @@ from urllib.parse import urlsplit
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
-from agent_runtime.auto_apply.contracts import ReplyQuestion, ContinueApplication, StartApplication, VersionRequest, ChatRequest, ResumeProfileRequest, PreparationMessage, AccountCredentials, AccountMode, SavedCandidateRequest
+from agent_runtime.auto_apply.contracts import ReplyQuestion, ContinueApplication, StartApplication, VersionRequest, ChatRequest, ResumeProfileRequest, PreparationMessage, AccountCredentials, AccountMode, SavedCandidateRequest, MemoryUpdate, StandardAnswers
 from agent_runtime.auto_apply.loop import ApplicationLoop
 from agent_runtime.auto_apply.repository import ApplyConflict, ApplyNotFound, ApplyRepository, DuplicateApplication
 
@@ -106,6 +106,22 @@ def clear_candidate(loop=Depends(service)):
     return {'removed':True}
 
 
+@router.get("/standard-answers")
+def standard_answers(response: Response, loop=Depends(service)):
+    response.headers['Cache-Control']='no-store'
+    return {'answers':loop.repository.standard_answers(loop.repository.saved_candidate()['profile'])}
+
+
+@router.put("/standard-answers")
+def save_standard_answers(body: StandardAnswers, loop=Depends(service)):
+    try:
+        with loop.lock:
+            saved = loop.repository.save_standard_answers(loop.repository.saved_candidate()['profile'], body.answers)
+    except ApplyConflict as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return {'answers':saved}
+
+
 @router.post("/{run_id}/chat", status_code=202)
 def chat(run_id: str, body: ChatRequest, loop=Depends(service)):
     return invoke(lambda: loop.chat(run_id, body))
@@ -165,6 +181,17 @@ def forget(run_id: str, memory_id: str, loop=Depends(service)):
         with loop.lock:
             loop.repository.forget(loop.repository.get(run_id)["profile"], memory_id)
         return {"forgotten": True}
+    return invoke(action)
+
+
+@router.patch("/{run_id}/memory/{memory_id}")
+def update_memory(run_id: str, memory_id: str, body: MemoryUpdate, loop=Depends(service)):
+    def action():
+        with loop.lock:
+            state = loop.repository.get(run_id)
+            record = loop.repository.update_memory(state["profile"], memory_id,
+                value=body.value, scope=body.scope, url=state.get("url"))
+        return {"memory": record}
     return invoke(action)
 
 

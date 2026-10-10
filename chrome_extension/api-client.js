@@ -27,7 +27,7 @@ async function request(path, options = {}) {
   } catch (error) {
     if (error?.name === "AbortError") throw new ApiError("The analysis timed out. The run may still be processing; open this job in career chat.");
     if (error instanceof ApiError) throw error;
-    throw new ApiError("Cannot reach JobHunterAgent at http://localhost:8000.");
+    throw new ApiError("Cannot reach eregion at http://localhost:8000.");
   } finally { clearTimeout(timeout); }
 }
 

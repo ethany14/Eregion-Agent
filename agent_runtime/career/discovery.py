@@ -73,7 +73,7 @@ class JobDiscovery:
     def read(self,url):
         # Validate each redirect before following it; refuse private DNS targets.
         with httpx.Client(transport=self.transport,timeout=20,follow_redirects=False,trust_env=False,
-                headers={'User-Agent':'JobHunterAgent/1.0 (public job research)'}) as client:
+                headers={'User-Agent':'eregion/1.0 (public job research)'}) as client:
             for _ in range(5):
                 url = public_https_url(url)
                 addresses = self.resolver(urlsplit(url).hostname,443,type=socket.SOCK_STREAM)

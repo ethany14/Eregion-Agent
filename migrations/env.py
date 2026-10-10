@@ -9,6 +9,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from api.db import Base
+import agent_runtime.analysis_cache  # noqa: F401
 import api.models  # noqa: F401
 import agent_runtime.models  # noqa: F401
 import agent_runtime.sessions.models  # noqa: F401
@@ -33,7 +34,9 @@ import agent_runtime.career.alerts  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # Migrations run inside the server at startup; keep the application's
+    # already-created loggers (agent failures, task loop) enabled.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 database_url = os.getenv("JOB_AGENT_DATABASE_URL")
 if database_url:

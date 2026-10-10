@@ -423,10 +423,12 @@ def test_web_application_flow_with_actual_api_and_offline_employer(tmp_path, mon
             expect(page.locator('#answer-list')).to_contain_text('Alex')
             expect(page.locator("#browser-preview")).to_be_visible(timeout=10000)
             expect(page.locator("#browser-actions")).to_contain_text("Fill known details")
+            # The agent interpreted the chat reply, so it is not remembered until approved.
             page.locator("#answer-memory summary").click()
-            expect(page.locator("#memory-list")).to_contain_text("No")
-            page.locator("#memory-list").get_by_role("button", name="Forget").click()
-            expect(page.locator("#memory-list .answer")).to_have_count(0)
+            expect(page.locator("#memory-list")).to_contain_text("No answers remembered yet")
+            approval = page.locator("#conversation-actions .approval-row")
+            expect(approval).to_contain_text("sponsorship")
+            expect(approval.get_by_role("checkbox", name="Remember")).to_be_checked()
             screenshot = os.getenv("JOB_AGENT_APPLY_SCREENSHOT")
             if screenshot:
                 page.screenshot(path=screenshot, full_page=True)
@@ -439,6 +441,9 @@ def test_web_application_flow_with_actual_api_and_offline_employer(tmp_path, mon
             expect(status).to_have_text("Application received", timeout=20000)
             assert len(loop.repository.list()) == 1
             assert loop.repository.list()[0]["status"] == "submitted"
+            # Submitting with Remember checked approves the answer for later applications.
+            [memory] = loop.repository.memories(loop.repository.list()[0]["profile"])
+            assert memory["value"] == "No" and memory["status"] == "approved"
             assert not errors
             browser.close()
     finally:
@@ -493,7 +498,7 @@ def test_actual_browser_agent_repairs_keyboard_only_field_after_autofill():
         assert result["reason"] == "ready"
         assert browser.field(name)["value"] == "Test"
         assert browser.field(country)["value"] == "Canada"
-        assert any(values[-1] == "not_retained" for values in reports)
+        assert any(values[-1] == "needs_agent" for values in reports)  # One progress event per autofill pass.
         assert browser.page.evaluate("window.submissions") == 0
     finally:
         browser.close()

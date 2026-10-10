@@ -109,7 +109,15 @@ def test_work_can_continue_past_a_slice_without_a_fixed_pipeline(database):
 
 def test_unchanged_tool_results_yield_feedback_then_one_question(database):
     repo=TaskRepository(database.session_factory);harness=Harness()
-    model=ToolModel(lambda _:('lookup',{}))
+    class AdaptiveModel(ToolModel):
+        def invoke(self, messages, tools):
+            if self.calls % 6 == 5:
+                assert any('progress_feedback' in str(m.content) for m in messages)
+                self.calls += 1
+                return AIMessage(content='',tool_calls=[{'id':str(self.calls),'name':'ask_user',
+                    'args':{'text':'Which alternative source should I inspect?','wait_for_reply':True}}])
+            return super().invoke(messages,tools)
+    model=AdaptiveModel(lambda _:('lookup',{}))
     loop=TaskLoop(repo,harness,model_factory=lambda:model)
     try:
         task=loop.start('Inspect this task.','repeat-test')

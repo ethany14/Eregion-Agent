@@ -60,7 +60,7 @@ def build_pack_plan(*, application_id: str, parent_session_id: str,
                     match_evidence_ids: tuple[str, ...] = (),
                     include_interview: bool = False,
                     company: str | None = None, title: str | None = None,
-                    max_revisions: int = 3,
+                    max_revisions: int = 1,
                     request_hash: str | None = None,
                     budget: MultiAgentBudget | None = None) -> AgentPlan:
     """Expand only approved artifact types and bounded revision steps in Python."""

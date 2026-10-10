@@ -37,7 +37,7 @@ class AgentLoop:
         resume_text: str,
         job_description: str,
         run_id: str | None = None,
-        max_revisions: int = 3,
+        max_revisions: int = 1,
     ) -> AgentState:
         state = AgentState(
             run_id=run_id or str(uuid4()),

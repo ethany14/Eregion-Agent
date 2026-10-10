@@ -2,6 +2,7 @@
 import base64
 import hashlib
 import json
+import os
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -27,6 +28,14 @@ class ApplyNotFound(LookupError):
     pass
 
 
+def open_limit():
+    """Unfinished attempts allowed at once (each may keep a Chrome window open)."""
+    try:
+        return max(1, int(os.getenv("JOB_AGENT_MAX_OPEN_APPLICATIONS", "6")))
+    except ValueError:
+        return 6
+
+
 def now():
     return datetime.now(UTC).isoformat()
 
@@ -34,6 +43,7 @@ def now():
 class ApplyRepository:
     def __init__(self, session_factory):
         self.sessions = session_factory
+        self.state_listeners = []
 
     def saved_candidate(self):
         with self.sessions.begin() as session:
@@ -65,6 +75,17 @@ class ApplyRepository:
             if name:row.resume_name=name
             if extracted is not None:row.extracted=extracted
             row.profile_json=json.dumps(profile);row.updated_at=now()
+        if resume:
+            from io import BytesIO
+            from pypdf import PdfReader
+            from agent_runtime.analysis_cache import warm_resume
+            from agent_runtime.memory.policy import LocalOwnerResolver
+            try:
+                text = '\n\n'.join(page.extract_text() or '' for page in PdfReader(BytesIO(resume)).pages).strip()
+                if text:
+                    warm_resume(self.sessions, text, owner=LocalOwnerResolver().resolve().owner_id)
+            except Exception:
+                pass  # Saving candidate details must not depend on model availability.
         return profile
 
     def clear_candidate(self):
@@ -93,8 +114,8 @@ class ApplyRepository:
                 raise DuplicateApplication(existing.run_id)
             active = session.scalars(select(AutoApplicationRow.run_id).where(
                 AutoApplicationRow.status.not_in(TERMINAL))).all()
-            if len(active) >= 3:
-                raise ApplyConflict("Finish or cancel an existing attempt before opening another browser (limit: 3).")
+            if len(active) >= open_limit():
+                raise ApplyConflict(f"Finish or cancel an existing attempt before opening another browser (limit: {open_limit()}).")
             state = {"run_id": str(uuid4()), "platform": platform, "url": url,
                 "profile": request.profile.model_dump(), "auto_submit": request.auto_submit,
                 "automation_mode": request.automation_mode, "visual_fallback": request.visual_fallback,
@@ -161,18 +182,66 @@ class ApplyRepository:
             row.resume_bytes = resume
             row.status, row.version = 'queued', row.version+1
             row.state_json = json.dumps(updated)
-            return self._state(row)
+            result = self._state(row)
+        for listener in tuple(self.state_listeners):
+            listener(result)
+        return result
 
     @staticmethod
     def owner_key(profile):
         return hashlib.sha256(profile.get("email",'').strip().casefold().encode()).hexdigest()
 
     def memories(self, profile):
+        from .memory import default_scope
         with self.sessions() as session:
             rows = session.scalars(select(ApplicationMemoryRow).where(ApplicationMemoryRow.owner_key == self.owner_key(profile))).all()
-            return [json.loads(row.record_json) for row in rows]
+            records = [json.loads(row.record_json) for row in rows]
+        # Records from before approval tracking were explicit answers; the user
+        # chose to keep them approved with their previous (global) reuse.
+        return [{"status": "approved", "scope": "global", **record} if "status" not in record
+                else {"scope": default_scope(record["question"]), **record} for record in records]
 
-    def remember(self, state, answers, *, historical=False):
+    def _answer_rows(self, session, owner, identity, scope, url=None):
+        from .memory import record_scope, same_employer
+        found = []
+        for row in session.scalars(select(ApplicationMemoryRow).where(ApplicationMemoryRow.owner_key == owner)).all():
+            record = json.loads(row.record_json)
+            if (question_identity(record["question"]) == identity and record_scope(record) == scope
+                    and (scope == "global" or same_employer(record.get("url"), url))):
+                found.append((row, record))
+        return sorted(found, key=lambda item: item[1].get("updated_at", ""), reverse=True)
+
+    def update_memory(self, profile, memory_id, *, value=None, scope=None, url=None):
+        from .memory import SCOPES, employer_key, record_scope
+        if scope is not None and scope not in SCOPES:
+            raise ApplyConflict("Choose where this answer can be reused.")
+        if isinstance(value, str) and (not value.strip() or len(value) > 10_000):
+            raise ApplyConflict("Enter a nonempty answer.")
+        with self.sessions.begin() as session:
+            row = session.get(ApplicationMemoryRow, memory_id)
+            if row is None or row.owner_key != self.owner_key(profile): raise ApplyNotFound("Remembered answer not found.")
+            record = json.loads(row.record_json)
+            record["scope"] = record_scope(record)
+            if value is not None: record["value"] = value.strip() if isinstance(value, str) else value
+            if scope is not None:
+                record["scope"] = scope
+                if scope == "employer":
+                    record["url"] = url or record.get("url")
+            if record["scope"] == "employer" and not employer_key(record.get("url")):
+                raise ApplyConflict("Choose an application with an identified employer before limiting this answer.")
+            # IDs are stable references. Coalesce the destination bucket when
+            # the user explicitly moves an answer, without touching other employers.
+            for other, _ in self._answer_rows(session, row.owner_key, question_identity(record["question"]),
+                                              record["scope"], record.get("url")):
+                if other.memory_id != memory_id:
+                    session.delete(other)
+            record.update(status="approved", updated_at=now(), approved_at=now())
+            row.record_json = json.dumps(record)
+            return record
+
+    def remember(self, state, answers, *, historical=False, scopes=None):
+        """Save answers the user approved. Run-local interpretations are never saved here."""
+        from .memory import SCOPES, default_scope, employer_key, record_scope
         if not state.get("reuse_answers", True): return
         fields = {f["key"]: f for f in state["fields"]}
         owner = self.owner_key(state["profile"])
@@ -197,11 +266,26 @@ class ApplyRepository:
                 identity = question_identity(field["label"])
                 if sum(question_identity(f["label"]) == identity for f in fields.values()) > 1: continue
                 if not historical and member and isinstance(value,str):profile_updates[member]=value
-                memory_id = hashlib.sha256(f"{owner}:{identity}".encode()).hexdigest()
+                local = self._answer_rows(session, owner, identity, "employer", state.get("url"))
+                global_rows = self._answer_rows(session, owner, identity, "global")
+                previous = (local or global_rows or [(None, {})])[0][1]
+                scope = (scopes or {}).get(key) or (record_scope(previous) if previous else default_scope(field["label"]))
+                if scope not in SCOPES:
+                    raise ApplyConflict("Choose where this answer can be reused.")
+                if scope == "employer" and not employer_key(state.get("url")):
+                    continue
+                bucket = local if scope == "employer" else global_rows
+                row, previous = (bucket or [(None, {})])[0]
+                # Opaque IDs survive edits to scope. Old IDs remain valid; new
+                # employer buckets can never overwrite an old global-key row.
+                memory_id = row.memory_id if row else uuid4().hex
+                stamp = state["updated_at"] if historical else now()
                 record = {"memory_id": memory_id, "question": field["label"], "identity": identity,
-                    "value": value, "run_id": state["run_id"], "url":state.get('url'), "updated_at": state["updated_at"] if historical else now(), "source": "user_answer"}
-                row = session.get(ApplicationMemoryRow, memory_id)
-                if row and historical and json.loads(row.record_json)["updated_at"] >= record["updated_at"]: continue
+                    "value": value, "run_id": state["run_id"], "url":state.get('url'), "updated_at": stamp,
+                    "source": "user_answer", "status": "approved", "scope": scope, "approved_at": stamp}
+                if row and historical and previous["updated_at"] >= record["updated_at"]: continue
+                for duplicate, _ in bucket[1:]:
+                    session.delete(duplicate)
                 if row: row.record_json = json.dumps(record)
                 else: session.add(ApplicationMemoryRow(memory_id=memory_id, owner_key=owner, record_json=json.dumps(record)))
         if profile_updates:
@@ -209,6 +293,46 @@ class ApplyRepository:
             if self.owner_key(saved['profile'])==owner:
                 try:self.save_candidate({**saved['profile'],**profile_updates})
                 except ValueError:pass # Keep the confirmed answer even if it is too long for a flat contact field.
+
+    def standard_answers(self, profile):
+        """Only globally approved answers belong in the all-jobs setup form."""
+        from .standard import catalog
+        latest = {question_identity(m["question"]): m for m in
+                  sorted(self.memories(profile), key=lambda m: m.get("updated_at", ""))
+                  if m.get("status") == "approved" and m.get("scope") == "global"}
+        return [{**item, "value": latest.get(item["identity"], {}).get("value", ""),
+                 "scope": latest.get(item["identity"], {}).get("scope", "global")} for item in catalog()]
+
+    def save_standard_answers(self, profile, answers):
+        """Answers entered in setup are approved answers; an empty value removes one."""
+        from .standard import catalog
+        if not profile.get("email"):
+            raise ApplyConflict("Save your email in your details before adding standard answers.")
+        items = {item["topic"]: item for item in catalog()}
+        if not set(answers).issubset(items):
+            raise ApplyConflict("Unknown standard question.")
+        owner = self.owner_key(profile)
+        with self.sessions.begin() as session:
+            for topic, value in answers.items():
+                item = items[topic]
+                value = value.strip() if isinstance(value, str) else value
+                bucket = self._answer_rows(session, owner, item["identity"], "global")
+                row = bucket[0][0] if bucket else None
+                memory_id = row.memory_id if row else uuid4().hex
+                keep = value not in ("", None)
+                # Setup edits and clears affect only this global question. Keep
+                # employer answers and questions with different salary units.
+                for duplicate, _ in (bucket[1:] if keep else bucket):
+                    session.delete(duplicate)
+                if not keep:
+                    continue
+                stamp = now()
+                record = json.dumps({"memory_id": memory_id, "question": item["question"], "identity": item["identity"],
+                    "value": value, "run_id": None, "url": None, "updated_at": stamp, "source": "user_answer",
+                    "origin": "standard", "status": "approved", "scope": "global", "approved_at": stamp})
+                if row: row.record_json = record
+                else: session.add(ApplicationMemoryRow(memory_id=memory_id, owner_key=owner, record_json=record))
+        return self.standard_answers(profile)
 
     def forget(self, profile, memory_id):
         with self.sessions.begin() as session:
@@ -219,11 +343,19 @@ class ApplyRepository:
     def recalled_answers(self, state, fields):
         from .memory import compatible
         if not state.get("reuse_answers", True): return {}, {}
-        memories = {m["identity"]: m for m in self.memories(state["profile"])}
+        # Filter before choosing: another employer's newer answer cannot hide
+        # this employer's answer. A local preference overrides a global default.
+        memories = sorted(self.memories(state["profile"]),
+            key=lambda m: (m.get("scope") == "employer", m.get("updated_at", "")), reverse=True)
         answers, sources = {}, {}
         for field in fields:
-            memory = memories.get(question_identity(field["label"]))
-            if memory and compatible(memory,field,state) and field["key"] not in state["answers"] and candidate_answer(field, state["profile"], {}) is None:
+            identity = question_identity(field["label"])
+            memory = next((m for m in memories
+                if (question_identity(m["question"]) == identity or
+                    (identity.split("|")[0] == "standard:salary" and
+                     question_identity(m["question"]).split("|")[0] == "standard:salary"))
+                and compatible(m, field, state)), None)
+            if memory and field["key"] not in state["answers"] and candidate_answer(field, state["profile"], {}) is None:
                 value = memory["value"]
                 if field["kind"] == "checkbox" and isinstance(value, str):
                     value = boolean_answer(value)
@@ -250,6 +382,9 @@ class ApplyRepository:
                 or next_state["status"] in SUBMISSION_STATES
                 or any(event.get("status") in SUBMISSION_STATES for event in state.get("events", []))):
             next_state["submission_started"] = True
+        if next_state['status'] in {'awaiting_review', 'needs_input', 'submitted'}:
+            from agent_runtime.telemetry import application_perf_summary
+            next_state['perf_summary'] = application_perf_summary(next_state)
         if message:
             next_state["message"] = message
             next_state["events"] = [*state["events"], {"at": now(), "status": next_state["status"], "message": message}][-100:]
@@ -260,6 +395,8 @@ class ApplyRepository:
                     version=next_state["version"], status=next_state["status"], state_json=json.dumps(next_state)))
             if updated.rowcount != 1:
                 raise ApplyConflict("The attempt changed. Refresh before continuing.")
+        for listener in tuple(self.state_listeners):
+            listener(next_state)
         return next_state
 
     def reopen(self, state):
@@ -268,8 +405,8 @@ class ApplyRepository:
         with self.sessions() as session:
             active = session.scalars(select(AutoApplicationRow.run_id).where(
                 AutoApplicationRow.status.not_in(TERMINAL))).all()
-            if len(active) >= 3:
-                raise ApplyConflict("Finish or cancel an existing attempt before opening another browser (limit: 3).")
+            if len(active) >= open_limit():
+                raise ApplyConflict(f"Finish or cancel an existing attempt before opening another browser (limit: {open_limit()}).")
         # Reserve a browser slot now, but keep the old worker stopped until its
         # cancellation and browser-close jobs have drained from the same queue.
         return self.save(state, status="queued", reopening=True, pause_requested=True,

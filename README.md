@@ -1,6 +1,6 @@
-# JobHunterAgent
+# eregion
 
-JobHunterAgent is a local-first career copilot for saving job postings, comparing
+eregion is a local-first career copilot for saving job postings, comparing
 them with a resume, producing evidence-grounded application materials, and managing
 the conversations and review steps around an application.
 
@@ -32,6 +32,12 @@ the same local service at `http://localhost:8000`.
   details, and supports secure account input for login or registration. Greenhouse,
   Lever and Workday entry flows have focused coverage; other sites use the generic loop.
 - Keeps Memory and Skills governed, versioned, reviewable, and separate from resume evidence.
+
+### Chat and application agent loop
+
+Career chat and application filling share one decision kernel with separate domain
+hosts. It retains complete tool exchanges, fences stale decisions after user feedback,
+and resumes from durable task state. See [the architecture and smoke checks](docs/agent-loop.md).
 
 ### Resume agent loop
 
@@ -476,6 +482,13 @@ Run the browser-side unit tests:
 node --test tests/test_copilot_ui.mjs tests/test_learning_ui.mjs tests/test_mock_interview_ui.mjs tests/test_web_ui.mjs
 ```
 
+Run the suite including the real-Chrome tests. They drive local fixture pages in
+Google Chrome and intercept every employer request, so they make no network or model calls:
+
+```powershell
+$env:JOB_AGENT_BROWSER_TESTS = "1"; python -m pytest -q
+```
+
 The historical release baseline before removal of the graph backend was:
 
 ```text
@@ -489,7 +502,7 @@ calls. Live evaluations are opt-in. Reproducible datasets, runners, raw outputs,
 version metadata live under `evals/`.
 
 GitHub Actions runs both commands on every push and pull request through
-`.github/workflows/ci.yml`. It never runs a real-model evaluation. Live evaluations
+`.github/workflows/ci.yml`, and runs the real-Chrome tests on a Windows runner. It never runs a real-model evaluation. Live evaluations
 remain explicit, paid, manual commands.
 
 Human material-quality review uses 10–20 anonymized real resume/JD pairs and scores
@@ -567,7 +580,7 @@ using the same database. A retired backend cannot be selected by environment set
 ## On-demand discovery and optional daily recommendations
 
 Job discovery is available directly in the existing `/apply` conversation. For
-example, say “Find five data analyst jobs in New York that fit my resume.” Northstar
+example, say “Find five data analyst jobs in New York that fit my resume.” eregion
 chooses sources and search terms, searches in the actual browser, reads postings, scores promising roles against
 the saved resume, and adds its reasons and uncertainties to the job cards. Continue
 with “Only show remote roles” or ask it to prepare materials for a selected job.
@@ -629,7 +642,7 @@ times fire once and nonexistent times shift forward. Windows installs `tzdata`
 from `requirements.txt`. Startup applies migration `0034_career_job_alerts`.
 
 In-app digests are saved even when the web page is closed. Optional browser popups
-require the Northstar page to stay open and **Enable browser notifications** to be
+require the eregion page to stay open and **Enable browser notifications** to be
 clicked; permission is never requested just because the user searched. Popups are
 deduplicated in this browser and read digests are not notified again. This version
 does not provide browser-closed Web Push or an OS/cloud scheduler. See
@@ -792,6 +805,23 @@ resume-generation loop remains focused on producing and reviewing materials.
    browser preview, plan, activity, completed answers and answer memory. **Pause agent
    & use Chrome** stops automation for manual interaction; send `continue` to resume.
    Review approval remains bound to the observed form and is invalidated by changes.
+6. Answers the agent interpreted from your chat are listed on the review card with a
+   **Remember** checkbox. Checked answers are saved when you submit and are filled in
+   automatically on later applications, so each answer is approved once. **Standard
+   answers** in **Your details** (salary, start date, relocation, work authorization,
+   demographics and similar) are approved the same way and match common wordings.
+
+Application automation settings (environment variables):
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `JOB_AGENT_APPLY_WORKERS` | `2` | Applications filled at the same time (1–8). Jobs on one employer site always take turns. |
+| `JOB_AGENT_MAX_OPEN_APPLICATIONS` | `6` | Unfinished attempts allowed at once; each can keep a Chrome window open. |
+| `JOB_AGENT_HIDDEN_BROWSER` | `offscreen` | How Chrome runs while hidden. `offscreen` is a normal window placed off-screen, which sites challenge far less often than headless Chrome and which can be shown without reloading. `headless` restores the previous mode. |
+| `JOB_AGENT_ALLOWED_HOSTS` | (none) | Extra hostnames accepted by the local server besides `localhost` and `127.0.0.1`. |
+
+If a site shows a verification challenge, use **Control browser**, complete it, and the
+agent continues by itself once the challenge is gone.
 
 If the browser never opens, confirm that Playwright is installed in the **same
 Python environment as the server**. Installing Chrome alone is not enough. After

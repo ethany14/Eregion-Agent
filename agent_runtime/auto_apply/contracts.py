@@ -167,6 +167,9 @@ class ContinueApplication(StrictModel):
     automation_mode: Literal["autofill", "hybrid"] | None = None
     visual_fallback: bool | None = None
     consent_policy: Literal["ask", "required_only"] | None = None
+    # Review approval: which newly interpreted answers to reuse, and where.
+    remember: dict[str, bool] = Field(default_factory=dict, max_length=200)
+    memory_scopes: dict[str, Literal["global", "employer"]] = Field(default_factory=dict, max_length=200)
 
     @field_validator("answers")
     @classmethod
@@ -185,6 +188,29 @@ class ReplyQuestion(StrictModel):
     @classmethod
     def bounded_answers(cls, value):
         return ContinueApplication.bounded_answers(value)
+
+
+class MemoryUpdate(StrictModel):
+    value: str | bool | None = None
+    scope: Literal["global", "employer"] | None = None
+
+    @field_validator("value")
+    @classmethod
+    def bounded_value(cls, value):
+        if isinstance(value, str) and len(value) > 10_000:
+            raise ValueError("An answer is too long.")
+        return value
+
+
+class StandardAnswers(StrictModel):
+    answers: dict[str, str] = Field(default_factory=dict, max_length=50)
+
+    @field_validator("answers")
+    @classmethod
+    def bounded(cls, value):
+        if any(len(answer) > 2000 for answer in value.values()):
+            raise ValueError("An answer is too long.")
+        return value
 
 
 class VersionRequest(StrictModel):

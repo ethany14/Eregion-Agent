@@ -48,9 +48,7 @@ from job_agent.schemas import (
 
 
 class Analyzer(Protocol):
-    def __call__(
-        self, schema: type[BaseModel], system_message: str, human_message: str
-    ) -> BaseModel: ...
+    def __call__(self, schema: type[BaseModel], system_message: str, human_message: str) -> BaseModel: ...
 
 
 class SharedModelAnalyzer:
@@ -59,12 +57,38 @@ class SharedModelAnalyzer:
 
     def cache_namespace(self):
         from job_agent.model import model_settings_fingerprint
-        return model_settings_fingerprint(env_path=self._env_path)
+        from job_agent.job_extraction import extraction_signature
+        from job_agent.resume_extraction import extraction_signature as resume_signature
+        return model_settings_fingerprint(env_path=self._env_path) + ':' + extraction_signature() + ':' + resume_signature()
+
+    def write_resume(self, state, content):
+        from job_agent.model import shared_model
+        from job_agent.resume_selection import ResumeSelection, RESUME_SELECTION_PROMPT
+        selection = invoke_structured(shared_model(env_path=self._env_path), ResumeSelection,
+            RESUME_SELECTION_PROMPT, content)
+        return selection.expand(state)
 
     def __call__(
         self, schema: type[BaseModel], system_message: str, human_message: str
     ) -> BaseModel:
-        model = create_model(env_path=self._env_path)
+        from job_agent.model import shared_model
+        model = shared_model(env_path=self._env_path,
+            purpose='extraction' if schema in {ResumeAnalysis, JobAnalysis, SkillAssessment} else None)
+        if schema is ResumeAnalysis:
+            from job_agent.resume_extraction import ResumeExtraction, RESUME_EXTRACTION_PROMPT
+            return invoke_structured(model, ResumeExtraction, RESUME_EXTRACTION_PROMPT, human_message).expand()
+        if schema is JobAnalysis:
+            from job_agent.job_extraction import ReferencedJobExtraction, REFERENCE_JOB_PROMPT, numbered_sentences
+            sentences = numbered_sentences(human_message)
+            return invoke_structured(model, ReferencedJobExtraction, REFERENCE_JOB_PROMPT,
+                json.dumps(sentences, ensure_ascii=False, separators=(',', ':'))).expand(sentences)
+        if schema is SkillAssessment:
+            from job_agent.compact_match import CompactSkillAssessment, COMPACT_MATCH_PROMPT
+            resume_text, job_text = human_message.removeprefix('Resume analysis:\n').split('\n\nJob analysis:\n', 1)
+            resume, job = ResumeAnalysis.model_validate_json(resume_text), JobAnalysis.model_validate_json(job_text)
+            content = json.dumps({'evidence': [e.model_dump(mode='json') for e in resume.evidence],
+                'requirements': [r.model_dump(mode='json') for r in job.requirements]}, ensure_ascii=False, separators=(',', ':'))
+            return invoke_structured(model, CompactSkillAssessment, COMPACT_MATCH_PROMPT, content).expand(resume, job)
         if schema is VerificationResult:
             # Quality is checked deterministically below. Requesting it from
             # the model can reject an otherwise valid factual verdict before
@@ -77,14 +101,24 @@ class SharedModelAnalyzer:
 class JobAgentStepHandler:
     """Execute the validated business steps of the custom agent loop."""
 
-    def __init__(self, analyzer: Analyzer | None = None) -> None:
+    def __init__(self, analyzer: Analyzer | None = None, *, decisions=None, analysis_cache=None) -> None:
+        from agent_runtime.fast_decisions import configured_decisions, FastDecisions
+        # Custom analyzers remain isolated unless their caller opts in explicitly.
+        self._decisions = decisions if decisions is not None else (
+            configured_decisions(scope='career') if analyzer is None else FastDecisions())
         model_analyzer = analyzer or SharedModelAnalyzer()
+        self.analysis_cache = analysis_cache
         self._model_analyzer = model_analyzer
         self._analyze = lambda *args, **kwargs: invoke_model(model_analyzer, *args, **kwargs)
 
     def analysis_cache_namespace(self):
         namespace = getattr(self._model_analyzer,'cache_namespace',None)
-        return namespace() if callable(namespace) else f'custom:{id(self._model_analyzer)}'
+        from job_agent.fast_match import MATCH_ROUTING_VERSION
+        main = namespace() if callable(namespace) else f'custom:{id(self._model_analyzer)}'
+        from job_agent.compact_match import COMPACT_MATCH_PROMPT, CompactSkillAssessment
+        import hashlib
+        compact = hashlib.sha256(json.dumps([COMPACT_MATCH_PROMPT, CompactSkillAssessment.model_json_schema()], sort_keys=True).encode()).hexdigest()
+        return f'{main}:{MATCH_ROUTING_VERSION}:{compact}:{self._decisions.cache_namespace()}'
 
     def execute(self, step: Step, state: AgentState) -> StepOutcome:
         handlers = {
@@ -100,7 +134,39 @@ class JobAgentStepHandler:
         handler = handlers.get(step)
         if handler is None:
             raise ValueError(f"Step {step} is not a computation step.")
-        return StepOutcome(updates=handler(state))
+        kind = {Step.ANALYZE_RESUME: 'resume', Step.ANALYZE_JOB: 'job', Step.MATCH_SKILLS: 'match'}.get(step)
+        if self.analysis_cache is None or kind is None:
+            return StepOutcome(updates=handler(state))
+        def compute():
+            updates = handler(state)
+            if kind == 'resume':
+                self._validate_evidence(state.model_copy(update=updates))
+            return {key: value.model_dump(mode='json') if isinstance(value, BaseModel) else value
+                    for key, value in updates.items()}
+        from job_agent.prompts import PROMPT_VERSION
+        from job_agent.schemas import SCHEMA_VERSION
+        analyzer_namespace = getattr(self._model_analyzer, 'cache_namespace', None)
+        namespace = analyzer_namespace() if callable(analyzer_namespace) else self.analysis_cache_namespace()
+        prompt = {'resume': RESUME_PROMPT, 'job': JOB_PROMPT, 'match': MATCH_PROMPT}[kind]
+        schema = {'resume': ResumeAnalysis, 'job': JobAnalysis, 'match': SkillAssessment}[kind]
+        signature = [namespace, PROMPT_VERSION, SCHEMA_VERSION, prompt, schema.model_json_schema()]
+        if kind == 'match':
+            # Confirmed Career Evidence is part of the candidate payload, including
+            # immutable version IDs. Changing evidence cannot reuse an old score.
+            content = [state.resume_analysis.model_dump(mode='json'), state.job_analysis.model_dump(mode='json')]
+            signature.append(self.analysis_cache_namespace())
+        else:
+            content = (state.resume_text if kind == 'resume' else state.job_description).replace('\r\n', '\n').strip()
+        updates = self.analysis_cache.get(kind, signature, content, compute)
+        if kind == 'resume':
+            updates['resume_analysis'] = ResumeAnalysis.model_validate(updates['resume_analysis'])
+            self._validate_evidence(state.model_copy(update=updates))
+        elif kind == 'job':
+            updates['job_analysis'] = JobAnalysis.model_validate(updates['job_analysis'])
+        else:
+            from job_agent.schemas import SkillMatch
+            updates['skill_match'] = SkillMatch.model_validate(updates['skill_match'])
+        return StepOutcome(updates=updates)
 
     @staticmethod
     def _validate_input(state: AgentState) -> dict:
@@ -157,9 +223,11 @@ class JobAgentStepHandler:
             f"Resume analysis:\n{resume.model_dump_json()}\n\n"
             f"Job analysis:\n{job.model_dump_json()}"
         )
-        assessment = SkillAssessment.model_validate(
-            self._analyze(SkillAssessment, MATCH_PROMPT, content)
-        )
+        if self._decisions.enabled or isinstance(self._model_analyzer, SharedModelAnalyzer) or getattr(self._model_analyzer, 'chunked_matching', False):
+            from job_agent.fast_match import assess_skills
+            assessment = assess_skills(resume, job, self._analyze, self._decisions)
+        else:
+            assessment = SkillAssessment.model_validate(self._analyze(SkillAssessment, MATCH_PROMPT, content))
         skill_match = normalize_skill_match(resume, job, assessment)
         return {"skill_match": skill_match}
 
@@ -179,9 +247,9 @@ class JobAgentStepHandler:
             "Use at most two summary sentences and at most five selected bullets per source entry. "
             "Return target requirement IDs only from the supplied Job Analysis."
         )
-        draft = normalize_tailored_resume_claim_ids(TailoredResume.model_validate(
-            self._analyze(TailoredResume, WRITE_RESUME_PROMPT, content)
-        ))
+        compact_writer = getattr(self._model_analyzer, 'write_resume', None)
+        result = invoke_model(compact_writer, state, content) if callable(compact_writer) else self._analyze(TailoredResume, WRITE_RESUME_PROMPT, content)
+        draft = normalize_tailored_resume_claim_ids(TailoredResume.model_validate(result))
         draft = normalize_generated_resume_metadata(
             draft,
             state.resume_analysis.source_entries,
@@ -293,6 +361,10 @@ class JobAgentStepHandler:
             or state.tailored_resume is None
         ):
             raise ValueError("Complete resume state is required before revision.")
+        from job_agent.resume_selection import remove_unsupported
+        repaired = remove_unsupported(state)
+        if repaired is not None:
+            return {'tailored_resume': repaired, 'verification': None, 'revision_feedback': []}
         feedback = list(state.verification.revision_feedback)
         if state.human_feedback:
             feedback.append(state.human_feedback)

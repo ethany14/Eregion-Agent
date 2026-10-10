@@ -180,6 +180,7 @@ class GenerationEvidenceSnapshot(PackModel):
 
 
 class ApplicationPack(PackModel):
+    perf_summary: dict | None = None
     pack_id: str
     workflow_mode: Literal["single_custom", "multi_agent_v1"] = "single_custom"
     application_id: str

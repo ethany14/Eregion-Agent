@@ -14,7 +14,7 @@ def test_web_app_route_and_assets_are_served() -> None:
     with TestClient(create_app(run_service=object())) as client:
         response = client.get("/apply")
         assert response.status_code == 200
-        assert "Northstar · Career agent" in response.text
+        assert "eregion · Career agent" in response.text
         assert 'href="/app#' not in response.text
         assert 'data-view-panel=' not in response.text
         assert client.get("/web-assets/apply.css").status_code == 200

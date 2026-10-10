@@ -67,7 +67,7 @@ class PackRepository:
             preference_snapshot_id=row.preference_snapshot_id,
             created_at=_utc(row.created_at), updated_at=_utc(row.updated_at),
             completed_at=_utc(row.completed_at), error_code=row.error_code,
-            stale_reason=row.stale_reason)
+            stale_reason=row.stale_reason, perf_summary=json.loads(row.perf_summary_json) if row.perf_summary_json else None)
 
     @staticmethod
     def _item(row: ApplicationPackItemRow) -> ApplicationPackItem:
@@ -231,7 +231,7 @@ class PackRepository:
     def add_item(self, pack_id: str, *, expected_version: int, artifact_type: str,
                  idempotency_key: str, source_question: str | None = None,
                  max_length: int | None = None, requires_manual_answer: bool = False,
-                 max_revisions: int = 3) -> ApplicationPackItem:
+                 max_revisions: int = 1) -> ApplicationPackItem:
         if artifact_type not in {"tailored_resume", "cover_letter", "application_answer"}:
             raise PackValidationError("Unsupported artifact type.")
         if not 0 <= max_revisions <= 3: raise PackValidationError("Revision limit is invalid.")

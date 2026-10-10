@@ -436,6 +436,10 @@ def test_full_no_interview_pack_flow_uses_frozen_evidence_and_public_schemas(tmp
         assert all(tasks.require(item.task_id).status == TaskStatus.SUCCEEDED for item in all_tasks)
         pack = packs.list_for_application(application.application_id)[0]
         assert pack.workflow_mode == "multi_agent_v1"
+        assert pack.perf_summary['wall_seconds'] >= 0
+        assert pack.perf_summary['critical_path_seconds'] >= 0
+        assert pack.perf_summary['critical_path'][-1] == 'pack_assembler'
+        assert pack.perf_summary['critical_path_seconds'] <= sum(pack.perf_summary['task_seconds'].values()) + .01
         items = packs.items(pack.pack_id)
         assert len(items) == 3
         assert all(item.verification and item.verification.passed for item in items)

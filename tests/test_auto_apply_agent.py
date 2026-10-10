@@ -77,8 +77,8 @@ def test_model_calls_autofill_then_repairs_text_and_dropdown():
     assert result["reason"] == "ready"
     assert [f["value"] for f in browser.observe()] == ["Test", "Canada"]
     assert model.calls == ["autofill", "type_from_source", "inspect_field", "choose_option", "ready_for_review"]
-    assert reservations == ["model", "tool"] * 5
-    assert len(reports) == 5
+    assert reservations == ["tool"] + ["model", "tool"] * 5  # host autofills before the first model turn
+    assert len(reports) == 6  # includes the initial host autofill
 
 
 def test_compacted_tool_history_keeps_the_user_turn_required_by_provider():
@@ -106,7 +106,9 @@ def test_provider_timeout_is_reported_without_leaking_error_body():
         autofill=lambda: {}, active=lambda: True, reserve=lambda kind: True,
         report=lambda *args: None, checkpoint=lambda **changes: checkpoints.append(changes))
     assert result["reason"] == "model_timeout"
-    assert checkpoints == [{"last_tool_result": {"tool": "model", "result": {"error": "OpenAITimeoutError", "status": None}}}]
+    # Timings are written together with the failure summary; only the summary is asserted.
+    assert [c["last_tool_result"] for c in checkpoints if "last_tool_result" in c] == [
+        {"tool": "model", "result": {"error": "OpenAITimeoutError", "status": None}}]
     assert "Private" not in str(checkpoints)
 
 
@@ -212,7 +214,7 @@ def test_cancelled_model_response_cannot_execute_tools():
             autofill=lambda: filled.append(True), active=lambda: not started.is_set(),
             reserve=lambda kind: True, report=lambda *args: None)
         assert result["reason"] == "cancelled"
-        assert not filled
+        assert filled == [True]  # one authorized host pass before cancellation; no tool from the cancelled response
     finally:
         release.set()
 

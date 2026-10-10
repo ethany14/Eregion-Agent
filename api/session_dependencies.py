@@ -279,11 +279,15 @@ def create_session_runtime(
         sessions=sessions, workspace=workspace, packs=packs, evidence=evidence,
         context_snapshots=context_snapshots, pack_workflow=pack_workflow)
     agent_tasks = AgentTaskRepository(database.session_factory)
+    from agent_runtime.analysis_cache import AnalysisCache
+    from custom_agent.handlers import JobAgentStepHandler
+    analysis_handler = JobAgentStepHandler(analysis_cache=AnalysisCache(database.session_factory,
+        owner=owner_resolver.resolve().owner_id))
     agent_workers = AgentWorkerRegistry()
     for worker in (
         SourceProvisionWorker(ApplicationSourceReader(workspace, packs), resumes=resumes, workspace=workspace),
-        CandidateAnalysisWorker(evidence=evidence), JobAnalysisWorker(),
-        RequirementMatchWorker(),
+        CandidateAnalysisWorker(handler=analysis_handler, evidence=evidence), JobAnalysisWorker(handler=analysis_handler),
+        RequirementMatchWorker(handler=analysis_handler),
         EvidenceGapWorker(InterviewRepository(database.session_factory)),
         AnalysisProjectionWorker(workspace),
         InterviewerWorker(interviewer),
