@@ -1,58 +1,57 @@
 # Eregion frontend conventions
 
-On 2026-10-09 the user chose the Eregion "v4-final" design: v4's layout with v3's
-colouring, no background waves and no compass, plus a Day/Night toggle. Extend
-this design when adding or fixing features.
+Preserve the established Eregion interface: the v4-final layout, the v3-inspired
+palette, and a Day/Night toggle. Do not add background waves or a compass motif.
+Extend the implemented design when adding or repairing features.
 
 ## Source of truth
 
-- `tokens.css`: colours, Night (default) and Day palettes, fonts, radii and
-  shadows. `../chrome_extension/shared/tokens.css` is a copy without the font
-  import; keep the two in sync.
-- `eregion.css`: the Eregion visual layer (sidebar, theme toggle, trail, sheets,
-  Chronicle, the Road, the Forge). It loads after `apply.css`, which still holds
-  the base shell and component layout.
-- `apply.html`: shell, SVG sprite (holly mark, Chronicle, Council, Road, Forge,
-  beacon, Ithil/Anor) and the head script that applies a saved theme before paint.
-- `theme.js`: Day/Night state, stored as `eregion.theme` (`light` or `night`).
-  Without a stored choice the app follows the system setting.
-- `chat-typography.css`: message typography and Markdown presentation.
-- `career-chat.js`, `apply-answers.js`, `pages.js`, `insights.js` and
-  `conversations.js`: result cards, questions, pages and workspace interactions.
-- `../design/v4-final/`: visual reference. The implemented files take precedence.
-  Earlier versions are preserved under `../design/archive/`.
+- `tokens.css` defines palettes, typography, radii, and shadows. Keep
+  `../chrome_extension/shared/tokens.css` aligned; that copy omits the font import.
+- `eregion.css` supplies the Eregion visual layer and loads after the base layout
+  in `apply.css`.
+- `apply.html` owns the shell, SVG sprite, and pre-paint theme initialization.
+- `theme.js` stores the user's `eregion.theme` choice as `light` or `night`.
+  Without a saved choice, the app follows the system setting; the base palette
+  is Night.
+- `chat-typography.css` owns message typography and Markdown presentation.
+- `career-chat.js`, `apply-answers.js`, `pages.js`, `insights.js`, and
+  `conversations.js` own cards, questions, views, and workspace interactions.
+- When available locally, `../design/v4-final/` contains reference mockups and
+  `../design/archive/` contains earlier versions. These ignored assets are
+  optional for a checkout; implemented files take precedence.
 
 ## Visual language
 
-- Night is holly-night with ithildin-silver ink; Day is parchment. Use semantic
-  variables only: `--holly` for progress and success, `--signal` (the beacon
-  flame) only for "needs you", `--gold` for an offer or a sealed document,
-  `--river` for information, `--danger` for destructive actions.
-- Type: `--map` (IM Fell English SC) for place names, page titles and section
-  labels; `--serif` (EB Garamond) for headings, greetings and large numbers;
-  `--sans` (Inter) for UI text; `--mono` for technical snippets.
-- Panels are sheets: thin inked frame with two corner ticks, 3–4px radius.
-  Keep generous whitespace. Never put decorative patterns, waves or textures
-  behind content.
-- Every process is a trail (`ol.trail` of `li.st` with `done`, `now`, `wait`
-  or `gold`): application stages (Sighted → Prepared → Sent → In interview →
-  Offer), materials (Drafted → Tempered → Sealed), the agent's "way", and the
-  conversation journey. Use `.trail.compact` in rows.
-- A card has one dominant primary action (the pill button); secondary actions
-  stay quiet text buttons. Reuse the sprite and its stroke style for icons.
+- Night uses a holly-dark surface and silver ink; Day uses parchment. Use
+  semantic variables: `--holly` for progress/success, `--signal` only for
+  "needs you", `--gold` for offers or sealed documents, `--river` for information,
+  and `--danger` for destructive actions.
+- Use `--map` (IM Fell English SC) for place names, page titles, and labels;
+  `--serif` (EB Garamond) for headings, greetings, and large numbers; `--sans`
+  (Inter) for UI text; and `--mono` for technical snippets.
+- Panels are sheets with a thin frame, two corner ticks, 3–4px radii, and generous
+  whitespace. Do not put decorative patterns, waves, or textures behind content.
+- Show processes with `ol.trail` and `li.st` states `done`, `now`, `wait`, or
+  `gold`. Use `.trail.compact` in rows. Retain application stages
+  Sighted → Prepared → Sent → In interview → Offer and material stages
+  Drafted → Tempered → Sealed.
+- Give each card one dominant pill-button action. Keep secondary actions quiet
+  and reuse the SVG sprite's icons and stroke style.
 
-## Layout and naming
+## Interaction and layout
 
-- Sidebar: Chronicle (home), Council (conversations), The Road (applications),
-  The Forge (materials), Job alerts, "Beacons lit" conversations, Archive
-  (Archived and Trash tabs), then the person and the Day/Night toggle.
-- The Chronicle is the empty career state: greeting, composer, today's entries,
-  beacons and the road. Conversation stays central; The Lookout is the optional
-  right panel. All pages are views inside the `/apply` shell.
-- Keep the stepped question presentation and batch submission; preserve drafts.
-- Keep existing IDs, test hooks and API wiring when changing presentation.
-- Maintain mobile drawers, keyboard/focus behaviour and reduced motion.
+The sidebar contains Chronicle, Council, The Road, The Forge, Job alerts,
+"Beacons lit" conversations, Archive with Archived/Trash tabs, and the profile
+and theme controls. These are views within the `/apply` shell.
 
-For a visible UI change, inspect the affected state in Night and Day at desktop
-and mobile sizes. A request for a "new version" means a new layout and structure,
-not a reskin; preserve the current version under `../design/archive/` first.
+Chronicle is the empty career state, with the greeting, composer, today's entries,
+beacons, and the road. Keep the conversation central and The Lookout as the
+optional right panel. Preserve stepped questions, batch answer submission,
+unsent drafts, existing IDs, test hooks, and API wiring.
+
+Maintain mobile drawers, keyboard and focus behavior, and reduced-motion support.
+For visible changes, inspect the affected state in Day and Night at desktop and
+mobile sizes. A requested new design version means a new layout and structure;
+preserve the existing version in the local `../design/archive/` before replacing
+it, rather than treating a color change as a new version.

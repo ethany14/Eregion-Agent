@@ -1,89 +1,117 @@
-# Jev 接入与实测：2026-10-09
+# Jev and performance
 
-已接入五类现有能力：表单选项映射、职位初筛、历史记忆相关性、申请问题分类、
-简单技能与简历证据匹配。主模型继续负责自主规划、聊天、内容生成、复杂匹配、
-事实核验和非字面 Yes/No 解释。配置和数据范围见 [agent-loop.md](agent-loop.md)。
+[Home](../README.md) · [Configuration](configuration.md) ·
+[Architecture](agent-loop.md)
 
-## 实际调用结果
+Jev is an optional accelerator for small decisions inside Eregion's tools. It
+does not replace the main model's planning, conversation, writing, interview
+evaluation, or factual verification. Enabling it does not guarantee fewer calls
+or faster end-to-end work.
 
-主模型：`muse-spark-1.3-contributor`。Jev 返回版本：`jev-1.13.0`。
-使用代码中写明的虚构简历、JD、偏好和问题，调用真实配置的模型服务。
-不包含真实用户资料；没有修改 `.env`、运行中的用户任务或长期记忆。
-表中为单次任务耗时的中位数，包含不确定结果回退主模型的时间。
+## Where the fast path applies
 
-| 任务 | 每个模式样本数 | 仅主模型 | Jev + 主模型回退 | 耗时缩短 |
-| --- | ---: | ---: | ---: | ---: |
-| 简单技能匹配（固定证据） | 2 | 20.44 s | 1.27 s | 93.8% |
-| 复杂要求混合匹配（固定证据） | 2 | 37.08 s | 17.03 s | 54.1% |
-| 中英跨语种匹配（固定证据） | 2 | 14.21 s | 5.43 s | 61.8% |
-| 申请问题分类 | 7 | 5.54 s | 0.68 s | 87.8% |
-| 记忆相关性筛选 | 6 | 6.38 s | 0.61 s | 90.4% |
-| 完整 analyze 冷启动（原始耗时） | 2 | 48.59 s | 41.85 s | 13.9% |
+| Capability | Eligible work | Boundary |
+| --- | --- | --- |
+| Form filling | Map confirmed source values to observed options | Only live option IDs can be adopted; freshness and actual field values are rechecked. |
+| Job screening | Prioritize observed posting snippets | Screening is advisory and is not a verified fit score. |
+| Memory retrieval | Rank already permitted confirmed memories | Uncertain selection returns the original candidate set; it creates no new facts. |
+| Question classification | Choose an existing semantic category | Sensitive facts, consent, and ambiguous questions retain their normal checks. |
+| Requirement matching | Select evidence for eligible simple skills | Complex, partial, educational, duration, or uncertain requirements retain the main path. |
 
-固定证据匹配每个模式测了三种任务各两轮，按 main→Jev、Jev→main 交替执行。
-每次关闭 FitAnalysisService 缓存、清空 Jev 结果缓存；没有把缓存命中算成推理速度。
-分类数据来自分类代码相同的一批七题实测。记忆数据是修复完整上下文回退后的新测试，
-使用更明确的任务边界，避免将“可选相关的职位偏好”误判成确定错误。
-样本量很小，模型服务延迟波动明显，不能据此推断所有真实工作负载都按相同比例提速。
+The adapter validates response IDs and distributions, uses a short timeout, and
+falls back on invalid or uncertain output. It caches exact decisions briefly and
+shares identical in-flight requests. Browser effects are never shared as cached
+semantic decisions.
 
-## 完整评分的限制与交叉核对
+## Current matching cost gate
 
-第一个可比较的冷启动对照：53.616 s → 45.885 s（缩短 14.4%），双方均提取六条要求，
-得分均为 83.3。匹配子步骤 13.281 s → 1.352 s；主模型调用 3 → 2，另有两次 Jev 请求。
-这说明匹配阶段可以明显提速，而原始简历/JD 提取仍占大部分等待时间。
+The matcher estimates the remaining main-model batches before calling Jev. The
+fast path requires both an opportunity to remove a main batch and enough request
+size savings to justify the added request. A second evidence-verification batch
+also requires a potential reduction in remaining main-model work.
 
-另一次 Jev 模式的主模型提取出了八条要求，多了两条职责，结果为 70.0；其他完整
-运行提取六条要求、得分 83.3。因此最后一行仅是原始耗时统计，不能当作工作量、
-输出完全相同的严格 A/B 加速比。这个提取一致性问题仍存在，不应归因于 Jev 的评分公式。
-将这两次 Jev 运行的原样 resume_analysis 和 job_analysis 交给主模型重新匹配后：
-- 6 条同一要求：主模型 83.3，Jev 混合 83.3；逐条状态一致。
-- 8 条同一要求：主模型 70.0，Jev 混合 70.0；逐条状态一致。
+Consequently, a mixed resume can use the same main-model batches with the Jev
+switch on or off and make **zero Jev calls**. That is an intentional skip, not a
+failed configuration. Check routing metadata and actual usage rather than
+assuming that an enabled flag means the fast model was called.
 
-固定提取结果的六对匹配测试，28 条要求的状态和总分均与主模型对照一致，所有引用
-都来自原始证据。复杂年限、在读学历、需要用户确认的资格问题保留主模型或原有规则；
-不通过 Jev 的 `Score` 直接生成总分。快速路径的解释改为简短证据汇总，文字不保证
-与主模型逐字一致，复杂要求保留主模型建议。
+The size estimate is not a provider price quote. It does not establish dollar
+savings or eliminate latency variance.
 
-## 其他验证与修复
+## Recorded Jev measurements
 
-- 申请问题分类两模式均通过七题，包括中文入职时间、隐式同意和含糊问题。
-- 记忆筛选严格预期通过 12/12 次；含糊的筛选保留完整候选集交回主模型。
-- 12 个额外实测检查覆盖否定、部分能力、组合要求、团队/个人责任、工具区别、翻译、
-  引用中的指令和授权问题；9 个直接采用正确结果，3 个复杂例子回退，未观察到错误的快速采纳。
-- 真实 headless Chrome 检查了新用户回复、选项替换、新增歧义选项、暂停、服务故障和
-  成功填写六种状态；原有同意问题未被自动选择，最终提交点击始终为零。
-- 原有自主填表入口使用真实主模型 + Jev + Chrome 复测成功：17.408 s 到达 review，
-  学校、学位、LinkedIn 均填写正确，最终提交为零。实际 task loop 的 browser_open →
-  screen_jobs 也成功完成（10.610 s，其中 Jev 0.634 s）；这是合成网页上的集成验证，
-  没有把它当作所有真实 ATS 网站的可靠性保证。
-- 401、429、超时、坏响应、冷却期、重复缓存、预算计数、未知/遗漏 ID 回退等检查通过。
-  两个主模型提取 + 两个 Jev 请求计为四次真实请求；完整缓存命中计为零次。
-- 初版证据“选一条”方案未提速，因为多个正确引用会分散概率。现在单独验证所选引用，
-  且明确普通技能名称不要求未写明的精通程度。问题分类和二次核验均保留 confidence >= 0.95、概率 >= 0.98 的门槛。
-- 初版完整分析有一次 provider 响应未通过校验并正确回退；后续完整实测未再次出现。
-  浮点容差边界已修正，但没有原始故障响应可证明它就是那一次的原因，故不宣称已消除所有服务异常。
+The following measurements were recorded on **2026-10-09**, before later context
+and cost-gate changes. Main model: `muse-spark-1.3-contributor`; returned Jev
+version: `jev-1.13.0`. They used synthetic inputs and real configured services.
+Times are per-mode medians including fallback work.
 
-## 启用与复现
+| Task | Samples per mode | Main only | Jev with fallback |
+| --- | ---: | ---: | ---: |
+| Simple skills with fixed extracted evidence | 2 | 20.44 s | 1.27 s |
+| Mixed complex requirements with fixed evidence | 2 | 37.08 s | 17.03 s |
+| Cross-language matching with fixed evidence | 2 | 14.21 s | 5.43 s |
+| Application-question classification | 7 | 5.54 s | 0.68 s |
+| Memory relevance | 6 | 6.38 s | 0.61 s |
+| Full cold analysis, raw timing only | 2 | 48.59 s | 41.85 s |
 
-这轮完成代码接入和合成资料测试，生产开关保持原值。新增 career 开关默认关闭。
-启用后，相关证据片段、已通过原有范围过滤的记忆、查询和问题会发送到 TypeSafe。
-真实资料的接收方/范围需要用户同意后再启用。写作、完整简历核验、面试评价继续使用主模型。
+The complete-analysis row is **not an equal-work speedup claim**. One extraction
+produced eight requirements rather than six, changing the score from 83.3 to
+70.0. Replaying the same extracted requirements through both matching paths
+produced the same score and statuses. In six fixed-extraction pairs, all 28
+requirement statuses and scores agreed, with original-source citations retained.
 
-```dotenv
-TYPESAFE_ENABLED=true
-TYPESAFE_CAREER_ENABLED=true
+A comparable six-requirement cold pair took 53.616 s versus 45.885 s. Main-model
+calls fell from three to two, with two additional Jev requests. Counting only
+main calls would conceal part of the cost.
+
+See the [recorded Jev results](benchmarks/jev-2026-10-09.json). These small samples
+do not describe current production percentiles or establish an accuracy guarantee.
+
+## Other historical measurements
+
+The former latency audit and implementation plan are consolidated here. Their
+raw records remain available; their timings are historical observations rather
+than current product targets or service guarantees.
+
+| Experiment recorded on 2026-10-09 | Observation | Interpretation |
+| --- | --- | --- |
+| Greeting through the task loop | 2.514 → 1.067 s median | Two samples per mode; provider latency can vary. |
+| Browse, shortlist, and reply | 12.462 → 11.374 s median | Three planner calls remained in each run. |
+| Controlled six-requirement cold fit | 35.481 → 31.909 s median | Same extracted work and match results in this fixture. |
+| Two-page synthetic application | 26.27 → 19.07 s | One paired Chrome smoke; no employer submission. |
+| Saved cold fit versus reused analysis | 217.482 → 0.032 s | Cache reuse, not faster cold inference. |
+
+Sources: [latency measurements](benchmarks/latency-2026-10-09.json) and
+[speed measurements](benchmarks/speed-2026-10-09.json). The saved-input speed trial
+also had extraction and revision timeouts; it did not produce a fully verified
+tailored pack in those attempted cases. Failed attempts must remain in any
+comparison of completion rate and cost.
+
+## Reproduce a comparison
+
+Configure the main model and TypeSafe credentials using the
+[configuration guide](configuration.md#optional-jev-acceleration). These commands
+make billable requests with the scripts' synthetic inputs. Use a new output
+directory for each run; the benchmark enables its Jev scope in its own process.
+
+```sh
+python scripts/benchmark_jev.py --output artifacts/browser-eval/jev-run-001 --repeats 2 --suite all
+python scripts/check_jev_routing.py
+python scripts/quality_jev.py artifacts/browser-eval/jev-run-001/quality.json
+python scripts/compare_jev_extractions.py --input artifacts/browser-eval/jev-run-001/benchmark-all.json --output artifacts/browser-eval/jev-run-001/crosscheck.json
 ```
 
-配置 API key 后重启后端。完整配置见 [agent-loop.md](agent-loop.md)。以下命令会调用付费 API，
-但使用脚本内的合成资料；故障注入脚本只在本地运行，不使用 pytest。
+For a synthetic context-sharing comparison:
 
-```powershell
-.\.venv\Scripts\python.exe scripts\benchmark_jev.py --output <目录> --repeats 2 --suite all
-.\.venv\Scripts\python.exe scripts\check_jev_routing.py
-.\.venv\Scripts\python.exe scripts\quality_jev.py <目录>\quality.json
-.\.venv\Scripts\python.exe scripts\compare_jev_extractions.py --input <目录>\benchmark-all.json --output <目录>\crosscheck.json
+```sh
+python scripts/benchmark_context_sharing.py --live --jev --output artifacts/browser-eval/context-run-001
 ```
 
-可复核的原始合成测试结果、逐条匹配、分阶段时间和调用统计保存在
-[jev-2026-10-09.json](benchmarks/jev-2026-10-09.json)。当前最大的后续优化点是主模型的
-JD/简历结构提取耗时与要求集合的一致性；两者都没有在本轮用 Jev 强行替代。
+Record the code commit, model identity, source inputs, cache state, task IDs, and
+call ledger for both modes. Compare output quality before reporting a speedup.
+Use unique task IDs or ledger deltas so earlier rounds do not inflate the counts.
+
+Report elapsed time, input/output tokens, main and Jev requests, fallback calls,
+failed attempts, and unknown usage separately. Cached input and reasoning tokens
+are detail categories within reported totals, not extra tokens to add again.
+Claims about monetary savings require the applicable provider billing data.

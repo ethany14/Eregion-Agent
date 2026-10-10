@@ -1,35 +1,65 @@
 # Eregion Lens
 
-The Chrome extension is intentionally small. It reads the job description from the page the user explicitly selected, leaves the extracted text editable, and asks the local Eregion API for a quick comparison with the default PDF resume stored by the web app.
+Compare a job with your resume while you browse. Eregion Lens opens a Chrome Side
+Panel, extracts the selected page, and lets you review the job before saving it
+or requesting a fit analysis. Continue with materials, applications, and interview
+practice in the [Eregion web app](../README.md).
 
-It shows a match score, matched/partial/missing counts, focused suggestions, and optional requirement details. Resume upload, job review, materials, applications, and interview practice share the career chat at `http://localhost:8000/apply`. Opening a saved job starts a conversation with that job already attached.
+## Install
 
-## Run locally
+1. Follow the [Eregion setup](../README.md#get-started) and start the local server
+   on port 8000.
+2. Open `http://localhost:8000/apply`, upload a selectable-text PDF resume, and
+   check your saved details.
+3. Open `chrome://extensions` in Chrome 116 or later.
+4. Enable **Developer mode**, choose **Load unpacked**, and select this
+   `chrome_extension` directory.
+5. Open a job posting and click the Eregion Lens toolbar icon.
 
-```powershell
-.\.venv\Scripts\python.exe -m alembic upgrade head
-.\.venv\Scripts\python.exe -m uvicorn api.main:app --host 127.0.0.1 --port 8000
-```
+The extension uses `http://localhost:8000`. Keep the backend running while using
+it, and reload the unpacked extension after updating its files.
 
-Open `http://localhost:8000/apply`, select **＋ Resume**, and upload a text-based PDF resume. Then:
+## Use it
 
-1. Open `chrome://extensions`.
-2. Enable **Developer mode**.
-3. Choose **Load unpacked** and select `chrome_extension`.
-4. Open a normal HTTP(S) job page.
-5. Click the Eregion Lens toolbar icon.
-6. Select **Extract page**, review the title, company, and description, then select **Analyze fit**.
+Opening the panel from the toolbar starts extraction of the selected HTTP(S) page.
+Review or edit the title, company, and description, then choose **Analyze fit** or
+**Save job**. A saved job can be opened in career chat with its context attached.
 
-The API URL is fixed to `http://localhost:8000`. The Side Panel uses `GET /health`, `POST /api/workspaces`, and `POST /api/applications/{id}/analyze-with-resume`.
+If extraction is incomplete, use **Extract page** again, select the relevant job
+text, or paste the description into the editable field. Chrome's internal pages
+and other protected surfaces cannot be extracted.
 
-## Privacy and permissions
+Fit analysis uses the resume saved in the local service. The score, requirement
+statuses, and suggestions help explain the comparison; they do not predict a
+hiring decision or generate an approved application document.
 
-- `activeTab` grants temporary access to the page where the toolbar icon was clicked.
-- `scripting` runs the text-only extractor after **Extract page** is clicked.
-- `storage` remembers only the selected tab in session storage.
-- `sidePanel` displays the UI.
-- `http://localhost:8000/*` allows the two local API requests.
+## Permissions and data flow
 
-The extension does not store resume text, job descriptions, analysis results, messages, tool output, or prompts. It does not request broad website access, cookies, history, downloads, `webRequest`, or the `tabs` permission. It never sends extracted page text automatically.
+| Permission | Use |
+| --- | --- |
+| `activeTab` | Temporary access to the page selected through the toolbar action. |
+| `scripting` | Run the page-text extractor. |
+| `storage` | Keep the selected tab and a temporary extraction handoff in session storage. |
+| `sidePanel` | Display the extension interface. |
+| `http://localhost:8000/*` | Contact the local Eregion API. |
 
-PDFs containing only scanned images are rejected because OCR is outside this version.
+The extraction result is temporarily cached in Chrome session storage while it
+passes from the toolbar worker to the panel, then consumed by the panel. The
+theme preference is saved locally. Extracted text is not automatically submitted
+for model analysis: **Analyze fit** and **Save job** initiate the corresponding
+local-service actions. Analysis sends relevant content through the server's
+configured model provider.
+
+The extension does not request browsing history, cookies, downloads,
+`webRequest`, `tabs`, or blanket access to all websites. Your resume is managed by
+the backend, not uploaded through the extension.
+
+## Troubleshooting
+
+- **Service unavailable:** confirm the backend is running on port 8000 in the
+  expected Python environment; check `http://localhost:8000/health`.
+- **No saved resume:** upload one in the web app before analyzing a job.
+- **Wrong job extracted:** review the editable fields and use manual extraction
+  or pasted text, especially on pages containing several listings.
+- **Analysis failed:** check provider access and the backend error message. A
+  healthy local server does not guarantee a successful model request.

@@ -1,23 +1,58 @@
-# Career Evidence Vault v0.1
+# Career evidence
 
-Career Evidence stores candidate career statements separately from Memory (preferences and profile context), Skills (procedures), Job requirements (employer requests), and Application artifacts (generated output). Neither a JD nor generated text is a permitted evidence source. Confirmation means the user accepted the statement or a resume quote matched an accepted source; it is **not independent fact checking**.
+Career evidence records candidate facts with their provenance. It is separate
+from preferences and memory, procedural skills, employer requirements, and
+generated application materials. A job description or generated sentence cannot
+establish a candidate's experience.
 
-Each item has a stable UUID and an optimistic state version. Immutable content versions have distinct UUIDs and deterministic hashes. A proposed revision creates a candidate version without rewriting the historical confirmed version. State changes and append-only events commit in one transaction. Application links cite a specific confirmed version; deleting an application removes its links, not the reusable evidence. Historical version records remain after supersession or archiving.
+## Lifecycle and ownership
 
-Resume imports validate each exact quote against the original resume using the existing whitespace/case normalization, preserve its existing `ResumeEvidence.evidence_id` as an external ID, and deduplicate replay by source and content hash. Manual user statements enter as candidates and require explicit confirmation. Document claims need a quote and source reference; this release does not ingest or verify external documents. Metrics must carry their original wording, value, unit, and qualifier. A confirmed statement authorizes no stronger wording or inferred leadership, impact, scale, or metrics.
+Each evidence item has a stable ID and an optimistic state version. Content
+versions are immutable and have their own IDs and hashes. Revisions, confirmation,
+rejection, supersession, and archiving preserve an event history.
 
-For a Session model call, the retriever selects only confirmed evidence relevant to the current linked Application or query. It uses a separate token budget and renders an explicitly bounded `CONFIRMED CAREER EVIDENCE` block. Prepared Context Snapshots record exactly the included evidence IDs, version IDs, and content hashes. Snapshot recovery checks those immutable versions. The existing LangGraph resume workflow remains unchanged; this Vault is not yet wired into resume Writer or Verifier.
+Manual statements enter as candidates and require confirmation. Server-side resume
+imports validate quotes against the held source, retain source identity, and
+deduplicate replay. Confirmation records the accepted source or the user's
+attestation; it is not independent fact checking.
 
-The `/api/evidence` endpoints and Chrome Context manager are for trusted, local single-user use. There is no account authorization or remote access control. SQLite stores career statements and quotes in plaintext; use local filesystem protections and backups. Archiving hides evidence from new retrieval but keeps audit history and historical links. Hard deletion, retention policies, external document ingestion, interviewer-generated evidence, and automatic conversation extraction are deferred.
+Keep employer/project ownership, dates, units, qualifiers, and limitations with
+the claim. A confirmed fact does not support stronger leadership, impact, scale,
+degree-completion, or proficiency claims than the source supplies.
 
-To try the local API, start FastAPI after migration and submit a user-attested candidate. Confirmation is deliberately separate:
+Application links cite particular confirmed versions. Removing an application
+does not remove reusable evidence; archiving hides it from new retrieval while
+preserving historical references.
 
-```json
-POST /api/evidence/candidates
-{"category":"experience","source_type":"user_attested","claim_text":"Built Python APIs.","exact_quote":"Built Python APIs."}
+## Runtime consumers
 
-POST /api/evidence/{evidence_id}/confirm
-{"expected_version":1}
-```
+Session retrieval selects relevant confirmed evidence within a separate context
+budget. Context snapshots record the evidence IDs, version IDs, and hashes used
+for a model request.
 
-The Context tab can create, confirm, reject, search, filter, and inspect version history. Reload the unpacked extension after changing its files. Open a saved Application before opening Context to see its evidence-link indicators. Manual Chrome interaction was not automated by the Python suite.
+Application packs also consume evidence. Their selection policy freezes an
+application-scoped snapshot for generation and verification. Source or preference
+changes can invalidate a pack, so an older confirmation is not a blanket approval
+to reuse outdated material.
+
+See [the architecture guide](../../docs/agent-loop.md) for source completion,
+material version selection, and browser upload boundaries.
+
+## API and implementation
+
+The local API exposes candidate creation, confirmation, revisions, version/event
+inspection, and application linking. Consult the running `/docs` page and
+[`api/evidence_routes.py`](../../api/evidence_routes.py) for current endpoints.
+Clients cannot claim resume provenance by posting an unchecked quote; imports
+must go through the server's source-validation path.
+
+| File | Purpose |
+| --- | --- |
+| `types.py`, `models.py` | Public contracts and persisted records |
+| `repository.py` | Versioned mutations, source imports, links, and events |
+| `retrieval.py` | Scoped confirmed-evidence selection for context |
+| `extraction.py` | Evidence extraction integration |
+
+Evidence lives in the local database and can contain personal information.
+Protect local data and evaluation exports accordingly. See
+[configuration and data handling](../../docs/configuration.md#data-and-credentials).
