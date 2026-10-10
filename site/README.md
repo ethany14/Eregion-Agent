@@ -1,8 +1,16 @@
 # Eregion website
 
 The product and download page for Eregion, live at
-[ethany14.github.io/Eregion-Agent](https://ethany14.github.io/Eregion-Agent/). It is a static site with no build step:
-`index.html`, `styles.css`, `script.js` and the images in `assets/`.
+[ethany14.github.io/Eregion-Agent](https://ethany14.github.io/Eregion-Agent/). It is a static site with no build step.
+
+| Page | Contents |
+| --- | --- |
+| `index.html` | Home: overview, the five stages, Jev speed, privacy and download |
+| `guide.html` | User guide: install, examples and walkthroughs for every feature |
+| `docs.html` | Documentation: settings, Jev, browser options, data, updating, architecture |
+
+All pages share `styles.css`, `script.js` and the images in `assets/`. The header,
+footer and icon sprite are repeated in each page, so change them in all three.
 
 ## Preview
 
@@ -27,7 +35,7 @@ The site is published at `https://<owner>.github.io/<repository>/`.
 
 | Path | Contents |
 | --- | --- |
-| `assets/screens/` | App screenshots in Night (`*-night.webp`) and Day (`*-light.webp`) |
+| `assets/screens/` | App screenshots in Night (`*-night.webp`) and Day (`*-light.webp`), including Job alerts |
 | `assets/readme/` | The README banner in both themes |
 | `assets/holly.svg` | The holly mark, also used as the favicon |
 
