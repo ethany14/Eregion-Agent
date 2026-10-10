@@ -6,8 +6,12 @@ The product and download page for Eregion, live at
 | Page | Contents |
 | --- | --- |
 | `index.html` | Home: overview, the five stages, Jev speed, privacy and download |
-| `guide.html` | User guide: install, examples and walkthroughs for every feature |
+| `guide.html` | User guide: install, examples and walkthroughs, one topic at a time |
 | `docs.html` | Documentation: settings, Jev, browser options, data, updating, architecture |
+
+Guide and Docs share a side panel listing every topic from both pages. `script.js`
+shows the chosen topic (from the URL hash) with Previous/Next links; without
+JavaScript every topic is shown in sequence.
 
 All pages share `styles.css`, `script.js` and the images in `assets/`. The header,
 footer and icon sprite are repeated in each page, so change them in all three.

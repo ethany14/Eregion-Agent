@@ -49,6 +49,8 @@
   <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
   <symbol id="i-restore" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v4h4"/></symbol>
   <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
   <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
 </svg>
 
@@ -73,32 +75,38 @@
 </header>
 
 <main id="main" class="doc">
-  <header class="doc-hero">
-    <div class="wrap">
-      <p class="eyebrow">User guide</p>
-      <h1>From first search<br><em>to final review.</em></h1>
-      <p class="lede">Install Eregion, then follow a role from search to interview. Every example below is something you can type into a conversation.</p>
-    </div>
-  </header>
   <div class="wrap doc-layout">
-    <nav class="toc" aria-label="On this page">
-      <p class="toc-title">On this page</p>
+    <button class="side-toggle" type="button" aria-expanded="false" aria-controls="side"><svg class="i" aria-hidden="true"><use href="#i-menu"/></svg><span class="side-toggle-label">Contents</span><span class="side-current"></span></button>
+    <div class="side-scrim" hidden></div>
+    <nav class="side" id="side" aria-label="Guide and documentation">
+      <p class="side-group here">User guide</p>
       <ol>
-          <li><a href="#install">Install</a></li>
-          <li><a href="#profile">Set up your profile</a></li>
-          <li><a href="#find">Find and compare roles</a></li>
-          <li><a href="#alerts">Automatic job search</a></li>
-          <li><a href="#materials">Materials</a></li>
-          <li><a href="#apply">Applications</a></li>
-          <li><a href="#lookout">Take over the browser</a></li>
-          <li><a href="#memory">Saved answers</a></li>
-          <li><a href="#interview">Interview practice</a></li>
-          <li><a href="#road">Track applications</a></li>
-          <li><a href="#lens">Eregion Lens</a></li>
-          <li><a href="#troubleshoot">Troubleshooting</a></li>
+          <li><a href="guide.html#install" data-page="guide.html" data-id="install">Install</a></li>
+          <li><a href="guide.html#profile" data-page="guide.html" data-id="profile">Set up your profile</a></li>
+          <li><a href="guide.html#find" data-page="guide.html" data-id="find">Find and compare roles</a></li>
+          <li><a href="guide.html#alerts" data-page="guide.html" data-id="alerts">Automatic job search</a></li>
+          <li><a href="guide.html#materials" data-page="guide.html" data-id="materials">Materials</a></li>
+          <li><a href="guide.html#apply" data-page="guide.html" data-id="apply">Applications</a></li>
+          <li><a href="guide.html#lookout" data-page="guide.html" data-id="lookout">Take over the browser</a></li>
+          <li><a href="guide.html#memory" data-page="guide.html" data-id="memory">Saved answers</a></li>
+          <li><a href="guide.html#interview" data-page="guide.html" data-id="interview">Interview practice</a></li>
+          <li><a href="guide.html#road" data-page="guide.html" data-id="road">Track applications</a></li>
+          <li><a href="guide.html#lens" data-page="guide.html" data-id="lens">Eregion Lens</a></li>
+          <li><a href="guide.html#troubleshoot" data-page="guide.html" data-id="troubleshoot">Troubleshooting</a></li>
+      </ol>
+      <p class="side-group">Documentation</p>
+      <ol>
+          <li><a href="docs.html#model" data-page="docs.html" data-id="model">Model connection</a></li>
+          <li><a href="docs.html#jev" data-page="docs.html" data-id="jev">Jev fast scoring</a></li>
+          <li><a href="docs.html#browser" data-page="docs.html" data-id="browser">Browser and workers</a></li>
+          <li><a href="docs.html#data" data-page="docs.html" data-id="data">Data and privacy</a></li>
+          <li><a href="docs.html#limits" data-page="docs.html" data-id="limits">Good to know</a></li>
+          <li><a href="docs.html#update" data-page="docs.html" data-id="update">Updating</a></li>
+          <li><a href="docs.html#architecture" data-page="docs.html" data-id="architecture">How it works</a></li>
+          <li><a href="docs.html#develop" data-page="docs.html" data-id="develop">Development</a></li>
       </ol>
     </nav>
-    <div class="prose">
+    <article class="prose pager" data-page="guide.html">
 
       <section id="install">
         <h2><svg class="i" aria-hidden="true"><use href="#i-dl"/></svg>Install</h2>
@@ -281,7 +289,7 @@ python -m uvicorn api.main:app --host 127.0.0.1 --port 8000</code></pre><button 
         <p>For setup problems, see the <a href="docs.html">documentation</a>.</p>
       </section>
 
-    </div>
+    </article>
   </div>
 </main>
 

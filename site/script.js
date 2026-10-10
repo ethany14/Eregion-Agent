@@ -54,20 +54,66 @@
     if (heroDownload) heroDownload.textContent = `Download for ${names[detected]}`;
   }
 
-  // Highlight the table-of-contents entry for the section being read.
-  const tocLinks = [...document.querySelectorAll('.toc a')];
-  if (tocLinks.length && 'IntersectionObserver' in window) {
-    const byId = new Map(tocLinks.map(link => [link.hash.slice(1), link]));
-    const observer = new IntersectionObserver(entries => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        for (const link of tocLinks) link.classList.toggle('on', link === byId.get(entry.target.id));
+  // Guide and docs: show one topic at a time, chosen from the side panel.
+  const article = document.querySelector('.pager');
+  const sideLinks = [...document.querySelectorAll('.side a')];
+  if (article && sideLinks.length) {
+    const page = article.dataset.page;
+    const sections = [...article.querySelectorAll(':scope > section')];
+    const side = document.getElementById('side');
+    const toggle = document.querySelector('.side-toggle');
+    const scrim = document.querySelector('.side-scrim');
+    const current = document.querySelector('.side-current');
+    const baseTitle = document.title;
+
+    const setMenu = open => {
+      side.classList.toggle('open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+      scrim.hidden = !open;
+      document.body.classList.toggle('menu-open', open);
+    };
+    toggle.addEventListener('click', () => setMenu(!side.classList.contains('open')));
+    scrim.addEventListener('click', () => setMenu(false));
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') setMenu(false); });
+
+    // Previous / next follow the side panel's order, across both pages.
+    sections.forEach(section => {
+      const index = sideLinks.findIndex(link => link.dataset.page === page && link.dataset.id === section.id);
+      const nav = document.createElement('nav');
+      nav.className = 'pager-nav';
+      nav.setAttribute('aria-label', 'Previous and next topic');
+      for (const [offset, cls, label] of [[-1, 'prev', 'Previous'], [1, 'next', 'Next']]) {
+        const target = sideLinks[index + offset];
+        if (!target) { nav.append(document.createElement('span')); continue; }
+        const a = document.createElement('a');
+        a.className = cls;
+        a.href = target.dataset.page === page ? `#${target.dataset.id}` : target.getAttribute('href');
+        a.innerHTML = `<small>${label}</small><b></b>`;
+        a.querySelector('b').textContent = target.textContent;
+        nav.append(a);
       }
-    }, { rootMargin: '-20% 0px -70% 0px' });
-    for (const id of byId.keys()) {
-      const section = document.getElementById(id);
-      if (section) observer.observe(section);
+      section.append(nav);
+    });
+
+    function show(id, scroll) {
+      const section = sections.find(s => s.id === id) || sections[0];
+      for (const s of sections) s.hidden = s !== section;
+      for (const link of sideLinks) {
+        const on = link.dataset.page === page && link.dataset.id === section.id;
+        link.classList.toggle('on', on);
+        if (on) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current');
+      }
+      const label = sideLinks.find(link => link.classList.contains('on'))?.textContent || '';
+      if (current) current.textContent = label;
+      document.title = label ? `${label} · ${baseTitle}` : baseTitle;
+      setMenu(false);
+      if (scroll) window.scrollTo({ top: 0 });
     }
+    window.addEventListener('hashchange', () => show(location.hash.slice(1), true));
+    article.classList.add('paged');
+    show(location.hash.slice(1), false);
+    // The browser jumps to the hash target on load; start each topic at the top instead.
+    if (location.hash) requestAnimationFrame(() => window.scrollTo({ top: 0 }));
   }
 
   // Copy buttons fall back to selecting the text when the clipboard is unavailable.
