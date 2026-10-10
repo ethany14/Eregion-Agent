@@ -208,3 +208,17 @@ def test_kernel_reads_archived_result_without_dispatching_a_domain_action(tmp_pa
         assert harness.writes == [] and done['loop_runtime']['context_archive']
     finally:
         loop.close(); db.close()
+
+
+def test_context_read_pages_are_not_recursively_archived():
+    from agent_runtime.request_context import compact_snapshot
+    archive = ContextArchive()
+    reference = archive.reference({'evidence': 'quoted source ' * 1500})['context_ref']
+    page = archive.read(reference)
+    original_refs = set(archive.values)
+    for _ in range(12):
+        snapshot = compact_snapshot({'history': [{'tool': 'read_context',
+            'arguments': {'ref': reference}, 'result': page}]}, archive)
+        assert snapshot['history'] == []  # Access pages live only in the current ToolMessage.
+        assert archive.read(reference) == page
+    assert set(archive.values) == original_refs

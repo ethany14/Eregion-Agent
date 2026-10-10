@@ -11,6 +11,11 @@ from test_auto_apply import database
 from test_career_flow import ToolModel, settled
 
 
+def final_answer(text):
+    from uuid import uuid4
+    return AIMessage(content='',tool_calls=[{'id':str(uuid4()),'name':'finish_task','args':{'text':text}}])
+
+
 class ProviderError(Exception):
     def __init__(self, status):
         self.status_code = status
@@ -42,7 +47,7 @@ def test_invalid_public_output_is_repaired_before_display_or_tools(database, bro
             self.calls += 1
             if self.calls == 1:return broken
             assert all('partial private content' not in str(m.content) for m in messages)
-            return AIMessage(content='Use the secure account form to continue signing in.')
+            return final_answer('Use the secure account form to continue signing in.')
     model=Model();repo=TaskRepository(database.session_factory)
     loop=TaskLoop(repo,Harness(),model_factory=lambda:model)
     try:
@@ -50,7 +55,7 @@ def test_invalid_public_output_is_repaired_before_display_or_tools(database, bro
         result=settled(repo,task['task_id'])
         assert model.calls == 2
         assert [m['text'] for m in result['messages'] if m['role']=='assistant'] == ['Use the secure account form to continue signing in.']
-        assert not result['history']
+        assert [h['tool'] for h in result['history']] == ['finish_task']
     finally:loop.close()
 
 
@@ -198,7 +203,7 @@ def test_transient_model_failures_retry_then_deliver_plain_chat_once(database):
         def invoke(self,*args):
             self.calls+=1
             if self.calls<3:raise ProviderError(503)
-            return AIMessage(content='Hi! What would you like help with?')
+            return final_answer('Hi! What would you like help with?')
     model=Model();loop=TaskLoop(repo,harness,model_factory=lambda:model,retry_delays=(0,0))
     try:
         task=loop.start('hi','hello-retry')
@@ -220,7 +225,7 @@ def test_model_failure_is_bounded_specific_redacted_and_recoverable(database,cap
         def invoke(self,*args):
             self.calls+=1
             if not self.recover:raise ProviderError(status)
-            return AIMessage(content='I can respond again.')
+            return final_answer('I can respond again.')
     model=Model();loop=TaskLoop(repo,Harness(),model_factory=lambda:model,retry_delays=(0,0))
     try:
         task=loop.start('hi','provider-failure')
@@ -245,13 +250,13 @@ def test_model_retries_do_not_replay_completed_tools(database):
             self.calls+=1
             if self.calls==1:return AIMessage(content='',tool_calls=[{'name':'lookup','args':{},'id':'lookup-once'}])
             if self.calls==2:raise ProviderError(503)
-            return AIMessage(content='The lookup completed.')
+            return final_answer('The lookup completed.')
     model=Model();loop=TaskLoop(repo,harness,model_factory=lambda:model,retry_delays=(0,0))
     try:
         task=loop.start('Inspect.','retry-after-tool')
         state=settled(repo,task['task_id'])
         assert model.calls==3 and harness.lookups==1
-        assert [h['tool'] for h in state['history']]==['lookup']
+        assert [h['tool'] for h in state['history']]==['lookup','finish_task']
     finally:loop.close()
 
 
@@ -276,7 +281,7 @@ def test_stale_failure_cannot_overwrite_new_user_message(database):
             self.calls+=1
             if self.calls==1:
                 entered.set();assert release.wait(5);raise ProviderError(503)
-            return AIMessage(content='Responding to your latest message.')
+            return final_answer('Responding to your latest message.')
     model=Model();loop=TaskLoop(repo,Harness(),model_factory=lambda:model,retry_delays=())
     try:
         task=loop.start('hi','failure-message-race')
@@ -322,7 +327,7 @@ def test_text_with_tool_call_is_visible_before_slow_tool_finishes_and_context_is
             self.requests.append(messages)
             if len(self.requests)==1:
                 return AIMessage(content='I am checking that now.',tool_calls=[{'name':'lookup','args':{},'id':'slow-lookup'}])
-            return AIMessage(content='The check is complete.')
+            return final_answer('The check is complete.')
     repo=TaskRepository(database.session_factory);model=Model()
     loop=TaskLoop(repo,SlowHarness(),model_factory=lambda:model)
     try:
@@ -333,7 +338,7 @@ def test_text_with_tool_call_is_visible_before_slow_tool_finishes_and_context_is
         assert state['tool_activity']['tool']=='lookup'
         release.set();state=settled(repo,task['task_id'])
         assert state['tool_activity'] is None
-        assert [t['stage'] for t in state['timings']]==['observation','model','tool','observation','model']
+        assert [t['stage'] for t in state['timings']]==['observation','model','tool','observation','model','tool']
         assert all(t['duration_seconds']>=0 for t in state['timings'])
         assert len(model.requests)==2
         request=model.requests[1]

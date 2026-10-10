@@ -1,5 +1,6 @@
 """Action failures tell the agent what to repair, without guessing from prose."""
 RECOVERY = {
+    'verification_unavailable': ('The user fact is saved but the semantic verifier is unavailable. Request an explicit field choice without treating the original answer as incorrect.', False),
     'invalid_action': ('Read the tool error and correct the arguments or source. A screenshot does not repair a source or policy constraint.', False),
     'quote_mismatch': ('Quote the words in the user message that state this answer; the value must be those words, the same yes/no, or the same option. If the user did not state it, ask them.', False),
     'source_required': ('Use confirmed profile/education facts or bind the relevant chat answer with record_answers. Ask the user only if the fact is actually missing.', False),

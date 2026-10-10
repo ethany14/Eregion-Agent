@@ -1,0 +1,93 @@
+SYNTHETIC QA CANDIDATE - all employment and accomplishments are fictional
+1
+ AVERY LIN
+ Ithaca, NY | avery.lin.qa@example.com | +1 607 555 0148
+ linkedin.com/in/avery-lin-synthetic-qa | github.com/avery-lin-synthetic-qa
+SUMMARY
+Profile
+ - Systems engineering graduate student with experience building Python services, data pipelines, and evidence-grounded AI
+ agents. Combines SQL analytics, evaluation design, and stakeholder communication to turn ambiguous operational needs
+into tested workflows. Seeking full-time AI deployment, data analyst, or software engineering roles starting June 2027.
+EDUCATION
+Cornell University | Master of Engineering, Systems Engineering
+Ithaca, NY | Aug 2026 - May 2027 (expected)
+ - GPA: 3.83/4.00. Coursework: Model-Based Systems Engineering, Optimization, Machine Learning, and Engineering Project
+ Management.
+- Capstone: Designed an appointment-intake simulation for a university clinic using synthetic records, evaluating queue lengths
+ and staffing scenarios. This was an academic simulation, not clinical production work.
+University of Wisconsin-Madison | Bachelor of Science, Computer Science
+Madison, WI | Sep 2022 - May 2026
+ - GPA: 3.72/4.00. Minor: Statistics. Coursework: Database Management Systems, Algorithms, Probability, Distributed Systems,
+ and Human-Computer Interaction.
+- Dean's List for five semesters; completed a senior team project on accessible data dashboards.
+ 
+EXPERIENCE
+Data Engineering Intern | Cedar Analytics Lab (fictional)
+Boston, MA | Jun 2025 - Aug 2025
+ - Built Python and SQL ingestion jobs for 12 internal operational datasets using PostgreSQL and Airflow; reduced median daily
+ processing time from 46 to 29 minutes on the same benchmark workload.
+- Added 38 validation checks for schema drift, missing identifiers, and duplicate events; reduced weekly manual data-cleaning
+ time from approximately 6 hours to 2 hours.
+- Created a Power BI dashboard tracking pipeline freshness and error rates for an eight-person operations team, and
+ documented incident response procedures.
+- Worked with two analysts to clarify reporting requirements and presented weekly progress in English; did not own hiring,
+ budgets, or management responsibilities.
+Undergraduate Research Assistant | Lakeview Computing Group (fictional)
+Madison, WI | Sep 2024 - May 2025
+ - Evaluated retrieval-augmented question answering over 640 public technical documents using Python,
+ sentence-transformers, and FAISS.
+- Created a 180-question evaluation set and compared three chunking strategies; improved citation-supported answer accuracy
+ from 68% to 81% on the held-out evaluation split.
+- Implemented reproducible experiment scripts with fixed seeds, tracked precision and latency, and wrote a six-page methods
+ report for a faculty-supervised student team.
+Software Engineering Intern | Harbor Logistics Studio (fictional)
+Remote, United States | Jun 2024 - Aug 2024
+ - Implemented four FastAPI endpoints for a shipment-status prototype backed by PostgreSQL; added 26 API regression checks
+ and documented request/response contracts.
+- Analyzed 90 days of anonymized shipment events with pandas and SQL to identify recurring late-scan patterns; shared
+ findings with a three-person product team.
+- Containerized the development environment with Docker and added a GitHub Actions workflow for linting and smoke checks.
+ 
+
+SYNTHETIC QA CANDIDATE - all employment and accomplishments are fictional
+2
+PROJECTS
+CareerWeave - Evidence-Grounded Job Agent
+Independent project | Jan 2026 - present
+ - Built a task agent in Python with tool calling, durable SQLite checkpoints, a FastAPI server, and a JavaScript chat interface;
+ supports job analysis, resume tailoring, and application preparation.
+- Implemented Playwright browser tools for text fields, dependent dropdowns, file uploads, and multi-step forms; added explicit
+ review before any final application submission.
+- Created a synthetic evaluation suite of 72 form cases across four layouts, reaching 89% completion without manual
+ correction; measured failures instead of claiming universal website support.
+- Added provider token accounting and compared request batching strategies, reducing input tokens by 31% on a fixed
+ 18-requirement benchmark while retaining source citations.
+TransitPulse - Urban Mobility Analytics
+Course project | Sep 2025 - Dec 2025
+ - Processed 1.2 million public bus-arrival events with pandas and DuckDB; designed a star schema and SQL queries for
+ route-level delay analysis.
+- Trained a scikit-learn gradient boosting baseline to predict delay bands; reached macro-F1 of 0.76 on a chronological holdout
+ and documented seasonal limitations.
+- Built a Streamlit dashboard with route filters and distribution plots, and presented recommendations to a four-person project
+ review panel.
+Document Intake Sandbox
+Independent project | Mar 2026 - May 2026
+ - Developed an OCR-assisted document parsing prototype using Tesseract, pypdf, and Pydantic over 240 synthetic invoices
+ and intake forms.
+- Implemented confidence thresholds and a human review queue for missing or inconsistent fields; achieved 94% exact-field
+ accuracy on a 60-document held-out set.
+- Recorded processing latency and failure categories; documents were synthetic and the project did not handle protected
+ patient information or deploy to a hospital.
+SKILLS
+Technical and communication
+ - Languages: Python, SQL, JavaScript, TypeScript, Java. Data: pandas, NumPy, PostgreSQL, DuckDB, Airflow, Power BI. AI
+ and evaluation: scikit-learn, PyTorch fundamentals, FAISS, retrieval evaluation, prompt testing, structured outputs.
+- Engineering: FastAPI, Playwright, REST APIs, Git, GitHub Actions, Docker, Linux, SQLite. Methods: experimental design,
+ source-grounded writing, data validation, requirements analysis, stakeholder presentations.
+- Languages spoken: English (fluent), Mandarin Chinese (native). Credentials: AWS Certified Cloud Practitioner, earned June
+ 2025. No claim of professional AWS infrastructure ownership or Kubernetes experience.
+ACTIVITIES
+Student mentor | Computing Peer Network (fictional)
+Sep 2023 - May 2026
+ - Mentored six first-year students in introductory Python and debugging during weekly office hours; helped organize two
+ campus project demonstrations.

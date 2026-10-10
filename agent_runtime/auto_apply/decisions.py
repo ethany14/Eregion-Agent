@@ -22,6 +22,13 @@ def source_value(state, reference):
 def active_decision(field, state):
     decision = state.get("field_decisions", {}).get(field["key"])
     if not decision or decision["field"] != signature(field): return None
+    # Retire legacy fast guesses that treated a generic category as proof of
+    # equivalence. Keep them in the audit log, but require a leaf observation.
+    if decision.get('mode')=='equivalent' and (decision.get('origin')=='fast_options' or
+            decision.get('reason')=='Fast semantic mapping from the confirmed source to an observed option.'):
+        from .matching import field_category, resolve_option
+        if field_category(field['label'])=='other' and not resolve_option(field['label'], decision['original_answer'],
+                [{'label':decision['value'],'value':decision['value']}]):return None
     if any(ref.startswith('education:') for ref in decision['sources']):
         from .education import binding
         bound=binding(field,state)

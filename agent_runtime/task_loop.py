@@ -74,7 +74,7 @@ CONTROL_TOOLS = [
     function('pause_task','Honor a request to pause this task and its running capabilities. Preserve all work.',{'text':TEXT}),
     function('wait_for_result','Sleep until a running capability needs input or completes.',
         {'kind':TEXT,'id':TEXT}),
-    function('finish_task','Conclude this request with an accurate summary. The conversation can continue.',{'text':TEXT}),
+    function('finish_task','Explicitly finish the latest request with its answer or observed outcome and evidenced limitations. Also use directly for greetings and ordinary questions. Do not conclude with a promise of future work; the conversation can continue.',{'text':TEXT}),
 ]
 
 
@@ -111,7 +111,9 @@ class TaskLoop:
 
     def start(self, text, key, *, visual_fallback=False, context=None):
         state, created = self.repository.create(text,key,visual_fallback=visual_fallback,context=context)
-        if created:self.schedule(state['task_id'])
+        if created:
+            state = self.repository.change(state['task_id'], model_budget=self._budget(state))
+            self.schedule(state['task_id'])
         return state
 
     def chat(self, task_id, text, message_id, *, visual_fallback=None, context=None):
@@ -288,7 +290,7 @@ class TaskLoop:
             token = self.harness.wait_token(args)
             observed = state.get('capability_versions',{}).get(args['kind'],{}).get(args['id'])
             if observed is not None and observed!=token:return {'changed':True,'next':'Read the newly available result.'}
-            self.repository.change(task_id,status='waiting',wait={**args,'token':token})
+            self.repository.change(task_id,wait={**args,'token':token})
             return {'waiting':True}
         if name=='finish_task':
             self.harness.validate_finish(self.repository.get(task_id))

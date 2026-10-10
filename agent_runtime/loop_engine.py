@@ -96,7 +96,9 @@ class AgentLoop:
         self.runtime = {'version': 1, 'sequence': 0, 'events': [], **(runtime or {})}
         self.context = ConversationWindow(self.runtime.get('transcript', []), max_chars=context_chars)
         self.notice = self.runtime.get('recovery')
-        self.archive = ContextArchive(self.runtime.get('context_archive'))
+        self.archive = ContextArchive(self.runtime.get('context_archive'), self.runtime.get('context_read_progress'), self.runtime.get('context_resources'))
+        if hasattr(self.host, 'context_archive'):
+            self.host.context_archive = self.archive
         self.request_chars = request_chars
 
     def event(self, kind, **data):
@@ -107,6 +109,8 @@ class AgentLoop:
     def save(self):
         self.runtime['transcript'] = self.context.groups
         self.runtime['context_archive'] = self.archive.values
+        self.runtime['context_read_progress'] = self.archive.reads
+        self.runtime['context_resources'] = self.archive.resources
         # Hosts receive a snapshot, never mutable lists shared with the engine.
         self.host.persist(json.loads(json.dumps(self.runtime)))
 
@@ -206,7 +210,7 @@ class AgentLoop:
                             'revision': turn.revision, 'arguments': trace_value(call['args'])}
                         self.event('tool_started', tool=call['name'], call_id=call['id'], revision=turn.revision)
                         self.save()  # Journal intent before a capability has effects.
-                        outcome = (self.archive.read(call['args']['ref'], call['args'].get('offset', 0))
+                        outcome = (self.archive.read(call['args']['ref'], call['args'].get('offset', 0), call['args'].get('path'), reread=call['args'].get('reread', False), historical=call['args'].get('historical', False))
                                    if call['name'] == 'read_context' else self.host.execute(call, turn))
                     except LoopStop:
                         raise
@@ -219,7 +223,7 @@ class AgentLoop:
                     if image and hasattr(self.host, 'image_message'):
                         image_inputs = self.host.image_message(image)
                     stopped = self.host.after_action(call, outcome, turn)
-                    results.append(outcome)
+                    results.append(self.archive.tool_result(outcome))
                     self.event('tool_completed', tool=call['name'], call_id=call['id'], failed='error' in outcome)
                     self.runtime['inflight'] = None
                 self.context.append(snapshot, text, calls, results, turn.revision)

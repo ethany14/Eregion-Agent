@@ -9,6 +9,11 @@ from .decisions import active_decision
 
 
 def desired_answer(field, state):
+    from .education import format_date
+    return format_date(field, _desired_answer(field, state))
+
+
+def _desired_answer(field, state):
     decision = active_decision(field, state)
     if decision: return decision["value"]
     if field['key'] in state['answers']:return state['answers'][field['key']]

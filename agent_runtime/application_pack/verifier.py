@@ -238,7 +238,12 @@ class ArtifactVerifier:
                 if self._semantic_judge is not None:
                     semantic_candidates.append({"claim_id": block.block_id,
                         "claim": block.text, "employer_context": employer_context, "evidence": [
-                            {"claim": item.claim_text, "quote": item.exact_quote}
+                            {"claim": item.claim_text, "quote": item.exact_quote,
+                             "source_section": item.source_section,
+                             "category": item.category,
+                             "employer_or_project": item.employer_or_project,
+                             "role": item.role, "start_date": item.start_date,
+                             "end_date": item.end_date}
                             for item in citations]})
                     reason = None
                 else:
@@ -265,7 +270,9 @@ class ArtifactVerifier:
                 block = next(b for b in blocks if b.block_id == candidate["claim_id"])
                 issues.append(ClaimIssue(block_id=block.block_id, unsupported_text=block.text,
                     reason=("Semantic verification is temporarily unavailable." if unavailable else
-                            "The cited evidence does not entail the complete claim."),
+                            "The cited evidence does not entail the complete claim." + (
+                                " " + str(getattr(supported, 'reasons', {}).get(candidate['claim_id'], ''))[:800]
+                                if getattr(supported, 'reasons', {}).get(candidate['claim_id']) else "")),
                     cited_evidence_ids=block.evidence_ids,
                     revision_instruction="Verify against the cited evidence; remove any added facts."))
         return ArtifactVerification(passed=not issues, issues=issues)

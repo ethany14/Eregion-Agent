@@ -508,21 +508,30 @@ class ApplicationLoop:
             self._submit(run_id, self._close_browser, run_id)
             return state
 
-    def resume(self, run_id, version):
+    def _handoff_message(self, state, text, message_id):
+        if not text or not message_id or any(m['id'] == message_id for m in state.get('messages', [])):
+            return state
+        return self.repository.save(state, messages=[*state.get('messages', []),
+            {'id': message_id, 'role': 'user', 'text': text, 'at': now()}][-100:])
+
+    def resume(self, run_id, version, *, initial_message=None, message_id=None):
         with self.lock:
             state = self.repository.get(run_id)
             if self.closed or state["version"] != version:
                 raise ApplyConflict("The attempt changed. Refresh before resuming.")
             updated = self.repository.reopen(state)
+            updated = self._handoff_message(updated, initial_message, message_id)
             self._submit(run_id, self._finish_reopen, run_id, updated["chat_revision"])
             return updated
 
-    def replace_materials(self, run_id, resume, cover_letter, *, profile=None, material_refs=None):
+    def replace_materials(self, run_id, resume, cover_letter, *, profile=None, material_refs=None,
+                          initial_message=None, message_id=None):
         """Browser work remains serialized; no previous submission approval survives."""
         with self.lock:
             if self.closed:raise ApplyConflict('The application service is stopping.')
             state = self.repository.get(run_id)
             updated = self.repository.replace_documents(state,resume,cover_letter,profile=profile,material_refs=material_refs)
+            updated = self._handoff_message(updated, initial_message, message_id)
             self.scheduled.pop(run_id,None)
             self._submit(run_id, self._finish_reopen, run_id, updated['chat_revision'])
             return updated

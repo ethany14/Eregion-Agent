@@ -28,7 +28,8 @@ from agent_runtime.workspace.repository import JobWorkspaceRepository
 from agent_runtime.workspace.types import ArtifactType
 from custom_agent.handlers import JobAgentStepHandler
 from custom_agent.state import AgentState, AgentStatus, Step
-from job_agent.domain import make_source_entry_id, normalize_text
+from job_agent.domain import make_source_entry_id, normalize_text, normalize_resume_analysis
+from job_agent.resume_sources import complete_source_evidence
 from job_agent.model import DEFAULT_ENV_PATH, shared_model, invoke_structured, optional_setting
 from job_agent.schemas import (
     JobAnalysis, ResumeAnalysis, ResumeEvidence, ResumeSourceEntry, SkillMatch, TailoredResume,
@@ -135,7 +136,7 @@ def resume_analysis_from_snapshot(
             organization or "",
             item.start_date or "",
             item.end_date or "",
-            item.source_section or "",
+            section,
         )
         grouped.setdefault(key, []).append(item)
 
@@ -268,15 +269,8 @@ class ApplicationPackWorkflow:
 
     @staticmethod
     def resume_header_lines(text: str) -> list[str]:
-        lines = [line.strip() for line in text.splitlines() if line.strip()]
-        section_names = {
-            "summary", "professional summary", "education", "experience",
-            "work experience", "selected projects", "projects", "skills",
-            "technical skills", "certifications",
-        }
-        boundary = next((index for index, line in enumerate(lines)
-                         if normalize_text(line) in section_names), None)
-        return lines[:boundary] if boundary is not None else []
+        from job_agent.resume_headers import header_lines
+        return header_lines(text)
 
     def _source(self, application_id: str) -> tuple[JobAnalysis, SkillMatch]:
         application = self._workspace.get_application(application_id)
@@ -348,7 +342,7 @@ class ApplicationPackWorkflow:
             source = self._packs.resume_source(application_id, match.source_run_id)
             if source is not None:
                 imported = self._evidence.import_resume_evidence(
-                    source[1], source[0], source_run_id=match.source_run_id
+                    normalize_resume_analysis(complete_source_evidence(source[1], source[0])), source[0], source_run_id=match.source_run_id
                 )
                 linked = {
                     item.evidence_id
@@ -373,7 +367,8 @@ class ApplicationPackWorkflow:
             original_text = self._workspace.resume_source(resume_artifact.artifact_id)
             if original_text is not None:
                 imported = self._evidence.import_resume_evidence(
-                    ResumeAnalysis.model_validate(resume_artifact.content),
+                    normalize_resume_analysis(complete_source_evidence(
+                        ResumeAnalysis.model_validate(resume_artifact.content), original_text)),
                     original_text,
                     created_by="pack_resume_import",
                 )
@@ -393,6 +388,13 @@ class ApplicationPackWorkflow:
                     )
         snapshot = self._current_snapshot(application_id)
         if scope_to_inputs:
+            if self._workspace.get_application(application_id).version != expected_version:
+                raise PackConflictError('Application version changed.')
+            for existing in self._packs.list_for_application(application_id):
+                if (existing.snapshot_id == snapshot.job_snapshot_id
+                        and existing.evidence_set_hash == snapshot.evidence_set_hash
+                        and existing.status != PackStatus.STALE):
+                    return existing
             # Retrying an agent action after an actual job/evidence change is a
             # new generation, while identical retries still reuse the same pack.
             idempotency_key = hashlib.sha256(json.dumps(
@@ -469,6 +471,9 @@ class ApplicationPackWorkflow:
             item = existing or self._packs.add_item(pack_id, artifact_type=artifact,
                 expected_version=self._packs.get(pack_id).version,
                 idempotency_key=f'{idempotency_key}:{artifact}')
+            if item.status == ItemStatus.FAILED:
+                item = self._packs.request_regeneration(pack_id, item.pack_item_id,
+                    expected_version=item.version, idempotency_key=f'{idempotency_key}:retry:{artifact}')
             if item.status in {ItemStatus.GENERATING, ItemStatus.VERIFYING, ItemStatus.NEEDS_REVISION}:
                 items.append(item)
         with ThreadPoolExecutor(max_workers=3, thread_name_prefix='pack-writer') as pool:

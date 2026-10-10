@@ -37,4 +37,13 @@ def execute(session, name, args):
         'browser_select':'select','browser_check':'check','browser_key':'key','browser_back':'back',
         'browser_tabs':'tabs','browser_frame':'choose_frame','browser_scroll':'scroll','browser_wait':'wait',
         'browser_screenshot':'screenshot','browser_click_at':'click_at'}[name]
-    return getattr(session,method)(**args)
+    from .session import ObservationExpired
+    try:
+        return getattr(session,method)(**args)
+    except ObservationExpired as exc:
+        # The failed precondition is before the effect. Never retry the old ref
+        # against a new page. Return a genuinely fresh observation for replanning.
+        observed = session.read()
+        return {**observed, 'action_performed':False,
+            'recovery':{'kind':'observation_refreshed','reason':str(exc),'requested_tool':name,'action_replayed':False},
+            'next':'The page or control changed before the action. No action was performed. Choose from this fresh observation; do not reuse the old ref.'}

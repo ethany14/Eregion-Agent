@@ -515,3 +515,28 @@ concurrency checks passed 15 tests, including mutation of caller input during a
 request, bounded waits, budget exceptions, source/citation preservation and
 cover-letter/answer/revision adapters. Only the existing Starlette/AnyIO warning
 was reported. Backend processes and `.env` were not changed or restarted.
+
+
+## Current request and explicit completion
+
+Task observations reconstruct `current_request` from the latest durable user
+message and chat revision. The original creation goal remains `initial_goal`
+for history and idempotency; it cannot override a later request. The current
+request is protected during request compaction. Replayed exchanges are labeled
+historical, including older stored transcripts; migration does not rewrite audit
+evidence. A restart retains the same messages, revision, model count and budget.
+
+Every task turn ends through an explicit control decision. `finish_task` delivers
+the answer or observed result; it can directly answer a greeting or ordinary
+question in one model call. Text without a control call is progress, including
+before the first capability action and in a new chat revision. It cannot mark a
+promise as completed. Questions, pauses, background waits and completion retain
+their existing validation and persistence rules.
+
+Repeated immutable reads ignore changing access counters when measuring progress.
+If an unchanged read repeats while a linked application is running, the career
+harness offers the same durable `wait_for_result` handoff used by the model.
+Independent useful actions remain available. A capability that changed meanwhile
+causes a fresh observation instead of sleeping on an obsolete result. Live domain
+observations refresh archived-resource status; old source content stays readable
+but is not authoritative for current approval or application status.

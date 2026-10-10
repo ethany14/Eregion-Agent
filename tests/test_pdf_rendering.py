@@ -75,3 +75,9 @@ def test_tailored_resume_pdf_does_not_repeat_identical_dates() -> None:
     text = PdfReader(BytesIO(render_tailored_resume_pdf(resume))).pages[0].extract_text()
 
     assert "2026 - 2026" not in text
+
+
+def test_identical_approved_content_exports_identical_bytes():
+    from job_agent.pdf_rendering import render_letter_pdf
+    assert render_tailored_resume_pdf(sample_resume()) == render_tailored_resume_pdf(sample_resume())
+    assert render_letter_pdf('Dear Hiring Team,\n\nSource-backed text.') == render_letter_pdf('Dear Hiring Team,\n\nSource-backed text.')

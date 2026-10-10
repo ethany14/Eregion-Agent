@@ -79,6 +79,20 @@ def validate_question(question: MockInterviewQuestion, item: PlanItem,
         raise MockInterviewValidation("Question introduced a number absent from pinned context.")
 
 
+def without_list_markers(text):
+    """Ignore an ordered outline's 1./2./3. labels, not factual quantities.
+
+    Require an actual consecutive sequence starting at one. Standalone numbers,
+    years, decimal values, percentages and quantified achievements remain checked.
+    """
+    markers = list(re.finditer(r'(?<![\w.])([1-9]\d?)[.)]\s+(?=\S)', text))
+    if len(markers) < 2 or [int(m[1]) for m in markers] != list(range(1, len(markers) + 1)):
+        return text
+    for marker in reversed(markers):
+        text = text[:marker.start()] + text[marker.end():]
+    return text
+
+
 def validate_evaluation(evaluation: MockAnswerEvaluation, answer_text: str,
                         question: MockInterviewQuestion, permitted_context: str) -> None:
     if any(normalize_text(quote) not in normalize_text(answer_text)
@@ -89,7 +103,7 @@ def validate_evaluation(evaluation: MockAnswerEvaluation, answer_text: str,
     # Numerals in coaching must come from the answer or pinned source context.
     feedback = " ".join([*evaluation.strengths, *evaluation.improvement_areas,
         *evaluation.unsupported_or_unclear_claims, *evaluation.missing_answer_elements,
-        evaluation.suggested_structure or "", evaluation.followup_reason or ""])
+        without_list_markers(evaluation.suggested_structure or ""), evaluation.followup_reason or ""])
     source_numbers = set(re.findall(r"\b\d+(?:\.\d+)?%?\b", answer_text + " " + permitted_context))
     feedback_numbers = set(re.findall(r"\b\d+(?:\.\d+)?%?\b", feedback))
     if feedback_numbers - source_numbers:

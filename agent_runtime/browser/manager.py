@@ -47,13 +47,30 @@ class BrowsingManager:
         session = self.sessions.get(task_id)
         if session and not session.browser.is_open():
             session.browser.close();self.sessions.pop(task_id,None);session=None
-        if session is None:
-            if name!='browser_open':raise BrowserBlocked('Open a page with browser_open first. Browser tabs are recreated after a server restart.')
-            session = BrowserSession(self.factory(args['url']))
+        try:
+            if session is None:
+                if name!='browser_open':raise BrowserBlocked('Open a page with browser_open first. Browser tabs are recreated after a server restart.')
+                session = BrowserSession(self.factory(args['url']))
+                self.sessions[task_id] = session
+                result = session.read()
+            else:
+                result = execute(session,name,args)
+        except Exception as exc:
+            if type(exc).__name__!='TargetClosedError' or not active():raise
+            # One bounded recovery of a lost transport. Navigation is a safe GET;
+            # other effects are never replayed. It is not a website auth block.
+            url = args.get('url') if name=='browser_open' else (self.states.get(task_id) or {}).get('url')
+            if not url:raise
+            if session:
+                try:session.browser.close()
+                except Exception:pass
+            self.sessions.pop(task_id,None)
+            session = BrowserSession(self.factory(url))
             self.sessions[task_id] = session
-            result = session.read()
-        else:
-            result = execute(session,name,args)
+            result = {**session.read(), 'recovery':{'kind':'closed_session','cause':'TargetClosedError',
+                'attempts':1,'requested_tool':name,'action_replayed':False},
+                'action_performed':name=='browser_open',
+                'next':'Browser transport was recreated once. This is a fresh observation, not a site restriction. No previous click, typing, or other effect was replayed; choose a fresh control if still needed.'}
         with self.lock:self.states[task_id] = {k:v for k,v in result.items() if k!='image'}
         self._preview(task_id,session)
         return result

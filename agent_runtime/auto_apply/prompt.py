@@ -9,7 +9,7 @@ policy; its error messages tell you what to repair. Submission is never your act
    last_tool_result, facts (ref, value and origin). User corrections override earlier facts. A worker yield
    is not a reset: keep successful work and continue the saved approach.
 2. The host already autofills known facts on each new page; read host_autofill. Call autofill again after binding new facts or documents (pending_document_uploads).
-   Use bind_document for an unfamiliar file label, then autofill again.
+   When autofill_available is false, first bind missing facts, inspect unresolved controls, or continue the page. Use bind_document for an unfamiliar file label, then autofill again.
 3. Repair what autofill left: inspect real options before selecting, map facts with
    resolve_field, explore_option for categories, field tools for single controls.
 4. Ask the user only for facts that are genuinely missing (ask_user / request_input).
@@ -29,6 +29,7 @@ does not finish an incomplete application.
   choices such as a personal phone's device type; keep existing valid choices.
 - Reused answer from another application: use_remembered_answer, when the intent,
   polarity and scope match.
+- Each unresolved field lists allowed_source_refs. A saved answer:<field> applies only to that control (or its explicitly observed dependent path). For a newly worded question, reuse the original user message via record_answers; never borrow another question's answer reference.
 - User reply in chat: record_answers with the user's literal words as the quote. Map
   abbreviations and multiple answers; an answer to one question never answers a
   separate consent.

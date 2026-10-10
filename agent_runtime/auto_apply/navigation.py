@@ -29,7 +29,16 @@ PAGE_SCAN = r"""() => {
     .filter(visible).map(el => clean(el.textContent)).join(' / ').slice(0,600);
   const accountHeading = [...root.querySelectorAll('h1, h2, legend, [role="heading"]')].filter(visible)
     .some(el => /sign.?in|log.?in|create.*account|candidate account|sign.?up|register/i.test(el.textContent));
-  const identifier = accountHeading && [...root.querySelectorAll('input:not([type="hidden"])')].some(visible);
+  const identifierInputs = [...root.querySelectorAll('input')].filter(visible)
+    .filter(el => !el.disabled && !el.readOnly && ['text','email','tel','file'].includes(el.type));
+  const accountSubmit = controls.some(c => c.tag !== 'A' && !c.disabled &&
+    /sign.?in|log.?in|create.*account|sign.?up|register/i.test(c.label));
+  const onlyInput = identifierInputs.length === 1 ? identifierInputs[0] : null;
+  const username = onlyInput && (onlyInput.type === 'email' || ['email','username'].includes(onlyInput.autocomplete) ||
+    (onlyInput.type === 'text' && /e.?mail|user.?name|login.?id/i.test(
+      [...onlyInput.labels || []].map(el => el.innerText).join(' ') || onlyInput.getAttribute('aria-label') ||
+      onlyInput.getAttribute('placeholder') || onlyInput.name || onlyInput.id)));
+  const identifier = accountHeading && (accountSubmit || !!username);
   const text = clean((root === document ? document.querySelector('main, [role="main"], form') || document.body : root).innerText).slice(0,6000);
   const errors = [...root.querySelectorAll('[role="alert"], [data-automation-id="errorMessage"], .field-error, .error-message')].filter(visible).map(el=>clean(el.textContent)).filter(Boolean).slice(0,20);
   return {heading, text, controls, errors, authentication_required: password || otp || identifier};

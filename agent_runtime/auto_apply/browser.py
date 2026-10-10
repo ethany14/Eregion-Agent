@@ -949,7 +949,16 @@ class ApplicationBrowser:
                 self.save_login_state(force=True)
                 if hasattr(self, 'context'):
                     self.context.close()
-                if not _pooled_browser(self.browser):
+                if _pooled_browser(self.browser):
+                    # The last task owns the last context, not a reusable live
+                    # session. Evict before close: a delayed disconnect event
+                    # must not hand the next task a closing Chrome process.
+                    if not self.browser.contexts:
+                        pool = getattr(_playwright_runtime, 'browsers', {})
+                        for key, browser in list(pool.items()):
+                            if browser is self.browser:pool.pop(key, None)
+                        self.browser.close()
+                else:
                     self.browser.close()
         finally:
             self._closed = True

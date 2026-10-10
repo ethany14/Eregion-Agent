@@ -175,7 +175,8 @@ def test_decision_context_has_material_status_and_full_documents_remain_inspecta
     snapshot=c.harness.observe(c.repository.get(c.state['task_id']))
     summary=snapshot['materials'][0]
     assert summary['content_available_via']=='inspect_materials'
-    assert all('text' not in item and 'verification' not in item for item in summary['items'])
+    assert all('text' not in item for item in summary['items'])
+    assert all(item['verification']['passed'] for item in summary['material_overview'])
     details=execute(c,'inspect_materials',pack_id=pack['pack_id'])
     assert all(item['text'] for item in details['items'])
     assert [(i['pack_item_id'],i['status'],i['version']) for i in summary['items']]==[

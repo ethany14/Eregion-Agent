@@ -266,6 +266,15 @@ class MockInterviewRepository:
                 {"answer_id": answer.answer_id, "question_id": question_id})
             return answer, False
 
+    def has_operation(self, interview_id: str, key: str, kind: str) -> bool:
+        with self._factory() as db:
+            event = db.scalar(select(MockInterviewEventRow).where(
+                MockInterviewEventRow.mock_interview_id == interview_id,
+                MockInterviewEventRow.idempotency_key == key))
+            if event is not None and event.event_type != kind:
+                raise MockInterviewConflict("Idempotency key was reused.")
+            return event is not None
+
     def evaluation(self, answer_id: str) -> MockAnswerEvaluation | None:
         with self._factory() as db:
             row = db.scalar(select(MockAnswerEvaluationRow).where(
@@ -322,7 +331,7 @@ class MockInterviewRepository:
 
     def change_status(self, interview_id: str, expected_version: int,
                       status: MockStatus, kind: str, key: str | None = None,
-                      error_code: str | None = None) -> MockInterviewSession:
+                      error_code: str | None = None, details: dict | None = None) -> MockInterviewSession:
         with self._factory.begin() as db:
             row = self._require(db, interview_id)
             if key:
@@ -339,8 +348,17 @@ class MockInterviewRepository:
                 error_code=error_code,
                 **({"completed_at": datetime.now(UTC)} if status in {
                     MockStatus.COMPLETED, MockStatus.CANCELLED} else {}))
-            self._event(db, row, kind, key)
+            self._event(db, row, kind, key, details)
             return self._view(row)
+
+    def last_failure(self, interview_id):
+        with self._factory() as db:
+            self._require(db, interview_id)
+            event = db.scalar(select(MockInterviewEventRow).where(
+                MockInterviewEventRow.mock_interview_id == interview_id,
+                MockInterviewEventRow.event_type.in_(['EVALUATION_FAILED', 'QUESTION_FAILED'])
+            ).order_by(MockInterviewEventRow.sequence.desc()).limit(1))
+            return json.loads(event.payload_json) if event else None
 
     def save_report(self, interview_id: str, report: dict,
                     expected_version: int, key: str) -> dict:

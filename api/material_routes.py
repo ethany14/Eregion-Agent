@@ -1,4 +1,4 @@
-"""Materials library: every generated document across applications, newest pack per application."""
+"""Materials library: current document of each type across an application's packs."""
 import json
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -47,12 +47,16 @@ def list_materials(runtime: SessionRuntime = Depends(get_session_runtime)):
     workspace, packs, workflow = _services(runtime)
     materials = []
     for application in _all_applications(workspace):
-        latest = packs.list_for_application(application.application_id)[:1]
-        if not latest:
-            continue
-        pack = workflow.refresh_staleness(latest[0].pack_id)
+        from agent_runtime.application_pack.selection import current_materials, latest_materials
+        selected = current_materials(workspace, packs, workflow, application.application_id)
+        latest_ids = {i.pack_item_id for p, i in latest_materials(workspace, packs, workflow, application.application_id)}
+        # Stale documents remain visible for review/history, but cannot be applied.
+        if not selected:
+            selected = [(workflow.refresh_staleness(p.pack_id), i)
+                        for p in packs.list_for_application(application.application_id)[:1]
+                        for i in packs.items(p.pack_id)]
         job = workspace.application_job(application.application_id)
-        for item in packs.items(pack.pack_id):
+        for pack, item in selected:
             verification = item.verification
             materials.append({
                 "pack_id": pack.pack_id, "pack_item_id": item.pack_item_id,
@@ -62,6 +66,8 @@ def list_materials(runtime: SessionRuntime = Depends(get_session_runtime)):
                 "source_question": item.source_question,
                 "status": item.status.value, "stale": pack.status.value == "stale",
                 "version": item.version, "updated_at": item.updated_at.isoformat(),
+                "is_latest_attempt": item.pack_item_id in latest_ids,
+                "requires_explicit_selection": item.pack_item_id not in latest_ids,
                 "verified": None if verification is None else verification.passed,
                 "issues": 0 if verification is None else len(verification.issues),
                 "pdf": f"/api/packs/{pack.pack_id}/items/{item.pack_item_id}/{PDF[item.artifact_type]}"

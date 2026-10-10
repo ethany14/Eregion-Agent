@@ -81,7 +81,7 @@ class ApplyRepository:
             from agent_runtime.analysis_cache import warm_resume
             from agent_runtime.memory.policy import LocalOwnerResolver
             try:
-                text = '\n\n'.join(page.extract_text() or '' for page in PdfReader(BytesIO(resume)).pages).strip()
+                text = '\n\n'.join((page.extract_text() or '').strip() for page in PdfReader(BytesIO(resume)).pages).strip()
                 if text:
                     warm_resume(self.sessions, text, owner=LocalOwnerResolver().resolve().owner_id)
             except Exception:

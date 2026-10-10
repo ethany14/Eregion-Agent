@@ -13,6 +13,10 @@ from agent_runtime.auto_apply.navigation import action_kind
 from agent_runtime.auto_apply.visual import SECRET_SELECTOR, SCREEN_STATE, VisualBrowser
 
 
+class ObservationExpired(BrowserBlocked):
+    """Pre-action observation invalidated; refresh without executing the stale intent."""
+
+
 SCAN = r"""({query, offset, text_offset, ref, region_ref, navigation_only, job_only}) => {
   const visible = e => !!e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden'
     && !e.closest('[hidden], [inert], [aria-hidden="true"]');
@@ -43,6 +47,7 @@ SCAN = r"""({query, offset, text_offset, ref, region_ref, navigation_only, job_o
     const search=type==='search' || role==='searchbox' || !!e.closest('[role="search"]') ||
       (editable && /search|keyword|query|find jobs/i.test([name,e.name,e.id,e.getAttribute('placeholder')].join(' ')));
     return {ref,label:name,tag:e.tagName,type,role,editable,search,
+      content_link:!e.closest('header,nav,footer,[role="navigation"]') && !!e.closest('main,article,li,[role="main"],[role="listitem"],.posting'),
       context:navigation_only?'':clean((e.closest('li,article,[role="listitem"]') || e.parentElement?.parentElement || e.parentElement)?.innerText).slice(0,360),
       href:e.tagName==='A'?e.href:null,disabled:!!e.disabled || e.getAttribute('aria-disabled')==='true',
       read_only:!!e.readOnly, checked:e.checked ?? e.getAttribute('aria-checked'),
@@ -140,29 +145,29 @@ class BrowserSession:
             result = {**self.scope.evaluate(SCAN,{'query':query,'offset':offset,'text_offset':text_offset,'region_ref':region_ref,'job_only':job_only}),
                 'url':page.url,'frame_url':self.scope.url,'tabs':tabs,
                 'frames':[{'id':str(i),'url':f.url,'active':f==self.scope} for i,f in enumerate(page.frames)]}
-        self.observation = {**result,'observation_id':str(uuid4())}
+        self.observation = {**result,'query':query,'observation_id':str(uuid4())}
         return self.observation
 
     def _fresh(self, token):
         if not self.observation or token!=self.observation['observation_id']:
-            raise BrowserBlocked('The observation is stale. Read the current browser state.')
+            raise ObservationExpired('The observation is stale. Read the current browser state.')
         if self.browser.page.is_closed() or self.browser.page.url!=self.observation['url']:
-            raise BrowserBlocked('The page changed. Read it before acting.')
+            raise ObservationExpired('The page changed. Read it before acting.')
 
     def _target(self, token, ref):
         self._fresh(token)
         item = next((c for c in self.observation['controls'] if c['ref']==ref),None)
         if not item:raise BrowserBlocked('Choose a control from the latest browser observation.')
         locator = self.scope.locator(f'[data-northstar-browse="{ref}"]')
-        if locator.count()!=1 or not locator.is_visible():raise BrowserBlocked('The control moved or disappeared. Read the page again.')
+        if locator.count()!=1 or not locator.is_visible():raise ObservationExpired('The control moved or disappeared. Read the page again.')
         if item['disabled'] or not locator.is_enabled():raise BrowserBlocked('The control is disabled. Wait or inspect the page.')
         if locator.evaluate("e=>e.matches('input[type=password],[data-northstar-secret],[autocomplete=one-time-code]')"):
             raise BrowserBlocked('Use the secure account form for credentials.')
         if (locator.get_attribute('href') is not None and locator.evaluate('e=>e.href') != item['href']):
-            raise BrowserBlocked('The link destination changed. Read the page again.')
+            raise ObservationExpired('The link destination changed. Read the page again.')
         fresh=self.scope.evaluate(SCAN,{'query':'','offset':0,'text_offset':0,'ref':ref})['controls']
         if not fresh or any(fresh[0].get(k)!=item.get(k) for k in ('label','tag','type','role','submits_form','search_form')):
-            raise BrowserBlocked('The control changed purpose. Read the page before acting.')
+            raise ObservationExpired('The control changed purpose. Read the page before acting.')
         return item,locator
 
     def _region(self,token,ref):
@@ -170,7 +175,7 @@ class BrowserSession:
         item=next((r for r in self.observation.get('regions',[]) if r['ref']==ref),None)
         if not item:raise BrowserBlocked('Choose a region from the latest browser observation.')
         locator=self.scope.locator(f'[data-northstar-browse="{ref}"]')
-        if locator.count()!=1 or not locator.is_visible():raise BrowserBlocked('The panel moved or disappeared. Read the page again.')
+        if locator.count()!=1 or not locator.is_visible():raise ObservationExpired('The panel moved or disappeared. Read the page again.')
         return locator
 
     @staticmethod

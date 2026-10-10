@@ -26,17 +26,24 @@ def date_parts(text, *, confirmed_quote=""):
     text=str(text).strip().casefold()
     years=list(dict.fromkeys(re.findall(r'\b(?:19|20)\d{2}\b',text)))
     result={'year':years[0]} if len(years)==1 else {}
-    for month in range(1,13):
-        if re.search(r'\b(?:'+calendar.month_name[month].lower()+'|'+calendar.month_abbr[month].lower()+r')\b',text):
-            result['month']=str(month);break
-    iso=re.fullmatch(r'((?:19|20)\d{2})[-/](0?[1-9]|1[0-2])',text)
-    reverse=re.fullmatch(r'(0?[1-9]|1[0-2])[-/]((?:19|20)\d{2})',text)
+    named_months=[month for month in range(1,13) if re.search(
+        r'\b(?:'+calendar.month_name[month].lower()+'|'+calendar.month_abbr[month].lower()+r')\b',text)]
+    if len(named_months)==1:result['month']=str(named_months[0])
+    if len(named_months)>1:return result
+    # A graduation status describes the date; it is not part of its calendar
+    # value. Project a local copy only, leaving the source fact untouched.
+    calendar_text=re.sub(r'\s*\((?:expected|anticipated|projected|planned|completed|in progress)\)\s*$', '', text)
+    iso=re.fullmatch(r'((?:19|20)\d{2})[-/](0?[1-9]|1[0-2])',calendar_text)
+    reverse=re.fullmatch(r'(0?[1-9]|1[0-2])[-/]((?:19|20)\d{2})',calendar_text)
     if iso:result.update(year=iso[1],month=str(int(iso[2])))
     if reverse:result.update(year=reverse[2],month=str(int(reverse[1])))
     # Full ISO dates are unambiguous. Slash dates require either an
     # unambiguous day (>12) or a matching, explicitly written calendar date.
-    full_iso = re.fullmatch(r'((?:19|20)\d{2})-(\d{1,2})-(\d{1,2})', text)
+    full_iso = re.fullmatch(r'((?:19|20)\d{2})-(\d{1,2})-(\d{1,2})', calendar_text)
     numeric = re.fullmatch(r'(\d{1,2})/(\d{1,2})/((?:19|20)\d{2})', text)
+    if re.match(r'^(?:19|20)\d{2}[-/]\d{1,2}',calendar_text) and not (iso or full_iso):
+        result.pop('month',None)
+        return result # Unrecognized alternatives must not turn into a different date.
     candidates = []
     if full_iso:candidates.append(tuple(map(int, full_iso.groups())))
     if numeric:
@@ -53,6 +60,50 @@ def date_parts(text, *, confirmed_quote=""):
     valid = {(y,m,d) for y,m,d in candidates if 1 <= m <= 12 and 1 <= d <= calendar.monthrange(y,m)[1]}
     if len(valid) == 1:
         year,month,_ = valid.pop();result.update(year=str(year),month=str(month))
+    return result
+
+
+def date_format(field):
+    hint=' '.join(str(field.get(k) or '') for k in ('label','placeholder','help')).upper()
+    template=re.search(r'(?<![A-Z])(?:YYYY[-/]MM(?:[-/]DD)?|MM[-/]YYYY|DD[-/]MM[-/]YYYY|MM[-/]DD[-/]YYYY)(?![A-Z])',hint)
+    if template:return template[0]
+    native=field.get('type') or field.get('kind')
+    return {'month':'YYYY-MM','date':'YYYY-MM-DD'}.get(native)
+
+
+def format_date(field, value):
+    template=date_format(field)
+    if not template or not isinstance(value,str):return value
+    parts=date_parts(value,confirmed_quote=value)
+    if 'year' not in parts or 'month' not in parts:return None
+    year,month=int(parts['year']),int(parts['month'])
+    day=None
+    iso=re.search(r'(?<!\d)((?:19|20)\d{2})-(\d{1,2})-(\d{1,2})(?!\d)',value)
+    if iso:day=int(iso[3])
+    numeric=re.fullmatch(r'(\d{1,2})/(\d{1,2})/((?:19|20)\d{2})',value.strip())
+    if numeric:
+        first,second,_=map(int,numeric.groups())
+        # The source, not the target's format, determines the calendar date.
+        # date_parts already rejects ambiguous and invalid numeric calendars.
+        if second>12 or first==second:day=second
+        elif first>12:day=first
+    for m in range(1,13):
+        named=re.search(r'\b(?:'+calendar.month_name[m]+'|'+calendar.month_abbr[m]+r')\.?\s+(\d{1,2})(?:st|nd|rd|th)?[,]?\s+((?:19|20)\d{2})\b',value,re.I)
+        if named:day=int(named[1]);month=m;year=int(named[2]);break
+    if 'DD' in template and (day is None or not 1<=day<=calendar.monthrange(year,month)[1]):return None
+    return template.replace('YYYY',str(year)).replace('MM',f'{month:02d}').replace('DD',f'{day:02d}' if day else '')
+
+
+def combined_bindings(items):
+    """Collapse redundant projections of the same date, never conflicting facts."""
+    groups={}
+    for item in items:groups.setdefault(item.get('field_key'),[]).append(item)
+    result=[]
+    for values in groups.values():
+        parts={v.get('component') for v in values}
+        prefix=next((p for p in ('start','end') if p+'_date' in parts and parts<={p+'_date',p+'_month',p+'_year'}),None)
+        if prefix:result.append(next(v for v in values if v['component']==prefix+'_date'))
+        else:result.extend(values)
     return result
 
 
@@ -134,7 +185,9 @@ def gaps(state,fields,page,*,final=False):
         item=binding(field,state)
         if not item:continue
         value=desired_answer(field,state)
-        if value is None:continue
+        if value is None:
+            if item['component'] in {'start_date','end_date'} and date_format(field):pending.append('Date needs the precision required by the field: '+field['label'])
+            continue
         if matches(field,value):
             if item['component']=='school':represented.add(item['education_id'])
         else:pending.append(field['label'])

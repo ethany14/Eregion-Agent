@@ -72,6 +72,9 @@ Summary evidence must belong to one non-education source entry per sentence; kee
 in their separate education entries. Never merge undergraduate and graduate records into one claim.
 Do not invent facts, numbers, qualifications or experience. Do not repeat summary text in entry bullets. Headings,
 organizations, contact details and dates are restored by code; do not emit or rewrite them.
+Education headers are citation evidence, not additional bullets: keep degree, school and dates in
+their restored headings. Use education bullets only for extra facts such as coursework or honors.
+Skills must describe affirmative capabilities; omit disclaimers about skills the candidate lacks.
 """
 
 def remove_unsupported(state):

@@ -27,7 +27,13 @@ def compact(value, depth=0):
 def trace_value(value):
     value = compact(value)
     encoded = json.dumps(value, ensure_ascii=False)
-    return value if len(encoded) <= 8000 else {'excerpt': encoded[:8000], 'truncated': True}
+    if len(encoded) <= 8000:
+        return value
+    # Audit excerpts must not swallow the error/recovery signal appended after
+    # a long page. Model replay uses lossless archive references separately.
+    important = {k: value[k] for k in ('error', 'error_code', 'next', 'progress_feedback',
+        'observation_id', 'context_ref', 'read_with', 'saved', 'failed', 'retryable') if isinstance(value, dict) and k in value}
+    return {'excerpt': encoded[:6000], 'truncated': True, **important}
 
 
 class ConversationWindow:
@@ -68,10 +74,11 @@ class ConversationWindow:
             return isinstance(value, list) and any(contains_secret(v) for v in value)
         if len(encoded) > 12000 or contains_secret(calls):
             return
-        self.groups.append({'request': {'goal': snapshot.get('goal') or snapshot.get('task'),
-                'request': trace_value(latest), 'context_note': 'Use the newest observation for current facts and permissions.'},
+        self.groups.append({'request': {'historical_request': trace_value(
+                snapshot.get('current_request', {}).get('message') or latest),
+                'context_note': 'Historical tool exchange only. The live current_request determines what to do now.'},
             'assistant': {'text': text[:4000], 'tool_calls': calls},
-            'results': [{'id': call['id'], 'name': call['name'], 'value': trace_value(result)}
+            'results': [{'id': call['id'], 'name': call['name'], 'value': result}
                         for call, result in zip(calls, results)], 'revision': revision})
         self._trim()
 
@@ -105,7 +112,13 @@ class ConversationWindow:
         messages, previous_request = [], None
         for group in self.groups:
             assistant = group['assistant']
-            request = json.dumps(group['request'], ensure_ascii=False, separators=(',', ':'))
+            old_request = group['request']
+            # Migrate replay at read time; preserve the original audit on disk.
+            request = json.dumps({'historical_request': old_request.get('historical_request',
+                old_request.get('request') or old_request.get('goal')),
+                'historical_revision': group.get('revision'),
+                'context_note': 'Past exchange, not a renewed instruction. Follow the live current_request and live outcomes.'},
+                ensure_ascii=False, separators=(',', ':'))
             identity = (group.get('revision'), request)
             if identity != previous_request:
                 messages.append(HumanMessage(content=request))

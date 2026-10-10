@@ -27,7 +27,17 @@ def email_first(browser):
     # A profile/contact form with an email field is not a login step. Require
     # account-specific heading context, not a header's unrelated Sign In link.
     headings = scope.locator('h1:visible, h2:visible, legend:visible, [role="heading"]:visible').all_text_contents()
-    return any(re.search(r'sign.?in|log.?in|create.*account|candidate account|sign.?up|register', text, re.I) for text in headings)
+    if not any(re.search(r'sign.?in|log.?in|create.*account|candidate account|sign.?up|register', text, re.I) for text in headings):
+        return False
+    # Portals often keep an account heading after sign-in. A normal application
+    # form must not be treated as another credential step on that heading alone.
+    controls = account_browser.catalog(scope)
+    if any(c['tag'] != 'A' and c['purpose'] in {'login', 'register'}
+           and not c['disabled'] for c in controls):
+        return True
+    inputs = [c for c in controls if c['tag'] == 'INPUT' and not c['disabled']
+              and c['type'] in {'text', 'email', 'tel', 'file'}]
+    return len(inputs) == 1 and inputs[0]['purpose'] == 'username'
 
 
 def context(browser):

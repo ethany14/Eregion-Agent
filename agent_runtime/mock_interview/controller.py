@@ -2,6 +2,25 @@
 from __future__ import annotations
 
 import hashlib
+import logging
+from pydantic import ValidationError
+from agent_runtime.model_runtime import model_failure
+
+logger = logging.getLogger(__name__)
+
+
+def evaluation_failure(exc):
+    # Never log provider bodies, answers, credentials, or arbitrary model output.
+    if isinstance(exc, ValidationError):
+        return {'error_code': 'evaluation_schema', 'error_type': type(exc).__name__,
+                'issues': [{'location': list(e['loc']), 'type': e['type']}
+                           for e in exc.errors(include_input=False, include_context=False, include_url=False)]}
+    if isinstance(exc, MockInterviewValidation):
+        return {'error_code': 'evaluation_grounding', 'error_type': type(exc).__name__, 'detail': str(exc)}
+    failure = model_failure(exc)
+    return {'error_code': failure.code, 'error_type': failure.error_type,
+            'retryable': failure.retryable, 'http_status': failure.status}
+
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -262,24 +281,29 @@ class MockInterviewController:
             previous={"question": question.model_dump(mode="json"),
                       "answer_id": answer.answer_id})
         context["expected_answer_elements"] = question.expected_answer_elements
+        # Retry feedback is diagnostic output, never additional factual evidence.
+        permitted_context = canonical_json(context)
         snapshot = self._prepare_context_snapshot(interview, context, "evaluation")
         try:
             for attempt in range(2):
+                draft = None
                 try:
                     draft = MockAnswerEvaluation.model_validate(self.model.evaluate(context))
                     evaluation = MockAnswerEvaluation.model_validate({
                         **draft.model_dump(mode="python"),
                         "evaluation_id": str(uuid4()), "answer_id": answer.answer_id})
                     validate_evaluation(evaluation, answer.original_text,
-                        question, canonical_json(context))
+                        question, permitted_context)
                     break
                 except (MockInterviewValidation, ValueError) as exc:
+                    logger.info('Interview validation repair: interview=%s details=%s', interview.mock_interview_id, evaluation_failure(exc))
                     if attempt:
                         raise
                     self.context_snapshots.abandon(snapshot.snapshot_id,
                         reason="evaluation_validation_retry")
-                    context = {**context, "validation_feedback":
-                        "Previous evaluation was ungrounded. Quote only the stored answer; do not add facts."}
+                    context = {**context, "validation_feedback": evaluation_failure(exc),
+                        "repair_instruction": "Correct the listed validation issues in the previous evaluation. Keep quotations verbatim and do not add candidate facts.",
+                        "previous_evaluation": draft.model_dump(mode='json') if draft is not None else None}
                     snapshot = self._prepare_context_snapshot(interview, context, "evaluation")
             used = sum(value["question"]["plan_item_id"] == item.plan_item_id
                        and value["question"]["is_followup"]
@@ -296,12 +320,15 @@ class MockInterviewController:
                 # and never silently confirms a fact.
                 pass
             return saved
-        except Exception:
+        except Exception as exc:
+            failure = evaluation_failure(exc)
+            logger.warning('Interview evaluation failed: interview=%s details=%s', interview.mock_interview_id, failure)
             self.context_snapshots.abandon(snapshot.snapshot_id, reason="evaluation_failed")
             try:
                 return self.interviews.change_status(interview.mock_interview_id,
                     interview.version, MockStatus.FAILED, "EVALUATION_FAILED",
-                    error_code="evaluation_failed")
+                    error_code="evaluation_failed", details={**failure, 'answer_id': answer.answer_id,
+                        'answer_saved': True, 'next': 'Retry evaluation of the saved answer or skip this question; do not ask for the same answer again.'})
             except MockInterviewConflict:
                 return self.interviews.get(interview.mock_interview_id)
 
@@ -323,12 +350,18 @@ class MockInterviewController:
     def resume(self, interview_id: str, *, expected_version: int,
                idempotency_key: str) -> MockInterviewSession:
         interview = self.interviews.get(interview_id)
+        if self.interviews.has_operation(interview_id, idempotency_key, 'RESUME_REQUESTED'):
+            return interview
         if interview.version != expected_version:
             raise MockInterviewConflict("Interview version changed.")
         if interview.status in {MockStatus.COMPLETED, MockStatus.CANCELLED}:
             return interview
         if interview.status == MockStatus.AWAITING_ANSWER:
             return interview
+        # Persist retry ownership before provider work. Repeated HTTP requests
+        # and restarts cannot spend another evaluation for the same operation.
+        interview = self.interviews.change_status(interview_id, interview.version,
+            interview.status, 'RESUME_REQUESTED', idempotency_key)
         if interview.current_question_id:
             answer = self.interviews.answer_for_question(interview.current_question_id)
             if answer and self.interviews.evaluation(answer.answer_id) is None:
@@ -353,8 +386,7 @@ class MockInterviewController:
         if previous is not None:
             if previous.original_text != text:
                 raise MockInterviewConflict("Idempotency key was reused with different content.")
-            return self.resume(interview_id, expected_version=interview.version,
-                idempotency_key=f"resume:{idempotency_key}")
+            return interview
         if not interview.current_question_id:
             raise MockInterviewConflict("No question is awaiting an answer.")
         self.interviews.save_answer(interview_id, interview.current_question_id,
@@ -436,4 +468,5 @@ class MockInterviewController:
             "question": question.model_dump(mode="json") if question else None,
             "latest_feedback": next((turn["evaluation"] for turn in reversed(
                 self.interviews.turns(interview_id)) if turn["evaluation"]), None),
-            "report_available": self.interviews.report(interview_id) is not None}
+            "report_available": self.interviews.report(interview_id) is not None,
+            "failure": self.interviews.last_failure(interview_id) if session.status == MockStatus.FAILED else None}

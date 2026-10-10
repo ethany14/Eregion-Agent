@@ -378,7 +378,9 @@ class PackRepository:
             artifact.verification_status = "passed" if verification.passed else "failed"
             self._refresh_status(session, pack)
             self._event(session, pack, "ARTIFACT_VERIFIED", {"item_id": item_id,
-                "passed": verification.passed, "issue_count": len(verification.issues)})
+                "passed": verification.passed, "issue_count": len(verification.issues),
+                "artifact_id": item.artifact_id, "item_version": item.version,
+                "verification": verification.model_dump(mode="json")})
             session.flush()
             return self._item(item)
 

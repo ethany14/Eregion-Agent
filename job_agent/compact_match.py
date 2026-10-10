@@ -7,6 +7,7 @@ def match_payload(resume, requirements):
     """Shared wire payload for request sizing and actual provider calls."""
     import json
     return json.dumps({'evidence': [e.model_dump(mode='json') for e in resume.evidence],
+                       'sources': [s.model_dump(mode='json') for s in resume.source_entries],
                        'requirements': [r.model_dump(mode='json') for r in requirements]},
                       ensure_ascii=False, separators=(',', ':'))
 
@@ -44,5 +45,8 @@ Matched means the ENTIRE requirement is supported, including expertise and durat
 some but not all. Related products are not equivalent. Respect negations. Missing means no support.
 Eligibility, work authorization, sponsorship and any user_confirmation requirement always need
 confirmation. Cite only supplied IDs. Never infer years from seniority. Do not treat future or
-in-progress education as completed. A missing/needs_confirmation item can have an empty evidence_ids.
+in-progress education as completed. Source metadata supplies ownership and dates, not extra qualifications.
+Degree requirements need explicit degree evidence; coursework alone is insufficient. Preserve alternative
+qualifications (degree OR equivalent experience) and completion constraints exactly as stated.
+A missing/needs_confirmation item can have an empty evidence_ids.
 """

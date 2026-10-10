@@ -3,7 +3,7 @@ from agent_runtime.fast_decisions import accepted, DecisionBatch, record_routing
 from job_agent.prompts import MATCH_PROMPT
 from job_agent.schemas import SkillAssessment, SkillEvidence
 
-MATCH_ROUTING_VERSION = 'adaptive-compact-v5'
+MATCH_ROUTING_VERSION = 'adaptive-compact-v6-source-evidence'
 
 
 def matching_batches(resume, requirements, *, max_requirements=24, target_chars=40_000):
@@ -64,7 +64,21 @@ def assess_skills(resume, job, analyze, service):
                              'missing': 'No quote offers full or partial support.',
                              'unknown': 'Partial, combined, ambiguous, or uncertain evidence.'}}
     batch = DecisionBatch()
-    if service.enabled and questions and len(questions) <= 40:
+    pending_before = [r for r in requirements if r.requirement_id not in decided]
+    minimum_pending = [r for i, r in enumerate(requirements)
+                       if r.requirement_id not in decided and f'r{i}' not in questions]
+    from job_agent.compact_match import match_payload
+    import json
+    main_batches = matching_batches(resume, pending_before)
+    unavoidable = matching_batches(resume, minimum_pending)
+    can_reduce = len(unavoidable) < len(main_batches)
+    main_chars = sum(len(match_payload(resume, chunk)) for chunk in main_batches)
+    unavoidable_chars = sum(len(match_payload(resume, chunk)) for chunk in unavoidable)
+    fast_chars = len(json.dumps({'evidence': evidence, 'questions': questions}, ensure_ascii=False))
+    # Require headroom even under optimistic acceptance. Mixed complex resumes
+    # otherwise pay for a large Jev payload and still repeat the same main calls.
+    cost_effective = fast_chars + unavoidable_chars < main_chars * .75
+    if service.enabled and questions and len(questions) <= 40 and can_reduce and cost_effective:
         batch = service.evaluate({'evidence': evidence}, questions, purpose='skill_evidence')
     # Equivalent supporting quotes divide selection probability. For these cases,
     # separately verify the chosen quote rather than lowering the entailment gate.
@@ -85,7 +99,12 @@ def assess_skills(resume, job, analyze, service):
                              'unsupported': 'Unsupported or only partially supported.',
                              'unknown': 'Uncertain or ambiguous.'}}
     verified = DecisionBatch()
-    if checks:
+    directly_decided = {requirements[int(key[1:])].requirement_id for key, answer in batch.answers.items()
+                        if accepted(answer) and (answer['choice'] in evidence or answer['choice'] == 'missing')}
+    remaining_direct = [r for r in pending_before if r.requirement_id not in directly_decided]
+    check_ids = {requirements[int(key[1:])].requirement_id for key in checks}
+    remaining_verified = [r for r in remaining_direct if r.requirement_id not in check_ids]
+    if checks and len(matching_batches(resume, remaining_verified)) < len(matching_batches(resume, remaining_direct)):
         verified = service.evaluate({}, checks, purpose='skill_evidence_verify')
         record_routing('skill_evidence_verify', verified)
     for i, requirement in enumerate(requirements):
@@ -138,7 +157,8 @@ def assess_skills(resume, job, analyze, service):
         elif match.match_status == 'needs_confirmation':
             recommendations.append(f'Confirm {match.job_skill} before applying.')
     record_routing('skill_evidence', batch, accepted=len(requirements)-len(pending),
-                   deferred=len(pending), main_model_calls=len(chunks))
+                   deferred=len(pending), main_model_calls=len(chunks),
+                   route_skipped=bool(service.enabled and questions and not (can_reduce and cost_effective)))
     counts = {status: sum(m.match_status == status for m in matches)
               for status in ('matched', 'partial', 'missing', 'needs_confirmation')}
     explanation = (f"Resume evidence supports {counts['matched']} requirements fully and "

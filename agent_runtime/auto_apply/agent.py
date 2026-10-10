@@ -18,7 +18,7 @@ from .matching import resolve_option, search_text, boolean_answer, is_consent, c
 from .autofill import desired_answer, matches, pending_documents
 from .decisions import active_decision, protected, preserves_format, signature, source_value
 from .contracts import candidate_answer
-from .education import COMPONENTS, facts as education_facts, binding as education_binding, gaps as education_gaps, repeatable as repeatable_education
+from .education import COMPONENTS, facts as education_facts, binding as education_binding, gaps as education_gaps, repeatable as repeatable_education, format_date
 from .drafting import prepare_draft, visible_drafts
 
 from agent_runtime.browser.tools import BROWSER_TOOLS, BROWSER_NAMES, VISUAL_NAMES as BROWSER_VISUAL_NAMES
@@ -50,7 +50,7 @@ TOOLS = [
         {**FIELD, 'text':TEXT, 'evidence':{'type':'array','items':{'type':'object',
             'properties':{'source_ref':TEXT,'quote':TEXT}, 'required':['source_ref','quote'],'additionalProperties':False}},
          'missing_details':{'type':'array','items':TEXT}}),
-    tool('bind_education','Associate all visible fields of one education row with one saved education record. Then autofill/repair those fields; add the next row when needed.',
+    tool('bind_education','Associate each visible field once with one saved education record. Combined dates use start_date/end_date; use month/year only for separate controls. Autofill formats explicit field date templates without changing source graduation status.',
         {'observation_id':TEXT,'education_id':TEXT,'fields':{'type':'array','items':{'type':'object','properties':{
             'field_key':TEXT,'component':{'type':'string','enum':list(COMPONENTS)}},'required':['field_key','component'],'additionalProperties':False}}}),
     tool('use_remembered_answer','Reuse a confirmed answer from an earlier application when the question means the same thing and its scope still applies.',
@@ -81,7 +81,7 @@ TOOLS = [
              "required": ["field_key", "message_id", "quote", "value"], "additionalProperties": False}}}),
     tool("update_plan", "Save the remaining steps and the current approach for this application.",
          {"steps": {"type": "array", "items": TEXT}, "approach": TEXT}),
-    tool("autofill", "Fill supplied candidate facts and explicit answers in bulk; report verified/failed fields."),
+    tool("autofill", "Fill newly bound facts/documents or remaining known values in bulk. The host already filled known values on page entry; this tool is offered only while work remains."),
     tool("observe", "Read the latest form values, missing fields and validation errors."),
     tool("say", "Send a short progress explanation or question to the user in the application chat.", {"text": TEXT}),
     tool("use_chat_answer", "Legacy literal-only answer tool; prefer record_answers for natural conversation.",
@@ -90,7 +90,7 @@ TOOLS = [
     tool("search_options", "Search an autocomplete dropdown using a supplied fact; expand known country/school aliases. Follow next_offset to read long results.", {**FIELD, "source_ref": TEXT}, optional=OPTION_PAGE),
     tool("click_field", "Click/focus an observed text control or dropdown, without changing checkbox answers.", FIELD),
     tool("type_from_source", "Type a value from an allowed source, with keyboard input events.", {**FIELD, "source_ref": TEXT}),
-    tool("choose_option", "Select an option observed for this field and grounded in its explicit answer.", {**FIELD, "source_ref": TEXT, "option_label": TEXT}),
+    tool("choose_option", "Select an observed option using this field's allowed_source_refs. If no answer is bound yet, use record_answers with the relevant original user message first.", {**FIELD, "source_ref": TEXT, "option_label": TEXT}),
     tool("press_key", "Use ArrowDown, ArrowUp, Escape or Tab on a control; Enter is unavailable.",
          {**FIELD, "key": {"type": "string", "enum": ["ArrowDown", "ArrowUp", "Escape", "Tab"]}}),
     tool("view_field", "Inspect an image of a field, only if optional visual fallback is enabled.", FIELD),
@@ -161,7 +161,7 @@ class ConfiguredToolModel:
 
     def verify_answers(self, answers):
         from .grounding import verify_boolean_answers
-        return verify_boolean_answers(self.model, answers, timeout=self.timeout)
+        return verify_boolean_answers(self.fast_model, answers, timeout=self.timeout)
 
 
 class HybridApplicationAgent:
@@ -240,6 +240,13 @@ class AgentTools:
             values = field.get("options", [])
             limit = 300 if field["key"] in self.observed_options or len(values) <= OPTION_PREVIEW else OPTION_PREVIEW
             return values[:limit]
+        def allowed_sources(field):
+            allowed=[]
+            for ref in sources:
+                try:self.source(field,ref)
+                except BrowserBlocked:continue
+                allowed.append(ref)
+            return allowed
         from .memory import compatible
         unresolved = [f for f in self.fields if f['key'] not in completed_keys]
         memories = [{k: item.get(k) for k in ('memory_id', 'question', 'value')}
@@ -274,7 +281,7 @@ class AgentTools:
             "facts": [{'ref': key, 'value': value[:2000] if isinstance(value, str) else value,
                 'origin': self.state.get('answer_sources', {}).get(key.removeprefix('answer:'), {})
                     if key.startswith('answer:') else key.split(':', 1)[0]} for key, value in sources.items()],
-            "fields": [{"key": f["key"], "label": f["label"][:250], "value": f["value"], "done": True} if f["key"] in completed_keys else {"key": f["key"], "label": f["label"][:250], "kind": f["kind"],
+            "fields": [{"key": f["key"], "label": f["label"][:250], "value": f["value"], "done": True} if f["key"] in completed_keys else {"key": f["key"], "label": f["label"][:250], "kind": f["kind"], "allowed_source_refs":allowed_sources(f),
                 "required": f["required"], "invalid": f.get("invalid", False),
                 "choice_control":f.get("choice_control", False), "group":f.get("group", ""),
                 "search_text":f.get("search_text", ""), "section":f.get("section", ""),
@@ -294,6 +301,15 @@ class AgentTools:
             return decision["value"]
         if reference == f"answer:{field['key']}" and field["key"] in self.state["answers"]:
             return self.state["answers"][field["key"]]
+        # A newly observed dependent choice may use its parent's confirmed
+        # leaf goal. This permission is restricted to the recorded live path,
+        # exact observed choices and non-sensitive fields, never general facts.
+        if field['key'] not in self.state['answers'] and not protected(field):
+            for path in self.state.get('option_paths',{}).values():
+                goal=source_value(self.state,reference)
+                if path['source_ref']==reference and field['key'] in path['field_keys'] and goal==path['goal']:
+                    options=self.observed_options.get(field['key']) or field.get('options',[])
+                    if goal is not None and resolve_option(field['label'],goal,options):return goal
         if reference.startswith('education:'):
             bound=education_binding(field,self.state)
             if not bound:
@@ -524,7 +540,8 @@ class AgentTools:
         if name == "click_field":
             self.browser.click_field(key)
         elif name == "type_from_source":
-            answer = self.source(field, args["source_ref"])
+            answer = format_date(field, self.source(field, args["source_ref"]))
+            if answer is None:raise BrowserBlocked("The source date lacks unambiguous precision for this field. Ask for the missing detail.")
             if matches(field, answer):
                 return {"field_key": key, "already_filled": True, "value": field["value"]}
             self.browser.type_field(key, answer)
@@ -569,7 +586,8 @@ class AgentTools:
         if not record or not isinstance(args['fields'],list) or not 1<=len(args['fields'])<=20:
             raise BrowserBlocked('Choose a saved education record and its observed row fields.')
         bindings=dict(self.state.get('education_bindings',{}));seen=set()
-        for item in args['fields']:
+        from .education import combined_bindings
+        for item in combined_bindings(args['fields']):
             if not isinstance(item,dict) or set(item)!={'field_key','component'} or item['component'] not in COMPONENTS:
                 raise BrowserBlocked('Map each field to a supported education component.')
             field=next((f for f in self.fields if f['key']==item['field_key']),None)
@@ -585,6 +603,13 @@ class AgentTools:
         return {'bound':list(seen),'education_id':record['id'],'next':'Fill all available facts for this record, then add/map other education records.'}
 
     def _recall_answer(self,field,args):
+        def allowed_sources(field):
+            allowed=[]
+            for ref in sources:
+                try:self.source(field,ref)
+                except BrowserBlocked:continue
+                allowed.append(ref)
+            return allowed
         from .memory import compatible
         memory=next((m for m in self.state.get('remembered_answers',[]) if m['memory_id']==args['memory_id']),None)
         if not self.state.get('reuse_answers',True) or not memory or not isinstance(args['reason'],str) or not 0<len(args['reason'])<=1000:
@@ -763,7 +788,9 @@ class AgentTools:
                 raise BrowserBlocked("Keep the existing valid choice unless the user changes it.")
         elif not sources:
             raise BrowserBlocked("Cite the confirmed fact you are adapting.")
-        elif mode == "format" and not preserves_format(value, sources):
+        elif mode == "format" and not (preserves_format(value, sources) or
+                any(format_date(field, v)==value
+                    for v in sources.values())):
             raise BrowserBlocked("Preserve the source data when formatting or splitting it; do not invent digits or facts.")
         # The model can represent the same source in a text control too (for
         # example an explicitly stated date in the site's requested format).
@@ -798,7 +825,7 @@ class AgentTools:
         if current and current["value"] and not matches(current,goal):
             self._decision(field,current["value"],"category",{args["source_ref"]:goal},args["reason"])
         return {"options":children, "field_keys":path["field_keys"], "goal":goal,
-            "next":"Choose the intended leaf or inspect the new dependent field. This category is not yet a completed answer."}
+            "next":"Choose the intended leaf or inspect the new dependent field using this path source_ref. This category is not yet a completed answer. If it exposed no matching leaf or child, try a different observed category before advancing."}
 
     def _reconcile_paths(self):
         paths = {k:dict(v) for k,v in self.state.get("option_paths",{}).items()}
@@ -886,24 +913,34 @@ class AgentTools:
                     # belongs to the next browser decision, not answer ingestion.
             seen.add(key)
             prepared.append({**item, "value": value})
+        unsupported = set()
         if semantic:
             if self.verify_answers is None:
                 raise BrowserBlocked("This nonliteral Yes/No answer needs semantic verification before filling.", code="quote_mismatch")
             checks = self.verify_answers([{"question": label, "quote": quote, "proposed": value}
                                           for label, quote, value in semantic])
-            if len(checks) != len(semantic) or any(check is not True for check in checks):
-                raise BrowserBlocked("The quoted statement does not support the proposed Yes/No answer to this question. "
-                    "Re-read its negation and scope, correct the interpretation, and retry. "
-                    "Ask the user only if the statement is ambiguous.", code="quote_mismatch")
+            if len(checks) != len(semantic):
+                raise BrowserBlocked('Incomplete semantic verification; no unverified answers were saved.', code='verification_unavailable')
+            unsupported = {evidence for evidence, checked in zip(semantic, checks) if checked is not True}
             if not self.active() or (self.refresh and self.refresh().get("chat_revision", 0) != revision):
                 raise BrowserBlocked("The conversation changed during verification. Read the latest reply.", code="stale_observation")
-            self.verified_answers.update(semantic)
+            self.verified_answers.update(evidence for evidence in semantic if evidence not in unsupported)
+        rejected = [item['field_key'] for item in prepared
+                    if (fields[item['field_key']]['label'], item['quote'],
+                        next(raw['value'] for raw in items if raw['field_key'] == item['field_key'])) in unsupported]
+        prepared = [item for item in prepared if item['field_key'] not in rejected]
+        if rejected and not prepared:
+            raise BrowserBlocked('The quoted statement does not support the proposed Yes/No answer. Preserve its negation and scope; clarify only genuinely ambiguous facts.', code='quote_mismatch')
         if self.bind_answers:
             self.bind_answers(prepared, revision)
         else:
             for item in prepared:
                 if self.accept_answer: self.accept_answer(item["field_key"], item["value"], item["message_id"])
         self.state["answers"].update({item["field_key"]: item["value"] for item in prepared})
+        if rejected:
+            return {'saved': [item['field_key'] for item in prepared], 'failed_fields': rejected,
+                'error': 'Some proposed answers were not supported by their quotes.', 'error_code': 'quote_mismatch',
+                'next': 'Autofill the saved answers. Correct or clarify only failed_fields; do not ask for the saved answers again.'}
         return {"saved": [item["field_key"] for item in prepared], "next": "autofill"}
 
 

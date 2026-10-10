@@ -62,7 +62,7 @@ IDs, grouping IDs and the legacy original_text copy are assigned by the applicat
 
 
 def extraction_signature():
-    return hashlib.sha256(json.dumps([REFERENCE_JOB_PROMPT, ReferencedJobExtraction.model_json_schema()],
+    return hashlib.sha256(json.dumps(['bounded-output-v2', REFERENCE_JOB_PROMPT, ReferencedJobExtraction.model_json_schema()],
                                     sort_keys=True).encode()).hexdigest()
 
 
@@ -92,3 +92,37 @@ def numbered_sentences(text):
 REFERENCE_JOB_PROMPT = JOB_EXTRACTION_PROMPT.replace(
     'Return one statement per source statement, copying its complete source_text verbatim ONCE.',
     'The source is a numbered sentence map. Return each source sentence_id instead of copying its text. Return responsibility_sentence_ids for responsibilities. Use only the supplied IDs.')
+
+
+def extract_job(model, text):
+    """Bound generated output per request while preserving full requirement context.
+
+    Each source sentence is assigned exactly once. Every batch sees the original
+    description so Preferred/Required headings and shared qualifiers are retained.
+    A failed batch fails the extraction; partial coverage is never a complete score.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+    from contextvars import copy_context
+    from job_agent.model import invoke_structured
+    sentences = numbered_sentences(text)
+    ids = list(sentences)
+    groups = [ids[i:i + 8] for i in range(0, len(ids), 8)] if len(ids) > 12 else [ids]
+    def extract(targets):
+        payload = {'source_sentences': sentences, 'extract_sentence_ids': targets}
+        prompt = REFERENCE_JOB_PROMPT + "\nExtract requirements and responsibilities ONLY for extract_sentence_ids. Other source sentences provide headings/qualifiers and role context, not additional items."
+        result = invoke_structured(model, ReferencedJobExtraction, prompt,
+                                  json.dumps(payload, ensure_ascii=False, separators=(',', ':')))
+        if any(s.sentence_id not in targets for s in result.statements) or any(k not in targets for k in result.responsibility_sentence_ids):
+            raise ValueError('Job extraction crossed its assigned source sentences.')
+        return result
+    if len(groups) == 1:
+        results = [extract(groups[0])]
+    else:
+        with ThreadPoolExecutor(max_workers=3, thread_name_prefix='job-extraction') as pool:
+            results = [future.result() for future in [pool.submit(copy_context().run, extract, group) for group in groups]]
+    merged = ReferencedJobExtraction(
+        title=next((r.title for r in results if r.title), None),
+        summary=next((r.summary for r in results if r.summary), ''),
+        statements=[s for r in results for s in r.statements],
+        responsibility_sentence_ids=list(dict.fromkeys(k for r in results for k in r.responsibility_sentence_ids)))
+    return merged.expand(sentences)

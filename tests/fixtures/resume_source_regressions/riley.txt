@@ -1,0 +1,89 @@
+RILEY NG
+Toronto, Ontario, Canada | riley.ng.qa@example.com | +1 416 555 0186
+linkedin.com/in/riley-ng-synthetic-qa | github.com/riley-ng-synthetic-qa
+SUMMARY
+Data systems engineer with graduate training in data science and practical experience developing Python services, analytical
+models, and quality checks for operational datasets. Enjoys explaining uncertainty to nontechnical collaborators and building
+reproducible workflows. Seeking remote Canadian data engineering or AI operations roles. All organizations, employment
+records, and accomplishments in this document are fictional QA data.
+EDUCATION
+University of British Columbia | Master of Data Science
+Vancouver, BC | Sep 2024 - Jun 2025 (completed)
+Coursework included statistical inference, database systems, natural language processing, cloud computing, visualization,
+and responsible data management. Graduated with an 87% program average. The capstone team developed a document
+categorization prototype using public municipal reports and synthetic service requests; no private citizen records were used.
+Riley owned the evaluation plan and data quality checks, rather than managing staff or a production service.
+University of Calgary | Bachelor of Science, Applied Mathematics
+Calgary, AB | Sep 2019 - May 2023 (completed)
+Minor in Computer Science. GPA 3.61/4.00. Completed courses in numerical methods, probability, optimization, algorithms,
+databases, and software design. The senior project compared queueing models for campus shuttle demand using public
+schedules. Received an undergraduate research award and presented a poster at a student research event in April 2023.
+EXPERIENCE
+Data Systems Developer | Silver Birch Operations (fictional)
+Toronto, ON | Jul 2025 - Sep 2026
+Built Python ingestion and reconciliation jobs for 18 synthetic supplier datasets stored in PostgreSQL. Added checks for
+missing identifiers, schema drift, impossible dates, and duplicate line items. Reduced median processing time from 34 to 22
+minutes on a fixed weekly benchmark; this comparison did not measure company-wide productivity.
+Implemented six FastAPI endpoints for an internal prototype, with Pydantic request models and documented error
+responses. Wrote 44 API and data validation checks, including malformed dates, duplicate requests, and restart scenarios.
+Participated in code review using Git and GitHub Actions.
+Created Power BI reports showing freshness, volume changes, and reconciliation failures for five operations analysts.
+Gathered requirements through weekly English-language discussions and documented definitions for recurring metrics. The
+team used the reports for prototype evaluation, not regulated financial reporting.
+Maintained a Docker development setup and reproducible local fixtures. Recorded latency distributions and failure causes,
+then compared batching changes on the same input. Had no responsibility for Kubernetes administration, security
+certification, employee hiring, or budget approval.
+Graduate Research Assistant | Coastline Information Lab (fictional)
+Vancouver, BC | Oct 2024 - May 2025
+Compared retrieval methods over 820 public city reports using Python, sentence-transformers, and FAISS. Created 210
+evaluation questions and annotated whether a generated answer cited the right source passage. Improved
+supported-answer accuracy from 65% to 79% on a held-out split while recording cases where retrieval still failed.
+Wrote scripts to fix random seeds, version datasets, and produce evaluation tables. Compared four chunk sizes and reported
+the tradeoff between retrieval recall and prompt length. Delivered a methods document for a faculty-supervised student team;
+the work was an academic prototype and was not deployed for public decision making.
+Data Analytics Intern | Prairie Transit Workshop (fictional)
+Calgary, AB | May 2022 - Aug 2022
+Analyzed 120 days of anonymized vehicle-event fixtures with pandas and SQL, looking for missing updates and recurring
+schedule gaps. Built a Tableau dashboard with route and time filters, and discussed findings with a four-person student
+
+
+operations group.
+Added reconciliation queries and documented assumptions about incomplete records. Estimated differences between
+weekday and weekend patterns without claiming causal effects. Presented findings in English and revised visualizations after
+stakeholder feedback.
+PROJECTS
+FormTrail - Recoverable Workflow Agent
+Independent project | Jan 2026 - Sep 2026
+Implemented a Python tool loop, SQLite checkpoints, typed action contracts, and a small JavaScript chat interface. The
+prototype reads public job pages, analyzes descriptions, drafts documents, and prepares forms for review. It cannot submit
+an application without a user review action.
+Built Playwright tools for dependent selects, search inputs, uploads, and repeated education sections. Evaluated 96 synthetic
+forms across five layouts, with 86% completing without intervention. Failures were logged by field and action; this result does
+not establish compatibility with every real website.
+Compared compact tool outputs and caching on a fixed 24-requirement workload. Reduced input tokens by 28% while
+keeping evidence citations and explicit missing-data results. Tested interrupted sessions and stale browser references
+separately from successful runs.
+PermitLens - Document Intake Evaluation
+Independent project | Mar 2025 - Jun 2025
+Used Tesseract, pypdf, and Pydantic to extract structured fields from 300 synthetic permit forms and public sample
+documents. Added confidence thresholds, format validation, and a manual review queue. Exact-field accuracy was 92% on
+an 80-document holdout, with handwritten inputs remaining difficult.
+Recorded parsing latency and common error categories. The project never handled patient records, deployed in a hospital,
+or claimed HIPAA compliance. Domain-specific production use would require additional expertise and controls.
+RouteBench - Mobility Analysis
+Course project | Sep 2023 - Dec 2023
+Processed 1.6 million public transit events using DuckDB and pandas, designed a star schema, and compared route-level
+delay distributions. A scikit-learn gradient boosting baseline reached macro-F1 of 0.73 on a chronological holdout. A
+Streamlit dashboard exposed filters, confidence limitations, and examples of seasonal drift.
+SKILLS
+Languages: Python, SQL, JavaScript, TypeScript, Java. Data: PostgreSQL, DuckDB, pandas, NumPy, Power BI, Tableau,
+Airflow. Machine learning: scikit-learn, FAISS, retrieval evaluation, prompt testing, and PyTorch fundamentals.
+Engineering: FastAPI, Pydantic, REST APIs, Playwright, SQLite, Git, GitHub Actions, Docker, Linux. Methods: experimental
+design, data validation, requirements analysis, technical writing, and stakeholder presentations.
+English: fluent. Mandarin Chinese: conversational. French: intermediate. AWS Certified Cloud Practitioner, earned August
+2025. No claim of production Kubernetes ownership or professional hospital deployment experience.
+ACTIVITIES
+Volunteer mentor | Prairie Coding Circle (fictional)
+Sep 2021 - May 2023
+Mentored eight beginner programmers during weekly workshops on Python, debugging, and explaining results. Helped
+organize three student project demonstrations and created sample exercises with synthetic data.

@@ -194,36 +194,17 @@ def normalize_generated_resume_metadata(
         }))
 
     normalized_source = normalize_claim_text(source_resume_text)
-    lines = [line.strip() for line in source_resume_text.splitlines() if line.strip()]
-    section_labels = {
-        "summary", "professional summary", "education", "experience",
-        "work experience", "selected projects", "projects", "skills",
-        "technical skills", "certifications",
-    }
-    first_section = next(
-        (index for index, line in enumerate(lines)
-         if normalize_claim_text(line) in section_labels),
-        None,
-    )
-    source_name = None
-    source_contacts: list[str] = []
-    if first_section is not None and first_section > 0:
-        header_lines = lines[:first_section]
-        candidate = header_lines[0]
-        if len(candidate) <= 120 and "@" not in candidate and "|" not in candidate:
-            source_name = candidate
-            source_contacts = header_lines[1:]
-
-    name = resume.header.name or source_name
-    if name and normalize_claim_text(name) not in normalized_source:
-        name = None
-        adjustments.append("Removed unsupported resume header name.")
-    contact_lines = [
-        value for value in resume.header.contact_lines
-        if normalize_claim_text(value) in normalized_source
-    ]
+    from job_agent.resume_headers import header_lines
+    source_header = header_lines(source_resume_text, resume.header.name)
+    name = source_header[0] if source_header else None
+    source_contacts = source_header[1:]
+    contact_lines = [value for value in resume.header.contact_lines
+                    if any(normalize_claim_text(value) in normalize_claim_text(line)
+                           for line in source_contacts)]
     if not contact_lines:
         contact_lines = source_contacts
+    if name != resume.header.name:
+        adjustments.append("Restored candidate name from the source header.")
     if contact_lines != resume.header.contact_lines:
         adjustments.append("Restored resume header metadata from the source resume.")
     return TailoredResume.model_validate({
@@ -234,6 +215,53 @@ def normalize_generated_resume_metadata(
         "sections": [section.model_dump(mode="python") for section in sections],
         "quality_adjustments": list(dict.fromkeys(adjustments)),
     })
+
+
+def affirmative_skill_clauses(text):
+    """Display verbatim affirmative skill clauses; keep limitations in source evidence.
+
+    This is conservative presentation cleanup, never a way of asserting that an
+    omitted/negated tool is known. Mixed uncertain clauses are omitted as a whole.
+    """
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    # A standalone group heading before a labelled/bulleted list is structure,
+    # not two skills joined by "and". Preserve ordinary single-item skill lines.
+    lines = [line for index, line in enumerate(lines) if not (
+        index + 1 < len(lines) and ':' not in line and ',' not in line
+        and not re.match(r'^[-•]', line) and len(line.split()) <= 6
+        and re.search(r'\band\b', line, re.I)
+        and re.match(r'^[-•]\s*[^:]{1,50}:', lines[index + 1]))]
+    text = '\n'.join(lines)
+    text = re.sub(r'\n\s*[-•]\s*', '; ', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+    text = re.sub(r'^\s*[-•]\s*', '', text)
+    # Category labels can contain 'and' (AI and evaluation). They are not skills.
+    text = re.sub(r'(?:^|(?<=[.;])\s+)[A-Za-z][A-Za-z /&-]{0,45}:\s*(?=[^.;]*[,|])', ' ', text)
+    clauses = re.split(r';+|(?<=[.!?])\s+', text)
+    positive = [clause.strip() for clause in clauses if clause.strip()
+                and not re.search(r'\b(?:no|not(?! only\b)|never|without|lack(?:ing|s)?|none)\b|不会|没有|不具备', clause, re.I)]
+    items = []
+    for clause in positive:
+        # Keep source wording and qualifiers while representing a source list
+        # as individual claims, as required by the shared resume validator.
+        for part in re.split(r'\s*(?:[,|•]|\band\b)\s*', clause):
+            part = part.strip().strip('.')
+            if not part:
+                continue
+            if items and re.match(r'^(?:earned|obtained|issued|valid|since|through)\b', part, re.I):
+                items[-1] += ' (' + part + ')'
+            else:
+                items.append(part)
+    return items
+
+
+def education_header_only(text, source):
+    remaining = normalize_claim_text(text)
+    for value in sorted((source.heading, source.organization, source.location,
+                         source.start_date, source.end_date), key=lambda v: len(v or ''), reverse=True):
+        if value:
+            remaining = remaining.replace(normalize_claim_text(value), '')
+    return not re.search(r'\w', remaining)
 
 
 def ensure_foundational_resume_sections(
@@ -257,6 +285,28 @@ def ensure_foundational_resume_sections(
             existing_index = next((index for index, entry in enumerate(entries)
                                    if entry.entry_id == source.source_entry_id), None)
             existing = entries[existing_index] if existing_index is not None else None
+            if source_type == 'skills':
+                # A citation to a whole skill block does not prove the writer
+                # actually retained every skill. Restore the positive source
+                # clauses directly, instead of treating its ID as full coverage.
+                claims = [SupportedClaim(text=clause, evidence_ids=[key], source_entry_id=source.source_entry_id)
+                          for key in source.evidence_ids
+                          for clause in affirmative_skill_clauses(evidence_by_id.get(key, ''))]
+                if not claims:
+                    if existing_index is not None:
+                        entries.pop(existing_index)
+                    continue
+                restored = ResumeEntry(entry_id=source.source_entry_id, heading=source.heading,
+                    subheading=source.organization, bullets=claims)
+                if existing_index is None:
+                    entries.append(restored)
+                else:
+                    entries[existing_index] = restored
+                continue
+            if existing is not None:
+                existing = existing.model_copy(update={'bullets': [claim for claim in existing.bullets
+                    if not education_header_only(claim.text, source)]})
+                entries[existing_index] = existing
             cited = {evidence_id for claim in (existing.bullets if existing else [])
                      for evidence_id in claim.evidence_ids}
             claims = []
@@ -264,7 +314,7 @@ def ensure_foundational_resume_sections(
                 if evidence_id in cited:
                     continue
                 text = evidence_by_id.get(evidence_id)
-                if not text:
+                if not text or education_header_only(text, source):
                     continue
                 digest = hashlib.sha256(
                     f"{source.source_entry_id}|{evidence_id}|{text}".encode()
@@ -276,7 +326,7 @@ def ensure_foundational_resume_sections(
                     source_entry_id=source.source_entry_id,
                     target_requirement_ids=[],
                 ))
-            if not claims:
+            if not claims and existing is not None:
                 continue
             restored = ResumeEntry(
                 entry_id=source.source_entry_id,
@@ -294,6 +344,9 @@ def ensure_foundational_resume_sections(
             adjustments.append(
                 f"Restored source-backed {section_type} entry {source.source_entry_id}."
             )
+        if not entries and section is not None and source_type == 'skills':
+            sections.remove(section)
+            by_type.pop(section_type, None)
         if entries:
             replacement = ResumeSection(
                 section_type=section_type,

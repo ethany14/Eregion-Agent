@@ -13,3 +13,6 @@ __pycache__/
 uploads/
 .browser-sessions/
 artifacts/browser-eval/
+
+# Local frontend design references
+/design/

@@ -12,6 +12,7 @@ from agent_runtime.evidence.types import (
 from agent_runtime.security import canonical_json
 from job_agent.schemas import JobAnalysis
 from job_agent.domain import normalize_text
+from job_agent.resume_headers import SKILL_SECTIONS, section_name
 
 
 def _words(value: str) -> set[str]:
@@ -21,6 +22,25 @@ def _words(value: str) -> set[str]:
 _INSTRUCTION_TEXT = re.compile(
     r"\b(ignore (?:previous|prior|all) instructions|system prompt|developer message|"
     r"override (?:the )?(?:verifier|safety|rules)|do not verify)\b", re.I)
+
+
+def _same_source_entry(left, right) -> bool:
+    """Skills-section extraction may lack entry metadata in older Vault versions.
+
+    Only explicit skill sections in the same resume share this relaxed boundary;
+    employment, project, and education ownership remains strict.
+    """
+    if not left.source_reference or left.source_reference != right.source_reference:
+        return False
+    if (left.category.value == right.category.value == 'skill'
+            and section_name(left.source_section or '') in SKILL_SECTIONS
+            and section_name(right.source_section or '') in SKILL_SECTIONS):
+        return True
+    if (left.category.value == right.category.value == 'skill'
+            and section_name(left.source_section or '') != section_name(right.source_section or '')):
+        return False
+    return (left.category, left.employer_or_project, left.role, left.start_date, left.end_date) == (
+        right.category, right.employer_or_project, right.role, right.start_date, right.end_date)
 
 
 class EvidenceSelectionPolicy:
@@ -52,6 +72,18 @@ class EvidenceSelectionPolicy:
         for link in links:
             if link.evidence_id in by_id and link.evidence_version_id == by_id[link.evidence_id].current.evidence_version_id:
                 linked.setdefault(link.evidence_id, []).append(link)
+        # Complete quotes supersede physical-line fragments only within an
+        # established source boundary. Keep the Vault/history immutable.
+        source_entries = [item for item in by_id.values()
+                          if item.current.source_type == EvidenceSourceType.RESUME]
+        for item in source_entries:
+            quote = normalize_text(item.current.claim_text)
+            if quote and any(other.evidence_id != item.evidence_id
+                   and _same_source_entry(other.current, item.current)
+                   and len(normalize_text(other.current.claim_text)) > len(quote)
+                   and quote in normalize_text(other.current.claim_text)
+                   for other in source_entries):
+                by_id.pop(item.evidence_id, None)
         ranked = []
         for item in by_id.values():
             # An Interviewer answer remains application-scoped until explicitly linked here.
@@ -62,7 +94,10 @@ class EvidenceSelectionPolicy:
                         and claim_words & _words(req.canonical_name + " " + req.atomic_text)]
             preferred = [req for req in job.requirements if req.level == "preferred"
                          and claim_words & _words(req.canonical_name + " " + req.atomic_text)]
-            if item.evidence_id in linked:
+            if (item.current.source_type == EvidenceSourceType.RESUME
+                    and item.current.category.value in {'skill', 'education'}):
+                rank, reason = -1, "resume_foundation"
+            elif item.evidence_id in linked:
                 rank, reason = 0, "application_link"
             elif required:
                 rank, reason = 1, "required_requirement"
@@ -87,10 +122,13 @@ class EvidenceSelectionPolicy:
                            item.evidence_id, item, reason, associated))
         ranked.sort()
         selected, remaining = [], token_budget
-        selected_claims: set[str] = set()
+        selected_claims: set[tuple] = set()
         for _, _, _, _, _, item, reason, associated in ranked:
             version = item.current
-            claim_key = " ".join(version.claim_text.casefold().split())
+            claim_key = (version.source_type, version.source_reference, version.category,
+                         version.employer_or_project, version.role, version.start_date,
+                         version.end_date, section_name(version.source_section or ''),
+                         normalize_text(version.claim_text))
             if claim_key in selected_claims:
                 continue
             cost = estimate_tokens({"claim": version.claim_text, "quote": version.exact_quote,

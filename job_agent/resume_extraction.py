@@ -45,6 +45,8 @@ Extract only supported facts; never infer skills or qualifications from demograp
 Create an entry for each original employer/role, project, education item, summary or skills block.
 Within each entry, quote each useful fact verbatim once in evidence. source_section identifies
 its original resume section. Preserve ALL education entries, disciplines and stated dates.
+Include each education header as verbatim evidence, including degree, school and completion
+qualifiers (expected, in progress, incomplete, or coursework only). Do not leave degrees only in metadata.
 Keep employers, projects and their evidence separate. Preserve original entry order.
 For experience, heading is the exact job title and organization the exact employer; for projects,
 heading is the exact project name; for education, heading is the exact degree/program and

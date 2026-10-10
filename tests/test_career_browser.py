@@ -167,7 +167,7 @@ def test_chat_surfaces_model_outage_and_recovers_a_greeting(career):
         def invoke(self,*args):
             self.calls+=1
             if not self.recover:raise ProviderError(503)
-            return AIMessage(content='Hi! What would you like help with?')
+            return AIMessage(content='',tool_calls=[{'id':'greeting','name':'finish_task','args':{'text':'Hi! What would you like help with?'}}])
     model=Model()
     service=CareerService(c.runtime,c.applications,harness=c.harness,model_factory=lambda:model)
     service.loop.retry_delays=(0,0)

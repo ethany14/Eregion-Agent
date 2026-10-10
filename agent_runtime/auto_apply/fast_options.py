@@ -159,7 +159,10 @@ def fill_options(session):
             session.observed_options[current['key']] = live
             reason = 'Fast semantic mapping from the confirmed source to an observed option.'
             try:
-                if selected.get('expandable'):
+                if selected.get('expandable') or field_category(current['label']) == 'other':
+                    # An unstructured label may be a parent category despite a
+                    # native select having no aria-expanded. A fast guess is a
+                    # navigation proposal, not proof of same-meaning equivalence.
                     session._explore_option(current, {'source_ref': ref, 'option_label': selected['label'], 'reason': reason})
                 else:
                     result = session._resolve_field(current, {'mode': 'equivalent', 'value': selected['label'],

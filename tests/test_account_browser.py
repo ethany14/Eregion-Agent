@@ -109,6 +109,16 @@ def test_job_form_email_is_not_treated_as_login(browser):
     assert not browser.page_state()['authentication_required']
 
 
+def test_persistent_account_heading_after_login_does_not_block_application(browser):
+    browser.page.set_content('''<h1>Candidate account</h1><h2>Apply: Data Analyst</h2><form>
+      <label>First name<input name="first_name"></label><label>Last name<input name="last_name"></label>
+      <label>Email<input type="email"></label><label>Resume<input type="file"></label>
+      <button>Submit application</button></form>''')
+    assert authentication.context(browser) is None
+    assert not browser.page_state()['authentication_required']
+    assert browser.page_state()['can_submit']
+
+
 def test_pausing_during_model_selection_prevents_credential_fill(browser):
     browser.page.set_content('<h1>Sign in</h1><form><input type="text"><input type="password"><button>Enter</button></form>')
     active = True

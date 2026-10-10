@@ -75,9 +75,8 @@ class SharedModelAnalyzer:
             return invoke_structured(model, ResumeExtraction, RESUME_EXTRACTION_PROMPT, human_message).expand()
         if schema is JobAnalysis:
             from job_agent.job_extraction import ReferencedJobExtraction, REFERENCE_JOB_PROMPT, numbered_sentences
-            sentences = numbered_sentences(human_message)
-            return invoke_structured(model, ReferencedJobExtraction, REFERENCE_JOB_PROMPT,
-                json.dumps(sentences, ensure_ascii=False, separators=(',', ':'))).expand(sentences)
+            from job_agent.job_extraction import extract_job
+            return extract_job(model, human_message)
         if schema is SkillAssessment:
             from job_agent.compact_match import CompactSkillAssessment, COMPACT_MATCH_PROMPT, match_payload
             resume_text, job_text = human_message.removeprefix('Resume analysis:\n').split('\n\nJob analysis:\n', 1)
@@ -160,6 +159,8 @@ class JobAgentStepHandler:
         updates = self.analysis_cache.get(kind, signature, content, compute)
         if kind == 'resume':
             updates['resume_analysis'] = ResumeAnalysis.model_validate(updates['resume_analysis'])
+            from job_agent.resume_sources import complete_source_evidence
+            updates['resume_analysis'] = normalize_resume_analysis(complete_source_evidence(updates['resume_analysis'], state.resume_text))
             self._validate_evidence(state.model_copy(update=updates))
         elif kind == 'job':
             updates['job_analysis'] = JobAnalysis.model_validate(updates['job_analysis'])
@@ -186,7 +187,8 @@ class JobAgentStepHandler:
         analysis = ResumeAnalysis.model_validate(
             self._analyze(ResumeAnalysis, RESUME_PROMPT, state.resume_text.strip())
         )
-        return {"resume_analysis": normalize_resume_analysis(analysis)}
+        from job_agent.resume_sources import complete_source_evidence
+        return {"resume_analysis": normalize_resume_analysis(complete_source_evidence(analysis, state.resume_text))}
 
     @staticmethod
     def _validate_evidence(state: AgentState) -> dict:

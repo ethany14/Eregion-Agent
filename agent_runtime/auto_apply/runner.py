@@ -25,6 +25,7 @@ class ApplicationHost:
         self.requests, self.deadline = ModelRequests(), time.monotonic() + 180
         self.history = list(session.state.get('decision_history', []))
         self.pending, self.started, self.fingerprint = {}, None, None
+        self.context_archive = None
         self.text_turns = 0
         self.first_observation = True
         self.host_autofill = None
@@ -99,21 +100,33 @@ class ApplicationHost:
         elif self.session.visual is not None:
             # No pixels in this turn means no reusable coordinate authority.
             self.session.visual.invalidate()
+        from .autofill import desired_answer, matches, pending_documents
+        # Affordances follow observed remaining work, not the model's intent.
+        # Legacy direct callers keep execution checks; current models are not
+        # invited to repeat a host action which has already filled every fact.
+        fill_available=bool(pending_documents(self.session.state,self.session.fields)) or any(
+            desired_answer(f,self.session.state) is not None and not matches(f,desired_answer(f,self.session.state))
+            for f in self.session.fields if f['kind']!='file')
+        snapshot['autofill_available']=fill_available
         tools = [item for item in TOOLS if item['function']['name'] not in HIDDEN_TOOLS
-                 and (self.session.state.get('visual_fallback') or item['function']['name'] not in VISUAL_TOOLS)]
+                 and (self.session.state.get('visual_fallback') or item['function']['name'] not in VISUAL_TOOLS)
+                 and (fill_available or item['function']['name']!='autofill')]
         if self.host_autofill is not None:
             snapshot['host_autofill'] = self.host_autofill
         return Turn(SYSTEM, snapshot, tools, snapshot.get('chat_revision', 0), images,
             batchable=frozenset({'type_from_source', 'choose_option', 'resolve_field', 'record_answers',
                 'use_remembered_answer', 'bind_document', 'bind_education', 'draft_answer', 'say',
                 'update_plan', 'search_options', 'inspect_field'}),
-            compatibility_tools=[t for t in TOOLS if t['function']['name'] in {'observe', 'use_chat_answer'}])
+            compatibility_tools=[t for t in TOOLS if t['function']['name'] in {'observe', 'use_chat_answer'} | ({'autofill'} if not fill_available else set())])
 
     def validate_batch(self, calls, turn):
         seen = set()
         observed = {f['key'] for f in self.session.fields}
         for call in calls:
             args = call['args']
+            if call['name']=='bind_education':
+                from .education import combined_bindings
+                args = {**args, 'fields':combined_bindings(args.get('fields', []))}
             keys = [args['field_key']] if args.get('field_key') else []
             keys += [item.get('field_key') for key in ('answers', 'fields') for item in args.get(key, [])]
             for key in keys:
@@ -248,20 +261,31 @@ class ApplicationHost:
             self.timed('fast_options', started, failed=result.status != 'ok', **metadata)
 
     def verify_answers(self, answers):
-        if not hasattr(self.model, 'verify_answers') or not self.reserve('model'):
-            raise BrowserBlocked('Answer verification is unavailable for this turn.', code='quote_mismatch')
+        if not hasattr(self.model, 'verify_answers'):
+            raise BrowserBlocked('Semantic answer verification is unavailable; use an explicit field reply.', code='verification_unavailable')
+        if not self.reserve('model'):
+            raise LoopStop('agent_limit', stage='answer_verification')
         started, revision = time.monotonic(), self.revision()
+        failed, error_code = True, None
         try:
-            return self.requests.call(lambda: self.model.verify_answers(answers),
+            result = self.requests.call(lambda: self.model.verify_answers(answers),
                 active=lambda: self.active() and self.revision() == revision,
-                timeout=min(17, max(.01, self.deadline - time.monotonic())), pump=getattr(self.browser, 'pump', None))
+                timeout=min(47, max(.01, self.deadline - time.monotonic())), pump=getattr(self.browser, 'pump', None))
+            failed = False
+            return result
         except ModelInterrupted as exc:
+            error_code = 'stale_observation'
             raise BrowserBlocked('Read the latest user reply before interpreting answers.', code='stale_observation') from exc
         except Exception as exc:
-            raise BrowserBlocked('Answer verification failed. Keep the original quote and retry; do not guess.',
-                                 code=model_failure(exc).code) from exc
+            failure = model_failure(exc)
+            error_code = failure.code
+            # Use the existing bounded provider recovery path. Returning a tool
+            # error here made the model rewrite and resubmit the same true fact.
+            raise LoopStop(failure.code, chat_revision=revision,
+                stage='answer_verification',
+                **({'retry_after': failure.retry_after} if failure.retry_after else {})) from exc
         finally:
-            self.timed('answer_verification', started)
+            self.timed('answer_verification', started, failed=failed, error_code=error_code)
 
     def progress(self, text, call, turn):
         if text and self.communicate and text != call['args'].get('text') and self.revision() == turn.revision:
@@ -332,7 +356,8 @@ class ApplicationHost:
             # same batch must not erase an earlier control's recovery request.
         self.timed('tool', self.started or time.monotonic(), tool=name, failed=failed)
         self.started = None
-        self.history = [*self.history, {'tool': name, 'call_id': call['id'], 'arguments': trace_value(args), 'result': trace_value(outcome),
+        context_result = self.context_archive.tool_result(outcome) if self.context_archive is not None else trace_value(outcome)
+        self.history = [*self.history, {'tool': name, 'call_id': call['id'], 'arguments': trace_value(args), 'result': context_result,
             'fingerprint': self.fingerprint, 'failed': failed, 'chat_revision': turn.revision,
             'page': (self.session.page_context or {}).get('heading', '')}][-24:]
         self.session.state['decision_history'] = self.history

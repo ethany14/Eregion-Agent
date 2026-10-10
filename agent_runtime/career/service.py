@@ -255,11 +255,27 @@ class CareerService:
 
     def review_material(self,task_id,pack_id,item_id,version,approve):
         state = self.repository.get(task_id)
-        self.harness.require_link(state,'packs',pack_id)
+        self.harness.link_job_pack(state, pack_id)
         self.runtime.pack_workflow.refresh_staleness(pack_id)
+        if self.runtime.packs.item(pack_id,item_id).version != version:
+            raise ValueError('The document changed; review the current revision.')
         self.runtime.packs.review(pack_id,item_id,expected_version=version,approve=approve,
             idempotency_key=f'career-review:{task_id}:{item_id}:{version}:{approve}')
         item = self.runtime.packs.item(pack_id,item_id)
+        if item.version != version and item.status.value != 'approved':
+            raise ValueError('The document changed; review the current revision.')
+        from agent_runtime.application_pack.selection import latest_materials
+        pack = self.runtime.packs.get(pack_id)
+        newest = next((i for p, i in latest_materials(self.runtime.workspace, self.runtime.packs,
+            self.runtime.pack_workflow, pack.application_id) if (i.artifact_type, i.source_question) ==
+            (item.artifact_type, item.source_question)), item)
+        selection = ({'pack_id': pack_id, 'item_id': item_id, 'version': item.version,
+            'superseding_item_id': newest.pack_item_id, 'superseding_version': newest.version} if approve else {})
+        current_choices = self.harness.material_selections_for(state, pack.application_id)
+        self.repository.change(task_id, lambda s: {
+            'material_selections': {**s.get('material_selections', {}), item.artifact_type:selection},
+            'material_selections_by_application': {**s.get('material_selections_by_application', {}),
+                pack.application_id:{**current_choices,item.artifact_type:selection}}})
         return self.chat(task_id,f'I {"approved" if approve else "rejected"} the displayed {item.artifact_type.replace("_"," ")} revision {version} for this job.',f'material-review:{item_id}:{version}:{approve}',context={'pack_id':pack_id,'item_id':item_id})
 
     def cancel(self,task_id):
