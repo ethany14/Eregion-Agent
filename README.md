@@ -18,7 +18,7 @@
   <a href="docs/usage.md">User guide</a> ·
   <a href="docs/configuration.md">Configuration</a> ·
   <a href="docs/agent-loop.md">Architecture</a> ·
-  <a href="site/index.html">Website</a>
+  <b><a href="https://ethany14.github.io/Eregion-Agent/">Website</a></b>
 </p>
 
 ---
@@ -243,7 +243,7 @@ compatibility with every ATS or successful submission to every employer.
 | 🧭 [Agent architecture](docs/agent-loop.md) | Shared loop, evidence, context, persistence and browser workers |
 | ⚡ [Jev and performance](docs/jev-benchmark.md) | Fast-path behaviour, recorded measurements and reproducible comparisons |
 | 🛠️ [Development](docs/development.md) | Repository layout, local checks, live evaluation and contributions |
-| 🌍 [Website](site/README.md) | The product site in `site/` and how to publish it |
+| 🌍 [Website](https://ethany14.github.io/Eregion-Agent/) | Product overview and download · [source and publishing](site/README.md) |
 
 <details>
 <summary><b>Run the checks</b></summary>

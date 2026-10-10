@@ -1,6 +1,7 @@
 # Eregion website
 
-The product and download page for Eregion. It is a static site with no build step:
+The product and download page for Eregion, live at
+[ethany14.github.io/Eregion-Agent](https://ethany14.github.io/Eregion-Agent/). It is a static site with no build step:
 `index.html`, `styles.css`, `script.js` and the images in `assets/`.
 
 ## Preview
