@@ -11,6 +11,7 @@
   <a href="#deployment-and-compatibility"><img src="https://img.shields.io/badge/runs-locally-9a7428?style=flat-square" alt="Runs locally"></a>
   <a href="chrome_extension/README.md"><img src="https://img.shields.io/badge/Chrome-Eregion%20Lens-c0532a?style=flat-square&logo=googlechrome&logoColor=white" alt="Chrome extension"></a>
   <a href="#day-and-night"><img src="https://img.shields.io/badge/themes-Day%20%C2%B7%20Night-1b2420?style=flat-square" alt="Day and Night themes"></a>
+  <a href="#get-started"><img src="https://img.shields.io/badge/fit%20scoring-Jev%20optional-d9b86a?style=flat-square" alt="Optional Jev fit scoring"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-6c776f?style=flat-square" alt="MIT License"></a>
 </p>
 
@@ -177,8 +178,64 @@ Replace the placeholders with your provider's settings. Leave `LLM_BASE_URL` out
 if the client's default endpoint is appropriate.
 
 > [!IMPORTANT]
-> Keep `.env` private; it is excluded from Git. Jev is optional and is not
-> required to use Eregion.
+> Keep `.env` private; it is excluded from Git.
+
+<details>
+<summary><b>Optional: faster fit scores with Jev</b></summary>
+
+<br>
+
+[Jev](docs/jev-benchmark.md) is a fast yes/no decision model from Typesafe. When
+it is on, Eregion scores job fit with Jev alone, while your main model still
+handles conversation, planning and writing. Eregion works fully without it.
+
+Add these lines to `.env` and restart the server:
+
+```dotenv
+TYPESAFE_API_KEY=your-typesafe-key
+TYPESAFE_BASE_URL=https://api.typesafe.ai
+TYPESAFE_DEFAULT_MODEL=jev-latest
+TYPESAFE_ENABLED=true
+# Optional: also use Jev for memory, question and evidence helpers.
+TYPESAFE_CAREER_ENABLED=false
+```
+
+| Setting | Default | What it does |
+| :-- | :-- | :-- |
+| `TYPESAFE_ENABLED` | `false` | Turns on Jev fit scoring for chat, quick analysis and saved jobs, plus form-option mapping and job screening. `false` uses the original analyzer. |
+| `TYPESAFE_CAREER_ENABLED` | `false` | Also uses Jev for memory, question classification and evidence helpers. Needs `TYPESAFE_ENABLED=true`. |
+| `TYPESAFE_FIT_MODEL` | `jev-1.13.0` | The exact Jev release used for fit scoring. |
+| `TYPESAFE_FIT_TIMEOUT` | `12` | Seconds allowed per fit request (0.1–60). |
+| `TYPESAFE_FIT_CACHE_PATH` | next to your database | Where cached decisions are stored. |
+
+**What changes when it is on**
+
+- Up to eight jobs are scored together in one batch, sharing your resume context.
+- Decisions are cached on your computer for 24 hours, so re-scoring the same resume
+  and job is nearly instant. Uncertain answers are kept for 5 minutes.
+- A requirement Jev can't decide stays *unresolved* and the score is shown as a
+  range, rather than a guessed exact number.
+- There is no fallback to the main model for scoring. If Typesafe is unreachable,
+  scoring fails until you fix the key or turn Jev off.
+- Fit requests send your extracted resume text, the job description and scoped
+  details to Typesafe. Resume files, screenshots and passwords are never sent.
+
+**How much faster**
+
+| Recorded run | Time |
+| :-- | --: |
+| Fit analysis with the main model only, cold *(2026-10-09)* | 32–49 s |
+| Three jobs scored independently with Jev, cold | 4.6 s |
+| Three jobs scored in one Jev batch, cold | **2.0 s** |
+| Same three jobs again, from the local cache | **0.15 s** |
+
+The Jev batch also used 47% fewer tokens than three separate Jev requests. These
+are small synthetic test runs on different days and inputs, so treat them as an
+indication rather than a controlled comparison or a guarantee. Details,
+caveats and reproduction steps are in [Jev and performance](docs/jev-benchmark.md),
+and every setting is in [Configuration](docs/configuration.md#optional-jev-acceleration).
+
+</details>
 
 ### 3 · Start Eregion
 
