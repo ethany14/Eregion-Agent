@@ -11,6 +11,7 @@
   <a href="#deployment-and-compatibility"><img src="https://img.shields.io/badge/runs-locally-9a7428?style=flat-square" alt="Runs locally"></a>
   <a href="chrome_extension/README.md"><img src="https://img.shields.io/badge/Chrome-Eregion%20Lens-c0532a?style=flat-square&logo=googlechrome&logoColor=white" alt="Chrome extension"></a>
   <a href="#day-and-night"><img src="https://img.shields.io/badge/themes-Day%20%C2%B7%20Night-1b2420?style=flat-square" alt="Day and Night themes"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-6c776f?style=flat-square" alt="MIT License"></a>
 </p>
 
 <p align="center">
@@ -261,6 +262,10 @@ See [Development](docs/development.md) for the opt-in real-Chrome tests.
 
 The running service also exposes [API documentation](http://localhost:8000/docs)
 and a [health endpoint](http://localhost:8000/health).
+
+## License
+
+Eregion is released under the [MIT License](LICENSE).
 
 <p align="center">
   <br>
