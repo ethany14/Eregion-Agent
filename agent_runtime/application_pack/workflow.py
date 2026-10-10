@@ -6,9 +6,7 @@ import json
 import logging
 import time
 import os
-import re
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Protocol
 from uuid import uuid4
 
@@ -19,11 +17,7 @@ from agent_runtime.application_pack.policy import (
     EvidenceSelectionPolicy, classify_question, evidence_set_hash, requires_manual_answer,
 )
 from agent_runtime.application_pack.repository import PackRepository
-from agent_runtime.application_pack.types import (
-    ApplicationAnswer, ApplicationPack, ApplicationPackItem, ArtifactVerification,
-    ClaimIssue, CoverLetter, GenerationEvidenceSnapshot, GroundedBlock, ItemStatus,
-    PackStatus,
-)
+from agent_runtime.application_pack.types import ApplicationAnswer, ApplicationPack, ApplicationPackItem, ArtifactVerification, CoverLetter, GenerationEvidenceSnapshot, ItemStatus, PackStatus
 from agent_runtime.application_pack.verifier import ArtifactVerifier
 from agent_runtime.evidence.repository import CareerEvidenceRepository
 from agent_runtime.evidence.types import EvidenceLinkType, EvidenceSourceType
@@ -35,7 +29,7 @@ from agent_runtime.workspace.types import ArtifactType
 from custom_agent.handlers import JobAgentStepHandler
 from custom_agent.state import AgentState, AgentStatus, Step
 from job_agent.domain import make_source_entry_id, normalize_text
-from job_agent.model import DEFAULT_ENV_PATH, shared_model, create_model, invoke_structured, optional_setting
+from job_agent.model import DEFAULT_ENV_PATH, shared_model, invoke_structured, optional_setting
 from job_agent.schemas import (
     JobAnalysis, ResumeAnalysis, ResumeEvidence, ResumeSourceEntry, SkillMatch, TailoredResume,
     UnsupportedClaim, VerificationResult,
@@ -215,19 +209,31 @@ class SharedPackModel:
         return VerificationResult.model_validate(
             self._handler.execute(Step.VERIFY_RESUME, state).updates["verification"])
 
+    def verify_resume_structure(self, state: AgentState) -> VerificationResult:
+        """Material packs separately verify every claim through verify_claims."""
+        from job_agent.resume_verification import verify_resume_structure
+        return verify_resume_structure(state)
+
     def revise_resume(self, state: AgentState, preferences: list[dict]) -> TailoredResume:
         return TailoredResume.model_validate(
             self._handler_for(preferences).execute(Step.REVISE_RESUME, state).updates["tailored_resume"])
 
     def cover_letter(self, context: str) -> CoverLetter:
-        return invoke_structured(shared_model(), CoverLetter, _COVER_SYSTEM, context)
+        from job_agent.prompt_context import compact_json_context, context_instruction
+        context = compact_json_context(context)
+        return invoke_structured(shared_model(), CoverLetter, _COVER_SYSTEM + context_instruction(context), context)
 
     def application_answer(self, context: str) -> ApplicationAnswer:
-        return invoke_structured(shared_model(), ApplicationAnswer, _ANSWER_SYSTEM, context)
+        from job_agent.prompt_context import compact_json_context, context_instruction
+        context = compact_json_context(context)
+        return invoke_structured(shared_model(), ApplicationAnswer, _ANSWER_SYSTEM + context_instruction(context), context)
 
     def revise_blocks(self, artifact_type: str, context: str) -> CoverLetter | ApplicationAnswer:
         schema = CoverLetter if artifact_type == "cover_letter" else ApplicationAnswer
         instruction = (_COVER_SYSTEM if artifact_type == "cover_letter" else _ANSWER_SYSTEM) + "\n" + _REVISE_SYSTEM
+        from job_agent.prompt_context import compact_json_context, context_instruction
+        context = compact_json_context(context)
+        instruction += context_instruction(context)
         return invoke_structured(shared_model(), schema, instruction, context)
 
 
@@ -244,7 +250,7 @@ class ApplicationPackWorkflow:
         self._verifier = verifier or ArtifactVerifier(getattr(self._model, "verify_claims", None))
         self._selection = EvidenceSelectionPolicy()
 
-    def _resume_header_lines(self, application_id: str) -> list[str]:
+    def _resume_source_text(self, application_id: str) -> str | None:
         artifacts = self._workspace.list_artifacts(application_id)
         analysis = next((item for item in reversed(artifacts)
                          if item.artifact_type == ArtifactType.RESUME_ANALYSIS), None)
@@ -254,9 +260,11 @@ class ApplicationPackWorkflow:
                           if item.artifact_type == ArtifactType.MATCH_REPORT), None)
             source = self._packs.resume_source(application_id, match.source_run_id) if match and match.source_run_id else None
             text = source[0] if source else None
-        if text is None:
-            return []
-        return self.resume_header_lines(text)
+        return text
+
+    def _resume_header_lines(self, application_id: str) -> list[str]:
+        text = self._resume_source_text(application_id)
+        return self.resume_header_lines(text) if text is not None else []
 
     @staticmethod
     def resume_header_lines(text: str) -> list[str]:
@@ -308,33 +316,10 @@ class ApplicationPackWorkflow:
         app = self._workspace.get_application(application_id)
         job, _ = self._source(application_id)
         evidence = self._evidence.list(status="confirmed", limit=500)
-        # Once a structured ResumeAnalysis exists, it is the authoritative resume
-        # import. Older run imports lack source-entry metadata and would otherwise
-        # recreate generic EXPERIENCE/PROJECTS entries alongside the real entries.
-        has_structured_resume = any(
-            artifact.artifact_type == ArtifactType.RESUME_ANALYSIS
-            for artifact in self._workspace.list_artifacts(application_id)
-        )
-        structured_creators = {
-            "fit_analysis",
-            "fit_analysis_import",
-            "pack_resume_import",
-        }
-        has_structured_evidence = any(
-            item.current.source_type == EvidenceSourceType.RESUME
-            and item.current.created_by in structured_creators
-            for item in evidence
-        )
-        if has_structured_resume and has_structured_evidence:
-            evidence = [
-                item for item in evidence
-                if item.current.source_type != EvidenceSourceType.RESUME
-                or item.current.created_by in structured_creators
-            ]
         selected = self._selection.select(
             evidence=evidence,
             links=self._evidence.list_for_application(application_id), job=job,
-            token_budget=4_000)
+            token_budget=4_000, resume_text=self._resume_source_text(application_id))
         if not selected:
             raise PackValidationError("Confirm relevant resume or Career Evidence before generating a Pack.")
         preferences = self._preferences()
@@ -582,18 +567,10 @@ class ApplicationPackWorkflow:
                     employer_context=self._workspace.current_snapshot(pack.application_id).cleaned_job_description))
                 try:
                     if item.artifact_type == 'tailored_resume':
-                        from .parallel_checks import parallel_checks
+                        from .verification import verify_material_resume
                         state = self._resume_state(pack_id, item, content=content)
-                        verification, result = parallel_checks(check, lambda: self._measured('resume_verification', item,
-                            lambda: self._model.verify_resume(state)))
-                        if verification.passed and not result.passed:
-                            claims = result.unsupported_claims or [UnsupportedClaim(
-                                claim='Unverified resume draft', reason='The resume verifier did not approve this draft.')]
-                            verification = ArtifactVerification(passed=False, issues=[ClaimIssue(
-                                block_id=f'resume-model-{index}', unsupported_text=claim.claim, reason=claim.reason,
-                                cited_evidence_ids=[], revision_instruction=(result.revision_feedback[
-                                    min(index, len(result.revision_feedback)-1)] if result.revision_feedback else 'Remove the unsupported claim.'))
-                                for index, claim in enumerate(claims)])
+                        verification = self._measured('resume_verification', item,
+                            lambda: verify_material_resume(state, self._model, check))
                     else:
                         verification = check()
                 except Exception as exc:
@@ -615,12 +592,17 @@ class ApplicationPackWorkflow:
         snap = self._packs.snapshot(pack_id)
         pack = self._packs.get(pack_id)
         job_analysis, _ = self._source(pack.application_id)
-        verdict = self._verifier.verify(content, item.artifact_type, snap.items,
+        check = lambda: self._verifier.verify(content, item.artifact_type, snap.items,
                                         max_length=item.max_length,
                                         expected_question=item.source_question,
                                         preferences=snap.preference_versions,
                                         expected_role=job_analysis.title,
                                                      employer_context=self._workspace.current_snapshot(pack.application_id).cleaned_job_description)
+        if item.artifact_type == 'tailored_resume':
+            from .verification import verify_material_resume
+            verdict = verify_material_resume(self._resume_state(pack_id, item, content=content), self._model, check)
+        else:
+            verdict = check()
         return self._packs.verify(pack_id, item_id, expected_version=item.version,
                                   verification=verdict)
 

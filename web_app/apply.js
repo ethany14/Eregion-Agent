@@ -1,10 +1,12 @@
 import {createBrowserControl} from './browser-control.js';
-import {careerRoute,renderCareerResults} from './career-chat.js';
+import {careerRoute,renderCareerResults,placeCareerResults} from './career-chat.js';
 import {renderMarkdown} from './chat-markdown.js';
+import {usageText,renderUsage} from './model-usage.js';
 import {api,organise,createGroup,renameGroup,deleteGroup,sidebarSections,collapsedGroups,toggleGroup,
   openMenu,closeMenu,toast,confirmDialog,nameDialog} from './conversations.js';
 import {renderPage} from './pages.js';
 import {startAlertNotifications} from './job-alerts.js';
+import {initTheme} from './theme.js';
 const careerMode=new URLSearchParams(location.search).get('mode')!=='application';
 import {AnswerDrafts,renderAnswerBatch,renderPendingQuestion} from './apply-answers.js';
 const answerDrafts=new AnswerDrafts();
@@ -27,7 +29,7 @@ let chatBusy=false,actionBusy=false,extracting=false,starting=false,extractionVe
 const optimistic=new Map();
 // Review approvals survive polling: run_id -> {remember:{key:bool}, scopes:{key:'global'|'employer'}}.
 const memoryChoices=new Map();
-let careerSignature='',visualPreferenceRun=null,restoring=true,candidateWrites=Promise.resolve();
+let careerSignature='',careerCards=[],renderedScope=null,visualPreferenceRun=null,restoring=true,candidateWrites=Promise.resolve();
 let defaultVisualFallback=false;
 try{defaultVisualFallback=localStorage.getItem('northstar.visualFallback')==='true';}catch{/* Storage is optional. */}
 function saveVisualPreference(enabled){
@@ -73,7 +75,7 @@ function statusText(item){
   return statuses[item.status]||item.status;
 }
 function button(text,action,cls='secondary-button'){const b=el('button',text,cls);b.type='button';b.addEventListener('click',action);return b;}
-function bottom(){const n=$('#chat-scroll');n.scrollTop=n.scrollHeight;}
+function bottom(){const n=$('#chat-scroll');n.scrollTo({top:n.scrollHeight,behavior:'instant'});}
 let panelByUser=false;
 function workspace(open=true,{remember=false}={}){
   if(remember||!open)panelByUser=open&&remember;
@@ -124,14 +126,15 @@ function showView(name,{push=true}={}){
   const changed=name!==view;view=name;closeMenu();
   $('#conversation').hidden=name!=='chat';$('#page-view').hidden=name==='chat';
   if(name!=='chat'&&!$('#browser-panel').hidden)workspace(false);
-  for(const link of document.querySelectorAll('[data-view]'))link.setAttribute('aria-current',String(link.dataset.view===name));
+  for(const link of document.querySelectorAll('[data-view]'))link.setAttribute('aria-current',String(link.dataset.view===name||link.dataset.also===name));
+  markChatNav();
   $('#history-panel').classList.remove('open');
   if(push&&changed)history.pushState({view:name},'',name==='chat'?location.pathname:`${location.pathname}?view=${name}`);
   if(name!=='chat'&&(changed||!push))renderPage(name,$('#page-view'),pageContext);
   renderSidebar();
 }
 const pageContext={el,button,icon,error:text=>error(text),groups:()=>groups,refresh:()=>refresh(),
-  counts:()=>refreshCounts(),open:id=>select(id),
+  counts:()=>refreshCounts(),open:id=>select(id),show:name=>showView(name),
   needsYou:()=>new Set(attempts.filter(needsYou).flatMap(a=>(a.jobs||[]).map(j=>j.application_id))),
   // Open the conversation that owns this application, or start one about it.
   openApplication:(applicationId,text='')=>{
@@ -148,7 +151,7 @@ async function refreshCounts(){
   try{
     const [archived,trash]=await Promise.all(['archived','trash'].map(v=>api(`/api/career/tasks?view=${v}`)));
     counts={archived:archived.attempts.length,trash:trash.attempts.length};
-    $('#count-archived').textContent=counts.archived||'';$('#count-trash').textContent=counts.trash||'';
+    $('#count-archived').textContent=counts.archived+counts.trash||'';
   }catch{/* Counts are decoration; the pages load their own data. */}
 }
 
@@ -239,7 +242,13 @@ function attemptRow(item){
   row.draggable=true;row.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/x-northstar-task',item.run_id);e.dataTransfer.effectAllowed='move';});
   row.append(b,more);return row;
 }
+function markChatNav(){
+  if(!careerMode)return;
+  $('#new-chat').setAttribute('aria-current',String(view==='chat'&&!selected));
+  $('#nav-council').setAttribute('aria-current',String(view==='chat'&&Boolean(selected)));
+}
 function renderSidebar(force=false){
+  markChatNav();
   const nav=$('#attempts');
   // Polling must not interrupt a rename in progress.
   if(!force&&renaming&&nav.querySelector('input.rename'))return;
@@ -268,9 +277,9 @@ function journeyStages(item){
   const jobs=item.jobs||[],docs=(item.materials||[]).flatMap(p=>(p.items||[]).map(i=>({...i,stale:p.status==='stale'})));
   const applied=jobs.some(j=>['applied','interviewing','offer'].includes(j.status));
   const stages=[
-    ['Match',jobs.some(j=>j.match_score!=null)?'done':jobs.length?'active':''],
-    ['Materials',docs.length&&docs.every(d=>d.status==='approved'&&!d.stale)?'done':docs.length?'active':''],
-    ['Apply',applied?'done':item.application_run_id?'active':''],
+    ['Weighed',jobs.some(j=>j.match_score!=null)?'done':jobs.length?'active':''],
+    ['Forged',docs.length&&docs.every(d=>d.status==='approved'&&!d.stale)?'done':docs.length?'active':''],
+    ['Applying',applied?'done':item.application_run_id?'active':''],
     ['Interview',(item.interviews||[]).length?'active':''],
   ];
   if(!stages.some(([,state])=>state))return null;
@@ -286,27 +295,102 @@ function renderHeader(messages){
   status.hidden=!status.textContent;status.classList.toggle('attention',needsYou(current));
   const stages=journeyStages(current),list=$('#journey');list.replaceChildren();list.hidden=!stages;
   for(const stage of stages||[]){
-    const li=el('li',stage.label,stage.state);
-    if(stage.state==='now'){li.setAttribute('aria-current','step');li.classList.toggle('attention',needsYou(current));}
+    const waiting=stage.state==='now'&&needsYou(current);
+    const li=el('li','',`st ${waiting?'wait':stage.state}`);li.append(el('i'),el('span',stage.label));
+    if(stage.state==='now')li.setAttribute('aria-current','step');
     list.append(li);
   }
   const empty=!current&&!messages.length;
   $('#conversation').classList.toggle('is-empty',empty);
+  $('#conversation').classList.toggle('is-chronicle',empty&&careerMode);
+  placeComposer(empty&&careerMode);
+  if(empty&&careerMode)renderChronicle();
   $('#starters').hidden=!(empty&&careerMode);
   const notice=$('#needs-you');notice.hidden=!needsYou(current);
   if(!notice.hidden)notice.textContent=current.account_request?'Waiting for you to sign in':current.status==='awaiting_review'?'Ready for your review':'Waiting for your answer';
 }
 let traceSignature='';
+// The way: the last few distinct steps the agent took, then where it stands now.
 function renderTrace(){
-  const actions=current?.actions||[],trace=$('#agent-trace'),sig=JSON.stringify([current?.run_id,actions.length,actions.at(-1)]);
+  const actions=current?.actions||[],trace=$('#agent-trace'),sig=JSON.stringify([current?.run_id,actions.length,actions.at(-1),current?.status,needsYou(current)]);
   if(sig===traceSignature)return;traceSignature=sig;
   trace.hidden=!actions.length;if(!actions.length)return;
-  const last=actions.at(-1);
-  trace.querySelector('summary').textContent=`${actions.length} browser ${actions.length===1?'step':'steps'} · ${toolNames[last.tool]||last.tool}${last.label?`: ${last.label}`:''}`;
-  trace.querySelector('ol').replaceChildren(...actions.slice(-12).map(a=>el('li',`${toolNames[a.tool]||a.tool}${a.label?` · ${a.label}`:''}${a.outcome?` · ${a.outcome}`:''}`)));
+  const names=[];
+  for(const a of actions){const name=toolNames[a.tool]||a.tool;if(names.at(-1)!==name)names.push(name);}
+  const busy=busyStatuses.has(current.status)||busyStatuses.has(current.task_status);
+  const stations=names.slice(-5).map(label=>({label,state:'done'}));
+  if(needsYou(current))stations.push({label:current.status==='awaiting_review'?'Your review':'Your answer',state:'wait'});
+  else if(busy)stations[stations.length-1].state='now';
+  trace.querySelector('.trail').replaceChildren(...stations.map(({label,state})=>{const li=el('li','',`st ${state}`);li.append(el('i'),el('span',label));return li;}));
+  trace.querySelector('.log').replaceChildren(...actions.slice(-12).map(a=>el('li',`${toolNames[a.tool]||a.tool}${a.label?` · ${a.label}`:''}${a.outcome?` · ${a.outcome}`:''}`)));
+}
+// ---- Chronicle: the home page when no conversation is open ----
+const composerWrap=document.querySelector('.composer-wrap');
+function placeComposer(home){
+  const target=home?$('#composer-home'):$('#conversation');
+  if(composerWrap.parentElement!==target)target.append(composerWrap);
+}
+const numberWords=['No','One','Two','Three','Four','Five','Six','Seven','Eight','Nine'];
+const greeting=()=>{const h=new Date().getHours();return h<5?'Good evening':h<12?'Good morning':h<18?'Good afternoon':'Good evening';};
+const sameDay=(iso,day=new Date())=>{const d=new Date(iso);return d.getFullYear()===day.getFullYear()&&d.getMonth()===day.getMonth()&&d.getDate()===day.getDate();};
+const clock=iso=>new Date(iso).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit',hour12:false});
+let roadData=null,roadLoadedAt=0,chronicleSignature='';
+async function loadRoad(){
+  if(Date.now()-roadLoadedAt<30000)return;roadLoadedAt=Date.now();
+  try{roadData=await api('/api/applications/overview?weeks=4');chronicleSignature='';render();}catch{/* The Chronicle works without it. */}
+}
+const ROAD_STAGE={saved:0,analyzing:0,analysis_failed:0,needs_evidence:1,materials_ready:1,ready_to_apply:1,applied:2,interviewing:3,offer:4};
+function stageTrail(status,waiting,count=5){
+  const at=ROAD_STAGE[status]??0,ol=el('ol','','trail compact');
+  for(let i=0;i<count;i++){const li=el('li','',`st ${i<at?'done':i===at?(waiting?'wait':status==='offer'?'gold':'now'):''}`);li.append(el('i'));ol.append(li);}
+  return ol;
+}
+function renderChronicle(){
+  const waiting=attempts.filter(needsYou),careers=attempts.filter(a=>a.career);
+  const sig=JSON.stringify([profile.first_name,waiting.map(a=>[a.run_id,a.status]),careers.map(a=>[a.run_id,a.status,a.updated_at]),roadData?.applications?.length,roadData?.totals]);
+  if(sig===chronicleSignature)return;chronicleSignature=sig;
+  loadRoad();
+  const first=profile.first_name?.trim();
+  $('#chron-date').hidden=false;
+  $('#chron-date').textContent=new Date().toLocaleDateString('en',{weekday:'long',day:'numeric',month:'long'});
+  $('#welcome h2').textContent=`${greeting()}${first?`, ${first}`:''}.`;
+  const lit=waiting.length;
+  $('#welcome h2 + p').textContent=lit?`${numberWords[lit]||lit} ${lit===1?'beacon is':'beacons are'} lit.`:'All quiet. Where does the road lead next?';
+  // Today's chronicle: what moved today, newest first.
+  const today=careers.filter(a=>a.updated_at&&sameDay(a.updated_at)).sort((a,b)=>b.updated_at.localeCompare(a.updated_at)).slice(0,6);
+  const list=$('#chron-today .vtrail');list.replaceChildren();
+  $('#chron-today').hidden=!careers.length;
+  for(const item of today){
+    const name=heading(item).title,busy=busyStatuses.has(item.status);
+    const state=needsYou(item)?'wait':busy?'now':'done';
+    const li=el('li','',state),text=el('button','','chron-entry');text.type='button';text.addEventListener('click',()=>select(item.run_id));
+    text.append(el('time',clock(item.updated_at)),el('b',needsYou(item)?`${name} is waiting on you`:busy?`${name} is under way`:name),el('small',statusText(item)));
+    li.append(el('i'),text);list.append(li);
+  }
+  if(!today.length)list.append(el('li','Quiet so far today. Write to Eregion to begin.','empty'));
+  // Beacons lit.
+  $('#chron-side').hidden=!careers.length&&!roadData?.applications?.length;
+  const beacons=$('#chron-beacons .rows');beacons.replaceChildren();
+  $('#chron-beacons .tag').textContent=lit?`${lit} need you`:'';$('#chron-beacons .tag').hidden=!lit;
+  for(const item of waiting.slice(0,4)){
+    const row=el('div','','row'),info=el('div');info.append(el('b',heading(item).title),el('span',statusText(item)));
+    row.append(info,button(item.status==='awaiting_review'?'Review':'Answer',()=>select(item.run_id),'secondary-button'));beacons.append(row);
+  }
+  if(!lit)beacons.append(el('p','No beacons lit. Nothing is waiting on you.','empty'));
+  // On the road: active applications as trails.
+  const needs=pageContext.needsYou(),road=$('#chron-road .rows');road.replaceChildren();
+  const active=(roadData?.applications||[]).filter(a=>!['rejected','withdrawn','archived'].includes(a.status)).sort((a,b)=>b.updated_at.localeCompare(a.updated_at));
+  for(const app of active.slice(0,5)){
+    const row=el('button','','road-row');row.type='button';row.addEventListener('click',()=>pageContext.openApplication(app.application_id));
+    row.append(el('span',app.company||app.title||'Application'),stageTrail(app.status,needs.has(app.application_id)));road.append(row);
+  }
+  if(!active.length)road.append(el('p','No applications on the road yet.','empty'));
+  $('#count-road').textContent=active.length||'';
 }
 function render(){
   const preferenceScope=current?.run_id||draft.id;
+  const scroll=$('#chat-scroll'),follow=renderedScope!==preferenceScope||scroll.scrollHeight-scroll.scrollTop-scroll.clientHeight<120;
+  renderedScope=preferenceScope;
   if(preferenceScope!==visualPreferenceRun){
     $('#visual-fallback').checked=current?Boolean(current.visual_fallback):defaultVisualFallback;
     visualPreferenceRun=preferenceScope;
@@ -315,8 +399,24 @@ function render(){
   const local=selected?optimistic.get(selected)||[]:[];
   const messages=current?[...(current.messages||[]),...local.filter(m=>!current.messages?.some(s=>s.id===m.id))]:draft.messages;
   $('#welcome').hidden=Boolean(current||messages.length);
-  const signature=JSON.stringify(messages);
-  if(signature!==logSignature){logSignature=signature;const s=$('#chat-scroll'),near=s.scrollHeight-s.scrollTop-s.clientHeight<120;$('#agent-messages').replaceChildren();for(const m of messages){const bubble=el('div','',`message ${m.role}`);bubble.dataset.messageId=m.id;bubble.append(el('span',m.role==='user'?'You':'eregion','speaker'));const body=m.role==='assistant'?renderMarkdown(m.text):el('p',m.text);bubble.append(body);if(m.role==='assistant'){const copy=button('Copy',async()=>{try{await navigator.clipboard.writeText(body.innerText);copy.textContent='Copied';}catch{copy.textContent='Select text to copy';}setTimeout(()=>{copy.textContent='Copy';},1800);},'message-copy');copy.setAttribute('aria-label','Copy reply');bubble.append(copy);}$('#agent-messages').append(bubble);}if(near)requestAnimationFrame(bottom);}
+  const signature=JSON.stringify([current?.run_id||draft.id,messages]);
+  const messagesChanged=signature!==logSignature;
+  if(messagesChanged){
+    logSignature=signature;
+    const log=$('#agent-messages'),existing=new Map([...log.querySelectorAll(':scope > .message')].map(n=>[n.dataset.messageId,n]));
+    for(const m of messages){
+      const previous=existing.get(m.id);
+      if(previous?.dataset.text===m.text&&previous.dataset.role===m.role)continue;
+      const bubble=el('div','',`message ${m.role}`);bubble.dataset.messageId=m.id;bubble.dataset.text=m.text;bubble.dataset.role=m.role;
+      bubble.append(el('span',m.role==='user'?'You':'Eregion','speaker'));
+      const body=m.role==='assistant'?renderMarkdown(m.text):el('p',m.text);bubble.append(body);
+      if(m.role==='assistant'){
+        const copy=button('Copy',async()=>{try{await navigator.clipboard.writeText(body.innerText);copy.textContent='Copied';}catch{copy.textContent='Select text to copy';}setTimeout(()=>{copy.textContent='Copy';},1800);},'message-copy');
+        copy.setAttribute('aria-label','Copy reply');bubble.append(copy);
+      }
+      if(previous)previous.replaceWith(bubble);else log.append(bubble);
+    }
+  }
   renderHeader(messages);
   $('#pause-agent').hidden=!current||terminal.has(current.status)||current.status==='submitting';$('#pause-agent').textContent=current?.pause_requested?'Resume':'Pause';$('#pause-agent').disabled=actionBusy||current?.reopening;
   $('#send-message').disabled=chatBusy||starting||restoring||current?.reopening||current?.status==='submitting';$('#attach-resume').disabled=extracting||restoring;$('#profile-toggle').disabled=extracting||restoring;
@@ -325,7 +425,21 @@ function render(){
   else if(resume){const remove=button('×',removeResume,'text-button');remove.setAttribute('aria-label','Remove resume');attachment.append(icon('file'),el('span',resume.name),remove);}
   decisions();renderWorkspace();renderTrace();autoOpenWorkspace(current);
   const careerSig=JSON.stringify([current?.run_id,current?.jobs,current?.recommendations,current?.materials,current?.interviews,chatBusy,actionBusy]);
-  if(careerSig!==careerSignature){careerSignature=careerSig;renderCareerResults({container:$('#career-results'),item:current,el,button,send:(text,context,id)=>send(text,null,id,context),busy:chatBusy||actionBusy,review:reviewMaterial,renderText:renderMarkdown});}
+  const resultsChanged=careerSig!==careerSignature;
+  if(resultsChanged){
+    const previous=new Map(careerCards.map(card=>[card.dataset.resultKey,card]));
+    careerSignature=careerSig;const results=el('div');
+    renderCareerResults({container:results,item:current,el,button,send:(text,context,id)=>send(text,null,id,context),busy:chatBusy||actionBusy,review:reviewMaterial,renderText:renderMarkdown});
+    careerCards=[...results.children];
+    for(const card of careerCards){
+      const old=previous.get(card.dataset.resultKey);
+      if(!old)continue;
+      if(card.tagName==='DETAILS'&&old.tagName==='DETAILS')card.open=old.open;
+      [...card.querySelectorAll('details')].forEach((detail,i)=>{detail.open=old.querySelectorAll('details')[i]?.open||false;});
+    }
+  }
+  placeCareerResults($('#agent-messages'),messages,careerCards);
+  if(follow&&(messagesChanged||resultsChanged))requestAnimationFrame(bottom);
 }
 function addDraft(role,text){draft.messages.push({id:crypto.randomUUID(),role,text});render();requestAnimationFrame(bottom);}
 function ask(text){if(draft.messages.at(-1)?.text!==text)addDraft('assistant',text);}
@@ -406,7 +520,9 @@ function renderWorkspace(){
   $('#cancel-attempt').hidden=!current||terminal.has(current.status)||current.status==='submitting';
   $('#browser-caption').textContent=current?`${browserHost(current)||company(current)} · live view`:'The browser will appear here.';
   const now=$('#workspace-now');now.hidden=!current;if(current)now.textContent=current.message||statusText(current);
-  const perf=current?.perf_summary,summary=$('#perf-summary');summary.hidden=!perf;summary.textContent=perf?`${perf.model_calls} model calls · ${Math.round(perf.model_seconds)} s model · ${Math.round(perf.browser_seconds)} s browser`:'';
+  const perf=current?.perf_summary,usage=current?.usage_summary,summary=$('#perf-summary');summary.hidden=!perf&&!usage?.calls;
+  summary.textContent=usageText(usage)||(perf?`${perf.model_calls} model calls · ${Math.round(perf.model_seconds)} s model · ${Math.round(perf.browser_seconds)} s browser`:'');
+  renderUsage($('#usage-details'),usage);
   if(!current)return;
   for(const step of current.task_plan||[])$('#task-plan').append(el('li',step));if(!current.task_plan?.length)$('#task-plan').append(el('li',current.status==='awaiting_review'?'Review the completed application':current.message));
   for(const a of [...(current.actions||[])].slice(-20).reverse())$('#browser-actions').append(el('li',`${toolNames[a.tool]||a.tool} · ${a.label} · ${a.outcome}`));
@@ -448,7 +564,7 @@ async function send(text,key=null,expectedRun=null,context=null){
   if(current?.status==='submitting'||current?.reopening)return;
   if(current&&/^(submit|confirm and submit|提交|确认提交)[.!。！]?$/i.test(text)){error('Use “Submit application” on the review card to confirm this application.');return;}
   chatBusy=true;error();const runId=current?.run_id,version=epoch;render();
-  try{if(!runId)await prepare(text);else{const id=failedMessage?.runId===runId&&failedMessage.text===text&&failedMessage.key===key&&JSON.stringify(failedMessage.context)===JSON.stringify(context)?failedMessage.id:crypto.randomUUID();optimistic.set(runId,[{id,role:'user',text}]);render();bottom();failedMessage={id,text,key,runId,context};await request(`/${runId}/chat`,{text,field_key:key,message_id:id,visual_fallback:$('#visual-fallback').checked,...(context?{context}:{})});failedMessage=null;optimistic.delete(runId);await refresh();}if(epoch===version&&$('#chat-text').value.trim()===text){$('#chat-text').value='';growComposer();}}
+  try{if(!runId)await prepare(text);else{const id=failedMessage?.runId===runId&&failedMessage.text===text&&failedMessage.key===key&&JSON.stringify(failedMessage.context)===JSON.stringify(context)?failedMessage.id:crypto.randomUUID();optimistic.set(runId,[{id,role:'user',text,at:new Date().toISOString()}]);render();bottom();failedMessage={id,text,key,runId,context};await request(`/${runId}/chat`,{text,field_key:key,message_id:id,visual_fallback:$('#visual-fallback').checked,...(context?{context}:{})});failedMessage=null;optimistic.delete(runId);await refresh();}if(epoch===version&&$('#chat-text').value.trim()===text){$('#chat-text').value='';growComposer();}}
   catch(e){if(runId)optimistic.delete(runId);error(e.message);}finally{chatBusy=false;render();}
 }
 async function act(action,body,id=current?.run_id){if(!current||current.run_id!==id||actionBusy||chatBusy)return false;const version=current.version;actionBusy=true;error();render();try{await request(`/${id}/${action}`,{...(action==='reply'?{}:{expected_version:version}),...body});if(body.answers)answerDrafts.clear(id);await refresh();return true;}catch(e){error(e.message);await refresh();return false;}finally{actionBusy=false;render();}}
@@ -549,6 +665,7 @@ if(careerMode){
   $('#side-nav').hidden=false;$('#side-footer-links').hidden=false;
   for(const link of document.querySelectorAll('[data-view]'))link.addEventListener('click',event=>{event.preventDefault();showView(link.dataset.view);});
 }
+initTheme();
 render();refresh();restoreCandidate();refreshCounts();
 if(careerMode){
   const stopNotifications=startAlertNotifications({open:()=>showView('alerts'),onUpdate:data=>{
@@ -572,9 +689,14 @@ async function reviewMaterial(pack,material,approve){
   catch(e){error(e.message);}finally{actionBusy=false;render();}
 }
 if(careerMode){
-  $('#new-chat span').textContent='New conversation';
+  $('#new-chat span').textContent='Chronicle';
+  $('#new-chat use').setAttribute('href','#i-chronicle');
+  $('#new-chat').title='Chronicle · new conversation (Ctrl+K)';
   $('#attempts').setAttribute('aria-label','Conversations');
-  $('#welcome h2').textContent='What are we working on?';
-  $('#welcome p').textContent='Find roles, check your fit, tailor your resume, apply and practise interviews, all in one conversation.';
-  $('#chat-text').placeholder='Paste a job link or describe the role you want';
+  $('#chat-text').placeholder='Write to Eregion…';
+  const errands=['Seek new roles','Weigh my fit','Forge a resume','Practise an interview'];
+  [...$('#starters').children].forEach((chip,i)=>{if(errands[i])chip.textContent=errands[i];});
+  // Council opens the conversation you were in, or the most recent one.
+  $('#nav-council').addEventListener('click',event=>{event.preventDefault();const target=selected||attempts.find(a=>a.career&&!a.archived_at)?.run_id;if(target)select(target);else reset();});
+  chronicleSignature='';render();
 }

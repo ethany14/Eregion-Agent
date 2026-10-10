@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass
-from datetime import UTC, datetime
 from threading import Event, Lock, Thread
 from uuid import NAMESPACE_URL, uuid4, uuid5
 
@@ -175,7 +174,10 @@ class AgentTaskScheduler:
             context = context.model_copy(update={"context_snapshot_id": snapshot_id})
             self.tasks.start(task.task_id, attempt_id, child_session_id=child_id,
                 context_snapshot_id=snapshot_id, context_hash=context.context_hash, manifest=manifest)
-            with model_usage_scope(self.tasks, task.task_id, attempt_id):
+            from agent_runtime.provider_usage import UsageLedger, usage_scope
+            with model_usage_scope(self.tasks, task.task_id, attempt_id), usage_scope(
+                    ledger=UsageLedger(self.tasks.sessions), task_id=task.root_task_id,
+                    run_id=task.task_id, purpose=task.task_type):
                 result = self.workers.get(task.task_type).execute(task, context)
             usage = self.tasks.model_usage(attempt_id)
             if usage:

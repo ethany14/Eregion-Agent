@@ -18,7 +18,6 @@ from agent_runtime.interviewer.errors import InterviewStaleVersionError
 from agent_runtime.interviewer.policy import InterviewPriorityPolicy, validate_candidate
 from agent_runtime.interviewer.errors import InterviewValidationError
 from agent_runtime.mock_interview.errors import MockInterviewValidation
-from agent_runtime.interviewer.errors import InterviewConflictError
 from agent_runtime.evidence.types import EvidenceStatus
 from agent_runtime.sessions.repository import SessionRepository
 from agent_runtime.workspace.models import ApplicationArtifactRow
@@ -408,18 +407,6 @@ def test_interviewer_api_contract_and_safe_errors(interview_setup):
         assert conflict.status_code == 409
         assert "traceback" not in conflict.text.lower()
         assert client.post(path + "/skip", json={}).status_code == 422
-
-
-def test_interviewer_chrome_safe_rendering_and_paths():
-    from pathlib import Path
-    root = Path(__file__).resolve().parents[1]
-    controller = (root / "chrome_extension/interview-controller.js").read_text(encoding="utf-8")
-    client = (root / "web_app/api.js").read_text(encoding="utf-8")
-    assert "textContent" in controller
-    assert "innerHTML" not in controller
-    assert "getActiveInterview" in controller
-    assert "/mock-interviews" in client
-    assert "/api/applications/" in client
 
 
 def test_migration_upgrades_populated_0015_database(tmp_path):

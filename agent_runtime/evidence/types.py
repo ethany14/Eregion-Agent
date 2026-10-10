@@ -41,19 +41,6 @@ class EvidenceLinkType(StrEnum):
     RELATED = "related"
 
 
-class EvidenceEventType(StrEnum):
-    EVIDENCE_CREATED = "EVIDENCE_CREATED"
-    SOURCE_VALIDATED = "SOURCE_VALIDATED"
-    CONFIRMED = "CONFIRMED"
-    REJECTED = "REJECTED"
-    REVISION_PROPOSED = "REVISION_PROPOSED"
-    SUPERSEDED = "SUPERSEDED"
-    ARCHIVED = "ARCHIVED"
-    RESTORED = "RESTORED"
-    APPLICATION_LINKED = "APPLICATION_LINKED"
-    APPLICATION_UNLINKED = "APPLICATION_UNLINKED"
-
-
 class EvidenceMetric(BaseModel):
     model_config = ConfigDict(extra="forbid")
     value: str = Field(min_length=1)

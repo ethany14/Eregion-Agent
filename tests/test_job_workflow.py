@@ -247,22 +247,6 @@ def test_existing_pack_mode_defaults_to_standard(tmp_path):
         db.close()
 
 
-def test_multi_agent_panel_uses_safe_text_and_server_owned_plan():
-    from pathlib import Path
-    root = Path(__file__).resolve().parents[1]
-    page = (root / "web_app/index.html").read_text(encoding="utf-8")
-    panel = (root / "web_app/app.js").read_text(encoding="utf-8")
-    controller = (root / "chrome_extension/multi-agent-controller.js").read_text(encoding="utf-8")
-    client = (root / "web_app/api.js").read_text(encoding="utf-8")
-    assert 'value="single_custom"' not in page
-    assert 'value="multi_agent_v1"' not in page
-    assert "renderMultiAgentProgress" in controller
-    assert "textContent" in controller and "innerHTML" not in controller
-    assert "innerHTML" not in panel
-    assert "/multi-agent-runs" in client
-    assert "application_questions" in controller
-
-
 def test_component_gate_uses_shared_dataset_without_model_calls():
     from evals.run_job_workflow_component_evals import run
     result = run()

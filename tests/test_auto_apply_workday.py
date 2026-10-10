@@ -98,13 +98,19 @@ def test_workday_visible_submit_surface_and_header_are_disambiguated():
         b.page.set_content('''<button>Sign In</button><form onsubmit="return false">
           <label>Email<input data-automation-id="email" autocomplete="email" type="text"></label>
           <label>Password<input type="password"></label><div>
-          <div role="button" aria-label="Submit" data-automation-id="click_filter" onclick="window.clicked=true">Sign In</div>
+          <div role="button" aria-label="Submit" data-automation-id="click_filter" onclick="window.clicked=(window.clicked||0)+1; window.email=this.closest('form').querySelector('input').value; this.closest('form').remove()">Sign In</div>
           <button type="submit" aria-hidden="true">Sign In</button></div></form>
           <input data-automation-id="beecatcher" name="website">''')
-        target=authentication.submit_control(b,'login')
-        assert target.count()==1 and target.get_attribute('data-automation-id')=='click_filter'
-        target.click();assert b.page.evaluate('window.clicked')
         assert len(b.observe())==1 # Only email; password and honeypot excluded.
+        account=authentication.context(b)
+        def no_model():
+            raise AssertionError('This conventional login must not call a model')
+        authentication.authenticate(b,AccountCredentials(expected_version=1,
+            origin=account['origin'],mode='login',username='test@example.com',password='fixture-password'),
+            model_factory=no_model)
+        assert b.page.evaluate('window.clicked')==1
+        assert b.page.evaluate('window.email')=='test@example.com'
+        assert authentication.context(b) is None
         b.page.set_content('''<main><h1>Review</h1><div>
           <div role="button" aria-label="Submit" data-automation-id="click_filter" onclick="window.submits=(window.submits||0)+1">Submit</div>
           <button aria-hidden="true" type="submit">Submit</button></div></main>''')

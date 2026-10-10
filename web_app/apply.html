@@ -3,10 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>eregion · Career agent</title>
-<link rel="stylesheet" href="/web-assets/tokens.css?v=v2-20261008">
+<title>Eregion · Career agent</title>
+<script>try{const t=localStorage.getItem('eregion.theme');if(t==='light'||t==='night')document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="/web-assets/tokens.css?v=v4final-20261009">
 <link rel="stylesheet" href="/web-assets/apply.css?v=standard-answers-20261009">
-<link rel="stylesheet" href="/web-assets/chat-typography.css?v=v2-20261008">
+<link rel="stylesheet" href="/web-assets/chat-typography.css?v=v4final-20261009">
+<link rel="stylesheet" href="/web-assets/eregion.css?v=v4final-20261009">
 </head>
 <body>
 <svg class="sprite" aria-hidden="true" focusable="false">
@@ -31,24 +33,38 @@
   <symbol id="i-restore" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v4h4"/></symbol>
   <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
   <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-holly" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17C13.6 14.8 10.6 15 9.6 12.8 7.6 13.4 6 11.6 4.4 12.4 5.6 9.8 3.8 8.2 5 6.6 7 7.4 8.4 5.4 10.6 6.6 11 4.4 13.4 4 14.6 5.4 14 8 16.2 9.6 15.6 12.2 16.8 14.2 15 17Z"/><path d="M15 17 7 8.6"/><path d="M17 17c2.2-1.2 2.4-4.2 4.6-5-.4-2 1.4-3.4.8-5 2.4 1.4 4.2-.2 5.6 1.2-.8 1.9 1.2 3.4 0 5.4 2 .6 2.2 3 .8 4-2.4-.8-4.2 1.2-6.6.4-1.8 1.2-3.6-.2-5.2-1z"/><path d="M17 17l8.6-7"/></g><circle cx="13.2" cy="22" r="2.3" fill="currentColor"/><circle cx="18.2" cy="22.6" r="2.3" fill="currentColor"/><circle cx="15.8" cy="26.6" r="2.3" fill="currentColor"/></symbol>
+  <symbol id="i-chronicle" viewBox="0 0 24 24"><path d="M4 5.5C6.5 4.5 9.5 4.5 12 6c2.5-1.5 5.5-1.5 8-.5V19c-2.5-1-5.5-1-8 .5-2.5-1.5-5.5-1.5-8-.5z"/><path d="M12 6v13.5"/></symbol>
+  <symbol id="i-council" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="4" r="1.5"/><circle cx="19" cy="9" r="1.5"/><circle cx="17" cy="18" r="1.5"/><circle cx="7" cy="18" r="1.5"/><circle cx="5" cy="9" r="1.5"/></symbol>
+  <symbol id="i-road" viewBox="0 0 24 24"><path d="M4 20c4-1 3-6 8-7s5-6 8-8" stroke-dasharray="2 2.6"/><circle cx="4" cy="20" r="1.5"/><circle cx="12" cy="13" r="1.5"/><path d="M20 2.5v5M17.5 5h5"/></symbol>
+  <symbol id="i-forge" viewBox="0 0 24 24"><path d="M3 9h12a4 4 0 0 0 4-3v5h-3l-2 3v2h3v3H7v-3h3v-2l-3-3H3z"/></symbol>
+  <symbol id="i-beacon" viewBox="0 0 24 24"><path d="M12 3c1.5 3.2 5 4.8 5 9.2A5 5 0 0 1 7 12.2C7 10 8.4 8.6 9.4 7.4c.3 1.6 1 2.4 2 2.8C11 7.6 11.2 5.2 12 3Z"/><path d="M8 21h8M10 17.5l-1 3.5M14 17.5l1 3.5"/></symbol>
+  <symbol id="i-seal" viewBox="0 0 24 24"><circle cx="12" cy="10" r="6"/><path d="M12 6.5v7M8.5 10h7" stroke-width="1.2"/><path d="m8.5 15-1.5 6 5-2 5 2-1.5-6"/></symbol>
+  <symbol id="i-quill" viewBox="0 0 24 24"><path d="M20 3C12 4 7 9 5 17l-1 4 4-1c2-3 3-4 6-5-2 0-3-.5-4-1 4-1 7-4 10-11z"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></symbol>
+  <symbol id="i-ithil" viewBox="0 0 24 24"><path d="M15.5 4.2A8 8 0 1 0 19.8 15 6.6 6.6 0 0 1 15.5 4.2Z"/><path d="M18.5 3.5v3M17 5h3" stroke-width="1.3"/></symbol>
+  <symbol id="i-anor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7"/></symbol>
 </svg>
 
 <main class="agent-shell">
   <aside class="history" id="history-panel">
-    <a class="brand" href="/apply"><svg class="i" aria-hidden="true"><use href="#i-mark"/></svg>eregion</a>
+    <a class="brand" href="/apply" aria-label="Eregion home"><svg class="mark" aria-hidden="true"><use href="#i-holly"/></svg><span>EREGION</span></a>
     <button id="new-chat" class="new-chat" type="button" aria-keyshortcuts="Control+K Meta+K" title="New conversation (Ctrl+K)"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg><span>New application</span></button>
     <nav id="side-nav" class="side-nav" aria-label="Workspace" hidden>
-      <a href="?view=applications" data-view="applications"><svg class="i" aria-hidden="true"><use href="#i-brief"/></svg>Applications</a>
-      <a href="?view=materials" data-view="materials"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Materials</a>
+      <a href="/apply" id="nav-council" data-council><svg class="i" aria-hidden="true"><use href="#i-council"/></svg>Council</a>
+      <a href="?view=applications" data-view="applications"><svg class="i" aria-hidden="true"><use href="#i-road"/></svg>The Road<span id="count-road" class="count"></span></a>
+      <a href="?view=materials" data-view="materials"><svg class="i" aria-hidden="true"><use href="#i-forge"/></svg>The Forge</a>
       <a href="?view=alerts" data-view="alerts"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Job alerts<span id="count-alerts" class="count"></span></a>
     </nav>
     <nav id="attempts" class="conversations" aria-label="Applications"></nav>
     <div class="history-footer">
       <div id="side-footer-links" class="side-footer-links" hidden>
-        <a href="?view=archived" data-view="archived"><svg class="i" aria-hidden="true"><use href="#i-archive"/></svg>Archived<span id="count-archived" class="count"></span></a>
-        <a href="?view=trash" data-view="trash"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg>Trash<span id="count-trash" class="count"></span></a>
+        <a href="?view=archived" data-view="archived" data-also="trash"><svg class="i" aria-hidden="true"><use href="#i-archive"/></svg>Archive<span id="count-archived" class="count"></span></a>
       </div>
-      <button id="profile-toggle" class="me" type="button" aria-label="Your details"><span class="avatar" id="profile-initials" aria-hidden="true"></span><span id="profile-name" aria-hidden="true">Your details</span></button>
+      <div class="me-row">
+        <button id="profile-toggle" class="me" type="button" aria-label="Your details"><span class="avatar" id="profile-initials" aria-hidden="true"></span><span id="profile-name" aria-hidden="true">Your details</span></button>
+        <div class="theme-toggle" role="group" aria-label="Theme"><span class="thumb" aria-hidden="true"></span><button class="night" type="button" aria-pressed="true" aria-label="Night theme" title="Night"><svg aria-hidden="true"><use href="#i-ithil"/></svg></button><button class="day" type="button" aria-pressed="false" aria-label="Day theme" title="Day"><svg aria-hidden="true"><use href="#i-anor"/></svg></button></div>
+      </div>
     </div>
   </aside>
   <div class="history-scrim" id="history-scrim"></div>
@@ -61,7 +77,7 @@
         <span id="chat-subtitle" class="chat-subtitle"></span>
         <p id="agent-status">A little less paperwork. A step closer.</p>
       </div>
-      <ol id="journey" class="journey" aria-label="Progress" hidden></ol>
+      <ol id="journey" class="journey trail" aria-label="Progress" hidden></ol>
       <button id="browser-toggle" class="icon-button" type="button" aria-expanded="false" aria-controls="browser-panel" aria-label="Agent activity" title="Agent activity"><svg class="i" aria-hidden="true"><use href="#i-panel"/></svg></button>
     </header>
     <p id="apply-error" role="alert" hidden></p>
@@ -69,12 +85,20 @@
     <div id="chat-scroll" class="chat-scroll">
       <div class="column">
         <div id="welcome" class="welcome">
-          <h2>You bring the experience. I’ll handle the application.</h2>
-          <p>Attach your resume and send a job link. I’ll fill what I know and ask you for anything that’s missing.</p>
+          <div class="chron-main">
+            <p id="chron-date" class="chron-date" hidden></p>
+            <h2>You bring the experience. I’ll handle the application.</h2>
+            <p>Attach your resume and send a job link. I’ll fill what I know and ask you for anything that’s missing.</p>
+            <div id="composer-home" class="composer-home"></div>
+            <section id="chron-today" class="sheet chron-today" hidden><div class="hd"><h3>Today’s chronicle</h3></div><ol class="vtrail"></ol></section>
+          </div>
+          <div id="chron-side" class="chron-side" hidden>
+            <section id="chron-beacons" class="sheet chron-beacons"><div class="hd"><svg class="i beacon-icon" aria-hidden="true"><use href="#i-beacon"/></svg><h3>Beacons lit</h3><span class="tag beacon-t r"></span></div><div class="rows"></div></section>
+            <section id="chron-road" class="sheet chron-road"><div class="hd"><svg class="i" aria-hidden="true"><use href="#i-road"/></svg><h3>On the road</h3><a class="r link" href="?view=applications" data-view="applications">All</a></div><div class="rows"></div></section>
+          </div>
         </div>
-        <div id="agent-messages" role="log" aria-live="polite" aria-relevant="additions text"></div>
-        <details id="agent-trace" class="trace" hidden><summary></summary><ol></ol></details>
-        <div id="career-results"></div>
+        <div id="career-results"><div id="agent-messages" role="log" aria-live="polite" aria-relevant="additions text"></div></div>
+        <details id="agent-trace" class="the-way" hidden><summary class="maplabel">The way</summary><ol class="trail"></ol><ol class="log"></ol></details>
         <div id="conversation-actions"></div>
       </div>
     </div>
@@ -101,7 +125,7 @@
 
   <aside id="browser-panel" class="workspace" hidden>
     <header>
-      <h2>Agent activity</h2>
+      <h2>The Lookout</h2>
       <button id="browser-close" class="icon-button" type="button" aria-label="Close agent activity"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
     </header>
     <div class="browser-frame">
@@ -110,6 +134,7 @@
       <p id="preview-placeholder" class="empty-preview">A live view appears here when I open a page.</p>
     </div>
     <p id="perf-summary" class="sub" hidden></p>
+    <details id="usage-details" class="sub" hidden></details>
       <p id="workspace-now" class="workspace-now" hidden></p>
     <details open><summary>Plan</summary><ol id="task-plan" class="plan"></ol></details>
     <details><summary>Recent actions</summary><ol id="browser-actions" class="log"></ol></details>
@@ -190,6 +215,6 @@
   </form>
 </dialog>
 
-<script type="module" src="/web-assets/apply.js?v=eregion-20261009"></script>
+<script type="module" src="/web-assets/apply.js?v=v4final-20261009"></script>
 </body>
 </html>

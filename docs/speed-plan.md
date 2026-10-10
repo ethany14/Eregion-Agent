@@ -49,8 +49,9 @@ takeover and final-submission boundaries remain in the shared loop.
   the background, with one worker and at most four queued distinct resumes.
 - Exact bare skills use conservative whole-word evidence matching; negation,
   years, expertise, compound requirements and ambiguous quotes fall back. Jev
-  still handles its configured decisions. Remaining requirements run in chunks
-  of six with at most three model requests in parallel. A compact ID/status/
+  still handles its configured decisions. Remaining requirements use adaptive
+  batches (up to 24 requirements, sized against the actual compact request text),
+  with at most three requests in parallel. A compact ID/status/
   evidence-ID response expands into the existing public match contract.
 - JD extraction references numbered exact source sentences. Resume writing
   returns source entries and grounded bullets; code restores headers, dates and
@@ -58,8 +59,10 @@ takeover and final-submission boundaries remain in the shared loop.
 - Factual-only unsupported bullets can be removed in code, falling back to
   original source bullets for an empty entry. Structural issues and user edits
   retain the model revision path. The default is one revision (configurable).
-  Code and model verification overlap; a code failure always wins. A running
-  provider request is still joined for usage accounting if it cannot be cancelled.
+  Deterministic source/structure checks now run before paid verification. Material
+  packs use one semantic pass over all resume sections instead of overlapping
+  factual model checks. Custom model adapters retain their additional verifier
+  contract. See the second-pass measurements in [agent-loop.md](agent-loop.md).
 - The task scheduler defaults to four concurrent tasks. Chat material creation
   starts resume/letter items together with short serialized repository writes.
   Verified documents appear as they finish; pending items show writing/checking

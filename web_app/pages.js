@@ -1,4 +1,4 @@
-// Full-page views next to the conversation: Archived, Trash, Applications and Materials.
+// Full-page views next to the conversation: the Archive (archived and trash), The Road and The Forge.
 import {api,organise,deleteForever,emptyTrash,confirmDialog,openMenu,toast} from './conversations.js';
 
 const DAY=24*60*60*1000,RETENTION_DAYS=30;
@@ -33,7 +33,13 @@ async function conversationList(ctx,container,kind){
   const body=el('div','','page-body narrow'),note=el('p',trash?`Conversations in Trash are deleted permanently after ${RETENTION_DAYS} days. Applications and materials are never deleted with them.`:'Archived conversations are hidden from the sidebar. Sending a message to one brings it back.','page-note');
   const bulk=el('div','','bulk-bar'),list=el('div','','check-list');bulk.hidden=true;
   body.append(note,bulk,list);
-  container.replaceChildren(header(ctx,trash?'Trash':'Archived conversations',tools),body);
+  // Archived and Trash are two tabs of one Archive.
+  const top=header(ctx,'Archive',tools),tabs=el('div','','page-tabs');tabs.setAttribute('role','group');tabs.setAttribute('aria-label','Archive');
+  for(const [name,label] of [['archived','Archived'],['trash','Trash']]){
+    const tab=button(label,()=>ctx.show(name),name===kind?'on':'');tab.dataset.view=name;tab.setAttribute('aria-pressed',String(name===kind));tabs.append(tab);
+  }
+  top.querySelector('h1').after(el('span',trash?'deleted for good after 30 days':'set aside, never lost','page-sub'),tabs);
+  container.replaceChildren(top,body);
 
   const act=async(label,run)=>{try{await run([...selected]);selected.clear();await load();ctx.refresh();toast(label);}catch(e){ctx.error(e.message);}};
   function drawBulk(){

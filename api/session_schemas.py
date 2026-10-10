@@ -128,12 +128,3 @@ class SessionSummary(SessionApiModel):
 
 class SessionListResponse(SessionApiModel):
     sessions: list[SessionSummary]
-
-
-class ApiErrorDetail(SessionApiModel):
-    code: str
-    message: str
-
-
-class ApiErrorResponse(SessionApiModel):
-    detail: ApiErrorDetail

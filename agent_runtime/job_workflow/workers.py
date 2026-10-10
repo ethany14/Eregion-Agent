@@ -303,15 +303,15 @@ class EvidenceFreezeWorker:
         application = self._workspace.get_application(task.application_id)
         if application.current_snapshot_id != task.input_spec.get("job_snapshot_id"):
             raise ValueError("The Job snapshot changed before evidence freezing.")
+        source = _one(context, "resume_source")
         selected = self._selection.select(
             evidence=self._evidence.list(status="confirmed", limit=500),
             links=self._evidence.list_for_application(task.application_id), job=job,
-            token_budget=4_000)
+            token_budget=4_000, resume_text=source["resume_text"])
         if not selected:
             raise ValueError("Confirmed, relevant evidence is required before writing.")
         preferences = self._pack_workflow._preferences()
         model_configuration = self._pack_workflow._model_configuration()
-        source = _one(context, "resume_source")
         resume_header_lines = self._pack_workflow.resume_header_lines(source["resume_text"])
         snapshot = GenerationEvidenceSnapshot(
             generation_snapshot_id=str(uuid5(NAMESPACE_URL, f"generation:{task.task_id}")),
@@ -422,7 +422,9 @@ class ArtifactVerifierWorker:
         prior_key = task.input_spec.get("prior_report_key")
         prior = _one(context, prior_key) if prior_key else None
         content_hash = hashlib.sha256(canonical_json(content).encode()).hexdigest()
-        if prior and prior["source_content_hash"] == content_hash and prior["verification"]["passed"]:
+        from agent_runtime.application_pack.verification import MATERIAL_VERIFICATION_VERSION
+        if (prior and prior.get('verification_version') == MATERIAL_VERIFICATION_VERSION
+                and prior["source_content_hash"] == content_hash and prior["verification"]["passed"]):
             verdict = ArtifactVerification.model_validate(prior["verification"])
         else:
             job_data = _one(context, "job_analysis")
@@ -431,27 +433,13 @@ class ArtifactVerifierWorker:
                 preferences=snapshot.preference_versions,
                 expected_role=job_data.get('title') if isinstance(job_data, dict) else None)
             if kind == 'tailored_resume':
-                from agent_runtime.application_pack.parallel_checks import parallel_checks
-                verdict, llm_verdict = parallel_checks(check, lambda: invoke_model(self._model.verify_resume,
-                    _writer_state(task, context, current=content)))
+                from agent_runtime.application_pack.verification import verify_material_resume
+                verdict = verify_material_resume(_writer_state(task, context, current=content), self._model, check)
             else:
                 verdict = check()
-        if kind == "tailored_resume" and verdict.passed and not (
-                prior and prior["source_content_hash"] == content_hash and prior["verification"]["passed"]):
-            if not llm_verdict.passed:
-                from agent_runtime.application_pack.types import ClaimIssue
-                verdict = ArtifactVerification(passed=False, issues=[ClaimIssue(
-                    block_id=f"model-{index}", unsupported_text=claim.claim,
-                    reason=claim.reason, cited_evidence_ids=[],
-                    revision_instruction=llm_verdict.revision_feedback[
-                        min(index, len(llm_verdict.revision_feedback) - 1)]
-                        if llm_verdict.revision_feedback else "Remove the unsupported claim.")
-                    for index, claim in enumerate(llm_verdict.unsupported_claims)] or [ClaimIssue(
-                        block_id='model-quality', reason='The model verifier rejected this draft.',
-                        unsupported_text='', cited_evidence_ids=[],
-                        revision_instruction='; '.join(llm_verdict.revision_feedback) or 'Revise the draft to meet the writing requirements.')])
         report = {"artifact_key": key, "artifact_type": kind,
                   "source_content_hash": content_hash,
+                  "verification_version": MATERIAL_VERIFICATION_VERSION,
                   "verification": verdict.model_dump(mode="json")}
         return AgentTaskResult(summary="Verification passed." if verdict.passed else
             "Verification found unsupported content.", output_artifacts=[

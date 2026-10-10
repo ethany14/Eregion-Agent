@@ -158,7 +158,8 @@ class CareerHarness:
         artifacts = rt.workspace.list_artifacts(application_id)
         match = next((a for a in reversed(artifacts) if a.artifact_type==ArtifactType.MATCH_REPORT),None)
         result = {'application_id':application_id,'title':job.title,'company':job.company,'url':job.canonical_url,
-            'location':job.location,'status':app.status.value,'match_score':match.content.get('overall_score') if match else None}
+            'location':job.location,'status':app.status.value,'match_score':match.content.get('overall_score') if match else None,
+            'result_at':(match.created_at if match else app.created_at).isoformat()}
         if match:result.update(self.requirement_summary(match.content))
         if detail:
             result.update(description=rt.workspace.current_snapshot(application_id).cleaned_job_description,

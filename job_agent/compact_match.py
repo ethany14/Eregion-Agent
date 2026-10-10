@@ -2,6 +2,14 @@
 from typing import Literal
 from job_agent.schemas import AnalysisModel, SkillAssessment, SkillEvidence
 
+
+def match_payload(resume, requirements):
+    """Shared wire payload for request sizing and actual provider calls."""
+    import json
+    return json.dumps({'evidence': [e.model_dump(mode='json') for e in resume.evidence],
+                       'requirements': [r.model_dump(mode='json') for r in requirements]},
+                      ensure_ascii=False, separators=(',', ':'))
+
 class CompactMatch(AnalysisModel):
     requirement_id: str
     status: Literal['matched', 'partial', 'missing', 'needs_confirmation']

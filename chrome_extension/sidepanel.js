@@ -33,7 +33,7 @@ async function getTargetJobTab() {
     const stored = await chrome.storage.session.get(ACTIVE_JOB_TAB_KEY); target = stored[ACTIVE_JOB_TAB_KEY];
     if (!target?.tabId) await new Promise((resolve) => setTimeout(resolve, 80));
   }
-  if (!target?.tabId) throw new Error("Open a job page and click the Job Lens toolbar icon first.");
+  if (!target?.tabId) throw new Error("Open a job page and click the Eregion Lens toolbar icon first.");
   if (!target.validPage || !validHttpUrl(target.url)) throw new Error("Chrome cannot extract from this protected page. Open a regular HTTP or HTTPS job page.");
   return target;
 }

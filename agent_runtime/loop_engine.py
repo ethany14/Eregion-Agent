@@ -4,13 +4,14 @@ The kernel knows neither career stages nor application fields. Scheduling, brows
 thread ownership, approvals and external-effect validation belong to its hosts.
 """
 import json
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
-from langchain_core.messages import HumanMessage, SystemMessage
 
 from agent_runtime.loop_context import ConversationWindow, trace_value
 from agent_runtime.model_output import output_problem, reply_text, REPAIR_INSTRUCTION
+from agent_runtime.request_context import ContextArchive, READ_CONTEXT, prepare_request
 
 
 class LoopStop(Exception):
@@ -90,11 +91,13 @@ class AgentLoop:
     action_error, after_action, persist. An explicit LoopStop is a durable handoff;
     reaching slice_steps only yields the worker, never asks a question.
     """
-    def __init__(self, host, runtime=None, *, slice_steps=12, context_chars=24000):
+    def __init__(self, host, runtime=None, *, slice_steps=12, context_chars=24000, request_chars=64000):
         self.host, self.slice_steps = host, slice_steps
         self.runtime = {'version': 1, 'sequence': 0, 'events': [], **(runtime or {})}
         self.context = ConversationWindow(self.runtime.get('transcript', []), max_chars=context_chars)
         self.notice = self.runtime.get('recovery')
+        self.archive = ContextArchive(self.runtime.get('context_archive'))
+        self.request_chars = request_chars
 
     def event(self, kind, **data):
         self.runtime['sequence'] += 1
@@ -103,6 +106,7 @@ class AgentLoop:
 
     def save(self):
         self.runtime['transcript'] = self.context.groups
+        self.runtime['context_archive'] = self.archive.values
         # Hosts receive a snapshot, never mutable lists shared with the engine.
         self.host.persist(json.loads(json.dumps(self.runtime)))
 
@@ -128,12 +132,10 @@ class AgentLoop:
                 turn.snapshot = snapshot
                 if not snapshot.get('visual_fallback'):
                     image_inputs = []
-                messages = [SystemMessage(content=turn.prompt), *self.context.messages()]
-                if repair:
-                    messages.append(SystemMessage(content=repair))
-                # A fresh live observation is never copied into the durable transcript.
-                messages.append(HumanMessage(content=json.dumps(self.context.snapshot(snapshot), ensure_ascii=False,
-                                                               default=str, separators=(',', ':'))))
+                turn.tools = [t for t in turn.tools if t['function']['name'] != 'read_context'] + [READ_CONTEXT]
+                messages, context_metrics = prepare_request(turn.prompt, turn.tools, self.context, snapshot,
+                    self.archive, max_chars=self.request_chars, repair=repair)
+                self.runtime['context_metrics'] = context_metrics
                 messages.extend(turn.images or image_inputs)
                 image_inputs = []
                 self.event('model_started', revision=turn.revision)
@@ -164,10 +166,14 @@ class AgentLoop:
                 text = reply_text(response)
                 self.event('model_completed', revision=turn.revision, tool_count=len(calls))
                 if not calls:
-                    disposition = self.host.on_text(text, turn)
-                    self.context.append(snapshot, text, [], [], turn.revision)
-                    self.event('assistant_message', revision=turn.revision)
-                    self.save()
+                    guard = self.host.text_guard(turn) if hasattr(self.host, 'text_guard') else nullcontext()
+                    with guard:
+                        self.context.append(snapshot, text, [], [], turn.revision)
+                        self.event('assistant_message', revision=turn.revision)
+                        # Publish completion only after persistence, and fence
+                        # the pair against concurrent user steering when supported.
+                        self.save()
+                        disposition = self.host.on_text(text, turn)
                     if disposition:
                         if 'reason' in disposition:
                             result = disposition
@@ -200,7 +206,8 @@ class AgentLoop:
                             'revision': turn.revision, 'arguments': trace_value(call['args'])}
                         self.event('tool_started', tool=call['name'], call_id=call['id'], revision=turn.revision)
                         self.save()  # Journal intent before a capability has effects.
-                        outcome = self.host.execute(call, turn)
+                        outcome = (self.archive.read(call['args']['ref'], call['args'].get('offset', 0))
+                                   if call['name'] == 'read_context' else self.host.execute(call, turn))
                     except LoopStop:
                         raise
                     except Exception as exc:

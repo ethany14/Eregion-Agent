@@ -10,6 +10,7 @@ from sqlalchemy import engine_from_config, pool
 
 from api.db import Base
 import agent_runtime.analysis_cache  # noqa: F401
+import agent_runtime.provider_usage  # noqa: F401
 import api.models  # noqa: F401
 import agent_runtime.models  # noqa: F401
 import agent_runtime.sessions.models  # noqa: F401

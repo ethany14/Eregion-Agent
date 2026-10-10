@@ -1,0 +1,298 @@
+/* Eregion v4-final: the map and the trail, in v3's holly-night and parchment colours.
+   Loaded after apply.css; it restyles shared components rather than duplicating them.
+   No patterns behind content: one soft glow at the top of the page is the only texture. */
+
+/* ---------- Page and type ---------- */
+body { font-family: var(--sans); font-size: 14.5px; }
+.agent-shell { background: radial-gradient(900px 500px at 50% -10%, var(--glow), transparent 70%), var(--bg); }
+.maplabel, .side-label, .eyebrow { font-family: var(--map); letter-spacing: .12em; color: var(--muted); font-size: 12.5px; text-transform: lowercase; font-variant: small-caps; }
+.eyebrow { margin-bottom: 10px; }
+::selection { background: var(--holly-soft); }
+
+/* Beacon: a small flame marks anything waiting on you. */
+.dot, .attempt .dot, .tbl td.co .dot, .bcard > .dot, .needs-you::before, #agent-status.attention::before, .answer-batch .qcount::before {
+  width: 12px; height: 12px; border-radius: 0; background: var(--signal);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2c1.6 3.4 5.6 5.2 5.6 10.2A5.6 5.6 0 0 1 6.4 12.2C6.4 9.8 8 8.2 9.1 6.9c.3 1.8 1.1 2.7 2.2 3.1C10.9 7.2 11.1 4.6 12 2Z'/%3E%3Crect x='8' y='19.5' width='8' height='2.2' rx='1'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2c1.6 3.4 5.6 5.2 5.6 10.2A5.6 5.6 0 0 1 6.4 12.2C6.4 9.8 8 8.2 9.1 6.9c.3 1.8 1.1 2.7 2.2 3.1C10.9 7.2 11.1 4.6 12 2Z'/%3E%3Crect x='8' y='19.5' width='8' height='2.2' rx='1'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* ---------- Sidebar ---------- */
+.history { width: 240px; padding: 22px 14px 16px; background: var(--bg-2); border-right: 1px solid var(--line-strong); }
+.brand { gap: 10px; margin-bottom: 24px; padding: 0 6px; }
+.brand .mark { width: 30px; height: 30px; color: var(--holly); flex: none; }
+.brand span { font-family: var(--map); font-weight: 400; font-size: 21px; letter-spacing: .16em; color: var(--ink); }
+.new-chat, .side-nav a, .side-footer-links a {
+  display: flex; align-items: center; gap: 11px; width: 100%; margin: 0; padding: 8px 10px; border-radius: 8px;
+  font-size: 14px; color: var(--ink-2); text-decoration: none; text-align: left;
+}
+.new-chat { margin-bottom: 2px; }
+.new-chat:hover, .side-nav a:hover, .side-footer-links a:hover { background: var(--raised); color: var(--ink); }
+.new-chat[aria-current="true"], .side-nav a[aria-current="true"], .side-footer-links a[aria-current="true"] {
+  background: var(--raised); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+.side-nav { margin: 0 0 4px; gap: 2px; }
+.count { font: 12px var(--sans); color: var(--muted); }
+.side-label { margin: 18px 10px 6px; font-size: 12px; }
+.attempt { font-size: 13.5px; padding: 6px 10px; color: var(--ink-2); }
+.attempt .dot { order: 3; margin-left: auto; }
+.attempt[aria-current="true"] { background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); }
+.attempt:hover { background: var(--raised); }
+.side-group-toggle { font-family: var(--map); letter-spacing: .1em; font-size: 12px; text-transform: lowercase; font-variant: small-caps; }
+.history-footer { border-top: 0; }
+.me-row { display: flex; align-items: center; gap: 6px; }
+.me-row .me { flex: 1; min-width: 0; }
+.me .avatar { background: transparent; box-shadow: inset 0 0 0 1px var(--line-strong); font-family: var(--serif); font-size: 13px; color: var(--ink-2); }
+
+/* ---------- Day / Night toggle: Ithil (moon) and Anor (sun) ---------- */
+.theme-toggle { position: relative; display: inline-flex; flex: none; padding: 3px; border-radius: 999px; background: var(--raised); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.theme-toggle button { position: relative; z-index: 1; width: 30px; height: 26px; display: grid; place-items: center; border-radius: 999px; color: var(--faint); transition: color .2s; }
+.theme-toggle button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.theme-toggle button[aria-pressed="true"] { color: var(--ink); }
+.theme-toggle button.day[aria-pressed="true"] { color: var(--gold); }
+.theme-toggle .thumb { position: absolute; top: 3px; left: 3px; width: 30px; height: 26px; border-radius: 999px; background: var(--bg); box-shadow: 0 0 0 1px var(--line-strong), 0 2px 6px rgba(0, 0, 0, .18); transition: transform .25s cubic-bezier(.2, .8, .2, 1); }
+.theme-toggle[data-state="light"] .thumb { transform: translateX(30px); background: var(--raised); box-shadow: 0 0 0 1px var(--line-strong), 0 2px 6px rgba(60, 50, 30, .12); }
+
+/* ---------- The trail: one line for every process ---------- */
+.trail { display: flex; align-items: flex-start; margin: 0; padding: 0; list-style: none; }
+.trail .st { flex: 1; position: relative; min-width: 0; padding-top: 18px; text-align: center; font-size: 11.5px; color: var(--faint); }
+.trail .st::before { content: ""; position: absolute; top: 6px; left: 0; right: 0; border-top: 1.4px dashed var(--line-strong); }
+.trail .st:first-child::before { left: 50%; }
+.trail .st:last-child::before { right: 50%; }
+.trail .st.done::before, .trail .st.now::before, .trail .st.wait::before, .trail .st.gold::before { border-top: 1.6px solid var(--holly); }
+.trail .st.now::before, .trail .st.wait::before, .trail .st.gold::before { right: 50%; }
+.trail .st:first-child.now::before, .trail .st:first-child.wait::before { display: none; }
+.trail .st > i { position: absolute; top: 1px; left: 50%; width: 11px; height: 11px; margin-left: -5.5px; border-radius: 50%; background: var(--bg); box-shadow: inset 0 0 0 1.3px var(--rule); }
+.trail .st.done { color: var(--muted); }
+.trail .st.done > i { background: var(--holly); box-shadow: none; }
+.trail .st.now { color: var(--ink); }
+.trail .st.now > i { box-shadow: inset 0 0 0 2px var(--holly), 0 0 0 4px var(--holly-soft); }
+.trail .st.wait { color: var(--signal); }
+.trail .st.wait > i { background: var(--signal); box-shadow: 0 0 0 4px var(--signal-soft); }
+.trail .st.gold { color: var(--gold); }
+.trail .st.gold > i { background: var(--gold); box-shadow: 0 0 0 4px var(--gold-soft); }
+.trail.compact .st { padding-top: 0; height: 13px; font-size: 0; }
+.vtrail { list-style: none; margin: 0; padding: 0; }
+.vtrail > li { position: relative; padding: 0 0 16px 28px; font-size: 14px; color: var(--ink-2); }
+.vtrail > li::before { content: ""; position: absolute; left: 6px; top: 16px; bottom: -2px; border-left: 1.4px dashed var(--line-strong); }
+.vtrail > li.done::before { border-left: 1.6px solid var(--holly); }
+.vtrail > li:last-child::before, .vtrail > li.empty::before { display: none; }
+.vtrail > li > i { position: absolute; left: 0; top: 5px; width: 13px; height: 13px; border-radius: 50%; background: var(--bg); box-shadow: inset 0 0 0 1.3px var(--rule); }
+.vtrail > li.done > i { background: var(--holly); box-shadow: none; }
+.vtrail > li.wait > i { background: var(--signal); box-shadow: 0 0 0 4px var(--signal-soft); }
+.vtrail > li.now > i { box-shadow: inset 0 0 0 2px var(--holly), 0 0 0 4px var(--holly-soft); }
+.vtrail > li.empty { padding-left: 0; color: var(--muted); }
+.chron-entry { display: grid; text-align: left; width: 100%; color: inherit; }
+.chron-entry time { font: 11px var(--mono); color: var(--faint); }
+.chron-entry b { font-weight: 500; color: var(--ink); }
+.chron-entry small { font-size: 13px; color: var(--muted); }
+.chron-entry:hover b { text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; }
+
+/* ---------- Sheets: panels with a fine inked frame ---------- */
+.card, .decision, .answer-batch, .sheet {
+  position: relative; background: var(--raised); border-radius: 3px;
+  box-shadow: 0 0 0 1px var(--line-strong), 0 1px 0 var(--line);
+}
+.card::before, .card::after, .decision::before, .decision::after, .answer-batch::before, .answer-batch::after, .sheet::before, .sheet::after {
+  content: ""; position: absolute; width: 10px; height: 10px; border-color: var(--rule); border-style: solid; pointer-events: none;
+}
+.card::before, .decision::before, .answer-batch::before, .sheet::before { left: 6px; top: 6px; border-width: 1px 0 0 1px; }
+.card::after, .decision::after, .answer-batch::after, .sheet::after { right: 6px; bottom: 6px; border-width: 0 1px 1px 0; }
+details.card.folded::before, details.card.folded::after { display: none; }
+.sheet { padding: 22px 24px; }
+.sheet .hd { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.sheet .hd h3 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 21px; color: var(--ink); }
+.sheet .hd .r { margin-left: auto; }
+.sheet .hd svg.i { width: 16px; height: 16px; color: var(--holly); }
+.sheet .hd .beacon-icon { color: var(--signal); }
+.decision h3, .card h3 { font-family: var(--serif); font-weight: 500; font-size: 21px; letter-spacing: 0; }
+.tag { display: inline-flex; align-items: center; font-size: 12px; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.tag.beacon-t { color: var(--signal); box-shadow: inset 0 0 0 1px var(--signal); background: var(--signal-soft); }
+.link { font-size: 13px; color: var(--muted); text-decoration: none; }
+.link:hover { color: var(--ink); }
+.score { font-family: var(--serif); font-weight: 400; letter-spacing: -.02em; }
+.secondary-button { color: var(--ink-2); }
+.chron-beacons .secondary-button, .the-way + .secondary-button { padding: 6px 14px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line-strong); }
+
+/* ---------- Header ---------- */
+.chat-header { border-bottom: 1px solid var(--line); height: 66px; }
+.chat-header h1 { font-family: var(--map); font-weight: 400; font-size: 22px; letter-spacing: .06em; }
+.chat-subtitle { font-family: var(--serif); font-style: italic; font-size: 16px; color: var(--muted); }
+.chat-subtitle:not(:empty)::before { content: ""; }
+#agent-status { font-size: 13px; }
+/* The trail already shows where things stand; the status line gives way to keep the title readable. */
+.chat-header:has(#journey:not([hidden])) #agent-status { display: none; }
+.chat-heading { flex: 1 1 auto; }
+.chat-header h1 { flex: none; max-width: 60%; }
+#agent-status.attention::before { width: 11px; height: 11px; vertical-align: -1px; }
+.journey .st::after { display: none !important; }
+.journey { display: flex; gap: 0; width: 340px; margin-left: auto; }
+.journey.trail { width: 340px; }
+.journey .st { color: var(--faint); font-weight: 400; }
+#journey { list-style: none; padding: 0; }
+
+/* ---------- Chronicle (home) ---------- */
+.conversation.is-chronicle .chat-header { display: none; }
+.conversation.is-chronicle .chat-scroll { flex: 1; margin-top: 0; overflow: auto; padding: 34px 0 32px; }
+.conversation.is-chronicle .column { max-width: 1180px; padding: 0 44px; }
+.conversation.is-chronicle .welcome { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 28px; text-align: left; padding: 0; }
+.chron-date { margin: 0 0 6px; font-family: var(--map); font-size: 13px; letter-spacing: .12em; color: var(--muted); text-transform: lowercase; font-variant: small-caps; }
+.conversation.is-chronicle .welcome h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 40px; line-height: 1.12; letter-spacing: -.005em; }
+.conversation.is-chronicle .welcome h2 + p { margin: 0; max-width: none; font-family: var(--serif); font-style: italic; font-size: 38px; line-height: 1.15; color: var(--holly); }
+.composer-home .composer-wrap, .conversation.is-empty .composer-home .composer-wrap { padding: 22px 0 0; margin: 0; }
+.conversation.is-chronicle .welcome .chron-date { margin: 0 0 6px; max-width: none; }
+.composer-home .composer-wrap .column { padding: 0; max-width: none; }
+.composer-home .composer { padding: 14px 12px 10px 16px; }
+.composer-home .composer textarea { min-height: 64px; }
+.composer-home .starters { justify-content: flex-start; margin-top: 14px; }
+.composer-home .composer-note { display: none; }
+.chron-today { margin-top: 26px; }
+.chron-side { display: grid; gap: 20px; align-content: start; padding-top: 6px; }
+.chron-side .rows .row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.chron-side .rows .row:first-child { border-top: 0; }
+.chron-side .rows b { display: block; font-weight: 500; color: var(--ink); }
+.chron-side .rows span { font-size: 13px; color: var(--muted); }
+.chron-side .rows .row > button { margin-left: auto; }
+.chron-side .empty, .the-way .empty { margin: 4px 0; font-size: 13px; color: var(--muted); }
+.road-row { display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 14px; width: 100%; padding: 7px 0; text-align: left; color: var(--ink-2); font-size: 13.5px; }
+.road-row:hover span { color: var(--ink); }
+
+/* ---------- Composer ---------- */
+.composer { background: var(--raised); border-radius: 14px; box-shadow: 0 0 0 1px var(--line-strong), var(--lift); }
+.composer textarea::placeholder { color: var(--faint); }
+.send-button { background: var(--primary); color: var(--on-primary); }
+.starters button { box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink-2); }
+.needs-you { color: var(--signal); }
+.needs-you::before { width: 12px; height: 12px; }
+
+/* ---------- Conversation ---------- */
+.message.user > p { background: var(--soft); box-shadow: inset 0 0 0 1px var(--line-strong); border-radius: 14px 14px 3px 14px; }
+.message.assistant .speaker { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; font-family: var(--map); font-size: 13px; letter-spacing: .14em; color: var(--holly); text-transform: uppercase; }
+.message.assistant .speaker::before { content: ""; width: 12px; height: 12px; background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4'/%3E%3C/svg%3E") center / contain no-repeat; }
+.the-way { margin: -14px 0 22px; padding: 14px 20px 8px; border-radius: 3px; background: var(--raised); box-shadow: 0 0 0 1px var(--line); }
+.the-way .maplabel { margin: 0 0 10px; font-size: 12px; }
+.the-way details { margin-top: 8px; font-size: 12.5px; color: var(--faint); }
+.the-way summary { cursor: pointer; }
+.the-way:not([open]) { padding-block: 10px; }
+.the-way:not([open]) > summary { margin: 0; }
+.the-way .log { margin: 8px 0 4px; padding-left: 18px; color: var(--muted); }
+.answer-batch .qcount { font-family: var(--map); letter-spacing: .1em; text-transform: lowercase; font-variant: small-caps; font-size: 13px; color: var(--signal); }
+.answer-batch .qcount::before { width: 12px; height: 12px; border-radius: 0; background: var(--signal); }
+.question-label { font-family: var(--serif); font-size: 21px; font-weight: 500; }
+.answer-batch.stepped .question-label { font-size: 23px; }
+.draft-evidence p, .quote { font-family: var(--serif); font-style: italic; font-size: 15px; }
+.answer-batch input, .answer-batch select, .answer-batch textarea { background: var(--soft); border-radius: 8px; box-shadow: inset 0 0 0 1px var(--line); }
+
+/* ---------- The Lookout ---------- */
+.workspace { background: var(--bg-2); box-shadow: -1px 0 0 var(--line-strong); }
+.workspace h2 { font-family: var(--map); font-weight: 400; font-size: 19px; letter-spacing: .08em; }
+.browser-frame { position: relative; padding: 8px; border-radius: 2px; background: var(--raised); box-shadow: 0 0 0 1px var(--rule); }
+.browser-frame::before { content: ""; position: absolute; inset: 3px; border: 1px solid var(--line-strong); pointer-events: none; }
+.browser-bar { border: 0; padding: 0 0 8px; font-size: 11px; color: var(--faint); }
+.workspace summary { font-family: var(--map); letter-spacing: .1em; text-transform: lowercase; font-variant: small-caps; font-size: 13px; }
+.plan li::before { box-shadow: inset 0 0 0 1.3px var(--rule); }
+.plan li:last-child::before { background: var(--holly); box-shadow: none; }
+
+/* ---------- Dialogs and inputs ---------- */
+dialog { border-radius: 6px; background: var(--raised); }
+dialog h2 { font-family: var(--serif); font-weight: 500; font-size: 24px; }
+dialog input[type="text"], dialog input[type="email"], dialog input[type="password"], dialog input:not([type]), dialog select, dialog textarea {
+  background: var(--soft); box-shadow: inset 0 0 0 1px var(--line); border-radius: 6px;
+}
+
+/* ---------- Pages ---------- */
+.page-top h1 { font-family: var(--map); font-weight: 400; font-size: 26px; letter-spacing: .06em; }
+.page-top .page-sub { font-family: var(--serif); font-style: italic; font-size: 16px; color: var(--muted); white-space: nowrap; }
+.page-tabs { display: flex; gap: 18px; font-size: 13.5px; }
+.page-tabs a { color: var(--faint); text-decoration: none; padding: 4px 0; }
+.page-tabs a[aria-current="true"] { color: var(--ink); box-shadow: inset 0 -1.5px 0 var(--holly); }
+
+@media (max-width: 1150px) {
+  .conversation.is-chronicle .welcome { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .history { width: 272px; }
+  .conversation.is-chronicle .column { padding: 0 16px; }
+  .conversation.is-chronicle .chat-header { display: flex; }
+  .conversation.is-chronicle .welcome h2, .conversation.is-chronicle .welcome h2 + p { font-size: 30px; }
+  .journey { display: none; }
+  .road-row { grid-template-columns: 96px 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .theme-toggle .thumb, .theme-toggle button { transition: none; } }
+
+/* ---------- Archive tabs ---------- */
+.page-tabs button { color: var(--faint); padding: 4px 0; }
+.page-tabs button.on { color: var(--ink); box-shadow: inset 0 -1.5px 0 var(--holly); }
+
+/* ---------- The Road ---------- */
+.segmented button[aria-pressed="true"] { box-shadow: inset 0 -1.5px 0 var(--holly); }
+.figs { display: flex; flex-wrap: wrap; gap: 20px 52px; align-items: flex-end; margin: 4px 0 8px; }
+.fig b { display: block; font-family: var(--serif); font-weight: 400; font-size: 44px; line-height: 1; color: var(--ink); }
+.fig b small { font-size: 18px; color: var(--faint); margin-left: 2px; }
+.fig span { font-size: 12.5px; color: var(--muted); }
+.fig.beacon b, .fig.beacon span { color: var(--signal); }
+.fig.link { cursor: pointer; border-radius: 4px; }
+.fig.link:hover span { text-decoration: underline; text-underline-offset: 3px; }
+.road-map { position: relative; height: 250px; margin: 0 0 18px; }
+.road-map svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; overflow: visible; }
+.road-map .road-ahead { stroke: var(--line-strong); stroke-width: 1.6; stroke-dasharray: 5 6; vector-effect: non-scaling-stroke; }
+.road-map .road-travelled { stroke: var(--holly); stroke-width: 2.2; vector-effect: non-scaling-stroke; }
+.road-map .road-stop { fill: var(--bg); stroke: var(--rule); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+.road-map .road-stop.travelled { fill: var(--holly); stroke: none; }
+.road-map .road-offer { stroke: var(--gold); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
+.station { position: absolute; width: 150px; transform: translateX(-50%); text-align: center; }
+.station .t { font-family: var(--map); font-size: 18px; letter-spacing: .06em; color: var(--ink); }
+.station.offer .t { color: var(--gold); }
+.station .c { margin-bottom: 6px; font-size: 12px; color: var(--muted); }
+.stones { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
+.stone { position: relative; display: grid; place-items: center; width: 27px; height: 27px; border-radius: 50%; font-family: var(--serif); font-size: 13px; background: var(--raised); box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink-2); }
+button.stone:hover { box-shadow: inset 0 0 0 1.4px var(--holly); color: var(--ink); }
+.stone.bc::after { content: ""; position: absolute; right: -2px; top: -2px; width: 8px; height: 8px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 0 2px var(--bg); }
+.stone.gold { box-shadow: inset 0 0 0 1px var(--gold); color: var(--gold); }
+.stone.more { background: none; box-shadow: none; font-family: var(--sans); font-size: 12px; color: var(--muted); }
+.road-lower { display: grid; gap: 32px; }
+.road-lower .chart { max-width: 560px; }
+.ledger { display: grid; margin-top: 12px; }
+.lhead, .lrow { display: grid; grid-template-columns: 200px minmax(0, 1fr) 54px 84px; align-items: center; gap: 22px; }
+.lhead { padding: 0 8px 8px; font-size: 12px; color: var(--faint); }
+.lhead > span:nth-child(n+3) { text-align: right; }
+.lhead .stations { display: flex; justify-content: space-around; font-family: var(--map); font-size: 12.5px; letter-spacing: .06em; color: var(--muted); }
+.lrow { padding: 11px 8px; border-top: 1px solid var(--line); font-size: 13.5px; cursor: pointer; }
+.lrow:hover, .lrow:focus-visible { background: var(--soft); }
+.lrow.closed { opacity: .6; }
+.lrow .co { min-width: 0; }
+.lrow .co b { display: flex; align-items: center; gap: 8px; font-weight: 500; color: var(--ink); }
+.lrow .co span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; color: var(--muted); }
+.lrow .fit { font-family: var(--serif); font-size: 20px; text-align: right; color: var(--ink); }
+.lrow .when { font-size: 12.5px; color: var(--muted); text-align: right; }
+.bcard { border-radius: 4px; }
+.bcol h4 { font-family: var(--map); font-weight: 400; font-size: 15px; letter-spacing: .05em; }
+.bcol.drop-ok { box-shadow: inset 0 0 0 1.5px var(--holly); }
+
+/* ---------- The Forge ---------- */
+.mi { border-radius: 4px; }
+.mi.on { background: var(--raised); box-shadow: 0 0 0 1px var(--line-strong); }
+.mi .trail { flex: 0 0 120px; }
+.mi > .st { width: 104px; text-align: right; }
+.mi .trail .st { font-size: 0; color: inherit; white-space: normal; }
+.mg { font-family: var(--map); letter-spacing: .06em; }
+.mprev { background: var(--bg-2); }
+.mprev h2 { font-family: var(--serif); font-size: 25px; font-weight: 500; }
+.mprev > .trail { margin: 4px 0 18px; }
+.sheet.vellum { background: #fbf8ef; color: #2a241a; border-radius: 2px; box-shadow: 0 0 0 1px var(--line-strong), var(--lift); }
+.sheet.vellum::before, .sheet.vellum::after { border-color: #cfc4ad; }
+.sheet.vellum pre { font: 12.5px/1.65 var(--serif); font-size: 13.5px; }
+
+@media (max-width: 900px) {
+  .road-map { display: none; }
+  .lhead { display: none; }
+  .lhead, .lrow { grid-template-columns: minmax(0, 1fr) 110px 40px; gap: 14px; }
+  .lrow .when { display: none; }
+  .mi .trail { display: none; }
+  .fig b { font-size: 34px; }
+  .figs { gap: 16px 32px; }
+}
+
+/* Material cards in the chat carry the Forge trail. */
+.career-material .trail.forge { max-width: 300px; margin: 6px 0 14px; }

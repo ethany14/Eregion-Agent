@@ -10,7 +10,6 @@ from agent_runtime.feedback.types import (
     CandidateScope, CandidateType, FeedbackClassification, FeedbackEvent,
     FeedbackSourceType, SignalStrength,
 )
-from agent_runtime.security import canonical_json
 
 _EMAIL = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.I)
 _PHONE = re.compile(r"(?<!\w)(?:\+?1[-. ]?)?\(?\d{3}\)?[-. ]?\d{3}[-. ]?\d{4}(?!\w)")

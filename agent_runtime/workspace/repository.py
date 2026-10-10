@@ -10,7 +10,6 @@ from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import func, select, update
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from agent_runtime.security import canonical_json, redact_sensitive

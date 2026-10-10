@@ -40,6 +40,8 @@ def model_metrics(messages, tools, response=None):
     result = {'context_chars': sum(len(m.content) for m in messages if isinstance(m.content, str)),
               'tool_schema_chars': len(json.dumps(tools, ensure_ascii=False, separators=(',', ':'))),
               'message_count': len(messages), 'tool_count': len(tools)}
+    result['image_count'] = sum(1 for m in messages if isinstance(m.content, list)
+        for block in m.content if isinstance(block, dict) and block.get('type') in {'image_url', 'image'})
     usage = getattr(response, 'usage_metadata', None) or {}
     for key in ('input_tokens', 'output_tokens'):
         value = usage.get(key)

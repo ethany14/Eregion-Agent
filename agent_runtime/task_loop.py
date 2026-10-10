@@ -10,13 +10,14 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Event, RLock, Thread
 from uuid import uuid4
 
-from agent_runtime.loop_engine import AgentLoop, ToolArgumentsError
+from agent_runtime.loop_engine import AgentLoop
 from agent_runtime.task_host import TaskHost
 from agent_runtime.loop_model import ModelInterrupted
 from agent_runtime.model_runtime import model_timeout
 from agent_runtime.model_runtime import MODEL_PAYMENT_MESSAGE, model_failure
 from agent_runtime.telemetry import timing_update, model_metrics
 from agent_runtime.task_control import requests_resume, requests_pause, resume_command_only
+from agent_runtime.provider_usage import track_run, usage_scope
 
 
 logger = logging.getLogger(__name__)
@@ -173,9 +174,10 @@ class TaskLoop:
                                         f'Retrying the model request automatically ({attempt}/{len(self.retry_delays)+1}).'},error=None)
             started = time.monotonic()
             try:
-                response = requests.call(lambda: model.invoke(messages, tools),
-                    active=active_revision,
-                    timeout=getattr(model, 'timeout', 45) + 2)
+                with usage_scope(attempt=attempt):
+                    response = requests.call(lambda: model.invoke(messages, tools),
+                        active=active_revision,
+                        timeout=getattr(model, 'timeout', 45) + 2)
             except ModelInterrupted:
                 return None
             except Exception as exc:
@@ -215,6 +217,7 @@ class TaskLoop:
         self.repository.append(task_id,role='assistant',text=text)
         return True
 
+    @track_run('task_id', 'agent')
     def _drive(self, task_id):
         host = None
         revision = self.repository.get(task_id)['chat_revision']

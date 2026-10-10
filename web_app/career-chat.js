@@ -37,6 +37,7 @@ function scoreNode(el,value,outOf,label){
 export function renderCareerResults({container,item,el,button,send,review,busy=false,renderText=text=>el('p',text)}){
   container.replaceChildren();
   if(!item?.career)return;
+  const add=(card,key,at)=>{card.dataset??={};card.dataset.resultKey=key;card.dataset.resultAt=at||'';container.append(card);};
   const link=(label,url)=>{const a=el('a',label,'quiet-button');a.href=url;a.target='_blank';a.rel='noopener noreferrer';return a;};
   for(const job of item.jobs||[]){
     const card=el('article','','card career-job'),head=el('div','','job-head'),title=el('div');
@@ -71,7 +72,7 @@ export function renderCareerResults({container,item,el,button,send,review,busy=f
       b.disabled=busy;actions.append(b);
     }
     if(job.url?.startsWith('https://'))actions.append(link('Job posting ↗',job.url));
-    card.append(actions);container.append(card);
+    card.append(actions);add(card,`job:${job.application_id}`,job.result_at||job.created_at);
   }
   for(const pack of item.materials||[]){for(const material of pack.items||[]){
     const stale=pack.status==='stale',folded=material.status==='approved'&&!stale;
@@ -79,7 +80,13 @@ export function renderCareerResults({container,item,el,button,send,review,busy=f
     const status=stale?'Needs updating':(materialStatus[material.status]||({generating:`Writing ${title.toLowerCase()}…`,verifying:`Checking ${title.toLowerCase()}…`,needs_revision:'Refining supported claims…'}[material.status]||'Preparing'));
     const card=el(folded?'details':'article','',folded?'card folded career-material':'card career-material');
     if(folded){const summary=el('summary');summary.append(el('span',title),el('span',`Approved · v${material.version||1}`,'ok'));card.append(summary);}
-    else card.append(el('p',`Version ${material.version||1} · ${status}`,'eyebrow'),el('h3',title));
+    else{
+      // Drafted → Tempered (your review) → Sealed, the same trail the Forge shows.
+      const [at,state]=stale?[1,'wait']:{awaiting_review:[1,'wait'],failed:[0,'wait']}[material.status]||[0,'now'];
+      const forge=el('ol','','trail forge');
+      ['Drafted','Tempered','Sealed'].forEach((name,i)=>{const st=el('li','',`st ${i<at?'done':i===at?state:''}`);st.append(el('i'),el('span',name));forge.append(st);});
+      card.append(el('p',`Version ${material.version||1} · ${status}`,'eyebrow'),el('h3',title),forge);
+    }
     const verification=material.verification;
     if(verification){
       const issues=verification.issues?.length||0;
@@ -96,7 +103,7 @@ export function renderCareerResults({container,item,el,button,send,review,busy=f
     const revise=button('Request changes',()=>send(`I want to revise this ${title.toLowerCase()}. Ask me what I would like to change.`,{pack_id:pack.pack_id,item_id:material.pack_item_id},item.run_id));revise.disabled=busy||['generating','verifying'].includes(material.status);actions.append(revise);
     if(material.artifact_type==='tailored_resume'&&material.text)actions.append(link('Download PDF',`/api/packs/${pack.pack_id}/items/${material.pack_item_id}/resume.pdf`));
     if(material.artifact_type==='cover_letter'&&material.text)actions.append(link('Download PDF',`/api/packs/${pack.pack_id}/items/${material.pack_item_id}/cover-letter.pdf`));
-    card.append(actions);container.append(card);
+    card.append(actions);add(card,`material:${material.pack_item_id}`,material.created_at);
   }}
   for(const practice of item.interviews||[]){
     const card=el('article','','card career-interview');
@@ -135,6 +142,47 @@ export function renderCareerResults({container,item,el,button,send,review,busy=f
       for(const turn of r.question_answer_summaries||[])details.append(el('h4',turn.question),renderText(turn.answer||'Not answered'));
       card.append(details);
     }
-    container.append(card);
+    add(card,`interview:${practice.interview?.mock_interview_id||''}:${question?.question_id||'report'}`,
+      practice.report?practice.interview?.completed_at:question?.created_at||practice.interview?.started_at);
   }
+}
+
+// Cards are results of earlier turns, not a dashboard pinned below every reply.
+// Timestamps let the order survive reloads; undated legacy cards follow the first
+// assistant turn instead of perpetually covering the newest conversation.
+export function careerTimeline(messages,cards){
+  const stamp=value=>{
+    // SQLite timestamps are UTC even when serialized without an offset.
+    let text=String(value||'');
+    if(/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(text)&&!/(Z|[+-]\d{2}:?\d{2})$/i.test(text))text+='Z';
+    const n=Date.parse(text);return Number.isFinite(n)?n:null;
+  };
+  const fallback=Math.max(0,messages.findIndex(m=>m.role==='assistant'));
+  const buckets=new Map();
+  for(const card of cards){
+    const at=stamp(card.dataset.resultAt);let index=fallback;
+    if(at!==null&&messages.some(m=>stamp(m.at)!==null)){
+      index=0;
+      for(let i=0;i<messages.length;i++){
+        const when=stamp(messages[i].at);
+        if(when!==null&&when<=at)index=i;
+        else if(when!==null)break;
+      }
+    }
+    if(!buckets.has(index))buckets.set(index,[]);
+    buckets.get(index).push(card);
+  }
+  for(const list of buckets.values())list.sort((a,b)=>(stamp(a.dataset.resultAt)||0)-(stamp(b.dataset.resultAt)||0));
+  if(!messages.length)return cards;
+  return messages.flatMap((message,index)=>[message,...(buckets.get(index)||[])]);
+}
+
+export function placeCareerResults(container,messages,cards){
+  const bubbles=new Map([...container.querySelectorAll(':scope > .message')].map(n=>[n.dataset.messageId,n]));
+  const wanted=careerTimeline(messages,cards).map(item=>bubbles.get(item.id)||item);
+  const keep=new Set(wanted);
+  for(const child of [...container.children])if(!keep.has(child))child.remove();
+  // Keep existing nodes (and their focus/open state) when polling changes nothing.
+  let before=container.firstChild;
+  for(const node of wanted){if(node===before)before=before.nextSibling;else container.insertBefore(node,before);}
 }

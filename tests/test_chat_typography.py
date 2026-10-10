@@ -76,6 +76,8 @@ def test_chat_markdown_readability_copy_and_untrusted_content(tmp_path,width):
                 route.fulfill(json={'attempts':[item]});return
             if request.url=='http://localhost/api/auto-apply/candidate':
                 route.fulfill(json={'profile':{},'resume_base64':None,'needs_extraction':False});return
+            if request.url.startswith('http://localhost/api/applications/overview'):
+                route.fulfill(json={'applications':[],'funnel':[],'weekly':[],'totals':{}});return
             if request.url.startswith('http://localhost/'):
                 response=client.get(request.url)
                 route.fulfill(status=response.status_code,body=response.content,

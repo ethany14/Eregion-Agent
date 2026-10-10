@@ -29,6 +29,23 @@ class ProviderCompatibleChatOpenAI(ChatOpenAI):
     OpenAI-compatible endpoint and only when the signature is absent.
     """
 
+    def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+        from agent_runtime.provider_usage import provider_call, record_chat_usage
+        from agent_runtime.telemetry import model_metrics
+        sizes = model_metrics(messages, kwargs.get('tools', []))
+        with provider_call(self.model_name, **sizes) as usage:
+            result = super()._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
+            record_chat_usage(usage, result)
+            return result
+
+    async def _agenerate(self, messages, stop=None, run_manager=None, **kwargs):
+        from agent_runtime.provider_usage import provider_call, record_chat_usage
+        from agent_runtime.telemetry import model_metrics
+        with provider_call(self.model_name, **model_metrics(messages, kwargs.get('tools', []))) as usage:
+            result = await super()._agenerate(messages, stop=stop, run_manager=run_manager, **kwargs)
+            record_chat_usage(usage, result)
+            return result
+
     def _get_request_payload(
         self,
         input_: Any,
@@ -131,8 +148,10 @@ def invoke_structured(
 ) -> Result:
     """Invoke a Pydantic structured model using the baseline message layout."""
     from agent_runtime.multi_agent.model_usage import invoke_model
-
-    return invoke_model(_invoke_structured, model, schema, system_message, human_message, config)
+    from agent_runtime.provider_usage import current_scope, usage_scope
+    purpose = current_scope().get('purpose', 'structured')
+    with usage_scope(purpose=purpose + ':' + schema.__name__):
+        return invoke_model(_invoke_structured, model, schema, system_message, human_message, config)
 
 
 def _invoke_structured(model, schema, system_message, human_message, config):

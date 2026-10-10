@@ -20,8 +20,7 @@ def _blocks(content: dict, artifact_type: str) -> list[GroundedBlock]:
     return [GroundedBlock(block_id=f"resume-{index}", text=claim.text,
                           block_type="factual", evidence_ids=claim.evidence_ids,
                           evidence_version_ids=claim.evidence_ids)
-            for index, claim in enumerate(
-                resume.professional_summary + resume.experience_bullets + resume.highlighted_skills)]
+            for index, claim in enumerate(resume.claims())]
 
 
 def _directly_supported(claim: str, evidence: EvidenceSnapshotItem) -> bool:
@@ -55,6 +54,15 @@ def _contains_supported_text(claim: str, evidence: EvidenceSnapshotItem) -> bool
         if quote and re.fullmatch(prefix + re.escape(quote) + suffix, target):
             return True
     return False
+
+
+def _resume_quote_unchanged(claim: str, evidence: EvidenceSnapshotItem) -> bool:
+    # With a single factual pass, substring matching cannot replace entailment:
+    # "Python" inside "Learning Python" or "degree" inside "degree in progress"
+    # has removed a material qualifier. Only an entire unchanged quote skips it.
+    target = normalize_text(claim)
+    return any(target == normalize_text(source) for source in
+               (evidence.claim_text, evidence.exact_quote or '') if source)
 
 
 class ArtifactVerifier:
@@ -222,7 +230,8 @@ class ArtifactVerifier:
             elif factual and (not valid_ids or not citations):
                 reason = "Factual claim lacks a confirmed evidence version in this generation snapshot."
             elif factual and not any(
-                    _directly_supported(block.text, item)
+                    (_resume_quote_unchanged(block.text, item) if artifact_type == 'tailored_resume'
+                     else _directly_supported(block.text, item))
                     or (artifact_type in {"cover_letter", "application_answer"}
                         and _contains_supported_text(block.text, item))
                     for item in citations):
@@ -242,7 +251,9 @@ class ArtifactVerifier:
                     cited_evidence_ids=block.evidence_ids,
                     revision_instruction=("Preserve the meaning of supported evidence in natural prose without "
                         "adding facts, or remove the unsupported claim.")))
-        if semantic_candidates:
+        # Reject the current draft before spending tokens judging its paraphrases.
+        # A revised draft must go through every check again before approval.
+        if semantic_candidates and not issues:
             unavailable = False
             try:
                 supported = self._semantic_judge(semantic_candidates)

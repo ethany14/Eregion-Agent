@@ -167,6 +167,20 @@ def test_images_are_only_sent_after_enabled_field_inspection():
     assert image_messages[0][1]["image_url"]["url"].startswith("data:image/png;base64,")
 
 
+def test_later_batch_success_preserves_earlier_visual_recovery():
+    from agent_runtime.auto_apply.runner import ApplicationHost
+    from agent_runtime.loop_engine import Turn
+    browser = RepairBrowser()
+    browser.page = object()
+    session = AgentTools(browser, state(visual_fallback=True), autofill=lambda:{}, active=lambda:True)
+    host = ApplicationHost(session, object(), active=lambda:True, reserve=lambda _:True, report=lambda *a:None)
+    turn = Turn('', {}, [], 0)
+    host.after_action({'name':'inspect_field', 'args':{}, 'id':'1'},
+                      {'error':'Custom control', 'visual_recovery':True}, turn)
+    host.after_action({'name':'inspect_field', 'args':{}, 'id':'2'}, {'options':['Known option']}, turn)
+    assert host.visual_requested
+
+
 def test_disabling_visual_backup_removes_images_from_retained_model_history():
     browser=RepairBrowser();browser.screenshot_field=lambda key:b'fixture-png'
     saved=state(visual_fallback=True)

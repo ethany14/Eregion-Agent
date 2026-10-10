@@ -2,6 +2,7 @@
 from concurrent.futures import Future
 from queue import Empty, Queue
 from threading import Thread
+from contextvars import copy_context
 
 
 class BrowserWorker:
@@ -13,7 +14,7 @@ class BrowserWorker:
 
     def submit(self, function, *args):
         future = Future()
-        self.queue.put((future, function, args))
+        self.queue.put((future, copy_context().run, (function, *args)))
         return future
 
     def _run(self):

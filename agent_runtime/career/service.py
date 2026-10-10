@@ -1,6 +1,5 @@
 """One conversational surface over task reasoning and the existing browser UI contract."""
 from threading import Event, Thread
-from uuid import uuid4
 
 from agent_runtime.task_loop import TaskLoop
 from agent_runtime.auto_apply.contracts import ContinueApplication, ReplyQuestion
@@ -36,6 +35,7 @@ class CareerService:
 
     def view(self,task_id):
         from api.auto_apply_routes import public
+        from agent_runtime.provider_usage import UsageLedger
         state = self.repository.get(task_id)
         self.harness.sync_submissions(state)
         child = self.applications.repository.get(state['active_application_run']) if state.get('active_application_run') else None
@@ -59,6 +59,7 @@ class CareerService:
         activity = state.get('model_activity') or {}
         tool_activity = state.get('tool_activity') or {}
         result = {**base,'run_id':task_id,'career':True,'title':state['title'],'goal':state['goal'],
+            'usage_summary':UsageLedger(self.repository.sessions).summary(task_id=task_id, run_ids=state['application_runs']),
             'browser':state.get('browser'),
             'preview_url':f'/api/career/tasks/{task_id}/browser/preview' if state.get('browser') and (not child or state.get('active_browser')=='research') else
                 f'/api/auto-apply/{child["run_id"]}/preview' if child else None,

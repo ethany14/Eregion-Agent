@@ -35,13 +35,7 @@ jobs:
         run: python -m pytest -q
 
       - name: Run browser-side tests
-        run: >-
-          node --test
-          tests/test_copilot_ui.mjs
-          tests/test_learning_ui.mjs
-          tests/test_mock_interview_ui.mjs
-          tests/test_web_ui.mjs
-          tests/test_apply_answers.mjs
+        run: node --test "tests/*.mjs"
 
   browser:
     # Real Chrome against offline fixture pages. Windows matches the supported

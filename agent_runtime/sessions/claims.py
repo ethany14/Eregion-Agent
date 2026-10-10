@@ -5,8 +5,7 @@ from datetime import datetime, timedelta
 from enum import StrEnum
 from uuid import uuid4
 
-from pydantic import Field
-from sqlalchemy import and_, or_, select, update
+from sqlalchemy import or_, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from agent_runtime.sessions.clock import Clock, SystemClock

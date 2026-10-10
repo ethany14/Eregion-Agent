@@ -29,7 +29,7 @@ from agent_runtime.sessions.state import (
     SessionStatus,
 )
 from agent_runtime.tools.loop import TOOL_DATA_SYSTEM_RULE, ToolCallingLoop
-from agent_runtime.tools.messages import AgentMessage, NormalizedToolCall
+from agent_runtime.tools.messages import AgentMessage
 from agent_runtime.types import (
     ToolCallRecord,
     ToolContext,

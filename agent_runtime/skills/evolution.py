@@ -31,7 +31,7 @@ from agent_runtime.skills.evolution_types import ActivationMode, SkillCandidateS
 from agent_runtime.skills.evolution_validation import validate_generated_package
 from agent_runtime.skills.hashing import hash_skill_package
 from agent_runtime.skills.security import iter_package_files
-from agent_runtime.skills.models import SkillEvaluationResultRow, SkillEventRow, SkillRow, SkillVersionRow
+from agent_runtime.skills.models import SkillEvaluationResultRow, SkillRow, SkillVersionRow
 from agent_runtime.skills.repository import SkillRepository
 from agent_runtime.skills.types import SkillEvent, SkillEventType, SkillStatus, SkillVersion
 

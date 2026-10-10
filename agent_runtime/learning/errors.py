@@ -7,8 +7,3 @@ class ConversationLearningError(Exception):
 
 class LearningExperienceConflictError(ConversationLearningError):
     pass
-
-
-class LearningExperienceNotFoundError(ConversationLearningError):
-    pass
-

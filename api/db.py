@@ -26,6 +26,7 @@ class Database:
     def create_all_for_tests(self) -> None:
         # Importing registers model metadata on Base before create_all runs.
         import agent_runtime.analysis_cache  # noqa: F401
+        import agent_runtime.provider_usage  # noqa: F401
         import api.models  # noqa: F401
         import agent_runtime.models  # noqa: F401
         import agent_runtime.sessions.models  # noqa: F401

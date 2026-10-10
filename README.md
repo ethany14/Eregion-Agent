@@ -1,6 +1,6 @@
-# eregion
+# Eregion
 
-eregion is a local-first career copilot for saving job postings, comparing
+Eregion is a local-first career copilot for saving job postings, comparing
 them with a resume, producing evidence-grounded application materials, and managing
 the conversations and review steps around an application.
 
@@ -202,19 +202,28 @@ It does not request broad browsing history, cookies, downloads, `webRequest`, or
 ## Capabilities in the conversation
 
 Job cards, material reviews, and interview practice appear inside the chat.
-The panel button in the chat header opens **Agent activity**: the live browser
+The panel button in the chat header opens **The Lookout**: the live browser
 view, plan, recent actions and answers. It opens on its own when an application
 starts in a wide window, and remembers if you close it.
 
-Next to the conversations, the sidebar links to three overviews:
+The sidebar links to:
 
-- **Applications**: pipeline and weekly charts, a filterable table, and a board
-  where cards can be dragged to any stage the application allows next.
-- **Materials**: every tailored resume, cover letter and answer, with version
-  history, verification status, PDF download and approval.
-- **Archived** and **Trash**: conversations you have put away. Trash keeps them for
-  30 days before deleting them; applications and materials are never deleted with
-  a conversation.
+- **Chronicle**: the home screen. A greeting and composer, today's entries,
+  the conversations waiting on you ("beacons lit") and the applications on the road.
+- **Council**: your conversations with the agent.
+- **The Road**: every application as a stone on a winding road (Sighted, Prepared,
+  Sent, In interview, Offer), a ledger where each row is its own trail, a weekly
+  chart, and a board where cards can be dragged to any stage the application allows next.
+- **The Forge**: every tailored resume, cover letter and answer, with its
+  Drafted → Tempered → Sealed trail, version history, verification status, PDF
+  download and approval.
+- **Archive**: Archived and Trash tabs for conversations you have put away. Trash
+  keeps them for 30 days before deleting them; applications and materials are never
+  deleted with a conversation.
+
+The moon and sun toggle beside your name switches between Night (the default) and
+Day. The choice is remembered on this device; until you choose, Eregion follows the
+system setting. The Chrome extension (Eregion Lens) has the same toggle.
 
 The older Jobs, Copilot, Evidence, Learning and Settings pages are no longer served.
 Their backend services and stored records remain available to the agent and API.
@@ -229,7 +238,7 @@ original page to remain open.
 
 Conversations can be renamed (F2), pinned, grouped into folders, archived or moved
 to Trash from each row's **⋯** menu or by right-clicking. Conversations that need
-your input are listed first under **Needs you**. Ctrl+K (⌘K) starts a new one.
+your input are listed first under **Needs you**, marked with a beacon flame. Ctrl+K (⌘K) starts a new one.
 
 Career conversations are durable and listed in a left sidebar. Messages appear
 optimistically while a model turn is running, and failed sends remain visible for
@@ -479,7 +488,7 @@ python -m pytest -q
 Run the browser-side unit tests:
 
 ```powershell
-node --test tests/test_copilot_ui.mjs tests/test_learning_ui.mjs tests/test_mock_interview_ui.mjs tests/test_web_ui.mjs
+node --test "tests/*.mjs"
 ```
 
 Run the suite including the real-Chrome tests. They drive local fixture pages in
@@ -534,7 +543,7 @@ JobHunterAgent/
 |-- chrome_extension/    # Manifest V3 Side Panel extension
 |-- custom_agent/        # Active persisted resume workflow loop
 |-- job_agent/           # Shared schemas, prompts, model config, domain rules, rendering
-|-- web_app/             # Unified career chat and retained UI modules
+|-- web_app/             # Career chat shell and shared workspace views
 |-- migrations/          # Alembic schema history
 |-- evals/               # Synthetic datasets, runners, and versioned results
 |-- skills/              # Built-in, project, and generated Skill packages
@@ -580,7 +589,7 @@ using the same database. A retired backend cannot be selected by environment set
 ## On-demand discovery and optional daily recommendations
 
 Job discovery is available directly in the existing `/apply` conversation. For
-example, say “Find five data analyst jobs in New York that fit my resume.” eregion
+example, say “Find five data analyst jobs in New York that fit my resume.” Eregion
 chooses sources and search terms, searches in the actual browser, reads postings, scores promising roles against
 the saved resume, and adds its reasons and uncertainties to the job cards. Continue
 with “Only show remote roles” or ask it to prepare materials for a selected job.
@@ -642,7 +651,7 @@ times fire once and nonexistent times shift forward. Windows installs `tzdata`
 from `requirements.txt`. Startup applies migration `0034_career_job_alerts`.
 
 In-app digests are saved even when the web page is closed. Optional browser popups
-require the eregion page to stay open and **Enable browser notifications** to be
+require the Eregion page to stay open and **Enable browser notifications** to be
 clicked; permission is never requested just because the user searched. Popups are
 deduplicated in this browser and read digests are not notified again. This version
 does not provide browser-closed Web Push or an OS/cloud scheduler. See

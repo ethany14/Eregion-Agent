@@ -137,6 +137,15 @@ def create_app(
     from api.skill_evolution_routes import router as skill_evolution_router
     application.include_router(skill_evolution_router)
     install_error_handlers(application)
+    @application.middleware('http')
+    async def provider_usage_context(request, call_next):
+        from agent_runtime.provider_usage import UsageLedger, usage_scope
+        from uuid import uuid4
+        runtime = application.state.session_runtime
+        database = getattr(runtime, 'database', None)
+        with usage_scope(ledger=UsageLedger(database.session_factory) if database else None,
+                         request_id=str(uuid4()), purpose='api'):
+            return await call_next(request)
     # DNS rebinding sends a page's own hostname to this local server. Reject
     # every Host except loopback names so remote pages cannot read candidate
     # data or drive applications through it.

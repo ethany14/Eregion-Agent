@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Protocol
 
 from pydantic import BaseModel
 
@@ -23,10 +23,9 @@ from job_agent.quality import (
     clean_tailored_resume,
     ensure_foundational_resume_sections,
     normalize_generated_resume_metadata,
-    quality_result,
     validate_resume_structure,
 )
-from job_agent.model import DEFAULT_ENV_PATH, create_model, invoke_structured
+from job_agent.model import DEFAULT_ENV_PATH, invoke_structured
 from job_agent.prompts import (
     JOB_PROMPT,
     MATCH_PROMPT,
@@ -35,16 +34,7 @@ from job_agent.prompts import (
     VERIFY_RESUME_PROMPT,
     WRITE_RESUME_PROMPT,
 )
-from job_agent.schemas import (
-    JobAnalysis,
-    ResumeAnalysis,
-    ResumeEvidence,
-    SkillAssessment,
-    TailoredResume,
-    UnsupportedClaim,
-    VerificationResult,
-    FactualVerificationResult,
-)
+from job_agent.schemas import JobAnalysis, ResumeAnalysis, SkillAssessment, TailoredResume, VerificationResult, FactualVerificationResult
 
 
 class Analyzer(Protocol):
@@ -64,9 +54,15 @@ class SharedModelAnalyzer:
     def write_resume(self, state, content):
         from job_agent.model import shared_model
         from job_agent.resume_selection import ResumeSelection, RESUME_SELECTION_PROMPT
+        from job_agent.prompt_context import context_instruction
         selection = invoke_structured(shared_model(env_path=self._env_path), ResumeSelection,
-            RESUME_SELECTION_PROMPT, content)
+            RESUME_SELECTION_PROMPT + context_instruction(content), content)
         return selection.expand(state)
+
+    def resume_context(self, state, **options):
+        from job_agent.prompt_context import resume_context, context_instruction
+        content = resume_context(state, **options)
+        return content if context_instruction(content) else None
 
     def __call__(
         self, schema: type[BaseModel], system_message: str, human_message: str
@@ -83,18 +79,22 @@ class SharedModelAnalyzer:
             return invoke_structured(model, ReferencedJobExtraction, REFERENCE_JOB_PROMPT,
                 json.dumps(sentences, ensure_ascii=False, separators=(',', ':'))).expand(sentences)
         if schema is SkillAssessment:
-            from job_agent.compact_match import CompactSkillAssessment, COMPACT_MATCH_PROMPT
+            from job_agent.compact_match import CompactSkillAssessment, COMPACT_MATCH_PROMPT, match_payload
             resume_text, job_text = human_message.removeprefix('Resume analysis:\n').split('\n\nJob analysis:\n', 1)
             resume, job = ResumeAnalysis.model_validate_json(resume_text), JobAnalysis.model_validate_json(job_text)
-            content = json.dumps({'evidence': [e.model_dump(mode='json') for e in resume.evidence],
-                'requirements': [r.model_dump(mode='json') for r in job.requirements]}, ensure_ascii=False, separators=(',', ':'))
+            content = match_payload(resume, job.requirements)
             return invoke_structured(model, CompactSkillAssessment, COMPACT_MATCH_PROMPT, content).expand(resume, job)
         if schema is VerificationResult:
             # Quality is checked deterministically below. Requesting it from
             # the model can reject an otherwise valid factual verdict before
             # that check, e.g. passed=false with no structural issues.
-            result = invoke_structured(model, FactualVerificationResult, system_message, human_message)
+            from job_agent.prompt_context import context_instruction
+            result = invoke_structured(model, FactualVerificationResult,
+                system_message + context_instruction(human_message), human_message)
             return VerificationResult.model_validate(result.model_dump())
+        if schema is TailoredResume:
+            from job_agent.prompt_context import context_instruction
+            system_message += context_instruction(human_message)
         return invoke_structured(model, schema, system_message, human_message)
 
 
@@ -248,6 +248,9 @@ class JobAgentStepHandler:
             "Return target requirement IDs only from the supplied Job Analysis."
         )
         compact_writer = getattr(self._model_analyzer, 'write_resume', None)
+        context_builder = getattr(self._model_analyzer, 'resume_context', None)
+        if callable(context_builder):
+            content = context_builder(state) or content
         result = invoke_model(compact_writer, state, content) if callable(compact_writer) else self._analyze(TailoredResume, WRITE_RESUME_PROMPT, content)
         draft = normalize_tailored_resume_claim_ids(TailoredResume.model_validate(result))
         draft = normalize_generated_resume_metadata(
@@ -292,8 +295,10 @@ class JobAgentStepHandler:
             raise ValueError(f"Generated resume failed source validation: {codes}.")
 
     def _verify_resume(self, state: AgentState) -> dict:
-        if state.tailored_resume is None or state.resume_analysis is None:
-            raise ValueError("A tailored resume and resume analysis are required.")
+        from job_agent.resume_verification import verify_resume_structure
+        structure = verify_resume_structure(state)
+        if not structure.passed:
+            return {"verification": structure, "revision_feedback": structure.revision_feedback}
         content = (
             f"SOURCE OF TRUTH - ORIGINAL RESUME:\n{state.resume_text}\n\n"
             f"GROUNDED EVIDENCE WITH IDS:\n{state.resume_analysis.model_dump_json()}\n\n"
@@ -301,53 +306,16 @@ class JobAgentStepHandler:
             f"{state.job_description}\n\n"
             f"GENERATED CLAIMS TO VERIFY:\n{state.tailored_resume.model_dump_json()}"
         )
+        context_builder = getattr(self._model_analyzer, 'resume_context', None)
+        if callable(context_builder):
+            content = context_builder(state, draft=state.tailored_resume, verification=True) or content
         verification = VerificationResult.model_validate(
-            self._analyze(VerificationResult, VERIFY_RESUME_PROMPT, content)
-        )
-        known_ids = {item.evidence_id for item in state.resume_analysis.evidence}
-        unsupported = list(verification.unsupported_claims)
-        feedback = list(verification.revision_feedback)
-        claims = state.tailored_resume.claims()
-        for claim in claims:
-            if not claim.evidence_ids:
-                unsupported.append(
-                    UnsupportedClaim(
-                        claim=claim.text,
-                        reason="The claim does not reference any resume evidence.",
-                    )
-                )
-                feedback.append(
-                    f"Remove or rewrite '{claim.text}' with resume evidence IDs."
-                )
-                continue
-            unknown_ids = [item for item in claim.evidence_ids if item not in known_ids]
-            if unknown_ids:
-                unsupported.append(
-                    UnsupportedClaim(
-                        claim=claim.text,
-                        reason=f"References unknown evidence IDs: {', '.join(unknown_ids)}.",
-                    )
-                )
-                feedback.append(
-                    f"Remove or rewrite '{claim.text}' using valid evidence IDs."
-                )
-        quality_issues = validate_resume_structure(
-            state.tailored_resume, state.resume_analysis.source_entries,
-            known_evidence_ids=known_ids,
-            allow_legacy_source_ids=False,
-            source_resume_text=state.resume_text,
-        )
-        quality = quality_result(quality_issues)
-        feedback.extend(quality.revision_feedback)
-        if unsupported != verification.unsupported_claims or not quality.passed:
-            verification = VerificationResult(
-                passed=False, unsupported_claims=unsupported,
-                revision_feedback=list(dict.fromkeys(feedback)), quality=quality,
-            )
-        else:
-            verification = VerificationResult.model_validate({
-                **verification.model_dump(mode="python"), "quality": quality,
-            })
+            self._analyze(VerificationResult, VERIFY_RESUME_PROMPT, content))
+        verification = VerificationResult.model_validate({
+            **verification.model_dump(mode="python"), "quality": structure.quality,
+            "revision_feedback": list(dict.fromkeys([
+                *verification.revision_feedback, *structure.revision_feedback])),
+        })
         return {
             "verification": verification,
             "revision_feedback": verification.revision_feedback,
@@ -387,9 +355,11 @@ class JobAgentStepHandler:
             "TARGET REQUIREMENTS - JOB ANALYSIS (NOT EVIDENCE):\n"
             f"{state.job_analysis.model_dump_json()}"
         )
+        context_builder = getattr(self._model_analyzer, 'resume_context', None)
+        if callable(context_builder):
+            content = context_builder(state, draft=state.tailored_resume, feedback=feedback) or content
         revised = normalize_tailored_resume_claim_ids(TailoredResume.model_validate(
-            self._analyze(TailoredResume, REVISE_RESUME_PROMPT, content)
-        ))
+            self._analyze(TailoredResume, REVISE_RESUME_PROMPT, content)))
         revised = normalize_generated_resume_metadata(
             revised,
             state.resume_analysis.source_entries,

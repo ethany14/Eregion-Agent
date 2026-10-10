@@ -319,3 +319,199 @@ See [the speed implementation report](speed-plan.md) for host-owned mechanical
 steps, batching, durable analysis reuse, compact model contracts, optional model
 tiers, configuration and measured results. Cold-provider performance targets are
 not yet met; the report separates these from verified cache and call reductions.
+
+## Provider usage and context reduction (first pass)
+
+Migration `0036_provider_usage` adds an independent ledger. The shared provider
+adapter records actual input/output usage before structured output parsing, plus
+cached-input and reasoning counters when supplied. Jev is recorded at its HTTP
+boundary; cache hits do not create paid-call records. Missing usage remains
+unknown. Counts are application-level provider invocations; with nonzero
+`LLM_MAX_RETRIES`, opaque internal SDK retry attempts are not individually visible.
+The default remains zero SDK retries.
+
+Task, browser-worker, analysis and material-generation thread contexts preserve
+attribution. Application resumes establish their run ID again after restart.
+Career API `usage_summary` combines the conversation with linked application
+runs without double counting; the Lookout shows reported totals and a breakdown.
+Standalone application GET responses also include their own usage. Old runs have
+no retrospective billing data. Interrupted provider calls keep running when the
+SDK cannot cancel them; late usage is recorded with `adopted=false`. A server
+crash can leave a call pending/unknown, not falsely free. Prompts, credentials,
+candidate data, URLs and provider error bodies are never written to this ledger.
+
+The kernel now measures system text, tool schemas, transcript and observation
+together against a default 64,000-character target (`AgentLoop.request_chars`).
+This is a text-size target, not a tokenizer or image-token estimate. Large legacy
+tool results and long source documents become `context_ref` references. The
+read-only `read_context` tool retrieves 3,000-character JSON slices, with exact
+offsets, from an archive persisted across worker slices and restarts. Current
+references are pinned; older references can expire explicitly under the archive
+size limit. The archive is excluded from public application responses.
+
+Whole tool exchanges are trimmed from replay as needed. The latest user message,
+candidate facts, pending question, live controls and observation IDs are retained
+exactly. If those protected fields alone exceed the target, the kernel records
+`protected_overflow` instead of silently removing instructions or permissions.
+All capabilities remain available in this first pass; no lower decision-step
+limit was introduced. Image usage is counted by provider counters when returned;
+the separate visual-input policy is unchanged.
+
+Semantic claim validation sends each distinct employer description once and
+references it from each claim. Candidate evidence and complete decision-set
+validation are unchanged. Adaptive matching batches, consolidation of overlapping
+validators and selective screenshot capture are subsequent optimizations, not
+claimed as part of this pass.
+
+Validation on 2026-10-09: offline reconstruction of the same saved long career
+conversation reduced the measured system/tools/base-observation text from 85,238
+to 42,294 characters (50.4%). Rebuilding one saved four-claim cover-letter check
+reduced its payload from 59,999 to 21,047 characters (64.9%). These are character
+measurements, not billing totals.
+
+A separate two-request live comparison used synthetic archived postings, the
+same seven-current-jobs question and `muse-spark-1.3-contributor`. Both answers
+were correct. Provider-reported input tokens changed from 20,681 to 7,323 (64.6%
+lower); output tokens were 274 and 303, including 256 and 285 reasoning tokens.
+Both reported zero cached input tokens. This one long-context case does not
+establish an end-to-end job search/application savings percentage.
+
+## Token reduction: second pass
+
+Matching now sizes batches against the same compact JSON sent to the provider,
+up to 24 requirements per call with a 40,000-character payload target. Every
+batch retains all candidate evidence. If the evidence alone exceeds the target,
+the batch still leaves 8,000 characters for requirements instead of multiplying
+the oversized evidence once per requirement. Individual oversized requirements
+remain intact. These are text/output-size heuristics, not strict token limits.
+Large jobs still use at most three concurrent requests. Exact-skill and Jev
+confidence gates, requirement completeness checks and score weights are unchanged.
+The matching routing version changed to invalidate old match-cache entries.
+
+Resume source ownership, header/entry metadata, citations and structure are
+checked locally before factual model calls. The standard material-pack adapter
+then uses the artifact verifier as its single semantic pass, including education
+bullets (previously omitted by that artifact verifier's legacy section projection).
+Only entire unchanged resume evidence quotes bypass semantic checking; removing
+qualifiers such as "learning", "planned" or "in progress" must be judged.
+The standalone resume handler retains its factual verifier after local checks;
+injected pack models without `verify_resume_structure` retain their additional
+verifier contract. This opt-in method must be deterministic and relies on the
+artifact check for full claim semantics. Local checks do not reserve model usage.
+Manual material edits and workflow workers use the same composition. Worker
+reports have a verification version; old passing reports are not silently reused.
+Citation, length and other deterministic artifact failures skip semantic calls;
+revised content must pass every check again before approval.
+
+Application screenshots are sent after explicit viewport/field viewing, visual
+actions, or a DOM failure that requests visual recovery. A capture already returned
+by a visual action is reused only after its fingerprint/token passes freshness
+validation following host actions. A changed page is recaptured. Returning to DOM
+or a text-only turn stops automatic images and invalidates old coordinate tokens.
+Pixels are ephemeral; no screenshot or pending visual request survives a restart.
+Login/verification barriers, secret masking and final-submission checks remain.
+
+Live comparison on 2026-10-10 used synthetic evidence only and the same configured
+`muse-spark-1.3-contributor`. Run
+`python scripts/benchmark_token_efficiency.py --live --output <new-directory>`
+to reproduce with the current configured model. The
+benchmark records provider usage in its own SQLite DB, not the user's database.
+
+| Scenario | Calls before → after | Input tokens | Output tokens (includes reasoning) | Total tokens | Seconds |
+| --- | --- | --- | --- | --- | --- |
+| Match 18 requirements | 3 → 1 | 3,121 → 1,893 | 2,141 → 763 | 5,262 → 2,656 (−49.5%) | 10.324 → 7.308 |
+| Verify a paraphrased resume | 2 → 1 | 1,770 → 498 | 2,171 → 960 | 3,941 → 1,458 (−63.0%) | 13.499 → 9.100 |
+
+All 18 match statuses agreed with expected results and cited only supplied quotes;
+both resume checks passed. Matching reported zero cached input tokens. The final
+resume check reported 497 cached input tokens, versus zero in its earlier pair.
+These are single-sample measurements, not a universal speed/cost guarantee or an
+end-to-end job-search total. Token totals include cached input and reasoning once;
+they are not dollar-cost estimates. In real Chrome, a five-decision mixed visual/
+DOM fixture sent only two image turns and captured each image once. Image token
+savings were not estimated from that offline test.
+
+A separate single-request live semantic check accepted a faithful paraphrase and
+rejected three synthetic counterexamples: fabricated team/revenue metrics, an
+in-progress degree presented as completed, and reversal of a negated skill.
+
+Validation: the network-fenced full Python suite completed with 1,075 passed,
+102 skipped and 12 passed subtests. Final qualifier/structure refinements passed
+59 targeted material/workflow tests; the final visual batch-recovery change passed
+30 application-loop/real-Chrome tests (including 11 visual tests). The broader
+real-Chrome visual/general-browser run passed 25 tests. Employer pages were local
+fixtures and no real application was submitted. The only warning was the existing
+Starlette/AnyIO deprecation. Production backend processes were not restarted.
+
+## Token reduction: third pass
+
+Material and semantic provider inputs can now use a self-contained `shared-text-v1`
+envelope. Long, exactly repeated prose is stored once in `shared_texts`; the
+original fields in `content` refer to it with `{"$text":"tN"}`. All source text,
+source ownership, evidence/version IDs, dates, preferences and revision feedback
+remain available in the same request. No summarizer, evidence filtering or extra
+retrieval/model call is involved. Public schemas and custom analyzer inputs are
+unchanged. Existing reference-like domain data prevents this transformation.
+
+The adapter applies this to resume generation/revision/verification, cover
+letters, application answers, and small semantic decisions. It only enables
+sharing when the encoded content plus its interpretation instruction saves at
+least 30% of the original JSON text and more than 200 characters. This is a
+conservative character heuristic, not a tokenizer or guaranteed latency saving.
+Low-saving resume inputs retain the original prompt format. The threshold was
+added after live testing found that a modest input reduction did not speed up
+end-to-end resume writing. Revision instructions appended after JSON remain intact.
+
+Identical concurrent Jev decisions now share one in-flight HTTP request per
+configured service instance. The key includes the full frozen payload and
+purpose; different page states, questions, models or purposes do not share it.
+Waiters receive independent answer copies and report zero new requests/tokens.
+Only the request owner is charged in the provider ledger. Waits are bounded by
+the existing timeout; timeout/error results retain normal main-model fallback.
+Budget exceptions release waiters without sharing exception bodies. This is
+process-local deduplication of pure decisions, never reuse of browser actions.
+The existing five-minute cache, decision confidence thresholds and outage cooldown
+remain in effect.
+
+Testing also exposed an older generator/validator mismatch: a summary could
+combine undergraduate and graduate citations even though the existing structure
+validator requires one source per claim and education in its own section. The
+writing and revision prompts now state those existing requirements explicitly.
+The validator was not weakened. Both complete education entries are still kept.
+
+Reproduce the opt-in synthetic comparison with
+`python scripts/benchmark_context_sharing.py --live --jev --output <new-directory>`.
+`--only materials|semantics|jev` selects a subset. No private resumes, application
+submissions, user memories or production DB changes are involved.
+
+Live results on 2026-10-10 with `muse-spark-1.3-contributor` and `jev-latest`:
+
+| Scenario | Requests before → after | Input tokens | Output tokens | Total tokens | Seconds |
+| --- | --- | --- | --- | --- | --- |
+| 12-claim semantic check | 1 → 1 | 1,515 → 881 | 1,053 → 985 | 2,568 → 1,866 (−27.3%) | 12.298 → 9.810 |
+| Four identical concurrent Jev decisions | 4 → 1 | 1,336 → 334 | 152 → 38 | 1,488 → 372 (−75%) | 0.983 → 0.698 |
+
+Both semantic variants accepted the same six supported claims and rejected all
+six negative cases, including fabricated revenue/team size, degree completion,
+an unsupported technology, and claims citing the wrong source even when the
+correct fact appeared elsewhere in the shared table. All Jev callers received
+the correct answer. Semantic calls reported zero cached input tokens. These are
+single-sample provider measurements, not universal workflow/cost guarantees.
+
+An initial resume pair was rejected after generation; those numbers are excluded
+from successful-output claims. After aligning the source rules in both variants,
+both drafts passed local and semantic checks and retained undergraduate/graduate
+records. Generation input decreased 5,606 → 4,969 tokens, but output increased
+3,660 → 4,193 and generation took 48.125 → 50.453 seconds. Including each draft's
+verification, totals were 12,531 → 12,509 tokens and 60.352 → 63.711 seconds.
+This does **not** establish a resume-writing speedup. Its net text reduction was
+23.8%, so the final 30% gate now leaves that input in the original format; a
+regression test checks exact equality with the previous prompt. Highly repeated
+inputs still use lossless sharing. Reasoning/output variance remains material.
+
+Validation: full network-fenced suite 1,090 passed, 102 skipped, 12 passed subtests.
+Final gating/material changes passed 109 targeted tests; final wire-format and
+concurrency checks passed 15 tests, including mutation of caller input during a
+request, bounded waits, budget exceptions, source/citation preservation and
+cover-letter/answer/revision adapters. Only the existing Starlette/AnyIO warning
+was reported. Backend processes and `.env` were not changed or restarted.

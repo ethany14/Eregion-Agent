@@ -21,7 +21,6 @@ from .contracts import candidate_answer
 from .education import COMPONENTS, facts as education_facts, binding as education_binding, gaps as education_gaps, repeatable as repeatable_education
 from .drafting import prepare_draft, visible_drafts
 
-from .prompt import SYSTEM
 from agent_runtime.browser.tools import BROWSER_TOOLS, BROWSER_NAMES, VISUAL_NAMES as BROWSER_VISUAL_NAMES
 
 
@@ -166,8 +165,14 @@ class ConfiguredToolModel:
 
 
 class HybridApplicationAgent:
-    def __init__(self, *, model_factory=ConfiguredToolModel):
+    def __init__(self, *, model_factory=ConfiguredToolModel, decisions=None):
         self.model_factory = model_factory
+        # Injecting a model must not silently enable a second, real provider.
+        # Production keeps configured Jev; custom models can opt in explicitly.
+        if decisions is None and model_factory is not ConfiguredToolModel:
+            from agent_runtime.fast_decisions import FastDecisions
+            decisions = FastDecisions()
+        self.decisions = decisions
 
     def run(self, browser, state, *, autofill, active, reserve, report, refresh=None,
             communicate=None, accept_answer=None, checkpoint=None, bind_answers=None, publish_question=None):
@@ -175,7 +180,7 @@ class HybridApplicationAgent:
         session = AgentTools(browser, state, autofill=autofill, active=active, refresh=refresh,
             communicate=communicate, accept_answer=accept_answer, checkpoint=checkpoint,
             bind_answers=bind_answers, publish_question=publish_question)
-        return DecisionRunner(self.model_factory).run(session, active=active, reserve=reserve,
+        return DecisionRunner(self.model_factory, decisions=self.decisions).run(session, active=active, reserve=reserve,
             report=report, refresh=refresh, communicate=communicate, checkpoint=checkpoint)
 
 

@@ -96,7 +96,7 @@ def test_health(api_client):
 
 def test_create_run_uses_fake_service_without_llm(api_client):
     client, _ = api_client
-    with patch("custom_agent.handlers.create_model") as model:
+    with patch("job_agent.model.create_model") as model:
         response = client.post(
             "/runs",
             json={"resume_text": FACT, "job_description": "Requires Python"},

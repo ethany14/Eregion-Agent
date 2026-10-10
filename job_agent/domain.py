@@ -622,11 +622,3 @@ def calculate_score_breakdown(
         preferred_score=percentage(preferred_group_values),
         overall_score=overall,
     )
-
-
-def calculate_match_score(
-    matches: list[SkillEvidence],
-    requirements: list[JobRequirement] | None = None,
-) -> float:
-    """Compatibility wrapper returning the grouped overall score."""
-    return calculate_score_breakdown(matches, requirements).overall_score

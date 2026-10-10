@@ -29,7 +29,6 @@ from agent_runtime.sessions.repository import SessionRepository
 from agent_runtime.sessions.state import SessionMessageDraft, SessionState, SessionStatus
 from agent_runtime.tools.messages import AgentMessage
 from agent_runtime.workspace.repository import JobWorkspaceRepository
-from job_agent.domain import normalize_text
 
 
 class InterviewController:

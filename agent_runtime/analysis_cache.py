@@ -123,4 +123,7 @@ def warm_resume(sessions, text, *, owner='local'):
         finally:
             with _warm_lock:
                 _warming.discard(key)
-    return _warm_pool.submit(run)
+    from contextvars import copy_context
+    from agent_runtime.provider_usage import UsageLedger, usage_scope
+    with usage_scope(ledger=UsageLedger(sessions), purpose='resume_warmup'):
+        return _warm_pool.submit(copy_context().run, run)

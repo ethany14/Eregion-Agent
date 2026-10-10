@@ -1,7 +1,7 @@
 """Mock interview state-machine tests use scripted models, never paid calls."""
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -13,10 +13,7 @@ from agent_runtime.mock_interview.worker import MockInterviewerWorker
 from agent_runtime.mock_interview.errors import MockInterviewConflict
 from agent_runtime.mock_interview.policy import build_plan, should_follow_up, validate_evaluation, validate_question
 from agent_runtime.mock_interview.repository import MockInterviewRepository
-from agent_runtime.mock_interview.types import (
-    Difficulty, InterviewMode, MockAnswerEvaluation, MockInterviewQuestion,
-    MockStatus,
-)
+from agent_runtime.mock_interview.types import InterviewMode, MockAnswerEvaluation, MockInterviewQuestion, MockStatus
 from agent_runtime.sessions.repository import SessionRepository
 from agent_runtime.application_pack.types import PackStatus
 from agent_runtime.workspace.repository import JobWorkspaceRepository
@@ -358,20 +355,3 @@ def test_migration_from_prior_populated_schema(tmp_path):
     with db.engine.connect() as connection:
         assert connection.scalar(text("SELECT count(*) FROM runs WHERE run_id='old-run'")) == 1
     db.close()
-
-
-def test_chrome_mock_interview_uses_safe_dom_and_declared_paths():
-    from pathlib import Path
-    root = Path(__file__).resolve().parents[1] / "chrome_extension"
-    controller = (root / "mock-interview-controller.js").read_text(encoding="utf-8")
-    client = (root.parent / "web_app/api.js").read_text(encoding="utf-8")
-    html = (root.parent / "web_app/index.html").read_text(encoding="utf-8")
-    assert "innerHTML" not in controller
-    assert "textContent" in controller
-    for action in ("answers", "skip", "end", "cancel", "resume"):
-        assert f'mutate("{action}"' in controller
-    assert "/mock-interviews" in client
-    assert 'data-view-panel="interviews"' not in html
-    assert 'id="composer"' in html
-    for element_id in ("mock-start", "mock-question", "mock-answer", "mock-report"):
-        assert f'id="{element_id}"' not in html

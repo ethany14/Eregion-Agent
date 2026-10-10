@@ -109,6 +109,8 @@ project bullets but must not erase this foundational resume structure.
 Every factual claim requires a stable claim_id, one or more valid evidence_ids, the
 valid source_entry_id that owns those evidence IDs, and relevant target requirement
 IDs when applicable. An evidence ID never licenses details absent from exact_text.
+Each summary claim must cite only one non-education source entry. Keep academic
+claims in their separate education entries; do not merge degrees into a summary claim.
 Do not combine facts into a stronger claim unless the source explicitly connects
 them. For every experience, project, or education ResumeEntry, copy entry_id from
 the corresponding source_entry_id; copy heading, organization into subheading,
@@ -150,7 +152,8 @@ original resume. If feedback asks for an unsupported qualification, do not add i
 Preserve section hierarchy and source_entry_id ownership. Remove duplicate and
 near-duplicate claims, keep summary to two concise sentences, keep skills as
 separate items, and never move education, projects, or employment claims into the
-wrong section. Always retain every supplied education entry and the complete
+wrong section. Each summary claim cites one non-education source entry; academic
+claims stay in their separate education entries. Always retain every supplied education entry and the complete
 source-backed skills section. Every summary claim, bullet, education statement, and skill must cite
 one or more valid evidence IDs. An ID never supports details absent from its
 exact_text. For experience, project, and education entries, restore entry_id and all

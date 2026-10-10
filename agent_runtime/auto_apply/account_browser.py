@@ -6,8 +6,7 @@ browser. Ambiguous semantic questions remain an explicit account handoff.
 """
 import json
 import re
-import time
-from concurrent.futures import ThreadPoolExecutor
+from agent_runtime.loop_model import ModelInterrupted, ModelRequests
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from agent_runtime.model_output import output_problem
@@ -71,22 +70,20 @@ def choose(browser, controls, *, mode, switch=False, model_factory=None,
         'Return a single tool call; do not guess unknown facts.')),
         HumanMessage(content=json.dumps({'mode':mode,'switch_mode_only':switch,'controls':controls}))]
     model = (model_factory or ConfiguredToolModel)()
-    executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='account-model')
+    requests = ModelRequests()
     try:
-        future = executor.submit(model.invoke, messages, tools)
-        deadline = time.monotonic() + getattr(model, 'timeout', 45) + 2
-        while not future.done():
-            if not active():raise BrowserBlocked('The account action was paused.')
-            if time.monotonic() >= deadline:
-                raise BrowserBlocked('The model timed out while selecting account controls. Retry the secure account step.')
-            browser.pump()
-        response = future.result()
+        response = requests.call(lambda: model.invoke(messages, tools), active=active,
+            timeout=getattr(model, 'timeout', 45) + 2, pump=browser.pump)
+    except ModelInterrupted:
+        raise BrowserBlocked('The account action was paused.') from None
+    except TimeoutError:
+        raise BrowserBlocked('The model timed out while selecting account controls. Retry the secure account step.') from None
     except BrowserBlocked:
         raise
     except Exception:
         raise BrowserBlocked('The model could not select account controls. Retry the secure account step.') from None
     finally:
-        executor.shutdown(wait=False, cancel_futures=True)
+        requests.close()
     calls = getattr(response, 'tool_calls', None) or []
     if output_problem(response) or len(calls) != 1:
         raise BrowserBlocked('The model did not return a usable account action. Retry the secure account step.')

@@ -191,19 +191,3 @@ def _validate(controls, plan, mode, *, switch=False):
     if not switch and not (plan['username_ids'] or plan['password_ids']):
         raise BrowserBlocked('Select the credential fields before sending the account form.')
     return target
-
-
-def submit_control(browser, mode):
-    scope = root(browser)
-    forms = scope.locator('form').filter(has=browser.scope.locator(PASSWORDS))
-    if forms.count() == 1: scope = forms.first
-    pattern = REGISTER if mode == "register" else LOGIN
-    action = scope.get_by_role("button", name=pattern).filter(visible=True)
-    if not action.count() and browser.platform == "workday":
-        # Workday exposes the interactive surface as role=button/"Submit" over
-        # an aria-hidden native button. Use that visible surface normally; never
-        # force-click the hidden button or invoke its handler.
-        native = scope.locator('button[type="submit"][aria-hidden="true"]').filter(has_text=pattern)
-        if native.count() == 1:
-            action = native.locator('..').locator('[data-automation-id="click_filter"][role="button"]:visible')
-    return action

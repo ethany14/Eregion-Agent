@@ -10,7 +10,6 @@ from typing import Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from agent_runtime.security import canonical_json
 from agent_runtime.feedback.policy import redact_secrets, redact_skill_pii
 
 

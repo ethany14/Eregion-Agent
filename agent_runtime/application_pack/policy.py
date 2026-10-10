@@ -11,6 +11,7 @@ from agent_runtime.evidence.types import (
 )
 from agent_runtime.security import canonical_json
 from job_agent.schemas import JobAnalysis
+from job_agent.domain import normalize_text
 
 
 def _words(value: str) -> set[str]:
@@ -24,7 +25,22 @@ _INSTRUCTION_TEXT = re.compile(
 
 class EvidenceSelectionPolicy:
     def select(self, *, evidence: list[CareerEvidence], links: list[EvidenceApplicationLink],
-               job: JobAnalysis, token_budget: int = 1800) -> list[EvidenceSnapshotItem]:
+               job: JobAnalysis, token_budget: int = 1800,
+               resume_text: str | None = None) -> list[EvidenceSnapshotItem]:
+        # The Vault keeps older resumes for history; they are not additional jobs.
+        # Scope before ranking so even an old application link cannot mix versions.
+        if resume_text is not None:
+            source_ref = hashlib.sha256(normalize_text(resume_text).encode()).hexdigest()
+            evidence = [item for item in evidence
+                        if item.current.source_type != EvidenceSourceType.RESUME
+                        or item.current.source_reference == source_ref]
+            structured = {'fit_analysis', 'fit_analysis_import', 'pack_resume_import'}
+            if any(item.status == EvidenceStatus.CONFIRMED
+                   and item.current.source_type == EvidenceSourceType.RESUME
+                   and item.current.created_by in structured for item in evidence):
+                evidence = [item for item in evidence
+                            if item.current.source_type != EvidenceSourceType.RESUME
+                            or item.current.created_by in structured]
         generic_words = {"with", "from", "have", "experience", "experienced", "working",
                          "work", "team", "teams", "role", "candidate", "strong", "skills",
                          "ability", "using", "good", "the", "and", "for", "this", "that"}

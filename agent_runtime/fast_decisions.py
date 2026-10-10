@@ -6,6 +6,7 @@ logged; cache keys are hashes. Callers own evidence, budgets and freshness.
 from collections import OrderedDict
 from contextlib import contextmanager
 from contextvars import ContextVar
+from concurrent.futures import Future, TimeoutError as FutureTimeout
 import logging
 from dataclasses import dataclass, field
 import hashlib
@@ -51,6 +52,7 @@ class FastDecisions:
         self.enabled = bool(enabled and api_key)
         self.timeout, self.transport = timeout, transport
         self._cache, self._lock, self._retry_at = OrderedDict(), RLock(), 0
+        self._inflight = {}
 
     def cache_namespace(self):
         return hashlib.sha256(json.dumps([self.enabled, self.base_url, self.model,
@@ -62,6 +64,18 @@ class FastDecisions:
             self._cache.clear()
 
     def _request(self, payload):
+        from agent_runtime.provider_usage import provider_call, token_counts
+        with provider_call(self.model, context_chars=len(json.dumps(payload, ensure_ascii=False))) as usage:
+            response = self._request_unmetered(payload)
+            if response.status_code >= 400:
+                usage.update(status='failed', http_status=response.status_code)
+            try:
+                usage.update(token_counts(response.json().get('usage')))
+            except (ValueError, AttributeError):
+                pass
+            return response
+
+    def _request_unmetered(self, payload):
         from agent_runtime.multi_agent.model_usage import current_model_call
         with httpx.Client(timeout=self.timeout, transport=self.transport,
                           follow_redirects=False) as client:
@@ -92,6 +106,10 @@ class FastDecisions:
             if q.get('type') != 'choice' or not 2 <= len(q.get('criteria', {})) <= 255:
                 result.status = 'input_limit'
                 return result
+        # Bind transport and validation to the exact snapshot used as the key;
+        # a caller mutating its input while another thread runs cannot change it.
+        payload = json.loads(encoded)
+        questions = payload['questions']
         digest = hashlib.sha256((purpose + encoded).encode()).hexdigest()
         with self._lock:
             cached = self._cache.get(digest)
@@ -101,11 +119,42 @@ class FastDecisions:
             if start < self._retry_at:
                 result.status = 'cooldown'
                 return result
+            flight = self._inflight.get(digest)
+            shared = flight is not None
+            if not shared:
+                flight = Future()
+                self._inflight[digest] = flight
+        if shared:
+            # Pure semantic decisions only. Identical concurrent callers share
+            # one HTTP request, never browser effects, passwords or new facts.
+            # Waiting is bounded and never starts a duplicate request on timeout.
+            try:
+                value = flight.result(timeout=self.timeout)
+            except FutureTimeout:
+                return DecisionBatch(status='inflight_timeout', model=self.model,
+                                     seconds=round(time.monotonic() - start, 3))
+            return DecisionBatch(answers=json.loads(value['answers']), status=value['status'],
+                model=value['model'], cached=value['status'] == 'ok',
+                seconds=round(time.monotonic() - start, 3))
+        try:
+            return self._evaluate_payload(payload, questions, digest, start, result, purpose)
+        finally:
+            # Resolve waiters even if a caller's budget/cancellation exception
+            # escapes. No exception text, prompt or response body is shared.
+            value = {'answers':json.dumps(result.answers), 'model':result.model,
+                     'status':result.status if result.status != 'disabled' else 'inflight_failed'}
+            with self._lock:
+                flight.set_result(value)
+                self._inflight.pop(digest, None)
+
+    def _evaluate_payload(self, payload, questions, digest, start, result, purpose):
         try:
             # No redirects: never forward an API credential to another host.
             from agent_runtime.multi_agent.model_usage import invoke_model
+            from agent_runtime.provider_usage import usage_scope
             result.requests = 1
-            response = invoke_model(self._request, payload)
+            with usage_scope(purpose='jev:' + purpose):
+                response = invoke_model(self._request, payload)
             if response.status_code != 200:
                 result.status = 'http_' + str(response.status_code)
             else:

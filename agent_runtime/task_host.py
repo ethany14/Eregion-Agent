@@ -1,13 +1,14 @@
 """Repository-backed conversations hosted by the shared decision kernel."""
 import base64
 import time
+from contextlib import contextmanager
 
 from langchain_core.messages import HumanMessage
 
 from agent_runtime.loop_context import trace_value
 from agent_runtime.loop_model import ModelRequests
 from agent_runtime.loop_engine import LoopStop, ToolArgumentsError, Turn
-from agent_runtime.telemetry import history_context, outcome_fingerprint
+from agent_runtime.telemetry import outcome_fingerprint
 
 
 class TaskHost:
@@ -46,7 +47,7 @@ class TaskHost:
         state['capability_versions'] = observed.get('capability_versions', {})
         self.observed_state = state
         snapshot = {'goal': state['goal'], 'messages': state['messages'][-60:], 'plan': state['plan'],
-            'history': history_context(state['history'], current_page=False), 'pending_question': state.get('input_request'),
+            'history': state['history'][-16:], 'pending_question': state.get('input_request'),
             'visual_fallback': state.get('visual_fallback', False),
             'budget_remaining': self.loop._budget(state) - state['model_calls'] + state['budget_base'], **observed}
         harness = self.loop.harness
@@ -64,6 +65,13 @@ class TaskHost:
                 raise LoopStop('steered')
             if text and not (call['name'] in {'say', 'ask_user', 'finish_task', 'pause_task'} and text == call['args'].get('text')):
                 self.loop._progress(self.task_id, text[:4000])
+
+    @contextmanager
+    def text_guard(self, turn):
+        with self.loop.lock:
+            if not self.active() or self.revision() != turn.revision:
+                raise LoopStop('steered')
+            yield
 
     def on_text(self, text, turn):
         with self.loop.lock:
@@ -92,7 +100,9 @@ class TaskHost:
                 'chat_revision': turn.revision, 'message': f'Running {call["name"].replace("_", " ")}.'})
             result = self.loop._control(self.task_id, call['name'], call['args'], self.observed_state)
         if result is None:
-            result = self.loop.harness.execute(self.task_id, call['name'], call['args'], call_id=call['id'])
+            from agent_runtime.provider_usage import usage_scope
+            with usage_scope(purpose=call['name']):
+                result = self.loop.harness.execute(self.task_id, call['name'], call['args'], call_id=call['id'])
         return result
 
     def action_error(self, exc):

@@ -21,7 +21,6 @@ from agent_runtime.workspace.errors import (
 )
 from agent_runtime.workspace.identity import normalize_job_url
 from agent_runtime.workspace.repository import JobWorkspaceRepository
-from agent_runtime.workspace.run_adapter import WorkspaceRunAdapter
 from agent_runtime.workspace.types import ApplicationStatus, ArtifactStatus, ArtifactType
 from api.db import create_database
 from api.main import create_app
@@ -175,7 +174,7 @@ def test_applied_at_requirement(workspace):
     assert applied.applied_at is not None
 
 
-def test_artifact_versions_validation_approval_and_run_projection(workspace):
+def test_artifact_versions_validation_and_approval(workspace):
     database, repository = workspace
     result = make_job(repository)
     app = repository.create_application(job_id=result.job.job_id, snapshot_id=result.snapshot.snapshot_id)
@@ -194,20 +193,6 @@ def test_artifact_versions_validation_approval_and_run_projection(workspace):
             content={"invalid": True}, evidence_ids=[], created_by="test", expected_version=4)
     assert repository.get_application(app.application_id).version == 4
 
-    runs = RunRepository(database.session_factory)
-    runs.create(run_id="run-workspace", thread_id="run-workspace", resume_text="Resume",
-                job_description="JD")
-    runs.update("run-workspace", status="awaiting_review", error_message=None, result={
-        "job_analysis": {"title": "Engineer", "summary": "Role", "requirements": [], "responsibilities": []},
-        "tailored_resume": {"professional_summary": [], "experience_bullets": [], "highlighted_skills": []},
-    })
-    adapter = WorkspaceRunAdapter(repository, runs)
-    state, projected = adapter.attach_completed_run(app.application_id, "run-workspace", expected_version=4)
-    replay_state, replay = adapter.attach_completed_run(app.application_id, "run-workspace",
-                                                         expected_version=state.version)
-    assert len(projected) == 2
-    assert [item.artifact_id for item in replay] == [item.artifact_id for item in projected]
-    assert replay_state.version == state.version
 
 
 def test_associations_validate_foreign_keys_and_are_idempotent(workspace):

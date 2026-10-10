@@ -1,5 +1,6 @@
 """Exercise the default chat UI through the real API; all external IO is synthetic."""
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -127,7 +128,7 @@ def test_default_chat_searches_scores_reviews_applies_and_interviews(career,tmp_
         assert page.url.startswith('http://localhost/apply')
         expect(page.get_by_role('link',name='Back to career workspace')).to_have_count(0)
         if not saved:
-            expect(page.locator('#welcome h2')).to_have_text('What are we working on?')
+            expect(page.locator('#welcome h2')).to_have_text(re.compile(r'^Good (morning|afternoon|evening)'))
             page.locator('#chat-text').fill('Find Python roles, compare fit, tailor materials, apply and practice the interview.')
             page.locator('#send-message').click()
         expect(page.locator('.career-job strong')).to_contain_text('Match score:',timeout=20000)

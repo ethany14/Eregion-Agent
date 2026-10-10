@@ -13,6 +13,7 @@ from uuid import uuid4
 
 from agent_runtime.model_runtime import MODEL_PAYMENT_MESSAGE
 from agent_runtime.telemetry import safe_traceback
+from agent_runtime.provider_usage import track_run
 
 from .agent import HybridApplicationAgent
 from .autofill import autofill, desired_answer, matches, pending_documents
@@ -250,6 +251,7 @@ class ApplicationLoop:
             self._submit(run_id, self._account, run_id, request, switch, state["account_request"])
             return updated
 
+    @track_run('run_id', 'account')
     def _account(self, run_id, request, switch, expected):
         try:
             state = self._active(run_id)
@@ -702,6 +704,7 @@ class ApplicationLoop:
                 self._submit(run_id, self._drive, run_id, None,frozenset(request.answers))
             return updated
 
+    @track_run('run_id', 'application')
     def _drive(self, run_id, approval, edited_keys=frozenset()):
         fields = None
         try:

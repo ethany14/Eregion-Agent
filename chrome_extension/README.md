@@ -1,6 +1,6 @@
-# eregion Job Lens
+# Eregion Lens
 
-The Chrome extension is intentionally small. It reads the job description from the page the user explicitly selected, leaves the extracted text editable, and asks the local eregion API for a quick comparison with the default PDF resume stored by the web app.
+The Chrome extension is intentionally small. It reads the job description from the page the user explicitly selected, leaves the extracted text editable, and asks the local Eregion API for a quick comparison with the default PDF resume stored by the web app.
 
 It shows a match score, matched/partial/missing counts, focused suggestions, and optional requirement details. Resume upload, job review, materials, applications, and interview practice share the career chat at `http://localhost:8000/apply`. Opening a saved job starts a conversation with that job already attached.
 
@@ -17,7 +17,7 @@ Open `http://localhost:8000/apply`, select **＋ Resume**, and upload a text-bas
 2. Enable **Developer mode**.
 3. Choose **Load unpacked** and select `chrome_extension`.
 4. Open a normal HTTP(S) job page.
-5. Click the eregion Job Lens toolbar icon.
+5. Click the Eregion Lens toolbar icon.
 6. Select **Extract page**, review the title, company, and description, then select **Analyze fit**.
 
 The API URL is fixed to `http://localhost:8000`. The Side Panel uses `GET /health`, `POST /api/workspaces`, and `POST /api/applications/{id}/analyze-with-resume`.

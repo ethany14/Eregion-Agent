@@ -13,7 +13,6 @@ from agent_runtime.security import arguments_hash, redact_sensitive
 from agent_runtime.types import (ToolCallRecord, ToolCallRequest, ToolContext,
     ToolExecutionStatus, ToolResult, ToolRiskLevel)
 
-_WRITE_RISKS = {ToolRiskLevel.LOCAL_WRITE, ToolRiskLevel.EXTERNAL_WRITE, ToolRiskLevel.SENSITIVE}
 
 def _tool_version(tool) -> str:
     """Keep phase-1A tools compatible while giving persisted approvals a version."""

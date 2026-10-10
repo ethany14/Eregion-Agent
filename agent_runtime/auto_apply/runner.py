@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class ApplicationHost:
-    def __init__(self, session, model, *, active, reserve, report, refresh=None, communicate=None, checkpoint=None):
+    def __init__(self, session, model, *, active, reserve, report, refresh=None, communicate=None, checkpoint=None, decisions=None):
         self.session, self.model, self.browser = session, model, session.browser
         self.is_active, self.reserve, self.report = active, reserve, report
         self.refresh, self.communicate, self.checkpoint = refresh, communicate, checkpoint
@@ -28,6 +28,7 @@ class ApplicationHost:
         self.text_turns = 0
         self.first_observation = True
         self.host_autofill = None
+        self.visual_requested, self.pending_screen = False, None
         session.verify_answers = self.verify_answers
         saved = session.state.get('loop_runtime', {}).get('application', {})
         self.autofill_fingerprint = saved.get('autofill_fingerprint')
@@ -35,10 +36,9 @@ class ApplicationHost:
         session.autofill_called = saved.get('autofill_called', False)
         session.failed_fields = set(saved.get('failed_fields', []))
         from agent_runtime.fast_decisions import configured_decisions
-        self.fast = configured_decisions()
+        self.fast = configured_decisions() if decisions is None else decisions
         session.fast_option_attempts = set(saved.get('fast_option_attempts', []))
-        if self.fast.enabled:
-            session.fast_choices = self.fast_choices
+        session.fast_choices = self.fast_choices if self.fast.enabled else None
 
     def active(self):
         return self.is_active()
@@ -77,14 +77,28 @@ class ApplicationHost:
         if time.monotonic() >= self.deadline:
             raise LoopStop('yielded', chat_revision=snapshot.get('chat_revision', 0))
         images = []
+        snapshot['screen'] = None
         if not self.session.state.get('visual_fallback'):
             self.session.visual = None
-        elif self.session.visual is not None:
-            # Capture a current viewport with a current observation token. Old
-            # screenshots are never persisted or replayed after a restart.
-            screen = self.session.visual.capture()
+            self.visual_requested, self.pending_screen = False, None
+        elif self.visual_requested:
+            # Only explicit viewing, visual actions, or DOM recovery need pixels.
+            # Reuse an explicitly requested capture only while its token is fresh
+            # after host autofill/navigation; otherwise capture the current page.
+            screen = self.pending_screen
+            self.visual_requested, self.pending_screen = False, None
+            if screen is not None:
+                try:
+                    self.session.visual.validate(screen['screen']['screenshot_id'])
+                except BrowserBlocked:
+                    screen = None
+            if screen is None:
+                screen = self.session._view_browser()
             images = self.image_message(screen['image'])
-            snapshot['screen'] = self.session.visual.screen
+            snapshot['screen'] = screen['screen']
+        elif self.session.visual is not None:
+            # No pixels in this turn means no reusable coordinate authority.
+            self.session.visual.invalidate()
         tools = [item for item in TOOLS if item['function']['name'] not in HIDDEN_TOOLS
                  and (self.session.state.get('visual_fallback') or item['function']['name'] not in VISUAL_TOOLS)]
         if self.host_autofill is not None:
@@ -291,7 +305,13 @@ class ApplicationHost:
             return {**action_failure('repeated_action', 'This failed action was not executed again because the page and inputs are unchanged.'), 'repeated_action': True}
         self.text_turns = 0
         session._cached_fields = None
-        return session.execute(name, args)
+        outcome = session.execute(name, args)
+        if (name == 'view_browser' or name.startswith('computer_')) and isinstance(outcome.get('image'), bytes):
+            # Host.observe owns screenshot delivery and freshness. Do not also
+            # place this image in the kernel's generic one-turn image queue.
+            self.pending_screen = dict(outcome)
+            outcome = {key: value for key, value in outcome.items() if key != 'image'}
+        return outcome
 
     def action_error(self, exc):
         if isinstance(exc, ToolArgumentsError):
@@ -305,12 +325,11 @@ class ApplicationHost:
             code = 'repeated_action' if outcome.get('unchanged') else 'value_not_retained' if outcome.get('verified') is False else 'invalid_action'
             outcome.update({**action_failure(code, outcome.get('error') or outcome.get('next') or 'Inspect the failed controls before retrying.'), **outcome})
         visual = outcome.get('visual_recovery') or any(d.get('visual_recovery') for d in outcome.get('failure_details', {}).values())
-        if self.session.state.get('visual_fallback') and hasattr(self.browser, 'page') and visual:
-            try:
-                screen = self.session._view_browser()
-                outcome['screen'] = screen['screen']
-            except BrowserBlocked:
-                pass
+        if self.session.state.get('visual_fallback') and hasattr(self.browser, 'page'):
+            if visual or name == 'view_browser' or name.startswith('computer_'):
+                self.visual_requested = True
+            # observe consumes this once. A later successful DOM action in the
+            # same batch must not erase an earlier control's recovery request.
         self.timed('tool', self.started or time.monotonic(), tool=name, failed=failed)
         self.started = None
         self.history = [*self.history, {'tool': name, 'call_id': call['id'], 'arguments': trace_value(args), 'result': trace_value(outcome),
@@ -340,15 +359,16 @@ class ApplicationHost:
 
 class DecisionRunner:
     """Existing application entry point; decisions now use AgentLoop."""
-    def __init__(self, model_factory):
+    def __init__(self, model_factory, *, decisions=None):
         self.model_factory = model_factory
+        self.decisions = decisions
 
     def run(self, session, **hooks):
         try:
             model = self.model_factory()
         except Exception:
             return {'reason': 'model_unavailable', 'field_keys': []}
-        host = ApplicationHost(session, model, **hooks)
+        host = ApplicationHost(session, model, decisions=self.decisions, **hooks)
         try:
             result = AgentLoop(host, session.state.get('loop_runtime'), context_chars=12000).run()
             return {'field_keys': [], **result}

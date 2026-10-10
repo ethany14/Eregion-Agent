@@ -3,7 +3,29 @@ from agent_runtime.fast_decisions import accepted, DecisionBatch, record_routing
 from job_agent.prompts import MATCH_PROMPT
 from job_agent.schemas import SkillAssessment, SkillEvidence
 
-MATCH_ROUTING_VERSION = 'exact-and-chunked-compact-v4'
+MATCH_ROUTING_VERSION = 'adaptive-compact-v5'
+
+
+def matching_batches(resume, requirements, *, max_requirements=24, target_chars=40_000):
+    """Bound output size and request text without repeating evidence for tiny batches.
+
+    All evidence remains available to every requirement. For an oversized resume,
+    reserve useful room for requirements instead of repeating it once per item.
+    This is a text-size heuristic, not a tokenizer or a hard context limit.
+    """
+    from job_agent.compact_match import match_payload
+    base = len(match_payload(resume, []))
+    budget = max(target_chars, base + 8_000)
+    batches, current = [], []
+    for requirement in requirements:
+        if current and (len(current) >= max_requirements
+                        or len(match_payload(resume, [*current, requirement])) > budget):
+            batches.append(current)
+            current = []
+        current.append(requirement)
+    if current:
+        batches.append(current)
+    return batches
 
 
 def assess_skills(resume, job, analyze, service):
@@ -87,6 +109,7 @@ def assess_skills(resume, job, analyze, service):
                           'No supporting evidence was found in the resume.'))
     pending = [r for r in requirements if r.requirement_id not in decided]
     fallback = None
+    chunks = []
     if pending:
         def chunk(items):
             subset = job.model_copy(update={'requirements': items})
@@ -96,7 +119,7 @@ def assess_skills(resume, job, analyze, service):
             if len(ids) != len(items) or set(ids) != {r.requirement_id for r in items}:
                 raise ValueError('Matching chunk returned an incomplete or duplicate requirement set.')
             return result
-        chunks = [pending[i:i+6] for i in range(0, len(pending), 6)]
+        chunks = matching_batches(resume, pending)
         with ThreadPoolExecutor(max_workers=3, thread_name_prefix='match') as pool:
             results = [f.result() for f in [pool.submit(copy_context().run, chunk, items) for items in chunks]]
         fallback = SkillAssessment(matches=[m for result in results for m in result.matches],
@@ -115,7 +138,7 @@ def assess_skills(resume, job, analyze, service):
         elif match.match_status == 'needs_confirmation':
             recommendations.append(f'Confirm {match.job_skill} before applying.')
     record_routing('skill_evidence', batch, accepted=len(requirements)-len(pending),
-                   deferred=len(pending), main_model_calls=(len(pending) + 5) // 6)
+                   deferred=len(pending), main_model_calls=len(chunks))
     counts = {status: sum(m.match_status == status for m in matches)
               for status in ('matched', 'partial', 'missing', 'needs_confirmation')}
     explanation = (f"Resume evidence supports {counts['matched']} requirements fully and "

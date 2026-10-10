@@ -42,6 +42,8 @@ def public(state):
     from agent_runtime.auto_apply.drafting import visible_drafts
     result = {key: value for key, value in state.items()
         if key not in {"profile", "answers", "review_digest", "resume_context"}}
+    if isinstance(result.get('loop_runtime'), dict):
+        result['loop_runtime'] = {k: v for k, v in result['loop_runtime'].items() if k != 'context_archive'}
     if "fields" in state:
         from agent_runtime.auto_apply.contracts import can_reopen
         result["answer_drafts"] = visible_drafts(state, state["fields"])
@@ -197,7 +199,9 @@ def update_memory(run_id: str, memory_id: str, body: MemoryUpdate, loop=Depends(
 
 @router.get("/{run_id}")
 def get_attempt(run_id: str, loop=Depends(service)):
-    return invoke(lambda: loop.repository.get(run_id))
+    from agent_runtime.provider_usage import UsageLedger
+    return invoke(lambda: {**loop.repository.get(run_id),
+        'usage_summary': UsageLedger(loop.repository.sessions).summary(run_ids=[run_id])})
 
 
 @router.post("/{run_id}/reply", status_code=202)

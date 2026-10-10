@@ -2,13 +2,13 @@
 .env
 evals/human_quality_review/*.local.json
 __pycache__/
-.pytest_cache/
 *.pyc
 *.db
+*.db-*
 *.sqlite
 *.sqlite-*
 *.sqlite3
-.pytest-tmp*/
+.pytest*/
 .release-local/
 uploads/
 .browser-sessions/

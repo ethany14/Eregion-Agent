@@ -1,20 +1,17 @@
-from pathlib import Path
-from urllib.parse import parse_qs, urlsplit
+from html.parser import HTMLParser
+import re
+from urllib.parse import parse_qs, urljoin, urlsplit
 
 from fastapi.testclient import TestClient
 
 from api.main import create_app
 
 
-ROOT = Path(__file__).resolve().parents[1]
-WEB = ROOT / "web_app"
-
-
 def test_web_app_route_and_assets_are_served() -> None:
     with TestClient(create_app(run_service=object())) as client:
         response = client.get("/apply")
         assert response.status_code == 200
-        assert "eregion · Career agent" in response.text
+        assert "Eregion · Career agent" in response.text
         assert 'href="/app#' not in response.text
         assert 'data-view-panel=' not in response.text
         assert client.get("/web-assets/apply.css").status_code == 200
@@ -40,65 +37,39 @@ def test_old_bookmarks_preserve_job_context_and_drop_old_view_settings() -> None
             assert parse_qs(target.query) == {"application":["saved-job"], "url":["https://example.org/jobs?a=1&b=2"]}
 
 
-def test_archived_workspace_source_retains_reusable_controls() -> None:
-    page = (WEB / "index.html").read_text(encoding="utf-8")
-    for view in {"overview", "jobs", "copilot", "materials",
-                 "evidence", "learning", "settings"}:
-        assert f'data-view-panel="{view}"' in page
-    assert 'data-view-panel="interviews"' not in page
-    assert 'id="execution-mode"' not in page
-    assert 'id="task-activity-list"' not in page
-    assert 'id="resume-file"' in page
-    assert 'accept="application/pdf,.pdf"' in page
+
+class AssetLinks(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.urls = []
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        url = attrs.get("src") if tag == "script" else attrs.get("href") if tag == "link" and attrs.get("rel") == "stylesheet" else None
+        if url and url.startswith("/web-assets/"):
+            self.urls.append(url)
 
 
-def test_web_frontend_uses_safe_dom_and_server_side_resume_storage() -> None:
-    script = (WEB / "app.js").read_text(encoding="utf-8")
-    client = (WEB / "api.js").read_text(encoding="utf-8")
-    assert "innerHTML" not in script
-    assert "textContent" in script
-    assert 'request("/api/resumes"' in client
-    assert '"Content-Type": "application/pdf"' in client
-    assert "localStorage.setItem" in script
-    assert "resume_text" not in script
-
-
-def test_web_workspace_has_history_deletion_material_actions_and_safe_dialog_close() -> None:
-    page = (WEB / "index.html").read_text(encoding="utf-8")
-    script = (WEB / "app.js").read_text(encoding="utf-8")
-    client = (WEB / "api.js").read_text(encoding="utf-8")
-    assert 'id="session-history"' in page
-    assert 'class="conversation-sidebar"' in page
-    assert "session-row" in script
-    assert 'id="delete-session"' in page
-    assert 'id="material-dialog"' in page
-    assert 'name="source_url"' in page
-    assert 'type="button" data-close-dialog="job-dialog"' in page
-    assert 'type="button" data-close-dialog="evidence-dialog"' in page
-    assert "approvePackItem" in script and "regeneratePackItem" in script
-    assert "Download PDF" in script and "/resume.pdf" in script
-    assert 'request(`/sessions/${encodeURIComponent(id)}?expected_version=${version}`' in client
-    assert "createMemory" not in script
-
-
-def test_web_buttons_have_hover_click_and_motion_feedback() -> None:
-    styles = (WEB / "styles.css").read_text(encoding="utf-8")
-    assert ":hover" in styles
-    assert ":active" in styles
-    assert "cubic-bezier" in styles
-    assert "@keyframes enter" in styles
-    assert "Monochrome product theme" in styles
-    assert "--accent:#111" in styles
-    assert "linear-gradient(145deg,#0e0e0e,#242424" in styles
-
-
-def test_copilot_optimistically_renders_user_message_and_thinking_state() -> None:
-    script = (WEB / "app.js").read_text(encoding="utf-8")
-    styles = (WEB / "styles.css").read_text(encoding="utf-8")
-    assert 'appendConversationMessage("user", content' in script
-    assert 'appendConversationMessage("assistant", "Thinking…"' in script
-    assert "setSessionBusy(true)" in script
-    assert "optimisticUser.classList.add(\"send-failed\")" in script
-    assert "await renderSession();" not in script[script.index("async function sendMessage"):script.index("async function deleteCurrentSession")]
-    assert ".pending-message" in styles
-    assert ".message-delivery" in styles
+def test_current_chat_asset_graph_is_served_without_retired_dependencies():
+    # Follow the real HTML and JS imports, including lazy-loaded workspace pages.
+    with TestClient(create_app(run_service=object())) as client:
+        links = AssetLinks()
+        links.feed(client.get("/apply").text)
+        pending, seen = links.urls[:], set()
+        assert pending
+        while pending:
+            url = pending.pop()
+            if url in seen:
+                continue
+            seen.add(url)
+            response = client.get(url)
+            assert response.status_code == 200, url
+            if urlsplit(url).path.endswith(".js"):
+                assert "javascript" in response.headers["content-type"]
+                for specifier in re.findall(r"(?:from\s*|import\s*\(\s*|import\s+)[\"']([^\"']+)[\"']", response.text):
+                    if specifier.startswith("."):
+                        pending.append(urljoin(url, specifier))
+        assert "/web-assets/career-chat.js" in seen
+        assert "/web-assets/insights.js" in seen
+        for name in ("app.js", "api.js", "styles.css", "apply-chat.css"):
+            assert client.get(f"/web-assets/{name}").status_code == 404

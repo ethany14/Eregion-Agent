@@ -17,21 +17,8 @@ class SkillCandidateStatus(StrEnum):
     ROLLED_BACK = "rolled_back"
 
 
-class EvolutionVersionStatus(StrEnum):
-    STAGED = "staged"
-    ACTIVE = "active"
-    INACTIVE = "inactive"
-    REJECTED = "rejected"
-    ROLLED_BACK = "rolled_back"
-
-
 class ActivationMode(StrEnum):
     INACTIVE = "inactive"
     SHADOW = "shadow"
     CANARY = "canary"
     ACTIVE = "active"
-
-
-class EvaluationVariant(StrEnum):
-    BASELINE = "baseline"
-    CANDIDATE = "candidate"

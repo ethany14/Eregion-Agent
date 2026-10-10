@@ -1,12 +1,12 @@
 """Deterministic, model-free task graph and isolation tests."""
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 
 import pytest
 
-from api.db import create_database, upgrade_database
+from api.db import create_database
 from agent_runtime.multi_agent.context import AgentContextPolicy
 from agent_runtime.multi_agent.errors import InvalidPlanError, LeaseConflictError, TaskConflictError
 from agent_runtime.multi_agent.policy import AgentPlanValidator
@@ -20,7 +20,7 @@ from agent_runtime.multi_agent.types import (
 from agent_runtime.sessions.clock import FakeClock
 from agent_runtime.sessions.events import SessionEvent, SessionEventType
 from agent_runtime.sessions.repository import SessionRepository
-from agent_runtime.sessions.state import SessionMessageDraft, SessionState, SessionMessageVisibility
+from agent_runtime.sessions.state import SessionMessageDraft, SessionState
 from agent_runtime.tools.messages import AgentMessage
 
 
@@ -408,15 +408,6 @@ def test_template_restricted_api_and_safe_task_response(setup):
         cancelled = client.post(f"/api/agent-tasks/{body['task_id']}/cancel",
             json={"expected_version": body["version"]})
         assert cancelled.status_code == 200 and cancelled.json()["status"] == "cancelled"
-
-
-def test_chrome_task_activity_safe_rendering():
-    root = Path(__file__).resolve().parents[1] / "chrome_extension"
-    source = (root / "task-activity.js").read_text(encoding="utf-8")
-    page = (root.parent / "web_app/index.html").read_text(encoding="utf-8")
-    assert "task-activity-list" not in page
-    assert "textContent" in source and "innerHTML" not in source
-    assert "input_spec" not in source and "output_spec" not in source
 
 
 def test_scheduler_restart_scans_expired_claim(setup):

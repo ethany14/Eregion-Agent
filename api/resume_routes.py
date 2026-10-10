@@ -8,7 +8,7 @@ from pathlib import Path
 from threading import Lock
 from urllib.parse import unquote
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 
 from agent_runtime.resumes.repository import (
     ResumeConflictError,

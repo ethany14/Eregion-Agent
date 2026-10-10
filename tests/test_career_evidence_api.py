@@ -42,23 +42,6 @@ def test_evidence_api_local_lifecycle_and_safe_projection(tmp_path):
         runtime.close()
 
 
-def test_evidence_chrome_uses_safe_dom_and_declared_paths():
-    from pathlib import Path
-    root = Path(__file__).resolve().parents[1]
-    controller = (root / "chrome_extension/evidence-controller.js").read_text(encoding="utf-8")
-    client = (root / "web_app/api.js").read_text(encoding="utf-8")
-    assert "textContent" in controller
-    assert "innerHTML" not in controller
-    assert "/api/evidence" in client
-    assert "Grounded in resume" in controller
-    assert "Confirmed by you" in controller
-    assert "Pending confirmation" in controller
-    assert 'for (const action of ["confirm", "reject"])' in controller
-    assert 'document.createElement("details")' in controller
-    assert "replaceChildren" in controller
-    assert 'source_type: "user_attested"' in controller
-
-
 def test_application_evidence_link_api_requires_confirmed_version(tmp_path):
     runtime = create_session_runtime(
         database_url=f"sqlite:///{(tmp_path / 'evidence-link-api.db').as_posix()}",

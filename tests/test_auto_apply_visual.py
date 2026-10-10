@@ -91,6 +91,39 @@ def test_failed_dom_action_automatically_gives_model_screenshot_and_tools(browse
     assert browser.field(key)['value']=='LinkedIn'
 
 
+def test_visual_images_stop_after_returning_to_dom_and_capture_once(browser, monkeypatch):
+    from agent_runtime.auto_apply.visual import VisualBrowser
+    original = VisualBrowser.capture
+    captures, image_turns = [], []
+    def capture(self):
+        result = original(self)
+        captures.append(result['screen']['screenshot_id'])
+        return result
+    monkeypatch.setattr(VisualBrowser, 'capture', capture)
+    class Model(ScriptModel):
+        def invoke(self, messages, tools):
+            image_turns.append(any(isinstance(m, HumanMessage) and isinstance(m.content, list)
+                                   for m in messages))
+            snapshot = json.loads(next(m.content for m in reversed(messages)
+                if isinstance(m, HumanMessage) and isinstance(m.content, str)))
+            assert bool(snapshot.get('screen')) == image_turns[-1]
+            return super().invoke(messages, tools)
+    def scroll(snap):
+        return {'observation_id':snap['observation_id'], 'screenshot_id':snap['screen']['screenshot_id'],
+                'x':700, 'y':500, 'delta_x':0, 'delta_y':100}
+    key = browser.observe()[0]['key']
+    model = Model([('view_browser', lambda snap:{'observation_id':snap['observation_id']}),
+                   ('computer_scroll', scroll), ('observe', {}), ('say', {'text':'Using the form controls.'}),
+                   ('request_input', {'field_keys':[key]})])
+    result = HybridApplicationAgent(model_factory=lambda:model).run(browser,
+        state(answers={},visual_fallback=True), autofill=lambda:{}, active=lambda:True,
+        reserve=lambda _:True, report=lambda *args:None)
+    assert result['reason'] == 'needs_input'
+    assert image_turns == [False, True, True, False, False]
+    assert len(captures) == 2 and len(set(captures)) == 2
+    assert browser.page.evaluate('submissions') == 0
+
+
 def test_old_coordinates_rejected_after_dom_change_scroll_and_dom_action(browser):
     s,key=session(browser);view(s)
     browser.page.evaluate("document.querySelector('h1').textContent='A new page'")

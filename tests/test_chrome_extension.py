@@ -94,6 +94,14 @@ def test_interactions_have_hover_and_press_feedback() -> None:
     assert ":active" in styles
     assert "transition:" in styles
     assert "transform:" in styles
-    assert "Monochrome Side Panel theme" in styles
-    assert "--green:#111" in styles
-    assert "conic-gradient(#111 var(--score)" in styles
+    assert "Eregion Lens theme" in styles
+    assert "conic-gradient(var(--holly) var(--score)" in styles
+
+
+def test_lens_offers_day_and_night_themes() -> None:
+    page = (EXTENSION / "sidepanel.html").read_text(encoding="utf-8")
+    theme = (EXTENSION / "shared" / "theme.js").read_text(encoding="utf-8")
+    assert 'aria-label="Night theme"' in page and 'aria-label="Day theme"' in page
+    assert page.index('src="shared/theme.js"') < page.index("sidepanel.css")
+    assert '"eregion.theme"' in theme
+    assert "@import" not in (EXTENSION / "shared" / "tokens.css").read_text(encoding="utf-8")

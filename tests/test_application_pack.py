@@ -13,10 +13,7 @@ from fastapi.testclient import TestClient
 from agent_runtime.application_pack.errors import PackConflictError, PackValidationError
 from agent_runtime.application_pack.policy import EvidenceSelectionPolicy, classify_question
 from agent_runtime.application_pack.repository import PackRepository
-from agent_runtime.application_pack.types import (
-    ApplicationAnswer, CoverLetter, CoverLetterParagraph, GroundedBlock, ItemStatus,
-    ArtifactVerification,
-)
+from agent_runtime.application_pack.types import ApplicationAnswer, CoverLetter, CoverLetterParagraph, GroundedBlock, ItemStatus
 from agent_runtime.application_pack.verifier import ArtifactVerifier
 from agent_runtime.application_pack.workflow import ApplicationPackWorkflow
 from agent_runtime.evidence.repository import CareerEvidenceRepository
@@ -438,7 +435,7 @@ def test_approval_is_idempotent_and_records_block_decisions(setup):
     assert packs.events(pack.pack_id)[-1].payload["block_reviews"][0]["decision"] == "accepted"
 
 
-def test_pack_api_and_safe_chrome_rendering(setup):
+def test_pack_api_generation_download_and_validation(setup):
     workflow, packs, _, _, saved, _ = setup
     app = create_app(run_service=object(), session_runtime=SimpleNamespace(
         pack_workflow=workflow, packs=packs))
@@ -476,14 +473,6 @@ def test_pack_api_and_safe_chrome_rendering(setup):
         assert client.post(f"/api/packs/{pack['pack_id']}/questions", json={
             "expected_version": generated.json()["pack"]["version"],
             "idempotency_key": "no-question"}).status_code == 422
-    root = Path(__file__).resolve().parents[1] / "web_app"
-    page = (root / "index.html").read_text(encoding="utf-8")
-    controller = (root / "app.js").read_text(encoding="utf-8")
-    assert 'data-view-panel="materials"' in page
-    assert 'id="generate-pack"' in page
-    assert "textContent" in controller and "innerHTML" not in controller
-    client = (root / "api.js").read_text(encoding="utf-8")
-    assert "getPack" in client and "generatePackResume" in client
 
 
 def test_resume_revision_loop_and_idempotent_generation(setup):

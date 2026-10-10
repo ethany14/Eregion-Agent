@@ -65,7 +65,9 @@ class Discovery:
 
 
 @pytest.fixture
-def career(tmp_path):
+def career(tmp_path, monkeypatch):
+    # This fixture scripts discovery, scoring and writing; screening must be offline too.
+    monkeypatch.setenv('TYPESAFE_ENABLED', 'false')
     url=f"sqlite:///{(tmp_path/'career.db').as_posix()}"
     upgrade_database(url)
     db=create_database(url)

@@ -72,12 +72,13 @@ def test_unvalidated_resume_never_enters_cache(tmp_path):
         assert len(analyzer.calls) == 2
     finally: db.close()
 
-def test_eighteen_pending_requirements_run_three_parallel_chunks():
+@pytest.mark.parametrize('count,expected', [(18, [18]), (60, [24, 24, 12])])
+def test_matching_batches_keep_all_requirements_and_bound_large_jobs(count, expected):
     from job_agent.fast_match import assess_skills
     resume = ResumeAnalysis(summary='', skills=[], education=[], evidence=[])
     job = JobAnalysis(title='Role', summary='', responsibilities=[], requirements=[JobRequirement(
-        requirement_id=str(i), canonical_name=f'duty{i}', original_text=f'Duty {i}', level='required', category='responsibility') for i in range(18)])
-    meeting = Barrier(3, timeout=3); sizes = []
+        requirement_id=str(i), canonical_name=f'duty{i}', original_text=f'Duty {i}', level='required', category='responsibility') for i in range(count)])
+    meeting = Barrier(len(expected), timeout=3); sizes = []
     def analyze(schema, prompt, content):
         subset = JobAnalysis.model_validate_json(content.split('\n\nJob analysis:\n')[1])
         sizes.append(len(subset.requirements)); meeting.wait()
@@ -85,7 +86,8 @@ def test_eighteen_pending_requirements_run_three_parallel_chunks():
             job_skill=r.canonical_name, requirement_level='required', match_status='missing',
             resume_evidence=[], confidence=1) for r in subset.requirements], explanation='', recommendations=[])
     result = assess_skills(resume, job, analyze, FastDecisions())
-    assert sizes == [6, 6, 6] and len(result.matches) == 18
+    assert sorted(sizes) == sorted(expected)
+    assert [m.requirement_id for m in result.matches] == [r.requirement_id for r in job.requirements]
 
 def test_exact_skill_keeps_negation_expertise_and_tool_identity():
     from job_agent.fast_match import exact_skill_quote
@@ -272,17 +274,12 @@ def test_factual_only_revision_removes_claim_without_a_model():
     assert revised is not None
     assert [c.text for c in revised.claims()]==['Built Python APIs.']
 
-def test_code_and_model_verification_overlap_and_keep_rejection():
-    from agent_runtime.application_pack.parallel_checks import parallel_checks
+def test_rejected_draft_never_starts_extra_model_verification():
+    from agent_runtime.application_pack.verification import verify_material_resume
     from agent_runtime.application_pack.types import ArtifactVerification, ClaimIssue
-    meeting=Barrier(2,timeout=2)
-    def code():meeting.wait();return ArtifactVerification(passed=True)
-    def model():meeting.wait();return 'model verdict'
-    assert parallel_checks(code,model)[1]=='model verdict'
     reject=ArtifactVerification(passed=False,issues=[ClaimIssue(block_id='x',unsupported_text='x',reason='unsupported',cited_evidence_ids=[],revision_instruction='remove')])
-    def failure():raise RuntimeError('Ignored because code rejected the draft')
-    result,other=parallel_checks(lambda:reject,failure)
-    assert result is reject and other is None
+    def failure(state):raise AssertionError('A rejected draft must not incur a second model request')
+    assert verify_material_resume(None, SimpleNamespace(verify_resume=failure), lambda:reject) is reject
 
 def test_cached_fast_options_are_not_counted_as_provider_calls():
     from agent_runtime.telemetry import timing_update, application_perf_summary

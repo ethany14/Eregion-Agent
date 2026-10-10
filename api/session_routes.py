@@ -16,12 +16,7 @@ from agent_runtime.types import (
     ToolExecutionStatus,
     ToolSideEffect,
 )
-from api.session_dependencies import (
-    CAPABILITY_PROFILES,
-    CAPABILITY_SKILL_PROFILES,
-    SessionRuntime,
-    get_session_runtime,
-)
+from api.session_dependencies import CAPABILITY_PROFILES, SessionRuntime, get_session_runtime
 from api.session_schemas import (
     CancelSessionRequest,
     CreateSessionRequest,
