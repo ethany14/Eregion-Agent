@@ -2,6 +2,21 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {careerRoute,renderCareerResults} from '../web_app/career-chat.js';
 
+test('Jev uncertainty renders a range, unresolved count and unmet conditions without a false zero',()=>{
+  const el=(tag,text='',className='')=>({tag,text,className,children:[],append(...n){this.children.push(...n);},replaceChildren(){this.children=[];}});
+  const container=el('div');
+  renderCareerResults({container,el,button:t=>el('button',t),send:()=>{},review:()=>{},item:{career:true,jobs:[{
+    application_id:'range',title:'Analyst',match_score:null,score_range:[65,80],analysis_status:'needs_review',
+    requirement_counts:{matched:4,partial:1,missing:1,unknown:2},
+    match_overview:{confirmed_condition:[{requirement:'Work onsite',satisfied:false}]}
+  }]}});
+  const all=n=>[n,...n.children.flatMap(all)], texts=all(container).map(n=>n.text);
+  assert.ok(texts.includes('65–80'));
+  assert.ok(texts.includes('unresolved'));
+  assert.ok(texts.includes('Unmet conditions: Work onsite.'));
+  assert.ok(!texts.includes('0'));
+});
+
 test('career chat keeps credential, preview and memory calls on the exact browser attempt',()=>{
   const current={run_id:'task',career:true,application_run_id:'browser-1'},options={enabled:true,current};
   assert.equal(careerRoute('',undefined,options).url,'/api/career/tasks');

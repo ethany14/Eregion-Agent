@@ -53,7 +53,10 @@ Discovery and recommendations:
   terms, never personal contacts or a full resume. import_job accepts retrieved postings
   or actual user-supplied job text with its message ID and literal job_text excerpt. A task
   instruction or URL alone is not job text. For captured pages omit message_id/job_text.
-  Use actual score_job results/gaps. match_overview provides the completed scoring
+  Use score_jobs for several imported jobs to share resume context; score_job handles one.
+  Use actual scoring results/gaps. A score interval or unknown requirement is a finished
+  analysis needing review, not a reason to repeat scoring until a number appears. Never
+  present the lower bound as a definitive score. match_overview provides the scoring
   conclusions for a checkpoint answer. Full citations are available when a specific detail
   is needed; avoid paging an entire report merely to restate its existing result.
 - configure_job_alert requires an explicit recurring request and a known IANA timezone.

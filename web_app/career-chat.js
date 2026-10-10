@@ -43,18 +43,23 @@ export function renderCareerResults({container,item,el,button,send,review,busy=f
     const card=el('article','','card career-job'),head=el('div','','job-head'),title=el('div');
     const scored=job.match_score!==null&&job.match_score!==undefined;
     if(scored)head.append(scoreNode(el,Math.round(job.match_score),100,'Match score'));
+    else if(job.score_range?.length===2&&job.score_range.every(Number.isFinite))
+      head.append(scoreNode(el,job.score_range.map(Math.round).join('–'),100,'Estimated match range'));
     title.append(el('h3',job.title||'Saved job'),el('p',[job.company,job.location].filter(Boolean).join(' · '),'sub'));
     head.append(title);card.append(head);
     const counts=job.requirement_counts;
     if(counts){
       const line=el('p','','counts');
-      for(const [key,label] of [['matched','matched'],['partial','partial'],['missing','missing'],['needs_confirmation','to confirm']]){
-        if(!counts[key]&&key==='needs_confirmation')continue;
+      for(const [key,label] of [['matched','matched'],['partial','partial'],['missing','missing'],['needs_confirmation','to confirm'],['unknown','unresolved']]){
+        if(!counts[key]&&['needs_confirmation','unknown'].includes(key))continue;
         const part=el('span');part.append(el('b',String(counts[key]||0)),el('span',label));line.append(part);
       }
       card.append(line);
     }
     if(job.gaps?.length)card.append(el('p',`Gaps: ${job.gaps.join(', ')}.`,'gaps'));
+    if(job.analysis_status==='needs_review')card.append(el('p','Some requirements remain uncertain. Review the evidence before relying on this range.','sub'));
+    const unmet=job.match_overview?.confirmed_condition?.filter(c=>c.satisfied===false)||[];
+    if(unmet.length)card.append(el('p',`Unmet conditions: ${unmet.map(c=>c.requirement).join('; ')}.`,'gaps'));
     const recommendation=item.recommendations?.find(r=>r.application_id===job.application_id);
     if(recommendation){
       const why=el('div','','recommendation-reason');

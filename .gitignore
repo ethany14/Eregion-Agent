@@ -8,6 +8,8 @@ __pycache__/
 *.sqlite
 *.sqlite-*
 *.sqlite3
+*.sqlite3-*
+/.cache/
 .pytest*/
 .release-local/
 uploads/

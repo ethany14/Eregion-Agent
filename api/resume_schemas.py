@@ -39,13 +39,16 @@ class AnalyzeSavedApplicationRequest(ResumeApiModel):
 
 class QuickAnalysisResponse(ResumeApiModel):
     analysis_id: str
-    status: Literal["completed"]
+    status: Literal["completed", "needs_review"]
     resume_id: str
     model_calls: int = Field(ge=0)
     main_model_calls: int = Field(default=0, ge=0)
     fast_model_calls: int = Field(default=0, ge=0)
     latency_seconds: float = Field(ge=0)
-    match_score: float
+    match_score: float | None
+    score_range: list[float | None] | None = None
+    unknown_requirements: list[dict[str, Any]] = Field(default_factory=list)
+    confirmed_conditions: list[dict[str, Any]] = Field(default_factory=list)
     matched_requirements: list[dict[str, Any]]
     partial_requirements: list[dict[str, Any]]
     missing_requirements: list[dict[str, Any]]

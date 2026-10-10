@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import hashlib
 import json
+import time
 
 from agent_runtime.workspace.repository import JobWorkspaceRepository
 from agent_runtime.workspace.types import ApplicationStatus
@@ -33,6 +34,10 @@ class WorkspaceAnalysisService:
         signature = getattr(self._fit_service,'cache_signature',None)
         return signature() if callable(signature) else 'custom-fit-service'
 
+    def uses_jev(self):
+        selected=getattr(self._fit_service,'uses_jev',None)
+        return bool(selected and selected())
+
     async def analyze(
         self,
         application_id: str,
@@ -41,6 +46,8 @@ class WorkspaceAnalysisService:
         resume_text: str,
         expected_version: int,
         resume_id: str | None = None,
+        candidate_facts=None,
+        _result=None,
     ):
         current = self._workspace.require_snapshot_for_application(
             application_id, snapshot_id
@@ -52,14 +59,19 @@ class WorkspaceAnalysisService:
 
         # The persisted result belongs to exact inputs and model/prompt/schema
         # configuration, so a new chat or server process need not score it again.
-        cache_key = (hashlib.sha256(json.dumps([snapshot_id, resume_text,
+        cache_key = (hashlib.sha256(json.dumps([snapshot_id, resume_text, candidate_facts,
             self.cache_signature()], ensure_ascii=False).encode()).hexdigest()
             if callable(getattr(self._fit_service, 'cache_signature', None)) else None)
         cache_lookup = getattr(self._workspace, 'cached_fit_analysis', None)
         cached = cache_lookup(application_id, cache_key) if cache_key and callable(cache_lookup) else None
+        if cached and self.uses_jev():
+            report=next((a.content for a in cached if a.artifact_type.value=='match_report'),{})
+            if report.get('algorithm')!='jev-only' or (report.get('valid_until')or 0)<=time.time():
+                cached=None
         if cached and current.status not in {ApplicationStatus.SAVED, ApplicationStatus.ANALYZING, ApplicationStatus.ANALYSIS_FAILED}:
             logger.info('Reused saved fit analysis: application=%s model_calls=0', application_id)
-            return current, None, 'completed', cached
+            report=next((a.content for a in cached if a.artifact_type.value=='match_report'),{})
+            return current, None, report.get('analysis_status','completed'), cached
 
         analyzing = self._workspace.transition_status(
             application_id,
@@ -68,9 +80,10 @@ class WorkspaceAnalysisService:
         )
         try:
             snapshot = self._workspace.current_snapshot(application_id)
-            result = await self._fit_service.analyze(
+            result = _result or await self._fit_service.analyze(
                 resume_text=resume_text,
                 job_description=snapshot.cleaned_job_description,
+                **({'candidate_facts':candidate_facts} if self.uses_jev() else {}),
             )
             if self._evidence is not None:
                 imported = self._evidence.import_resume_evidence(
@@ -111,6 +124,8 @@ class WorkspaceAnalysisService:
                 result.skill_match.missing_required_requirements
                 or result.skill_match.missing_preferred_requirements
                 or result.skill_match.confirmation_requirements
+                or result.skill_match.overall_score is None
+                or any(m.match_status=='confirmed_condition' and m.condition_satisfied is False for m in result.skill_match.matches)
             )
             ready = self._workspace.transition_status(
                 application_id,
@@ -122,7 +137,7 @@ class WorkspaceAnalysisService:
                 expected_version=state.version,
             )
             # Analysis-only executions are not persisted Run workflows.
-            return ready, None, "completed", artifacts
+            return ready, None, result.status, artifacts
         except Exception as exc:
             logger.exception("Workspace fit analysis failed: %s", type(exc).__name__)
             latest = self._workspace.get_application(application_id)
@@ -134,3 +149,20 @@ class WorkspaceAnalysisService:
                     error_code="fit_analysis_failed",
                 )
             raise
+
+    async def analyze_many(self, applications, *, resume_text, candidate_facts=None):
+        if not applications or len(applications)>8 or len(set(applications))!=len(applications):
+            raise ValueError('Choose one to eight unique applications.')
+        snapshots={}
+        for identifier in applications:
+            app=self._workspace.get_application(identifier)
+            snapshot=self._workspace.current_snapshot(identifier)
+            snapshots[identifier]=(app,snapshot)
+        jobs=[{'id':identifier,'source_version':snapshot.snapshot_id,'job_description':snapshot.cleaned_job_description}
+              for identifier,(app,snapshot)in snapshots.items()]
+        values=await self._fit_service.analyze_many(resume_text=resume_text,jobs=jobs,candidate_facts=candidate_facts)
+        result={}
+        for identifier,(app,snapshot)in snapshots.items():
+            result[identifier]=await self.analyze(identifier,snapshot_id=app.current_snapshot_id,
+                expected_version=app.version,resume_text=resume_text,candidate_facts=candidate_facts,_result=values[identifier])
+        return result

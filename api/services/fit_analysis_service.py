@@ -13,6 +13,7 @@ from contextvars import copy_context
 from copy import deepcopy
 from threading import RLock
 from time import perf_counter
+import time
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -38,10 +39,12 @@ class _AnalysisCache:
         self.limit, self.lock = limit, RLock()
         self.values, self.pending = OrderedDict(), {}
 
-    def get(self, key, compute):
+    def get(self, key, compute, *, valid=None):
         if not self.limit:
             return compute(), False
         with self.lock:
+            if key in self.values and valid is not None and not valid(self.values[key]):
+                del self.values[key]
             if key in self.values:
                 self.values.move_to_end(key)
                 return deepcopy(self.values[key]), True
@@ -87,7 +90,7 @@ class FitAnalysisResult(BaseModel):
 
 
 class FitAnalysisService:
-    """Parallel extraction with validated reuse; the scoring rules stay shared."""
+    """Route fit scoring to pure Jev or the original analysis pipeline."""
 
     _STEPS = (
         Step.VALIDATE_INPUT,
@@ -105,15 +108,23 @@ class FitAnalysisService:
         cache_size: int = 128,
         cache_namespace: Callable[[], str] | None = None,
         analysis_cache=None,
+        jev_config=None,
+        jev_transport=None,
+        jev_enabled=None,
     ) -> None:
         self._handler = handler or JobAgentStepHandler(analysis_cache=analysis_cache)
         self._timer = timer
         self._cache = _AnalysisCache(cache_size)
+        self._analysis_cache = analysis_cache
+        self._jev_config, self._jev_transport = jev_config, jev_transport
+        self._jev_enabled = jev_enabled
         self._namespace = cache_namespace or getattr(
             self._handler, 'analysis_cache_namespace', lambda: 'custom-handler'
         )
 
     def cache_signature(self) -> str:
+        if self.uses_jev():
+            return 'jev-only:' + self._jev_settings().signature()
         # Exact prompts/schemas and model configuration invalidate old results.
         content = [
             FIT_ANALYSIS_VERSION, PROMPT_VERSION, SCHEMA_VERSION,
@@ -122,14 +133,37 @@ class FitAnalysisService:
         ]
         return hashlib.sha256(json.dumps(content, sort_keys=True).encode()).hexdigest()
 
-    async def analyze(self, *, resume_text: str, job_description: str) -> FitAnalysisResult:
+    def uses_jev(self):
+        from job_agent.jev_fit.settings import enabled
+        return enabled() if self._jev_enabled is None else bool(self._jev_enabled() if callable(self._jev_enabled) else self._jev_enabled)
+
+    def _jev_settings(self):
+        from job_agent.jev_fit.settings import Settings, database_cache_path
+        return self._jev_config or Settings.load(cache_path=database_cache_path(self._analysis_cache))
+
+    async def analyze(self, *, resume_text: str, job_description: str, candidate_facts=None) -> FitAnalysisResult:
         return await asyncio.to_thread(
             self._analyze_sync,
             resume_text=resume_text,
             job_description=job_description,
+            candidate_facts=candidate_facts,
         )
 
-    def _analyze_sync(self, *, resume_text: str, job_description: str) -> FitAnalysisResult:
+    def _analyze_sync(self, *, resume_text: str, job_description: str, candidate_facts=None) -> FitAnalysisResult:
+        if self.uses_jev():
+            config=self._jev_settings()
+            from job_agent.jev_fit.settings import digest
+            # Short-lived top-level reuse also shares concurrent identical calls.
+            # Persisted decision expiry remains authoritative across processes.
+            key=('jev-fit',config.signature(),digest([resume_text,job_description,candidate_facts or {}]))
+            data,reused=self._cache.get(key,lambda:self._jev_many_sync(resume_text=resume_text,
+                jobs=[{'id':'single','job_description':job_description}],candidate_facts=candidate_facts)['single'],
+                valid=lambda result:(result.skill_match.valid_until or 0)>time.time())
+            if reused:
+                return data.model_copy(update={'analysis_id':f'analysis-{uuid4()}', 'model_calls':0,
+                    'main_model_calls':0,'fast_model_calls':0,'decision_routing':[],
+                    'latency_seconds':0,'stage_seconds':{},'cache_hits':['jev_fit']})
+            return data
         started = self._timer()
         state = AgentState(
             run_id=f"analysis-{uuid4()}",
@@ -160,6 +194,19 @@ class FitAnalysisService:
             result.model_calls, result.latency_seconds, result.cache_hits, result.stage_seconds,
         )
         return result
+
+    def _jev_many_sync(self, *, resume_text, jobs, candidate_facts=None):
+        from job_agent.jev_fit.service import JevFitService
+        service=JevFitService(self._jev_settings(),owner=getattr(self._analysis_cache,'owner','local'),
+                              transport=self._jev_transport)
+        values=service.analyze_many(resume_text=resume_text,jobs=jobs,candidate_facts=candidate_facts)
+        return {key:FitAnalysisResult(**value)for key,value in values.items()}
+
+    async def analyze_many(self, *, resume_text, jobs, candidate_facts=None):
+        if self.uses_jev():
+            return await asyncio.to_thread(self._jev_many_sync,resume_text=resume_text,jobs=jobs,candidate_facts=candidate_facts)
+        values=await asyncio.gather(*(self.analyze(resume_text=resume_text,job_description=j['job_description'])for j in jobs))
+        return {j['id']:value for j,value in zip(jobs,values)}
 
     def _step(self, step: Step, state: AgentState) -> AgentState:
         state = AgentState.model_validate({**state.model_dump(mode='python'), 'step': step})

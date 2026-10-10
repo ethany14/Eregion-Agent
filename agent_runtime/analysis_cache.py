@@ -105,6 +105,9 @@ _warming, _warm_lock = set(), RLock()
 def warm_resume(sessions, text, *, owner='local'):
     """Bounded best-effort precomputation. Upload responses never await a model."""
     import os
+    from job_agent.jev_fit.settings import enabled
+    if enabled():
+        return  # Jev-only fit must not launch an unrequested main-model warmup.
     if os.getenv('JOB_AGENT_ANALYSIS_WARMUP', '1').lower() in {'0', 'false', 'off'}:
         return
     key = cache_key('warmup', owner, text)

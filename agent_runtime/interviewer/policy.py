@@ -34,7 +34,7 @@ class InterviewPriorityPolicy:
             EvidenceAssessmentStatus.NOT_APPLICABLE, EvidenceAssessmentStatus.EVIDENCE_CANDIDATE,
         }:
             return False
-        if item.match_status == "matched":
+        if item.match_status in {"matched", "confirmed_condition"}:
             return False
         return not _EXCLUDED_TARGETS.search(item.original_requirement_text)
 

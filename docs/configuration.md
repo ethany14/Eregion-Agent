@@ -66,9 +66,9 @@ site coordination, waiting questions, and review boundaries still apply.
 
 ## Optional Jev acceleration
 
-Jev handles bounded decisions inside existing tools. The main model remains the
-planner. Leave both switches disabled until you want the additional provider and
-its data scope.
+The main model handles conversation, planning and writing. The general Jev switch
+also selects the fit-scoring engine; the career helper switch does not control
+fit scoring.
 
 ```dotenv
 TYPESAFE_API_KEY=your-typesafe-key
@@ -79,17 +79,44 @@ TYPESAFE_CAREER_ENABLED=false
 TYPESAFE_TIMEOUT=2.5
 ```
 
-`TYPESAFE_ENABLED=true` enables general option mapping and job screening.
-`TYPESAFE_CAREER_ENABLED=true` additionally enables eligible memory, question,
-and evidence-matching decisions; it also requires the general switch.
+`TYPESAFE_ENABLED=true` selects **Jev-only fit scoring**, including JD requirement
+classification, evidence decisions and citation checks. This applies to chat's
+`score_job` / `score_jobs`, quick analysis and saved-job analysis. There is no
+main-model fallback in these scoring requests. Provider failures remain failures;
+uncertain decisions produce unresolved requirements and a score interval rather
+than an invented exact score. Setting it to `false` selects the original analyze
+pipeline. Resume upload warmup skips main-model extraction while Jev is enabled.
 
-General requests can include observed choices, confirmed source answers, job
+The switch also enables general option mapping and job screening.
+`TYPESAFE_CAREER_ENABLED=true` additionally enables eligible memory, question,
+and legacy workflow evidence-matching helpers; it also requires the general switch.
+
+Fit-specific settings:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `TYPESAFE_FIT_MODEL` | `jev-1.13.0` | Exact Jev release. When unset, an exact `TYPESAFE_DEFAULT_MODEL` is used; its `jev-latest` / `jev-preview` aliases resolve to the tested `jev-1.13.0` for fit scoring. |
+| `TYPESAFE_FIT_TIMEOUT` | `12` seconds | Timeout for each fit request, from 0.1 to 60 seconds. No automatic paid retries. |
+| `TYPESAFE_FIT_CACHE_PATH` | Database sibling ending in `.jev-fit.sqlite3`; otherwise `.cache/jev-fit.sqlite3` | Persistent local decision cache. Relative overrides resolve from the server's working directory. |
+
+The cache uses exact resume, JD, supplied facts, owner, model release and scoring
+code/prompt identities. Decisive answers expire after 24 hours; uncertain answers
+after 5 minutes. Changes invalidate reuse. Only hashes, answers and provenance
+are stored in the decision cache; application artifacts retain the actual sources.
+Chat can batch up to eight imported jobs for the same candidate. Compatible
+questions share a request while each job retains its own result and citations.
+Paid requests and tokens are accounted once, including shared requests.
+
+Fit requests send extracted resume text, the supplied JD and scoped candidate
+facts to Typesafe. A combined input above 60,000 UTF-8 bytes is rejected without
+truncation. General helper requests can include observed choices, confirmed source answers, job
 snippets, and search preferences. Career requests can include extracted resume
 evidence and scoped confirmed memories. These may contain personal information.
 The Jev adapter does not upload resume files, screenshots, passwords, or codes.
 
-The timeout accepts 0.1–10 seconds. Uncertain, invalid, or failed fast decisions
-fall back to existing processing. A cost gate can skip Jev even when enabled.
+The general helper timeout accepts 0.1–10 seconds. Those helpers can fall back
+or skip Jev under their existing cost gate. **Fit scoring uses the separate
+timeout above and never falls back to the main model while enabled.**
 See [Jev and performance](jev-benchmark.md) for measurements and limitations.
 
 ## Data and credentials

@@ -3,10 +3,56 @@
 [Home](../README.md) · [Configuration](configuration.md) ·
 [Architecture](agent-loop.md)
 
-Jev is an optional accelerator for small decisions inside Eregion's tools. It
-does not replace the main model's planning, conversation, writing, interview
-evaluation, or factual verification. Enabling it does not guarantee fewer calls
-or faster end-to-end work.
+With `TYPESAFE_ENABLED=true`, chat and API fit analysis use a Jev-only scorer with
+persistent decision caching and multi-job batching. With the switch off, those
+entry points use the original analyzer. Jev also accelerates bounded decisions
+in other tools. Planning, conversation, writing, interview evaluation and material
+verification still use the main model.
+
+## Jev-only fit scoring
+
+Every semantic scoring question is a native yes/no decision: identify JD
+requirements, distinguish personal conditions, test full/related evidence and
+verify proposed citations. Arithmetic and exact source spans are local. Ambiguous
+answers retain their weight in a score interval; personal conditions stay separate
+from skill alignment. One focused pass can resolve uncertainty. There is no
+main-model fallback or unbounded retry loop.
+
+The persistent cache includes the exact resume, JD, supplied facts, owner,
+model release and implementation identity. Single and batch entry points share
+decisions, while compatible questions in a batch share resume context. The batch
+tool accepts up to eight jobs. Unknowns have a shorter cache lifetime than decisive
+answers. See [configuration](configuration.md#optional-jev-acceleration).
+
+Production integration was exercised on 2026-10-10 with complete synthetic Avery
+and Riley resumes, real `jev-1.13.0` requests, an isolated database, the saved-job
+HTTP endpoints, production chat tools and provider usage accounting. Final measured three-job pair:
+
+| Mode | Requests | Input tokens | Output tokens | Elapsed |
+| --- | ---: | ---: | ---: | ---: |
+| Three independent Jev scores, cold | 15 | 52,955 | 7,205 | 4.565 s |
+| Three jobs sharing a Jev batch, cold | 7 | 27,499 | 4,250 | 1.986 s |
+| Repeated batch, new service with persistent cache | 0 | 0 | 0 | 0.148 s |
+
+That batch used 47.2% fewer total tokens and 56.5% less wall time than sequential
+independent requests in this pair. It is not a percentile, a comparison with the
+main-model analyzer, or a guarantee for unrelated jobs. One certification changed
+from unresolved in an independent request to missing in the batch; other compared
+requirement statuses agreed. Riley's incomplete bachelor's and future master's
+remained partial; unresolved evidence kept a score interval. All scoring requests
+used zero primary-model calls. This is limited integration evidence, not a new
+accuracy benchmark or a universal resume-layout claim.
+
+The [integration measurements](benchmarks/jev-only-fit-2026-10-10.json) include
+unique task IDs, source-code hashes and per-phase token accounting.
+
+Run the deterministic routing, source-boundary, cache, failure and accounting
+checks without provider calls:
+
+```sh
+python -m unittest discover -s tests -p test_jev_fit_production.py -v
+node --test tests/test_career_chat.mjs
+```
 
 ## Where the fast path applies
 
@@ -16,16 +62,16 @@ or faster end-to-end work.
 | Job screening | Prioritize observed posting snippets | Screening is advisory and is not a verified fit score. |
 | Memory retrieval | Rank already permitted confirmed memories | Uncertain selection returns the original candidate set; it creates no new facts. |
 | Question classification | Choose an existing semantic category | Sensitive facts, consent, and ambiguous questions retain their normal checks. |
-| Requirement matching | Select evidence for eligible simple skills | Complex, partial, educational, duration, or uncertain requirements retain the main path. |
+| Legacy workflow matching helper | Select evidence for eligible simple skills | Kept for older workflow workers; it is separate from Jev-only chat/API scoring. |
 
 The adapter validates response IDs and distributions, uses a short timeout, and
 falls back on invalid or uncertain output. It caches exact decisions briefly and
 shares identical in-flight requests. Browser effects are never shared as cached
 semantic decisions.
 
-## Current matching cost gate
+## Legacy matching helper cost gate
 
-The matcher estimates the remaining main-model batches before calling Jev. The
+The legacy worker's matcher estimates remaining main-model batches before calling Jev. The
 fast path requires both an opportunity to remove a main batch and enough request
 size savings to justify the added request. A second evidence-verification batch
 also requires a potential reduction in remaining main-model work.

@@ -96,12 +96,17 @@ function addRequirementGroup(title, items, className) {
   elements.details.append(section);
 }
 function render(result) {
-  const score = Math.round(Number(result.match_score) || 0); elements.score.textContent = `${score}%`; elements.scoreRing.style.setProperty("--score", `${score * 3.6}deg`);
-  elements.resultTitle.textContent = score >= 80 ? "Strong alignment" : score >= 60 ? "Promising fit" : "A stretch role";
+  const known = result.match_score !== null && result.match_score !== undefined;
+  const score = known ? Math.round(Number(result.match_score)) : null;
+  const range = result.score_range?.length === 2 && result.score_range.every(Number.isFinite) ? result.score_range.map(Math.round).join('–') : null;
+  elements.score.textContent = known ? `${score}%` : range ? `${range}%` : '—'; elements.scoreRing.style.setProperty("--score", `${known ? score * 3.6 : 0}deg`);
+  elements.resultTitle.textContent = !known ? "Evidence needs review" : score >= 80 ? "Strong alignment" : score >= 60 ? "Promising fit" : "A stretch role";
   elements.resultStatus.textContent = "Compared with your default resume";
   elements.matched.textContent = String(result.matched_requirements.length); elements.partial.textContent = String(result.partial_requirements.length); elements.missing.textContent = String(result.missing_requirements.length);
   elements.suggestions.replaceChildren(); for (const suggestion of result.suggestions) { const item = document.createElement("li"); item.textContent = suggestion; elements.suggestions.append(item); }
   elements.details.replaceChildren(); addRequirementGroup("Matched", result.matched_requirements, "matched"); addRequirementGroup("Partial", result.partial_requirements, "partial"); addRequirementGroup("Missing evidence", result.missing_requirements, "missing"); addRequirementGroup("Confirm before applying", result.confirmation_requirements, "confirm");
+  addRequirementGroup("Unresolved evidence", result.unknown_requirements, "confirm");
+  addRequirementGroup("Known unmet conditions", result.confirmed_conditions?.filter(item => item.condition_satisfied === false), "missing");
   elements.result.hidden = false; elements.result.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 function workspacePayload() {
@@ -139,7 +144,9 @@ function quickResultFromAnalysis(analysis) {
   const suggestions = missing.slice(0, 3).map((item) => `Add concrete resume evidence for ${requirementName(item)} if you have it; otherwise keep it as a gap.`);
   suggestions.push(...partial.slice(0, 2).map((item) => `Strengthen ${requirementName(item)} with a specific example or outcome.`));
   if (!suggestions.length) suggestions.push("Keep the strongest matched requirements prominent and preserve factual evidence links.");
-  return { match_score: report.overall_score || 0, matched_requirements: matched,
+  return { match_score: report.overall_score ?? null, score_range: report.score_range,
+    unknown_requirements: matches.filter(item => item.match_status === 'unknown'),
+    confirmed_conditions: matches.filter(item => item.match_status === 'confirmed_condition'), matched_requirements: matched,
     partial_requirements: partial, missing_requirements: missing,
     confirmation_requirements: confirmations, suggestions };
 }

@@ -176,7 +176,9 @@ svg.i { width: 17px; height: 17px; flex: none; fill: none; stroke: currentColor;
 .model-error p { color: var(--ink); }
 
 /* Job match */
-.job-head { display: flex; align-items: flex-end; gap: 22px; }
+.job-head { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 22px; }
+.job-head > div { flex: 1 1 200px; min-width: 0; }
+.job-head .score { flex-shrink: 0; white-space: nowrap; }
 .score { display: flex; align-items: flex-start; font-size: 60px; font-weight: 300; letter-spacing: -.04em; line-height: .95; color: var(--ink); }
 .score sup { font-size: 14px; font-weight: 400; letter-spacing: 0; color: var(--faint); margin: 6px 0 0 4px; line-height: 1; }
 .job-head .sub, .card .sub { margin: 2px 0 0; font-size: 14px; color: var(--muted); }

@@ -132,7 +132,8 @@ class SkillEvidence(AnalysisModel):
     requirement_id: NonEmptyString
     job_skill: NonEmptyString = Field(description="Skill named in the job analysis.")
     requirement_level: Literal["required", "preferred"]
-    match_status: Literal["matched", "partial", "missing", "needs_confirmation"]
+    match_status: Literal["matched", "partial", "missing", "needs_confirmation", "unknown", "confirmed_condition"]
+    condition_satisfied: bool | None = None
     match_reason: str | None = None
     supported_years: float | None = Field(default=None, ge=0)
     resume_evidence: list[str] = Field(
@@ -152,7 +153,7 @@ class SkillAssessment(AnalysisModel):
 class ScoreBreakdown(AnalysisModel):
     required_score: float | None = Field(default=None, ge=0, le=100)
     preferred_score: float | None = Field(default=None, ge=0, le=100)
-    overall_score: float = Field(ge=0, le=100)
+    overall_score: float | None = Field(ge=0, le=100)
 
 
 class SkillMatch(SkillAssessment):
@@ -162,12 +163,17 @@ class SkillMatch(SkillAssessment):
     missing_preferred_requirements: list[MissingRequirement] = Field(
         description="Preferred requirements that are missing or only partially supported."
     )
-    overall_score: float = Field(
+    overall_score: float | None = Field(
         ge=0, le=100,
         description="Deterministic weighted skill alignment, not a hiring probability.",
     )
     score_breakdown: ScoreBreakdown
     confirmation_requirements: list[JobRequirement] = Field(default_factory=list)
+    score_range: list[float | None] | None = None
+    analysis_status: Literal["completed", "needs_review"] = "completed"
+    algorithm: str = "legacy"
+    valid_until: float | None = None
+    decision_details: dict = Field(default_factory=dict)
 
     @model_validator(mode="before")
     @classmethod

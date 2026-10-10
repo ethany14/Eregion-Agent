@@ -11,6 +11,12 @@ from api.services.fit_analysis_service import FitAnalysisService
 from job_agent.schemas import JobAnalysis, ResumeAnalysis, SkillMatch
 
 
+@pytest.fixture(autouse=True)
+def legacy_fit_engine(monkeypatch):
+    # These tests exercise the original pipeline, independent of local .env.
+    monkeypatch.setenv('TYPESAFE_ENABLED', 'false')
+
+
 class AnalysisOnlyHandler:
     def __init__(self) -> None:
         self.steps: list[Step] = []

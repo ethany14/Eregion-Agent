@@ -212,7 +212,7 @@ async def quick_analysis(
         raise HTTPException(status_code=502, detail="The agent could not analyze this job.")
     matches = skill_match.get("matches") or []
     grouped = {name: [item for item in matches if item.get("match_status") == name]
-               for name in ("matched", "partial", "missing", "needs_confirmation")}
+               for name in ("matched", "partial", "missing", "needs_confirmation", "unknown", "confirmed_condition")}
     missing = [*(skill_match.get("missing_required_requirements") or []),
                *(skill_match.get("missing_preferred_requirements") or [])]
     confirmations = skill_match.get("confirmation_requirements") or []
@@ -228,13 +228,18 @@ async def quick_analysis(
         f"Confirm {_requirement_label(item)} before applying."
         for item in confirmations[:2]
     )
+    suggestions.extend(
+        f"Review the unresolved evidence for {_requirement_label(item)}; it is not a confirmed match or gap."
+        for item in grouped['unknown'][:2]
+    )
     if not suggestions:
         suggestions.append("Keep the strongest matched requirements prominent and preserve factual evidence links.")
     return QuickAnalysisResponse(
-        analysis_id=result.analysis_id, status="completed", resume_id=resume.resume_id,
+        analysis_id=result.analysis_id, status=result.status, resume_id=resume.resume_id,
         model_calls=result.model_calls, latency_seconds=result.latency_seconds,
         main_model_calls=result.main_model_calls, fast_model_calls=result.fast_model_calls,
-        match_score=float(skill_match.get("overall_score") or 0),
+        match_score=skill_match.get("overall_score"), score_range=skill_match.get('score_range'),
+        unknown_requirements=grouped['unknown'],confirmed_conditions=grouped['confirmed_condition'],
         matched_requirements=grouped["matched"], partial_requirements=grouped["partial"],
         missing_requirements=missing, confirmation_requirements=confirmations,
         suggestions=suggestions,

@@ -575,8 +575,11 @@ def calculate_score_breakdown(
     grouped_values: dict[str, list[float]] = {}
     grouped_levels: dict[str, set[str]] = {}
 
+    if any(item.match_status == "unknown" for item in matches):
+        return ScoreBreakdown(overall_score=None)
+
     for item in matches:
-        if item.match_status == "needs_confirmation":
+        if item.match_status in {"needs_confirmation", "confirmed_condition"}:
             continue
         requirement = requirements_by_id.get(item.requirement_id)
         group_id = (

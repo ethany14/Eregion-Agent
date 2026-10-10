@@ -36,7 +36,8 @@ class Analyzer:
                 resume_evidence=['Python'], confidence=1) for r in job.requirements], explanation='Grounded', recommendations=[])
         raise AssertionError(schema)
 
-def test_fit_cache_survives_restart_and_is_reused_by_workflow(tmp_path):
+def test_fit_cache_survives_restart_and_is_reused_by_workflow(tmp_path, monkeypatch):
+    monkeypatch.setenv('TYPESAFE_ENABLED', 'false')
     db = create_database('sqlite:///' + (tmp_path/'analysis.db').as_posix(), create_schema_for_tests=True)
     analyzer = Analyzer()
     def handler():

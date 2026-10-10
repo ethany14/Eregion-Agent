@@ -41,6 +41,8 @@ TOOLS = [
     function('list_jobs','Inspect saved jobs from the old workspace as well as this task.',{'query':TEXT},[]),
     function('inspect_job','Read a saved job, score, gaps and linked artifacts.',APP),
     function('score_job','Run the existing resume/JD match analysis and persist the actual score and requirement gaps.',APP),
+    function('score_jobs','Compare up to eight imported jobs against the current resume in one batch. Uses shared Jev context when enabled; preserves uncertainty and separate results.',
+        {'application_ids':{'type':'array','minItems':1,'maxItems':8,'uniqueItems':True,'items':TEXT}},['application_ids']),
     function('generate_materials','Prepare verified drafts, reusing saved drafts for unchanged inputs. Only when the user explicitly requests a fresh/new set, use fresh=true with their message_id; preserves old documents. Use revise_material for feedback on an existing document.',
         {**APP,'artifacts':{'type':'array','minItems':1,'maxItems':2,'items':{'type':'string','enum':['tailored_resume','cover_letter']}},
             'fresh':{'type':'boolean'},'message_id':TEXT},['application_id','artifacts']),
@@ -85,7 +87,7 @@ class CareerHarness:
         if not configured_decisions().enabled:
             tools = [t for t in tools if t['function']['name'] != 'screen_jobs']
         if self.recommendation_run(state):
-            allowed=BROWSER_NAMES|{'search_jobs','screen_jobs','read_job','import_job','inspect_job','score_job','recommend_job'}
+            allowed=BROWSER_NAMES|{'search_jobs','screen_jobs','read_job','import_job','inspect_job','score_job','score_jobs','recommend_job'}
             return [t for t in tools if t['function']['name'] in allowed]
         return tools
 
@@ -178,6 +180,10 @@ class CareerHarness:
         if match:
             result.update(self.requirement_summary(match.content))
             result['match_overview'] = self.match_overview(match.content)
+            result.update(score_range=match.content.get('score_range'),
+                analysis_status=match.content.get('analysis_status','completed'),
+                score_algorithm=match.content.get('algorithm','legacy'),
+                score_valid_until=match.content.get('valid_until'))
         if detail:
             result.update(description=rt.workspace.current_snapshot(application_id).cleaned_job_description,
                 match_report=match.content if match else None)
@@ -187,10 +193,13 @@ class CareerHarness:
     def match_overview(report):
         matches = [m for m in report.get('matches', []) if isinstance(m, dict)]
         result = {'explanation': report.get('explanation', ''),
-                  'detail_hint': 'This is the completed scoring result. Full citations remain in match_report; read a specific path only when a detail is needed.'}
-        for status in ('matched', 'partial', 'missing', 'needs_confirmation'):
+                  'score_range':report.get('score_range'),
+                  'analysis_status':report.get('analysis_status','completed'),
+                  'detail_hint': 'Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.'}
+        for status in ('matched', 'partial', 'missing', 'needs_confirmation', 'unknown', 'confirmed_condition'):
             rows = [m for m in matches if m.get('match_status') == status]
-            result[status] = [{'requirement': m.get('job_skill'), 'level': m.get('requirement_level')}
+            result[status] = [{'requirement': m.get('job_skill'), 'level': m.get('requirement_level'),
+                              **({'satisfied':m.get('condition_satisfied')} if status=='confirmed_condition' else {})}
                               for m in (rows[:8] if status == 'matched' else rows)]
         return result
 
@@ -199,7 +208,7 @@ class CareerHarness:
         """Counts by match status and the first few gaps, for the job card in chat."""
         matches = [m for m in report.get('matches') or [] if isinstance(m,dict)]
         counts = {status:sum(m.get('match_status')==status for m in matches)
-            for status in ('matched','partial','missing','needs_confirmation')}
+            for status in ('matched','partial','missing','needs_confirmation','unknown','confirmed_condition')}
         missing = [*(report.get('missing_required_requirements') or []),*(report.get('missing_preferred_requirements') or [])]
         gaps = list(dict.fromkeys(str(m.get('canonical_name')).strip() for m in missing
             if isinstance(m,dict) and str(m.get('canonical_name') or '').strip()))[:3]
@@ -322,8 +331,13 @@ class CareerHarness:
         return hashlib.sha256(json.dumps([state['task_id'],message,action,args],sort_keys=True).encode()).hexdigest()
 
     def analysis_fingerprint(self,resume_text,snapshot_id):
-        inputs = [resume_text,snapshot_id,self.analysis.cache_signature()]
+        inputs = [resume_text,snapshot_id,self.analysis.cache_signature(),self.fit_facts()]
         return hashlib.sha256(json.dumps(inputs).encode()).hexdigest()
+
+    def fit_facts(self):
+        profile=self.applications.repository.saved_candidate().get('profile',{})
+        # Location is explicit saved data, never a proxy for citizenship/permission.
+        return {k:profile[k]for k in ('city','country')if profile.get(k)} or None
 
     def execute(self,task_id,name,args,*,call_id):
         state = self.repository.get(task_id)
@@ -353,6 +367,12 @@ class CareerHarness:
             if job['status'] in {'applied','interviewing','offer','rejected','withdrawn','archived'}:
                 raise ValueError('This job is already applied to or closed; look for a new opportunity.')
             if job['match_score'] is None:raise ValueError('This job has no verified match score.')
+            if job.get('score_algorithm')=='jev-only':
+                import time
+                if (job.get('score_valid_until')or 0)<=time.time():raise ValueError('This score has expired. Score the job again before recommending it.')
+            if any(m.get('match_status')=='confirmed_condition' and m.get('condition_satisfied')is False
+                   for m in (job.get('match_report')or {}).get('matches',[])):
+                raise ValueError('A confirmed personal condition is not satisfied; this job cannot be recommended as eligible.')
             retrieved=next((j for j in state.get('retrieved_jobs',{}).values() if j.get('url') and job_key(j['url'])==job_key(job['url'])),None)
             if not retrieved:raise ValueError('Read the current posting before recommending it.')
             if not isinstance(args['reason'],str) or not 1<=len(args['reason'])<=2000 or not isinstance(args['caveats'],str) or len(args['caveats'])>2000:
@@ -510,15 +530,26 @@ class CareerHarness:
             return {'material_choices':self.material_choices(args['application_id']),
                     'materials':[self.materials(pack.pack_id,detail=False) for pack in packs],
                     **self.job_summary(args['application_id'],detail=True)}
+        if name=='score_jobs':
+            identifiers=args['application_ids']
+            if not identifiers or len(identifiers)>8 or len(set(identifiers))!=len(identifiers):
+                raise ValueError('Choose one to eight unique imported jobs.')
+            for identifier in identifiers:self.require_link(state,'jobs',identifier)
+            _,text=self.candidate()
+            if not text:raise ValueError('Attach a resume in this chat before comparing fit.')
+            asyncio.run(self.analysis.analyze_many(identifiers,resume_text=text,candidate_facts=self.fit_facts()))
+            fingerprints={a:self.analysis_fingerprint(text,rt.workspace.get_application(a).current_snapshot_id)for a in identifiers}
+            self.repository.change(task_id,lambda s:{'analyses':{**s.get('analyses',{}),**fingerprints}})
+            return {'jobs':[self.job_summary(a)for a in identifiers]}
         if name=='score_job':
             saved,text = self.candidate()
             if not text:raise ValueError('Attach a resume in this chat before comparing fit.')
             app = rt.workspace.get_application(args['application_id'])
             fingerprint = self.analysis_fingerprint(text,app.current_snapshot_id)
-            if (state.get('analyses',{}).get(app.application_id)!=fingerprint
+            if (self.analysis.uses_jev() or state.get('analyses',{}).get(app.application_id)!=fingerprint
                     or self.job_summary(app.application_id)['match_score'] is None):
                 asyncio.run(self.analysis.analyze(app.application_id,snapshot_id=app.current_snapshot_id,
-                    resume_text=text,expected_version=app.version))
+                    resume_text=text,expected_version=app.version,candidate_facts=self.fit_facts()))
                 self.repository.change(task_id,lambda s:{'analyses':{**s.get('analyses',{}),app.application_id:fingerprint}})
             return self.job_summary(app.application_id,detail=True)
         if name=='generate_materials':
