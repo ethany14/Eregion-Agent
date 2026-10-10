@@ -32,6 +32,7 @@
   <symbol id="i-seal" viewBox="0 0 24 24"><circle cx="12" cy="10" r="6"/><path d="M12 6.5v7M8.5 10h7" stroke-width="1.2"/><path d="m8.5 15-1.5 6 5-2 5 2-1.5-6"/></symbol>
   <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M15 8l2 2"/></symbol>
   <symbol id="i-hand" viewBox="0 0 24 24"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12M11 11V4.5a1.5 1.5 0 0 1 3 0V12M14 11V6.5a1.5 1.5 0 0 1 3 0V14c0 4-2.5 7-6 7-2.5 0-4-1.2-5.5-3.5L3.7 14.6a1.5 1.5 0 0 1 2.5-1.6L8 15"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
   <symbol id="i-lens" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 4v5M12 15v5"/></symbol>
   <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
   <symbol id="i-gh" viewBox="0 0 24 24"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></symbol>
@@ -47,6 +48,7 @@
     <a class="brand" href="#top" aria-label="Eregion home"><svg class="mark" aria-hidden="true"><use href="#i-holly"/></svg><span>Eregion</span></a>
     <nav class="nav-links" aria-label="Sections">
       <a href="#road">How it works</a>
+      <a href="#jev">Speed</a>
       <a href="#workspace">Workspace</a>
       <a href="#local">Privacy</a>
       <a href="#lens">Lens</a>
@@ -201,6 +203,49 @@
     </div>
   </section>
 
+  <!-- Jev -->
+  <section class="speed" id="jev">
+    <div class="wrap speed-grid">
+      <div class="speed-copy">
+        <p class="eyebrow"><svg class="i" aria-hidden="true"><use href="#i-bolt"/></svg>Optional fast path</p>
+        <h2>Fit scores in seconds with Jev.</h2>
+        <p>Jev is a fast yes/no decision model from Typesafe. Turn it on and Eregion scores job fit with Jev alone, up to eight jobs per batch, and keeps the decisions in a local cache. Your main model still handles conversation and writing.</p>
+        <ul class="ticks">
+          <li>Requirements Jev can't decide stay unresolved, and the score shows as a range</li>
+          <li>No silent fallback: if Typesafe is unreachable, scoring stops until you fix it</li>
+          <li>Sends resume text and the job description, never files or passwords</li>
+        </ul>
+      </div>
+      <figure class="speed-chart">
+        <figcaption><b>Time to score fit</b><span>Recorded test runs · seconds, same scale</span></figcaption>
+        <div class="bars" role="img" aria-label="Main model only, cold: 32 to 49 seconds. Three jobs with Jev, separately: 4.6 seconds. Three jobs in one Jev batch: 2.0 seconds. Same three jobs from cache: 0.15 seconds.">
+          <div class="bar-row" title="Main model only, cold fit analysis: 32–49 s">
+            <span class="bar-label">Main model only</span>
+            <span class="bar-track"><i class="bar main" style="width:64%"></i><i class="bar main-range" style="width:34%"></i></span>
+            <span class="bar-value">32–49 s</span>
+          </div>
+          <div class="bar-row" title="Three jobs scored separately with Jev, cold: 4.6 s">
+            <span class="bar-label">Jev, 3 jobs separately</span>
+            <span class="bar-track"><i class="bar jev" style="width:9.2%"></i></span>
+            <span class="bar-value">4.6 s</span>
+          </div>
+          <div class="bar-row" title="Three jobs in one Jev batch, cold: 2.0 s">
+            <span class="bar-label">Jev, 3 jobs in one batch</span>
+            <span class="bar-track"><i class="bar jev" style="width:4%"></i></span>
+            <span class="bar-value strong">2.0 s</span>
+          </div>
+          <div class="bar-row" title="Same three jobs again from the local cache: 0.15 s">
+            <span class="bar-label">Same jobs, from cache</span>
+            <span class="bar-track"><i class="bar jev" style="width:0.3%"></i></span>
+            <span class="bar-value strong">0.15 s</span>
+          </div>
+          <div class="bar-axis" aria-hidden="true"><span></span><span class="ticks-row"><b>0</b><b>10</b><b>20</b><b>30</b><b>40</b><b>50</b></span><span></span></div>
+        </div>
+        <p class="fine">Small synthetic runs on different days and inputs, so an indication rather than a controlled comparison. <a href="https://github.com/ethany14/Eregion-Agent/blob/main/docs/jev-benchmark.md">Measurements and caveats</a></p>
+      </figure>
+    </div>
+  </section>
+
   <!-- Workspace glossary -->
   <section class="workspace" id="workspace">
     <div class="wrap">
@@ -317,6 +362,11 @@ python -m pip install -r requirements.txt</code></pre><button class="copy" type=
           <div class="cmd block"><pre><code id="cmd-env">LLM_MODEL_ID=your-model-id
 LLM_API_KEY=your-api-key
 LLM_BASE_URL=https://your-provider.example/v1</code></pre><button class="copy" type="button" data-copy="cmd-env" aria-label="Copy .env template"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg></button></div>
+          <p class="opt">Optional: add these lines too for <a href="#jev">Jev fast fit scoring</a>.</p>
+          <div class="cmd block"><pre><code id="cmd-jev">TYPESAFE_API_KEY=your-typesafe-key
+TYPESAFE_BASE_URL=https://api.typesafe.ai
+TYPESAFE_DEFAULT_MODEL=jev-latest
+TYPESAFE_ENABLED=true</code></pre><button class="copy" type="button" data-copy="cmd-jev" aria-label="Copy Jev settings"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg></button></div>
         </li>
         <li>
           <div class="step-copy"><h4>Start Eregion</h4><p>Then open <a href="http://localhost:8000/apply">localhost:8000/apply</a> and upload your resume.</p></div>
