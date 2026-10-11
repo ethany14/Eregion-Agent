@@ -67,15 +67,19 @@ def document_kind(field,state):
     label=field['label'].casefold()
     if 'cover letter' in label:return 'cover_letter'
     if re.search(r'resume|résumé|curriculum|\bcv\b',label):return 'resume'
+    # A required upload with only a generic label ("Attachments", "Upload file")
+    # is the application's document slot; optional extra-document fields are not.
+    if field.get('required') and re.search(r'attach|upload|document|\bfile\b',label):return 'resume'
     return None
 
 
 def pending_documents(state,fields):
     refresh=state.get('document_refresh',{})
-    pending=['resume'] if refresh.get('resume') else []
-    if refresh.get('cover_letter') and any(document_kind(f,state)=='cover_letter' for f in [*fields,*state.get('review_fields',[])]):
-        pending.append('cover_letter')
-    return pending
+    # A changed material is an upload obligation only when this application
+    # actually exposes that document control. Keep earlier steps in scope: a
+    # later review page must not erase an observed, still stale upload.
+    observed={document_kind(f,state) for f in [*fields,*state.get('review_fields',[])]}
+    return [kind for kind in ('resume','cover_letter') if refresh.get(kind) and kind in observed]
 
 
 def autofill(browser, state, resume, *, edited_keys=frozenset(), active=lambda: True, progress=lambda *args: None):

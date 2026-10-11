@@ -84,6 +84,9 @@ def test_default_chat_searches_scores_reviews_applies_and_interviews(career,tmp_
     observations=[]
     def decide(s):
         observations.append(s)
+        if s.get('goal')=='Built Python APIs.':
+            import json
+            (tmp_path/'answer-snapshot.json').write_text(json.dumps(s,indent=2),encoding='utf-8')
         if not s['jobs']:
             if not any(h['tool']=='search_jobs' for h in s['history']):return 'search_jobs',{'query':'Python'}
             return 'import_job',{'url':'https://jobs.lever.co/example/abc123'}

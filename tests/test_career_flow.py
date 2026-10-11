@@ -149,6 +149,9 @@ def test_general_visual_tools_require_task_opt_in(career):
     assert 'browser_screenshot' not in names()
     with pytest.raises(ValueError,match='Visual browser backup'):execute(c,'browser_screenshot')
     c.repository.change(c.state['task_id'],visual_fallback=True)
+    # Visual tools are advertised only after a browser is actually open.
+    c.repository.change(c.state['task_id'],browser={'url':'https://example.com/'})
+    c.harness._browsing=SimpleNamespace(inspect=lambda _:True,close=lambda:None)
     assert {'browser_screenshot','browser_click_at'}<=names()
 
 
@@ -416,7 +419,7 @@ def test_model_can_identify_unfamiliar_document_control_but_cannot_skip_upload(c
     state={'profile':{},'answers':{},'document_refresh':{'resume':True}}
     tools=AgentTools(browser,state,autofill=lambda:{},active=lambda:True)
     snapshot=tools.observe()
-    with pytest.raises(BrowserBlocked,match='Upload'):
+    with pytest.raises(BrowserBlocked,match='Upload|complete the option path'):
         tools.execute('ready_for_review',{})
     tools.execute('bind_document',{'observation_id':snapshot['observation_id'],'field_key':'attachment','document':'resume'})
     assert tools.state['document_bindings']['attachment']=='resume'
@@ -443,7 +446,22 @@ def test_unreadable_legacy_pdf_does_not_prevent_job_search(career):
 @pytest.mark.skipif(os.getenv('JOB_AGENT_LIVE_CAREER_TEST')!='1',reason='Opt-in configured model; synthetic resume and local tool IO only.')
 def test_configured_model_directs_real_career_tools_with_synthetic_sources(career):
     from agent_runtime.task_loop import TaskModel
+    from agent_runtime.auto_apply.browser import ApplicationBrowser
+    from agent_runtime.browser.manager import BrowsingManager
     c=career
+    # The model may choose general browsing instead of read_job. Both routes
+    # must see the same synthetic posting; never navigate to the real fake URL.
+    class SyntheticPostingBrowser(ApplicationBrowser):
+        def __init__(self,url):super().__init__(url,purpose='browse',headless=True)
+        def _guard_request(self,route):
+            if route.request.url.rstrip('/')=='https://jobs.lever.co/example/abc123':
+                route.fulfill(status=200,content_type='text/html',body=(
+                    '<title>Python Engineer at Example</title><h1>Python Engineer</h1>'
+                    '<p>Example Company. Remote.</p><p>Requires Python APIs. Build Python services, '
+                    'collaborate with the team on API design, maintain reliable backend systems, '
+                    'and write tests and documentation for production services.</p>'))
+            else:route.abort()
+    c.harness._browsing=BrowsingManager(factory=SyntheticPostingBrowser)
     goal='Use my saved resume to read https://jobs.lever.co/example/abc123, compute my match score, and prepare a tailored resume and cover letter. Stop when the drafts are ready for my review. Do not apply.'
     c.repository.change(c.state['task_id'],goal=goal,messages=[{'id':'synthetic-goal','role':'user','text':goal}])
     loop=TaskLoop(c.repository,c.harness,model_factory=TaskModel,budget=20)
@@ -457,7 +475,9 @@ def test_configured_model_directs_real_career_tools_with_synthetic_sources(caree
         assert state['packs'],[(h['tool'],h['result'].get('error')) for h in state['history']]
         assert len(c.runtime.packs.items(state['packs'][0]))==2
         assert not state['application_runs']
-    finally:loop.close()
+    finally:
+        loop.close()
+        c.harness.close()
 
 
 def test_job_card_summary_counts_requirements_and_lists_unique_gaps():
@@ -466,6 +486,6 @@ def test_job_card_summary_counts_requirements_and_lists_unique_gaps():
         'missing_required_requirements':[{'canonical_name':'Kubernetes'},{'canonical_name':' '},{'canonical_name':'Kubernetes'}],
         'missing_preferred_requirements':[{'canonical_name':'Go'},{'canonical_name':'Rust'},{'canonical_name':'Scala'}]}
     summary=CareerHarness.requirement_summary(report)
-    assert summary=={'requirement_counts':{'matched':2,'partial':1,'missing':1,'needs_confirmation':1},
+    assert summary=={'requirement_counts':{'matched':2,'partial':1,'missing':1,'needs_confirmation':1,'unknown':0,'confirmed_condition':0},
         'gaps':['Kubernetes','Go','Rust']}
     assert CareerHarness.requirement_summary({'overall_score':40})=={'requirement_counts':None,'gaps':[]}

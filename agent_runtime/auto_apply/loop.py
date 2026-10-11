@@ -140,7 +140,7 @@ class ApplicationLoop:
         self.handoff_checks[run_id] = time.monotonic()
         waiting = lambda state: (state is not None and state["status"] == "needs_input"
             and state.get("handoff_kind") in AUTO_RESUME and not state.get("account_request")
-            and (not state.get("pause_requested") or state.get("paused_for_control")))
+            and not state.get("pause_requested") and not state.get("paused_for_control"))
         with self.lock:
             if not waiting(self._active(run_id)): return
         try:
@@ -433,7 +433,7 @@ class ApplicationLoop:
                 answers={**state["answers"], **recovered}, answer_sources={**state.get("answer_sources", {}), **sources})
         return state
 
-    def start(self, request, *, material_refs=None):
+    def start(self, request, *, material_refs=None, origin_task_id=None):
         from .contracts import Candidate
         from .education import normalize_records
         import base64
@@ -443,7 +443,7 @@ class ApplicationLoop:
             profile=request.profile.model_dump()
             profile['education']=normalize_records(profile.get('education',[]))
             request=request.model_copy(update={'profile':Candidate.model_validate(profile)})
-            state, created = self.repository.create(request,material_refs=material_refs)
+            state, created = self.repository.create(request,material_refs=material_refs,origin_task_id=origin_task_id)
             if created:
                 if request.save_as_default:
                     self.repository.save_candidate(profile,resume=base64.b64decode(request.resume_base64),name=request.resume_name)

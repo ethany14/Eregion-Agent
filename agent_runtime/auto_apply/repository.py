@@ -102,7 +102,7 @@ class ApplyRepository:
             return self.save(state,profile={**state['profile'],'education':saved['profile']['education']})
         return state
 
-    def create(self, request, *, material_refs=None):
+    def create(self, request, *, material_refs=None, origin_task_id=None):
         platform, identity, url = posting(request.url)
         fingerprint = hashlib.sha256(request.model_dump_json().encode()).hexdigest()
         with self.sessions.begin() as session:
@@ -122,6 +122,7 @@ class ApplyRepository:
                 "reuse_answers": request.reuse_answers, "consent_policy": request.consent_policy,
                 "cover_letter": request.cover_letter,
                 "material_refs": material_refs or {},
+                "origin_task_id": origin_task_id,
                 "document_refresh": {'resume':True,'cover_letter':bool(request.cover_letter)} if material_refs is not None else {},
                 "messages": [], "chat_revision": 0, "answer_sources": {}, "pause_requested": False,
                 "memory_indexed": True,

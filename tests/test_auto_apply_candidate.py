@@ -256,7 +256,7 @@ def test_chat_ui_restores_resume_edits_education_and_batches_answers(tmp_path):
         browser.page.locator('.question-choice').nth(1).get_by_role('button',name='No',exact=True).click()
         # A normal poll must not clear an unsent selection.
         browser.page.wait_for_timeout(2200)
-        assert browser.page.locator('[aria-pressed=true]').count()==2
+        assert browser.page.locator('.question-choice [aria-pressed=true]').count()==2
         browser.page.screenshot(path=str(tmp_path/'batch-answers.png'),full_page=True)
         browser.page.get_by_role('button',name='Submit answers & continue').click()
         browser.page.get_by_role('button',name='Submit application',exact=True).wait_for()

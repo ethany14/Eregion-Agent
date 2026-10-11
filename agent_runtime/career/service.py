@@ -100,7 +100,8 @@ class CareerService:
     @staticmethod
     def _created_by_conversation(run):
         # Runs a conversation started keep that origin after the conversation is deleted.
-        return any(m['role']=='user' and m['text'].startswith(APPLICATION_INSTRUCTION) for m in run.get('messages',[])[:3])
+        return bool(run.get('origin_task_id')) or any(m['role']=='user' and APPLICATION_INSTRUCTION in m['text']
+            for m in run.get('messages',[])[:3])
 
     def organise(self,task_id,changes):
         """Rename, pin, group, archive or trash a conversation without touching its task state."""
@@ -159,6 +160,7 @@ class CareerService:
         if not run_id or run_id!=state.get('active_application_run'):
             raise ValueError('The active browser application changed. Refresh before replying or confirming.')
         clean = {k:v for k,v in body.items() if k!='application_run_id'}
+        self.harness.require_application_owner(state,self.applications.repository.get(run_id))
         if action=='reply':
             self.applications.reply_question(run_id,ReplyQuestion.model_validate(clean))
         elif action=='continue':
@@ -285,6 +287,8 @@ class CareerService:
                 status='cancelled',pause_requested=True,wait=None)
         for run_id in state['application_runs']:
             child = self.applications.repository.get(run_id)
+            try:self.harness.require_application_owner(state,child)
+            except ValueError:continue
             if child['status'] not in {'submitted','submission_unknown','cancelled','failed','submitting'}:
                 self.applications.cancel(run_id,child['version'])
         manager=getattr(self.harness,'_browsing',None)

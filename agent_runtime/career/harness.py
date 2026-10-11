@@ -302,6 +302,8 @@ class CareerHarness:
 
     def interview(self,identifier):
         view = self.runtime.mock_interviewer.view(identifier)
+        view.update(mock_interview_id=identifier,status=view['interview']['status'],
+            version=view['interview']['version'],current_question=view.get('question'))
         if view.get('report_available'):view['report'] = self.runtime.mock_interviewer.interviews.report(identifier)
         if view['interview']['status'] == 'failed':
             failure = view.get('failure') or {}
@@ -309,6 +311,23 @@ class CareerHarness:
                 error_code=failure.get('error_code', 'interview_failed'),
                 next=failure.get('next', 'Inspect the failure and retry only the failed stage.'))
         return view
+
+    def route_user_control(self,state,message):
+        """Route only unambiguous, explicit interview endings without a model."""
+        text=message['text'].strip().rstrip('.!。！').casefold()
+        if text not in {'end interview','end the interview','end this interview',
+                        'finish interview','finish the interview','end this practice and show my report',
+                        '结束面试','结束这次面试','结束模拟面试'}:
+            return None
+        context=message.get('context') or {}
+        identifiers=[context['interview_id']] if context.get('interview_id') else state.get('interviews',[])
+        active=[i for i in identifiers if self.runtime.mock_interviewer.interviews.get(i).status.value
+                not in {'completed','cancelled'}]
+        if len(active)!=1:return None
+        result=self.execute(state['task_id'],'control_interview',
+            {'interview_id':active[0],'action':'end','message_id':message['id']},call_id='direct:'+message['id'])
+        return {'text':'The interview has ended. Your saved answers and report are available below.',
+                'tool':'control_interview','result':result}
 
     def require_link(self,state,collection,identifier):
         if identifier not in state.get(collection,[]):raise ValueError('This result does not belong to this task. Inspect or import it first.')
@@ -353,7 +372,7 @@ class CareerHarness:
             old=self.alerts.get(identifier) if identifier else None
             if name=='set_job_alert_enabled':
                 if type(args['enabled']) is not bool:raise ValueError('Use a boolean enabled setting.')
-                config={k:old[k] for k in AlertConfig.model_fields}|{'enabled':args['enabled']}
+                config={k:old[k] for k in AlertConfig.model_fields if k in old}|{'enabled':args['enabled']}
             else:config=args['config']
             return self.alerts.save(config,request_key=key,alert_id=identifier,expected_version=old['version'] if old else None)
         if name=='recommend_job':
@@ -366,7 +385,10 @@ class CareerHarness:
             job=self.job_summary(identifier,detail=True)
             if job['status'] in {'applied','interviewing','offer','rejected','withdrawn','archived'}:
                 raise ValueError('This job is already applied to or closed; look for a new opportunity.')
-            if job['match_score'] is None:raise ValueError('This job has no verified match score.')
+            interval=job.get('score_range')
+            if job['match_score'] is None and not (isinstance(interval,list) and len(interval)==2
+                    and all(type(v) in (int,float) and 0<=v<=100 for v in interval) and interval[0]<=interval[1]):
+                raise ValueError('This job has no verified match score or bounded score interval.')
             if job.get('score_algorithm')=='jev-only':
                 import time
                 if (job.get('score_valid_until')or 0)<=time.time():raise ValueError('This score has expired. Score the job again before recommending it.')
@@ -378,6 +400,9 @@ class CareerHarness:
             if not isinstance(args['reason'],str) or not 1<=len(args['reason'])<=2000 or not isinstance(args['caveats'],str) or len(args['caveats'])>2000:
                 raise ValueError('Keep the recommendation reason and caveats concise.')
             payload={k:job[k] for k in ('application_id','title','company','location','url','match_score')}|{'reason':args['reason'],'caveats':args['caveats']}
+            if job['match_score'] is None:
+                payload.update(score_range=interval,analysis_status=job.get('analysis_status'),
+                    caveats=('Unresolved qualifications: fit is an interval, not a point score. '+args['caveats']).strip())
             if recommendation:
                 result=self.alerts.add(recommendation['run_id'],payload)
                 if not result['added']:return result
@@ -519,7 +544,9 @@ class CareerHarness:
             return {'jobs':[self.job_summary(a.application_id) for a in jobs]}
         if 'application_id' in args:self.require_link(state,'jobs',args['application_id'])
         if 'pack_id' in args and args['pack_id']:self.link_job_pack(state,args['pack_id'])
-        if 'run_id' in args:self.require_link(state,'application_runs',args['run_id'])
+        if 'run_id' in args:
+            self.require_link(state,'application_runs',args['run_id'])
+            if name!='inspect_application':self.require_application_owner(state,self.applications.repository.get(args['run_id']))
         if 'interview_id' in args:self.require_link(state,'interviews',args['interview_id'])
         if name=='inspect_job':
             # A new conversation can discover a saved job's existing materials.
@@ -693,9 +720,10 @@ class CareerHarness:
         request = StartApplication(url=args['url'],profile=saved['profile'],resume_base64=saved['resume_base64'],
             idempotency_key=key,save_as_default=False,auto_submit=False,automation_mode='hybrid',
             consent_policy='ask',visual_fallback=state['visual_fallback'],initial_message=self.application_instruction(state))
-        try:run=self.applications.start(request,material_refs={})
+        try:run=self.applications.start(request,material_refs={},origin_task_id=state['task_id'])
         except DuplicateApplication as exc:
             run=self.applications.repository.get(exc.run_id)
+            run=self.require_application_owner(state,run,adopt=True)
             if run['status'] in {'cancelled','failed'}:run=self.applications.resume(run['run_id'],run['version'])
         self.repository.link(state['task_id'],'application_runs',run['run_id'],active_application_run=run['run_id'],active_browser='application')
         refs=run.get('material_refs',{})
@@ -791,9 +819,10 @@ class CareerHarness:
             idempotency_key=key,automation_mode='hybrid',auto_submit=False,consent_policy='ask',
             save_as_default=False,cover_letter=cover,visual_fallback=state['visual_fallback'],
             initial_message=self.application_instruction(state))
-        try:run = self.applications.start(request,material_refs=material_refs)
+        try:run = self.applications.start(request,material_refs=material_refs,origin_task_id=state['task_id'])
         except DuplicateApplication as exc:
             run = self.applications.repository.get(exc.run_id)
+            run = self.require_application_owner(state,run,adopt=True)
             if run['status'] in {'submitted','submitting','submission_unknown'}:
                 # Never relabel an earlier submission as having used the new pack.
                 self.repository.link(state['task_id'],'application_runs',run['run_id'],active_application_run=run['run_id'],active_browser='application')
@@ -877,7 +906,44 @@ class CareerHarness:
         if action not in {'pause','resume'}:return
         for run_id in state['application_runs']:
             child = self.applications.repository.get(run_id)
+            try:self.require_application_owner(state,child)
+            except ValueError:continue
             if child['status'] in {'submitted','submission_unknown','cancelled','failed','submitting'}:continue
             if action=='resume' and not child.get('pause_requested'):continue
             self.applications.chat(run_id,ChatRequest(text='pause' if action=='pause' else 'continue',
                 message_id=str(uuid4()),visual_fallback=state['visual_fallback']))
+
+    def owner_active(self,task_id):
+        """An owner that was deleted, cancelled or moved to Trash no longer holds the run."""
+        try:
+            owner,meta=self.repository.get(task_id),self.repository.metadata(task_id)
+        except LookupError:
+            return False
+        return owner['status']!='cancelled' and not meta.get('trashed_at')
+
+    def require_application_owner(self,state,run,*,adopt=False):
+        """Refuse cross-conversation writes; optionally adopt a run whose owner is gone.
+
+        Adoption is only offered when a conversation explicitly reopens the same
+        job, and never while the abandoned run is still executing.
+        """
+        owner=run.get('origin_task_id')
+        if owner and owner!=state['task_id']:
+            if self.owner_active(owner):
+                raise ValueError('This application is already owned by another conversation. Continue it in that conversation; no documents or browser state were changed.')
+            return self.adopt_application(state,run,adopt)
+        if not owner:
+            linked=[s['task_id'] for s in self.repository.list() if run['run_id'] in s.get('application_runs',[])]
+            others=[task for task in linked if task!=state['task_id'] and self.owner_active(task)]
+            if others:
+                raise ValueError('This older application is linked to another conversation. Its execution ownership is ambiguous; no documents or browser state were changed.')
+            if any(task!=state['task_id'] for task in linked):
+                return self.adopt_application(state,run,adopt)
+        return run
+
+    def adopt_application(self,state,run,adopt):
+        if not adopt:
+            raise ValueError('This application belonged to a conversation that was deleted or cancelled. Reopen the job from this conversation to take it over.')
+        if run['status'] in {'queued','running','submitting'}:
+            raise ValueError('The earlier attempt for this job is still finishing. Wait a moment, then reopen the job here.')
+        return self.applications.repository.save(run,origin_task_id=state['task_id'])

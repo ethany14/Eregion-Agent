@@ -229,6 +229,17 @@ def hidden_mode():
     return mode if mode in {"offscreen", "headless"} else "offscreen"
 
 
+def context_options():
+    """Pin the page language instead of inheriting the OS locale.
+
+    On a non-English Windows install, sites such as LinkedIn otherwise serve
+    localized UI text that then leaks into captured job descriptions.
+    """
+    locale = os.getenv("JOB_AGENT_BROWSER_LOCALE", "en-US").strip() or "en-US"
+    language = locale.split("-")[0]
+    return {"locale": locale, "extra_http_headers": {"Accept-Language": f"{locale},{language};q=0.9"}}
+
+
 def _acquire_playwright(start):
     # Several task browsers share a worker thread. Playwright's sync dispatcher
     # must be started once on that thread, even with separate Chrome processes.
@@ -286,7 +297,7 @@ class ApplicationBrowser:
         try:
             self.browser = self._launch(self.headless)
             login_state = session_store.load(owner_key, self.session_site) if session_store and owner_key else None
-            self.context = self.browser.new_context(viewport={"width": 1280, "height": 900},
+            self.context = self.browser.new_context(viewport={"width": 1280, "height": 900}, **context_options(),
                 **({"storage_state":login_state} if login_state else {}))
             self.context.set_default_timeout(8000)
             self.context.route("**/*", self._guard_request)
@@ -370,7 +381,7 @@ class ApplicationBrowser:
         replacement=None
         try:
             replacement=self._launch(not visible)
-            context=replacement.new_context(viewport={'width':1280,'height':900},storage_state=state)
+            context=replacement.new_context(viewport={'width':1280,'height':900},storage_state=state,**context_options())
             context.set_default_timeout(8000)
             context.route('**/*',self._guard_request)
             active=None
