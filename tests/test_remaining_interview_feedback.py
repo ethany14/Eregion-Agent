@@ -101,6 +101,8 @@ def test_real_main_chat_feedback_latency(career,tmp_path,lane,limit):
         'I used Python to implement an API endpoint. I wrote a test for its response and checked that it passed.',
     ]
     accepted={};observed={};question_observed={};started=time.monotonic();max_pending_feedback=0
+    from datetime import datetime,timezone
+    started_wall=datetime.now(timezone.utc)
     termination='deadline'
     try:
         for text in texts:
@@ -131,11 +133,17 @@ def test_real_main_chat_feedback_latency(career,tmp_path,lane,limit):
         p50=statistics.median(samples) if len(samples)==3 else None
         usage=ledger.summary(task_id=task_id)
         feedback_groups=[g for g in usage['groups'] if g['purpose'].startswith('mock_interview_feedback:')]
+        # Queued answers consume each next question immediately, so polling the
+        # current question can miss it. Use the system-persisted question time
+        # (not a model timestamp) on the same clock as the polled feedback.
+        def question_seconds(question):
+            created=datetime.fromisoformat(question['created_at'].replace('Z','+00:00'))
+            return (created-started_wall).total_seconds()
         feedback_before_next=[]
         for a,b in zip(turns,turns[1:]):
             if a['answer'] and a['answer']['original_text'] in observed:
-                feedback_before_next.append(question_observed.get(b['question']['question_id'],float('inf')) >=
-                    observed[a['answer']['original_text']]['feedback_observed_seconds'])
+                seen=min(question_observed.get(b['question']['question_id'],float('inf')),question_seconds(b['question']))
+                feedback_before_next.append(seen>=observed[a['answer']['original_text']]['feedback_observed_seconds'])
         checks={'three_answers_fifo':[t['answer']['original_text'] for t in turns if t['answer']]==texts,
             'three_feedback_samples':len(samples)==3,'p50_within_original_limit':p50 is not None and p50<=limit,
             'complete_usage':usage['usage_complete'] and usage['pending']==0 and usage['unknown_usage_calls']==0,
@@ -147,7 +155,8 @@ def test_real_main_chat_feedback_latency(career,tmp_path,lane,limit):
         evidence={'scope':'Production main chat FIFO, real question/feedback providers, synthetic candidate/job, polling repository feedback at 100ms',
             'lane':lane,'configured_feedback_model':selected_model,'threshold_seconds':limit,'p50_seconds':p50,
             'samples_seconds':samples,'accepted':accepted,'observed':observed,'turns':turns,
-            'feedback_before_next_question':feedback_before_next,
+            'feedback_before_next_question':feedback_before_next,'started_wall':started_wall.isoformat(),
+            'question_persisted_seconds':{t['question']['question_id']:question_seconds(t['question']) for t in turns},
             'next_question_first_implemented':True,'max_pending_feedback':max_pending_feedback,
             'configured_reasoning':settings.get('LLM_AGENT_REASONING'),'usage':usage,'checks':checks,
             'termination':termination,'feedback_jobs':controller.interviews.feedback_jobs(identifier),

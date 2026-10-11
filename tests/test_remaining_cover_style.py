@@ -340,7 +340,10 @@ def test_real_cover_letter_preserves_source_citations_and_specific_natural_openi
         with usage_scope(task_id=c.state['task_id'],ledger=ledger,purpose='cover_style_original_revision_retest'):
             app=c.runtime.workspace.get_application(pack.application_id)
             replay_pack=workflow.create(pack.application_id,expected_version=app.version,idempotency_key='real-original-revision-pack')
-            failed=seed_failed_draft(c,replay_pack)
+            # The original rejection is frozen: the live verifier's verdict on this
+            # borderline draft flipped between runs, which skipped the reviser. The
+            # real reviser and the live re-verification of its output still run.
+            failed=seed_failed_draft(c,replay_pack,frozen_verification=True)
             assert failed.status.value=='needs_revision',failed
             repair_context=workflow._revision_context(replay_pack.pack_id,failed,
                 c.runtime.packs.artifact(replay_pack.pack_id,failed.pack_item_id))
