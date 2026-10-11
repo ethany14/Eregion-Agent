@@ -52,7 +52,12 @@ def make_plan(data, *, suite='all', runtime=None):
                 'body_sha256': j['structured_sha256']}
     if suite in {'all', 'cold4'}:
         trials.extend(trial(pair, 'cold4', repeat) for pair in data['pairs'] for repeat in range(4))
-    if suite in {'all', 'stress32'}:
+    if suite == 'sample':
+        # Reduced, user-approved sample: 8 evenly spaced pairs x 4 cold runs. It reports
+        # the same per-pair spread rule but is NOT the full 72-pair cold4 criterion.
+        sampled = [data['pairs'][i * len(data['pairs']) // 8] for i in range(8)]
+        trials.extend(trial(pair, 'cold4', repeat) for pair in sampled for repeat in range(4))
+    if suite in {'all', 'stress32', 'sample'}:
         trials.extend(trial(data['pairs'][i * len(data['pairs']) // 32], 'stress32', i) for i in range(32))
     plan = {'schema_version': 1, 'run_id': str(uuid4()), 'created_at': datetime.now(UTC).isoformat(),
             'dataset_revision': data['revision'], 'dataset_sha256': digest(data),
@@ -181,6 +186,9 @@ def report(plan, rows, peak):
     complete = integrity and len(ids) == len(expected) and all(valid(r) for r in rows)
     passed = (plan['mode'] == 'live' and complete and cold is not False and stress is not False)
     return {'status': 'passed_selected_stability_suite' if passed else 'not_passed',
+            'suite': plan.get('suite'),
+            'coverage_note': ('reduced sample: 8 of 72 pairs for cold4; full A1 cold4 criterion not measured'
+                              if plan.get('suite') == 'sample' else None),
             'mode': plan['mode'], 'manifest_sha256': plan['manifest_sha256'], 'integrity': integrity,
             'expected_trials': len(expected), 'observed_trials': len(rows), 'peak_active_trials': peak,
             'failed_trials': [r['trial_id'] for r in rows if not valid(r)],
@@ -251,7 +259,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--dataset', type=Path, default=Path('evals/fit_labels_v1.json'))
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--suite', choices=['all', 'cold4', 'stress32'], default='all')
+    parser.add_argument('--suite', choices=['all', 'cold4', 'stress32', 'sample'], default='all')
     parser.add_argument('--live', action='store_true')
     parser.add_argument('--evaluate-run', type=Path, help='Recompute existing frozen run offline; does not resume paid work')
     args = parser.parse_args()

@@ -125,9 +125,17 @@ def test_explicit_end_interview_routes_without_reasoning_model(career):
         def __init__(self):raise AssertionError('Ending an interview needs no reasoning model.')
     service=CareerService(c.runtime,c.applications,harness=c.harness,model_factory=NoModel,start_alert_scheduler=False)
     try:
-        result=service.chat(c.state['task_id'],'结束面试','end-interview-now')
+        service.chat(c.state['task_id'],'结束面试','end-interview-now')
+        # 'End' is queued in arrival order behind earlier answers and processed by the
+        # interview input worker; wait for that durable outcome instead of the chat return.
+        import time
+        deadline=time.monotonic()+15
+        while time.monotonic()<deadline:
+            ended=c.runtime.mock_interviewer.view(interview['mock_interview_id'])
+            result=service.view(c.state['task_id'])
+            if ended['interview']['status']=='completed' and result['task_status']=='completed':break
+            time.sleep(.1)
         assert result['task_status']=='completed'
-        ended=c.runtime.mock_interviewer.view(interview['mock_interview_id'])
         assert ended['interview']['status']=='completed' and ended['report_available']
         assert service.repository.get(c.state['task_id'])['model_calls']==0
         service.chat(c.state['task_id'],'结束面试','end-interview-now')  # same message is idempotent

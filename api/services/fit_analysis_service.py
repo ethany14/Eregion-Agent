@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import os
 from collections import OrderedDict
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -157,6 +158,21 @@ class FitAnalysisService:
         )
 
     @staticmethod
+    def _default_catalogue(body):
+        """Local deterministic catalogue unless JOB_AGENT_MAIN_CATALOG=extract.
+
+        Returns None (free extraction) when the text has no recognisable requirement.
+        """
+        if os.getenv('JOB_AGENT_MAIN_CATALOG', 'local').strip().lower() == 'extract':
+            return None
+        from job_agent.requirement_catalog import FrozenRequirementCatalog
+        catalogue = FrozenRequirementCatalog.from_local_units(body)
+        # Only personal conditions (or nothing) recognised: the posting states no skill
+        # requirements in a recognisable form, so let the model extract implied ones.
+        skills = [r for r in json.loads(catalogue.payload_json)['requirements'] if r['category'] != 'eligibility']
+        return catalogue if skills else None
+
+    @staticmethod
     def _validate_catalogue_input(catalogue, body, *, jev_route):
         if catalogue is None:
             return None
@@ -173,6 +189,12 @@ class FitAnalysisService:
         # Trusted internal input only. Validate before cache lookup or any provider.
         jev_route = self.uses_jev()
         fixed_job = self._validate_catalogue_input(fixed_job_catalog,job_description,jev_route=jev_route)
+        if not jev_route and fixed_job_catalog is None:
+            # Default main route (A1): score against a deterministic local catalogue so
+            # the requirement list, and therefore the score, is the same every run.
+            fixed_job_catalog = self._default_catalogue(job_description)
+            if fixed_job_catalog is not None:
+                fixed_job = fixed_job_catalog.validate_for(job_description)
         if jev_route:
             config=self._jev_settings()
             from job_agent.jev_fit.settings import digest

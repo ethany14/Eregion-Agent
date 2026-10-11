@@ -8,9 +8,57 @@ from dataclasses import dataclass
 import hashlib
 import json
 
-from job_agent.schemas import JobAnalysis
+import re
+
+from job_agent.schemas import JobAnalysis, JobRequirement
 
 CATALOG_VERSION = 'complete-job-payload-v1'
+LOCAL_PRODUCER = 'local-units-v2'
+
+REQUIREMENT_SECTION = re.compile(r'requirement|qualification|must have|nice to have|who you are|about you|you have|you bring|'
+    r'what you.ll bring|what we.re looking for|skills|experience|^required$|^preferred$', re.I)
+PREFERRED_SECTION = re.compile(r'preferred|nice to have|bonus|plus', re.I)
+DUTY_SECTION = re.compile(r'responsibilit|what you.ll do|what you will do|the role|day to day|your impact|in this role', re.I)
+QUALIFICATION_SIGNAL = re.compile(r'\b(?:\d+\+?\s*(?:years?|yrs)|experience (?:with|in)|proficien\w*|familiar\w*|knowledge of|'
+    r'degree|bachelor\w*|master\w*|ph\.?d|certif\w*|ability to|skills? in|expertise|fluen\w*|must (?:have|be))\b', re.I)
+
+
+LEADING_QUALIFICATION = re.compile(r'^(?:\d+\+?\s*(?:years?|yrs)|experience|strong|solid|high proficiency|proficien\w*|familiar\w*|'
+    r'knowledge|degree|bachelor\w*|master\w*|ph\.?d|ability to|demonstrated|proven|expertise|fluen\w*|deep understanding|'
+    r'understanding of|comfort\w* with|track record|background in)\b', re.I)
+
+
+def local_job_analysis(body):
+    from job_agent.domain import extract_minimum_years
+    from job_agent.jev_fit.core import CANDIDATE_CONDITION, boilerplate, job_units, qualification_text
+    units = [u for u in job_units(body) if not boilerplate(u) and u['text'].rstrip(':').strip() != (u.get('section') or '')]
+    has_requirement_section = any(REQUIREMENT_SECTION.search(u.get('section') or '') for u in units)
+    requirements, responsibilities = [], []
+    for u in units:
+        section = u.get('section') or ''
+        text = qualification_text(u['text'])
+        if not text or len(text) < 3:
+            continue
+        leading = bool(LEADING_QUALIFICATION.match(text))
+        if DUTY_SECTION.search(section) and not REQUIREMENT_SECTION.search(section) and not leading:
+            responsibilities.append(text)
+            continue
+        inline_pref = re.match(r'\s*preferred\s*:', u['text'], re.I)
+        is_requirement = (REQUIREMENT_SECTION.search(section) or re.match(r'\s*(?:required|preferred)\s*:', u['text'], re.I)
+            or leading or (not has_requirement_section and QUALIFICATION_SIGNAL.search(text)) or CANDIDATE_CONDITION.search(text))
+        if not is_requirement:
+            continue
+        condition = bool(CANDIDATE_CONDITION.search(text)) and not QUALIFICATION_SIGNAL.search(text)
+        level = 'preferred' if inline_pref or PREFERRED_SECTION.search(section) else 'required'
+        # An explicit duration ("8+ years") enables the pipeline's deterministic years
+        # guard: 'matched' requires evidence that states at least that many years.
+        years = None if condition else extract_minimum_years(text)
+        requirements.append(JobRequirement(requirement_id=u['id'], requirement_group_id=u['id'], canonical_name=text,
+            display_name=text, original_text=text, source_text=text, atomic_text=text,
+            category='eligibility' if condition else 'experience' if years else 'other',
+            verification_mode='user_confirmation' if condition else 'years_experience' if years else 'resume_evidence',
+            minimum_years=years, level=level))
+    return JobAnalysis(title=None, summary='', requirements=requirements, responsibilities=responsibilities)
 
 
 def digest(value):
@@ -109,6 +157,23 @@ class FrozenRequirementCatalog:
         if expected_catalogue_sha256 is not None and self.catalogue_sha256 != expected_catalogue_sha256:
             raise ValueError('Catalogue identity differs from expected frozen catalogue')
         return job
+
+    @classmethod
+    def from_local_units(cls, body):
+        """Default main-model catalogue: deterministic, local, no provider call.
+
+        Uses the same source units and section detection as Jev. Requirements are
+        units under requirement-type headings (preferred/required from the heading);
+        units under duty headings become responsibilities; company, benefit, salary
+        and EEO text is excluded. A posting without any requirement heading falls
+        back to units with explicit qualification signals. The same body always
+        yields the same ordered IDs, so main-model scores no longer depend on a
+        free-form extraction that changes between runs.
+        """
+        job = local_job_analysis(body)
+        frozen = freeze_catalog(job, body, provenance='local-units: deterministic job_units/section catalogue')
+        return cls(json.dumps(frozen['job_analysis'], ensure_ascii=False, sort_keys=True),
+            frozen['body_sha256'], frozen['catalogue_sha256'], LOCAL_PRODUCER, frozen['provenance'])
 
     def cache_signature(self):
         return digest([self.catalogue_version, self.catalogue_sha256, self.producer_signature])

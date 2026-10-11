@@ -320,3 +320,28 @@ def test_flattened_lists_are_restored_without_splitting_proper_nouns():
     assert any(u.startswith('Ship meaningful') for u in units)
     assert any(u.startswith('Collaborate with engineering') for u in units)
     assert not any(u.startswith(('Figma', 'Python', 'Prototyping')) for u in units)
+
+
+# ---- A1: default main-model catalogue from deterministic local units --------------------------
+def test_local_catalogue_requirements_levels_years_and_duties():
+    from job_agent.requirement_catalog import local_job_analysis
+    body = ('About us: We build payments.\nWhat you\'ll do\n- Own the API platform\n- Mentor engineers\n'
+            'Requirements\n- 8+ years of backend experience\n- Strong SQL\n- Willing to travel up to 25%\n'
+            'Nice to have\n- Experience with Kafka\nBenefits:\n- 401(k) match\n')
+    job = local_job_analysis(body)
+    by = {r.source_text: r for r in job.requirements}
+    assert by['8+ years of backend experience'].minimum_years == 8
+    assert by['8+ years of backend experience'].verification_mode == 'years_experience'
+    assert by['Strong SQL'].level == 'required' and by['Experience with Kafka'].level == 'preferred'
+    assert by['Willing to travel up to 25%'].category == 'eligibility'
+    assert 'Own the API platform' in job.responsibilities and not any('401(k)' in r for r in by)
+    assert [r.requirement_id for r in local_job_analysis(body).requirements] == [r.requirement_id for r in job.requirements]
+
+
+def test_story_text_is_not_a_condition_and_conditions_only_postings_fall_back():
+    from api.services.fit_analysis_service import FitAnalysisService
+    from job_agent.jev_fit.core import CANDIDATE_CONDITION
+    assert not CANDIDATE_CONDITION.search('which he had encountered when traveling in Japan')
+    assert CANDIDATE_CONDITION.search('Requires frequent travel to client sites')
+    story = 'Product Designer\nOur founder loved traveling in Japan.\nLogistics\nHybrid in San Francisco or New York.\n'
+    assert FitAnalysisService._default_catalogue(story) is None  # only a work condition -> free extraction

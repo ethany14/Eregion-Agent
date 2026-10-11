@@ -97,7 +97,8 @@ class JevProductionTests(unittest.TestCase):
         handler = AnalysisOnlyHandler()
         service = FitAnalysisService(handler, jev_config=replace(self.config, key=''),
             jev_transport=httpx.MockTransport(self.endpoint))
-        with patch.dict(os.environ, {'TYPESAFE_ENABLED': 'false'}):
+        # Routing contract only: opt into the legacy free extraction explicitly.
+        with patch.dict(os.environ, {'TYPESAFE_ENABLED': 'false', 'JOB_AGENT_MAIN_CATALOG': 'extract'}):
             result = self.analyze(service)
         self.assertEqual(result.skill_match.algorithm, 'legacy')
         self.assertEqual(result.main_model_calls, 3)

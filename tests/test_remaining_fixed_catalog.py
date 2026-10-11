@@ -32,27 +32,37 @@ def matches(job):
         explanation='Offline catalogue identity probe, not a quality judgment.',recommendations=[])
 
 
-def test_actual_default_main_service_still_extracts_a_separate_catalogue(tmp_path):
+def test_default_main_service_scores_a_local_deterministic_catalogue(tmp_path):
+    """A1 default route: no free-form extraction; the same ordered IDs on every cold run."""
+    from job_agent.requirement_catalog import FrozenRequirementCatalog, LOCAL_PRODUCER
     jev=inputs(tmp_path)
+    asked=[]
     class OfflineMain:
-        def cache_namespace(self):return 'offline-default-catalogue-probe-v1'
+        def cache_namespace(self):return 'offline-default-catalogue-local-v1'
         def __call__(self,schema,system,content):
+            asked.append(schema.__name__)
             if schema is ResumeAnalysis:return jev.resume_analysis
-            if schema is JobAnalysis:
-                return JobExtraction(title='Engineer',summary='',responsibilities=[],statements=[{
-                    'source_text':'Required: Python and SQL.','requirements':[{'canonical_name':name.lower(),
-                    'display_name':name,'atomic_text':name,'category':'skill','verification_mode':'resume_evidence',
-                    'level':'required'} for name in ('Python','SQL')]}]).expand()
+            if schema is JobAnalysis:raise AssertionError('The default route must not extract a catalogue')
             job=JobAnalysis.model_validate_json(content.split('\n\nJob analysis:\n')[1])
             return matches(job)
-    main=FitAnalysisService(JobAgentStepHandler(analyzer=OfflineMain()),jev_enabled=False,cache_size=0)._analyze_sync(
-        resume_text=RESUME,job_description=BODY)
-    a=freeze_catalog(jev.job_analysis,BODY,provenance='Production JevFitService/projection; MockTransport decisions, no real provider')
-    b=freeze_catalog(main.job_analysis,BODY,provenance='Default production main FitAnalysisService; synthetic legal atomic extraction')
-    audit=compare_catalog(a,b)
-    assert not audit['exact_catalogue_agreement']  # evidence of OPEN gap, not an A1 pass
-    assert len(a['requirements'])==1 and len(b['requirements'])==2
-    (tmp_path/'default-catalogue-gap.json').write_text(json.dumps({'status':'A1_not_bound','jev':a,'main':b,'audit':audit},indent=2),encoding='utf-8')
+    runs=[FitAnalysisService(JobAgentStepHandler(analyzer=OfflineMain()),jev_enabled=False,cache_size=0)._analyze_sync(
+        resume_text=RESUME,job_description=BODY) for _ in range(4)]
+    local=FrozenRequirementCatalog.from_local_units(BODY)
+    ids=[[r.requirement_id for r in run.job_analysis.requirements] for run in runs]
+    assert ids[0] and all(i==ids[0] for i in ids)
+    assert all(run.catalogue_identity['producer_signature']==LOCAL_PRODUCER for run in runs)
+    assert all(run.catalogue_identity['catalogue_sha256']==local.catalogue_sha256 for run in runs)
+    assert 'JobAnalysis' not in asked
+    (tmp_path/'default-local-catalogue.json').write_text(json.dumps({'status':'A1_local_default','ids':ids,
+        'catalogue_sha256':local.catalogue_sha256},indent=2),encoding='utf-8')
+
+
+def test_default_route_can_opt_back_into_free_extraction(tmp_path,monkeypatch):
+    monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG','extract')
+    assert FitAnalysisService._default_catalogue(BODY) is None
+    monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG','local')
+    assert FitAnalysisService._default_catalogue(BODY) is not None
+    assert FitAnalysisService._default_catalogue('Thank you for your interest in our company.') is None
 
 
 def test_production_matching_step_preserves_an_explicit_frozen_jev_catalogue_four_times(tmp_path):

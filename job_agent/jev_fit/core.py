@@ -123,6 +123,12 @@ BOILERPLATE = re.compile(r'equal (?:employment )?opportunity|regardless of (?:ra
     r'medical, dental|benefits (?:include|package)|e-?verify|privacy (?:notice|policy)', re.I)
 
 
+KNOWN_LABEL = re.compile(r'(?<=\s)((?:Experience|Requirements|Qualifications|Skills|Benefits|Perks|Responsibilities|'
+    r'Nice to have|Bonus points|Compensation|Who you are|About you|What you.ll (?:do|bring|need)|What we.re looking for))\s*:', re.I)
+HEADING_KEYWORD = re.compile(r'\b(?:requirements?|qualifications?|responsibilit\w+|what you|who you|you.ll|you will|bonus|nice to have|'
+    r'about (?:you|us|the)|skills|experience|benefits|perks|compensation|preferred|minimum|basic|the role)\b', re.I)
+
+
 def _sentence_end(text, position):
     """True when the punctuation before `position` really ends a sentence."""
     token = re.search(r'(\S+)\s*$', text[:position])
@@ -171,6 +177,21 @@ def job_units(text):
     for m in re.finditer(r'(?:^|(?<=\n)|(?<=[.!?]\s))[ \t]*([A-Z][A-Za-z&/\'’ ]{2,38}):(?=\s)', text):
         label = m.group(1).strip()
         if not any(a <= m.start(1) < b for a, b, _ in headings) and len(label.split()) <= 5:
+            headings.append((m.start(1), m.start(1) + len(label), label))
+    # Known heading words followed by ':' start a section anywhere, including after an
+    # unpunctuated word in flattened text ("...audiences Experience: Degree ...").
+    for m in KNOWN_LABEL.finditer(text):
+        if not any(a <= m.start(1) < b for a, b, _ in headings):
+            headings.append((m.start(1), m.end(1), m.group(1)))
+    # A short standalone line without punctuation ("What You'll Be Doing", "Bonus Points")
+    # is a heading when it is mostly title-case or contains a heading keyword.
+    for m in re.finditer(r'(?m)^[ \t]*([A-Z][^\n.!?;:,]{2,60}?)[ \t]*$', text):
+        label = m.group(1).strip()
+        words = label.split()
+        if not 1 <= len(words) <= 7 or any(a <= m.start(1) < b for a, b, _ in headings):
+            continue
+        titled = sum(w[:1].isupper() or not w[:1].isalpha() for w in words) / len(words)
+        if titled >= .6 or HEADING_KEYWORD.search(label):
             headings.append((m.start(1), m.start(1) + len(label), label))
     headings.sort()
     starts = {0, len(text)}
@@ -256,7 +277,11 @@ FLAT_ITEM_START = re.compile(r'(?<=[a-z0-9)%])\s+(?=(?:'
     r'Understanding|Hands-on|Passion|Prior|Background|Exposure|Fluency|Fluent|\d+\+?\s+years)\b)')
 
 
-CANDIDATE_CONDITION = re.compile(r'\b(?:in[- ]office|on[- ]?site|hybrid|days (?:a|per) week|relocat\w*|travel\w*|authori[sz]ed to work|'
+# Travel/relocation count only in requirement phrasing: a story about "traveling in
+# Japan" is not a work condition.
+CANDIDATE_CONDITION = re.compile(r'\b(?:in[- ]office|on[- ]?site|hybrid|days (?:a|per) week|'
+    r'(?:willing\w*|able|ability) to (?:travel|relocate)|relocation|travel (?:up to|required|requirement|\d+%)|'
+    r'requires? (?:\w+ )?travel|up to \d+% travel|authori[sz]ed to work|'
     r'work authori[sz]ation|sponsor\w*|security clearance|clearance|must (?:be|reside|live) (?:located )?in)\b', re.I)
 
 

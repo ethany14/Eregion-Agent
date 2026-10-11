@@ -80,6 +80,9 @@ def test_four_equivalent_cold_inputs_spread_and_requirement_count_not_truncated(
 
 
 def test_real_fit_service_cold_isolation_and_sqlite_usage_with_offline_provider(tmp_path,monkeypatch):
+    # Exercises timeout/retry accounting inside job extraction, so pin the free-extraction
+    # route; the default local catalogue performs no job-extraction call.
+    monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG','extract')
     from api.db import create_database
     from api.services.fit_analysis_service import FitAnalysisService
     from custom_agent.handlers import JobAgentStepHandler
