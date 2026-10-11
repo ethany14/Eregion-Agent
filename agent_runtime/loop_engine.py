@@ -4,6 +4,7 @@ The kernel knows neither career stages nor application fields. Scheduling, brows
 thread ownership, approvals and external-effect validation belong to its hosts.
 """
 import json
+import time
 from contextlib import nullcontext
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -12,6 +13,7 @@ from datetime import UTC, datetime
 from agent_runtime.loop_context import ConversationWindow, trace_value
 from agent_runtime.model_output import output_problem, reply_text, REPAIR_INSTRUCTION
 from agent_runtime.request_context import ContextArchive, READ_CONTEXT, prepare_request
+from agent_runtime.provider_usage import usage_scope, record_tool_action
 
 
 class LoopStop(Exception):
@@ -112,7 +114,9 @@ class AgentLoop:
         self.runtime['context_read_progress'] = self.archive.reads
         self.runtime['context_resources'] = self.archive.resources
         # Hosts receive a snapshot, never mutable lists shared with the engine.
+        started = time.monotonic()
         self.host.persist(json.loads(json.dumps(self.runtime)))
+        return time.monotonic() - started
 
     def run(self):
         result = {'reason': 'yielded'}
@@ -143,7 +147,8 @@ class AgentLoop:
                 messages.extend(turn.images or image_inputs)
                 image_inputs = []
                 self.event('model_started', revision=turn.revision)
-                response = self.host.invoke(messages, turn.tools, turn)
+                with usage_scope(context_metrics=context_metrics, reasoning_retry=bool(invalid)):
+                    response = self.host.invoke(messages, turn.tools, turn)
                 if response is None:
                     if not self.host.active():
                         raise LoopStop('cancelled')
@@ -200,6 +205,7 @@ class AgentLoop:
                     if stopped or (index and not batch) or not self.host.active() or self.host.revision() != turn.revision:
                         results.append({'deferred': True, 'next': 'Read the fresh observation and latest user message before this action.'})
                         continue
+                    tool_started, action_persistence = None, 0.0
                     try:
                         if batch_error:
                             raise batch_error
@@ -209,13 +215,19 @@ class AgentLoop:
                         self.runtime['inflight'] = {'tool': call['name'], 'call_id': call['id'],
                             'revision': turn.revision, 'arguments': trace_value(call['args'])}
                         self.event('tool_started', tool=call['name'], call_id=call['id'], revision=turn.revision)
-                        self.save()  # Journal intent before a capability has effects.
+                        action_persistence = self.save()  # Journal intent before effects.
+                        tool_started = time.monotonic()
                         outcome = (self.archive.read(call['args']['ref'], call['args'].get('offset', 0), call['args'].get('path'), reread=call['args'].get('reread', False), historical=call['args'].get('historical', False))
                                    if call['name'] == 'read_context' else self.host.execute(call, turn))
                     except LoopStop:
+                        record_tool_action({'tool': call['name'], 'tool_call_id': call['id'],
+                            'tool_execution_seconds': time.monotonic() - tool_started if tool_started is not None else 0,
+                            'persistence_seconds': action_persistence, 'persistence_boundary': 'intent_checkpoint',
+                            'status': 'interrupted'})
                         raise
                     except Exception as exc:
                         outcome = self.host.action_error(exc)
+                    tool_seconds = time.monotonic() - tool_started if tool_started is not None else 0
                     if not isinstance(outcome, dict):
                         outcome = {'value': outcome}
                     outcome = dict(outcome)
@@ -224,7 +236,11 @@ class AgentLoop:
                         image_inputs = self.host.image_message(image)
                     stopped = self.host.after_action(call, outcome, turn)
                     results.append(self.archive.tool_result(outcome))
-                    self.event('tool_completed', tool=call['name'], call_id=call['id'], failed='error' in outcome)
+                    self.event('tool_completed', tool=call['name'], call_id=call['id'], failed='error' in outcome,
+                               tool_execution_seconds=tool_seconds)
+                    record_tool_action({'tool': call['name'], 'tool_call_id': call['id'],
+                        'tool_execution_seconds': tool_seconds, 'persistence_seconds': action_persistence,
+                        'persistence_boundary': 'intent_checkpoint', 'failed': 'error' in outcome})
                     self.runtime['inflight'] = None
                 self.context.append(snapshot, text, calls, results, turn.revision)
                 self.save()

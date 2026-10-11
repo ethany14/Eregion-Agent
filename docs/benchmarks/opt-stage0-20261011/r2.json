@@ -1,0 +1,105 @@
+{
+  "calls": 11,
+  "completed": 11,
+  "failed": 0,
+  "pending": 0,
+  "discarded": 0,
+  "retries": 0,
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "unknown_usage_calls": 0,
+  "groups": [
+    {
+      "purpose": "agent",
+      "model": "b6-scripted-offline",
+      "calls": 11,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "unknown_usage_calls": 0,
+      "cache_hit_ratio": null,
+      "reasoning_share": null,
+      "composition_samples": 11,
+      "composition_averages": {
+        "live_snapshot": 14788.181818181818,
+        "repair": 0,
+        "replay_messages": 2721,
+        "system": 14078.454545454546,
+        "tools": 10661.636363636364
+      },
+      "timing_seconds": {
+        "queue_wait_seconds": {
+          "count": 11,
+          "p50": 6.38999990769662e-05,
+          "p95": 0.0002856999999494292,
+          "max": 0.0004907999991701217
+        },
+        "provider_duration_seconds": null,
+        "persistence_seconds": null
+      },
+      "missing": {
+        "context_metrics": 0,
+        "queue_wait_seconds": 0,
+        "provider_duration_seconds": 11,
+        "persistence_seconds": 11,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 11,
+        "reasoning_tokens": 11
+      },
+      "eviction": {
+        "samples": 11,
+        "requests": 8,
+        "groups": 38,
+        "frequency": 0.7272727272727273
+      },
+      "total_chars_average": 42249.27272727273
+    }
+  ],
+  "cache_hit_ratio": null,
+  "reasoning_share": null,
+  "usage_complete": true,
+  "composition_samples": 11,
+  "composition_averages": {
+    "live_snapshot": 14788.181818181818,
+    "repair": 0,
+    "replay_messages": 2721,
+    "system": 14078.454545454546,
+    "tools": 10661.636363636364
+  },
+  "timing_seconds": {
+    "queue_wait_seconds": {
+      "count": 11,
+      "p50": 6.38999990769662e-05,
+      "p95": 0.0002856999999494292,
+      "max": 0.0004907999991701217
+    },
+    "provider_duration_seconds": null,
+    "persistence_seconds": null
+  },
+  "missing": {
+    "context_metrics": 0,
+    "queue_wait_seconds": 0,
+    "provider_duration_seconds": 11,
+    "persistence_seconds": 11,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 11,
+    "reasoning_tokens": 11
+  },
+  "eviction": {
+    "samples": 11,
+    "requests": 8,
+    "groups": 38,
+    "frequency": 0.7272727272727273
+  },
+  "total_chars_average": 42249.27272727273,
+  "source": "B6 scripted r2",
+  "provider_usage_table_present": true,
+  "last_request_snapshots": [],
+  "tool_actions": {
+    "count": 0,
+    "execution_seconds": null,
+    "persistence_seconds": null
+  },
+  "tool_timing_note": "Persistence measures intent checkpoint; final commit cannot time itself. Absent samples are unknown."
+}

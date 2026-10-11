@@ -526,8 +526,10 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
         return live, history, static_chars + sum(len(encoded(m.model_dump())) for m in history) + len(encoded(live))
 
     live, history, size = build()
+    evicted = 0
     while size > max_chars and len(replay.groups) > 1:
         replay.groups.pop(0)  # Complete tool exchanges only, never orphan ToolMessages.
+        evicted += 1
         live, history, size = build()
     if size > max_chars:
         messages = live.get('messages', [])
@@ -603,11 +605,12 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
     actual = sum(len(m.content) if isinstance(m.content, str) else len(encoded(m.content)) for m in messages)
     actual += len(encoded(tools))
     return messages, {'request_text_chars': actual, 'limit_chars': max_chars,
+                      'history_evicted': bool(evicted), 'replay_groups_evicted': evicted,
                       'protected_overflow': actual > max_chars, 'archived_values': len(archive.used),
                       # Sizes only, never source text. These sum to the actual
                       # request measure, unlike the persistent archive size.
                       'request_parts_chars': {
-                          'system': len(prompt) + len(repair or ''),
+                          'system': len(prompt), 'repair': len(repair or ''),
                           'tools': len(encoded(tools)),
                           'replay_messages': actual - len(prompt) - len(repair or '') - len(encoded(tools)) - len(encoded(live)),
                           'live_snapshot': len(encoded(live))},

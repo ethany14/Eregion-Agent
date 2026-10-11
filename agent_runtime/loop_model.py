@@ -41,7 +41,11 @@ class ModelRequests:
         discarded = Event()
         with usage_scope(request_id=request_id, request_discarded=discarded):
             context = copy_context()
-        future = self.executor.submit(context.run, invoke)
+        queued = time.monotonic()
+        def dispatched():
+            with usage_scope(queue_wait_seconds=time.monotonic() - queued):
+                return invoke()
+        future = self.executor.submit(context.run, dispatched)
         deadline, next_check = time.monotonic() + timeout, time.monotonic() + .1
         while not future.done():
             moment = time.monotonic()

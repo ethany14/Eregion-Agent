@@ -154,6 +154,8 @@ def summarize(rows):
               'input_tokens': 0, 'output_tokens': 0, 'unknown_usage_calls': 0, 'groups': []}
     groups = {}
     for row in rows:
+        if row.get('source') == 'tool_action':
+            continue
         result['calls'] += 1
         result[row.get('status', 'pending')] += 1
         result['discarded'] += int(not row.get('adopted', True))
@@ -170,6 +172,11 @@ def summarize(rows):
                 result[metric] = result.get(metric, 0) + row[metric]
                 group[metric] = group.get(metric, 0) + row[metric]
     result['groups'] = list(groups.values())
+    for target in [result, *result['groups']]:
+        target['cache_hit_ratio'] = (target['cached_input_tokens'] / target['input_tokens']
+            if target.get('input_tokens') and 'cached_input_tokens' in target else None)
+        target['reasoning_share'] = (target['reasoning_tokens'] / target['output_tokens']
+            if target.get('output_tokens') and 'reasoning_tokens' in target else None)
     result['usage_complete'] = result['calls'] > 0 and result['unknown_usage_calls'] == 0
     return result
 
@@ -185,16 +192,25 @@ def provider_call(model, **sizes):
                'attempt': scope.get('attempt', 1),
                'status': 'pending', **{k: v for k, v in sizes.items() if k in
                 {'context_chars', 'tool_schema_chars', 'image_count'}}}
+    for key in ('context_metrics', 'queue_wait_seconds', 'reasoning_escalation', 'effective_reasoning'):
+        if key in scope:
+            details[key] = scope[key]
+    persistence = 0.0
     def persist(method):
+        nonlocal persistence
         if ledger is not None:
+            before = time.monotonic()
             try:
                 if method == 'start': ledger.start(call_id, scope, details)
                 else: ledger.finish(call_id, details)
             except Exception as exc:
                 # Telemetry failure must not repeat a paid request or a browser action.
                 log.warning('Provider usage persistence failed: %s', type(exc).__name__)
+            finally:
+                persistence += time.monotonic() - before
     _observe(details)
     persist('start')
+    provider_started = time.monotonic()
     try:
         yield details
         if details['status'] == 'pending': details['status'] = 'completed'
@@ -202,8 +218,20 @@ def provider_call(model, **sizes):
         details.update(status='failed', error_type=type(exc).__name__)
         raise
     finally:
+        details['provider_duration_seconds'] = time.monotonic() - provider_started
+        # Start-write duration is known before the final row write. The final
+        # write cannot measure its own commit; keep this boundary explicit.
+        details['persistence_seconds'] = persistence
+        details['persistence_boundary'] = 'attempt_start_write'
         details['duration_seconds'] = round(time.monotonic() - started, 3)
         persist('finish')
+        if ledger is not None:
+            details['persistence_seconds'] = persistence
+            details['persistence_boundary'] = 'start_and_finish_writes_excluding_timing_update'
+            try:
+                ledger.finish(call_id, details)
+            except Exception as exc:
+                log.warning('Provider timing update failed: %s', type(exc).__name__)
         discarded = scope.get('request_discarded')
         if ledger is not None and discarded and discarded.is_set():
             try: ledger.discard(scope['request_id'])
@@ -215,3 +243,16 @@ def record_chat_usage(details, result):
     message = generations[0].message if generations else None
     usage = getattr(message, 'usage_metadata', None) or (getattr(result, 'llm_output', None) or {}).get('token_usage')
     details.update(token_counts(usage))
+
+
+def record_tool_action(details):
+    """Durable action timings in the same store, excluded from provider counts."""
+    scope = current_scope()
+    ledger = scope.get('ledger')
+    if ledger is None:
+        return
+    row = {'source': 'tool_action', 'status': 'completed', **details}
+    try:
+        ledger.start(str(uuid4()), scope, row)
+    except Exception as exc:
+        log.warning('Tool timing persistence failed: %s', type(exc).__name__)
