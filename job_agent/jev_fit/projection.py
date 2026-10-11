@@ -4,7 +4,7 @@ from job_agent.schemas import (ResumeAnalysis, ResumeEvidence, ResumeSourceEntry
     JobAnalysis, JobRequirement, SkillMatch, SkillEvidence, ScoreBreakdown, MissingRequirement)
 from job_agent.domain import normalize_resume_analysis, validate_resume_source_metadata
 from job_agent.resume_sources import complete_source_evidence
-from .core import resume_blocks, score
+from .core import expected_score, resume_blocks
 from .settings import digest
 
 
@@ -61,7 +61,7 @@ def project(raw, resume_text, job_text, *, model, expires_at):
         probabilities=[a['noul']for a in (m.get('full_support'),m.get('related_evidence'),m.get('requires_confirmation'))if a]
         confidence=min((max(p,1-p)for p in probabilities),default=0)
         reason=m['reason']
-        if m['status']=='unknown':reason='Jev could not resolve this requirement confidently. It remains in the score interval.'
+        if m['status']=='unknown':reason='Jev was not decisive about this requirement; it counts by its probability of being met.'
         elif m['status']=='confirmed_condition':reason='The supplied personal condition is satisfied.' if m['condition_satisfied'] else 'The supplied personal condition is not satisfied.'
         matches.append(SkillEvidence(requirement_id=r.requirement_id,job_skill=r.display_name,
             requirement_level=r.level,match_status=m['status'],match_reason=reason,
@@ -71,9 +71,9 @@ def project(raw, resume_text, job_text, *, model, expires_at):
     missing=lambda level:[MissingRequirement(canonical_name=m.job_skill,original_text=by_id[m.requirement_id].original_text)
         for m in matches if m.requirement_level==level and m.match_status in {'missing','partial'}]
     total=raw['score']
-    groups={level:score([m for m in raw['matches']if m['level']==level])['score']for level in ('required','preferred')}
+    groups={level:expected_score([m for m in raw['matches']if m['level']==level])['score']for level in ('required','preferred')}
     resolved=sum(m.get('resolved_by')=='main_model' for m in raw['matches'])
-    explanation=('Evidence-based Jev alignment; uncertain requirements retain their weight in the score interval. Personal conditions are reported separately.'
+    explanation=(f'Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty {raw.get("certainty",0):.0%}). Personal conditions are reported separately.'
         +(f' {resolved} requirement(s) Jev could not decide were resolved by the main model with quoted evidence.' if resolved else ''))
     match=SkillMatch(matches=matches,explanation=explanation,
         recommendations=['Review unresolved requirements and personal conditions before applying.']if any(m.match_status in {'unknown','needs_confirmation'}for m in matches)else [],

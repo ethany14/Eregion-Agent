@@ -54,9 +54,14 @@ class Settings:
             raise ValueError('TYPESAFE_FIT_TIMEOUT must be between 0.1 and 60 seconds.')
         configured_path = values.get('TYPESAFE_FIT_CACHE_PATH')
         path = Path(configured_path) if configured_path else cache_path
-        resolve = str(values.get('TYPESAFE_FIT_RESOLVE_UNKNOWNS') or 'true').strip().lower() not in {'false', '0', 'no', 'off'}
+        resolve = str(values.get('TYPESAFE_FIT_RESOLVE_UNKNOWNS') or 'false').strip().lower() in {'true', '1', 'yes', 'on'}
+        # Jev is deterministic for identical input and uncertain answers are now
+        # scored by their probability, so re-asking them after minutes only costs.
+        unknown_ttl = float(values.get('TYPESAFE_FIT_UNKNOWN_TTL') or 86400)
+        if not 60 <= unknown_ttl <= 7 * 86400:
+            raise ValueError('TYPESAFE_FIT_UNKNOWN_TTL must be between 60 seconds and 7 days.')
         return cls(key=str(values.get('TYPESAFE_API_KEY') or '').strip(), model=model,
-                   base_url=base, timeout=timeout, resolve_unknowns=resolve,
+                   base_url=base, timeout=timeout, resolve_unknowns=resolve, unknown_ttl=unknown_ttl,
                    cache_path=Path(path) if path else ROOT / '.cache' / 'jev-fit.sqlite3')
 
     def signature(self):

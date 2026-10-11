@@ -130,14 +130,17 @@ class JevProductionTests(unittest.TestCase):
         self.assertEqual(second.model_calls,0)
         self.assertEqual(first.skill_match.overall_score,second.skill_match.overall_score)
 
-    def test_unknown_is_an_interval_and_has_short_expiry(self):
+    def test_uncertain_answers_score_by_probability_and_expire_by_config(self):
+        # Uncertain evidence (p=.5) contributes its expected credit
+        # .5 + (1-.5) x .5 x .5 = .625 instead of turning the score into a range.
         self.endpoint.unknown = True
         from unittest.mock import patch as patched
         service = self.service()
         result = self.analyze(service)
-        self.assertEqual(result.status, 'needs_review')
-        self.assertIsNone(result.skill_match.overall_score)
-        self.assertEqual(result.skill_match.score_range, [0, 100])
+        self.assertEqual(result.status, 'completed')
+        self.assertAlmostEqual(result.skill_match.overall_score, 62.5)
+        self.assertEqual(result.skill_match.score_range, [62.5, 62.5])
+        self.assertIn('certainty 0%', result.skill_match.explanation)
         self.assertEqual(self.analyze(service).model_calls, 0)
         with patched('time.time', return_value=result.skill_match.valid_until+1):
             repeated = self.analyze(service)

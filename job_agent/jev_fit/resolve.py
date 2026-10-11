@@ -15,7 +15,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from .core import POLICY, score
+from .core import POLICY, expected_score, score
 
 
 class UnknownDecision(BaseModel):
@@ -171,9 +171,9 @@ def resolve_unknowns(raw, evidence, *, model, invoke=None, store=None):
             unit['classification'] = decision.level
         resolved += 1
     matches = [m for m in raw['matches'] if m['requirement_id'] not in dropped]
-    totals = score(matches)
-    if any(item['classification'] == 'unknown' for item in ledger.values()):
-        totals['score'] = None
+    interval = score(matches)
+    totals = {**expected_score(matches), 'decision_interval': interval['score_range'],
+              'resolved_weight_fraction': interval['resolved_weight_fraction']}
     status = 'needs_review' if raw.get('provider_errors') or not matches or totals['score'] is None else 'completed'
     return {**raw, **totals, 'matches': matches, 'status': status, 'main_model_calls': calls,
             'resolver': {'status': 'completed', 'requested': len(targets), 'resolved': resolved,

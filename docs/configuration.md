@@ -82,15 +82,21 @@ TYPESAFE_TIMEOUT=2.5
 
 `TYPESAFE_ENABLED=true` selects **Jev fit scoring**, including JD requirement
 classification, evidence decisions and citation checks. This applies to chat's
-`score_job` / `score_jobs`, quick analysis and saved-job analysis. Jev answers
-every question it can decide confidently. Requirements it still leaves unknown
-are sent to the main model in **one structured request per job**; a
-matched/partial verdict must quote the resume verbatim, otherwise the requirement
-stays unknown. Benefits, salary, company and EEO/legal text are classified locally
-and never scored. Jev provider failures remain failures; a failed main-model
-resolution keeps Jev's honest score interval rather than an invented exact score.
-Set `TYPESAFE_FIT_RESOLVE_UNKNOWNS=false` for Jev-only intervals with no main-model
-calls. Setting `TYPESAFE_ENABLED` to `false` selects the original analyze pipeline.
+`score_job` / `score_jobs`, quick analysis and saved-job analysis. Every answer
+from Jev is a probability, and the score is the **expected credit** across
+requirements: each requirement weighs P(requirement) × (2 − P(preferred)) ×
+(1 − P(personal condition)) and earns P(fully met) + P(not fully met) × P(related) × 0.5.
+The result is always one number. Jev is deterministic for identical input, so
+repeated scoring returns the same or nearly the same value, and a `certainty`
+(0–100%) in the explanation shows how decisive the underlying answers were.
+Benefits, salary, company and EEO/legal text are classified locally and never scored;
+work-arrangement and eligibility sentences are kept as personal conditions.
+Jev provider failures remain failures, with no silent fallback.
+Optionally, `TYPESAFE_FIT_RESOLVE_UNKNOWNS=true` sends requirements Jev was not
+decisive about to the main model (one structured request per job, verbatim-quote
+verification). It is off by default because it measurably reduced consistency
+and separation (see [Jev and performance](jev-benchmark.md)).
+Setting `TYPESAFE_ENABLED` to `false` selects the original analyze pipeline.
 Resume upload warmup skips main-model extraction while Jev is enabled.
 
 The switch also enables general option mapping and job screening.
@@ -103,12 +109,13 @@ Fit-specific settings:
 | --- | --- | --- |
 | `TYPESAFE_FIT_MODEL` | `jev-1.13.0` | Exact Jev release. When unset, an exact `TYPESAFE_DEFAULT_MODEL` is used; its `jev-latest` / `jev-preview` aliases resolve to the tested `jev-1.13.0` for fit scoring. |
 | `TYPESAFE_FIT_TIMEOUT` | `12` seconds | Timeout for each fit request, from 0.1 to 60 seconds. No automatic paid retries. |
-| `TYPESAFE_FIT_RESOLVE_UNKNOWNS` | `true` | Resolve requirements Jev leaves unknown with one main-model request per job. `false` keeps Jev-only intervals. |
+| `TYPESAFE_FIT_RESOLVE_UNKNOWNS` | `false` | `true` resolves requirements Jev was not decisive about with one main-model request per job. |
+| `TYPESAFE_FIT_UNKNOWN_TTL` | `86400` seconds | Cache lifetime for non-decisive Jev answers (60 s – 7 days). |
 | `TYPESAFE_FIT_CACHE_PATH` | Database sibling ending in `.jev-fit.sqlite3`; otherwise `.cache/jev-fit.sqlite3` | Persistent local decision cache. Relative overrides resolve from the server's working directory. |
 
 The cache uses exact resume, JD, supplied facts, owner, model release and scoring
-code/prompt identities. Decisive answers expire after 24 hours; uncertain answers
-after 5 minutes. Changes invalidate reuse. Only hashes, answers and provenance
+code/prompt identities. Answers expire after 24 hours (non-decisive answers per
+`TYPESAFE_FIT_UNKNOWN_TTL`). Changes invalidate reuse. Only hashes, answers and provenance
 are stored in the decision cache; application artifacts retain the actual sources.
 Chat can batch up to eight imported jobs for the same candidate. Compatible
 questions share a request while each job retains its own result and citations.
@@ -123,8 +130,8 @@ The Jev adapter does not upload resume files, screenshots, passwords, or codes.
 
 The general helper timeout accepts 0.1–10 seconds. Those helpers can fall back
 or skip Jev under their existing cost gate. **Fit scoring uses the separate
-timeout above; only requirements Jev leaves unknown reach the main model, and only
-while `TYPESAFE_FIT_RESOLVE_UNKNOWNS` is on.**
+timeout above and makes no main-model calls unless `TYPESAFE_FIT_RESOLVE_UNKNOWNS`
+is on.**
 See [Jev and performance](jev-benchmark.md) for measurements and limitations.
 
 ## Data and credentials

@@ -13,11 +13,11 @@ verification still use the main model.
 
 Every semantic scoring question is a native yes/no decision: identify JD
 requirements, distinguish personal conditions, test full/related evidence and
-verify proposed citations. Arithmetic and exact source spans are local. Ambiguous
-answers retain their weight in a score interval; personal conditions stay separate
-from skill alignment. One focused pass can resolve uncertainty. Requirements that
-remain unknown go to the main model in one structured request per job, which must
-quote verbatim resume evidence for any support (`TYPESAFE_FIT_RESOLVE_UNKNOWNS`).
+verify proposed citations. Arithmetic and exact source spans are local. The score is
+the expected credit computed from Jev's probabilities, not thresholded categories,
+so it is always a single number; personal conditions stay separate from skill
+alignment. Categories (matched/partial/missing/unknown) remain for display.
+The optional main-model resolver (`TYPESAFE_FIT_RESOLVE_UNKNOWNS=true`) is off by default.
 There is no unbounded retry loop.
 
 The persistent cache includes the exact resume, JD, supplied facts, owner,
@@ -55,6 +55,21 @@ checks without provider calls:
 python -m unittest discover -s tests -p test_jev_fit_production.py -v
 node --test tests/test_career_chat.mjs
 ```
+
+## Expected-score consistency (2026-10-11)
+
+Four synthetic applicants × real Greenhouse JDs (2 fits + 1 mismatch each, plus a
+flattened copy of one fit), every input scored twice with fresh caches:
+
+| Mode | Point scores | Cold repeat Δ mean / max | Flat vs structured Δ mean / max | Fit vs mismatch AUC | Median time | Main calls |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Thresholded Jev (before) | 0 / 64 | ranges | ranges | — | ~2 s | 0 |
+| Jev expected score | 32 / 32 | 0.53 / 3.16 | 3.49 / 6.47 | 1.00 | 1.85 s | 0 |
+| Jev expected + main-model resolver | 32 / 32 | 3.16 / 9.34 | 11.65 / 23.37 | 0.81 | 54.7 s | 32 |
+
+Jev's per-question probabilities moved by 0.003–0.01 on average between cold runs;
+the former ranges came from thresholding, not provider randomness. Small sample,
+synthetic resumes; not an accuracy benchmark against human labels.
 
 ## Where the fast path applies
 

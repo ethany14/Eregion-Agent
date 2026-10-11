@@ -123,7 +123,8 @@ def test_resolver_rejects_fabricated_quotes_and_drops_non_requirements():
     assert by_id['j0']['status'] == 'unknown'  # unverifiable support is never adopted
     assert 'j1' not in by_id
     assert by_id['j2']['status'] == 'needs_confirmation'
-    assert result['score'] is None
+    # The unverified requirement keeps Jev's uncertain probability (.5 -> credit .625); no invented support.
+    assert result['score'] == 62.5
 
 
 def test_resolver_failure_keeps_the_honest_interval():
@@ -279,3 +280,43 @@ def test_finished_application_is_never_waited_on():
     assert harness.wake({'wait': {'kind': 'application', 'id': 'r1', 'token': token}})
     child['status'] = 'running'
     assert not harness.capability_finished({'kind': 'application', 'id': 'r1'})
+
+
+# ---- Step 5: Jev expected score (one consistent number instead of a range) --------------------
+from job_agent.jev_fit.core import expected_score, score as interval_score
+
+
+def match(full, related=.5, requirement=.99, preferred=0., condition=.01, status='unknown', level='required'):
+    return {'requirement_id': f'r{full}{related}', 'level': level, 'weight': 2, 'status': status,
+            'probabilities': {'requirement': requirement, 'preferred': preferred, 'condition': condition, 'full': full, 'related': related}}
+
+
+def test_expected_score_is_a_single_deterministic_number():
+    ms = [match(.97, .99, status='matched'), match(.6), match(.03, .2, status='missing')]
+    first, second = expected_score(ms), expected_score([dict(m) for m in ms])
+    assert first['score'] is not None and first['score'] == second['score']
+    assert first['score_range'] == [first['score'], first['score']]
+    assert interval_score(ms)['score'] is None  # the old categorical path still yields only a range here
+
+
+def test_expected_score_is_continuous_across_the_old_thresholds():
+    below, above = expected_score([match(.84), match(.9, .9)]), expected_score([match(.86), match(.9, .9)])
+    assert abs(below['score'] - above['score']) < 2  # .84 -> .86 used to flip unknown -> matched
+
+
+def test_expected_score_is_monotonic_and_excludes_personal_conditions():
+    weak, strong = expected_score([match(.2, .3)]), expected_score([match(.8, .9)])
+    assert strong['score'] > weak['score']
+    with_condition = expected_score([match(.9, .9), match(.0, .0, condition=.99)])
+    without = expected_score([match(.9, .9)])
+    assert abs(with_condition['score'] - without['score']) < 1
+
+
+def test_flattened_lists_are_restored_without_splitting_proper_nouns():
+    flat = ('Responsibilities Own the end-to-end product design process from discovery through delivery Ship meaningful, '
+            'high-quality experiences that balance business needs with usability Collaborate with engineering, product, and '
+            'other stakeholders to shape the roadmap and goals of the team using Figma Prototyping tools and Python Notebooks')
+    units = texts(flat)
+    assert any(u.startswith('Ship meaningful') for u in units)
+    assert any(u.startswith('Collaborate with engineering') for u in units)
+    assert not any(u.startswith(('Figma', 'Python', 'Prototyping')) for u in units)
