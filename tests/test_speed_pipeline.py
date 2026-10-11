@@ -38,6 +38,7 @@ class Analyzer:
 
 def test_fit_cache_survives_restart_and_is_reused_by_workflow(tmp_path, monkeypatch):
     monkeypatch.setenv('TYPESAFE_ENABLED', 'false')
+    monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG', 'extract')  # counts model job extraction calls
     db = create_database('sqlite:///' + (tmp_path/'analysis.db').as_posix(), create_schema_for_tests=True)
     analyzer = Analyzer()
     def handler():
