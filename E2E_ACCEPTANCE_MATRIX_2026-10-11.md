@@ -326,3 +326,13 @@ F2 r2原独立check exit0/199哈希200含自身作为历史保留。本轮F3、�
 | C16 排序子检查 | 测量缺陷已修（未付费复测） | 前述"反馈先于下一题"判断有误。三答案同时排队，Q2/Q3出现即被消费，轮询"当前题"永远看不到它们（记为inf）。原证据按系统持久化question.created_at换算：Q2 5.77s<F1 10.79s，Q3 12.73s<F2 15.72s，下一题确实先出现。检查改为取轮询与持久化时间的较早者（非模型时间戳），证据新增started_wall/question_persisted_seconds。离线重放原run通过；原失败xml保留 |
 | E5 r2 | 失败1项（根因已修，未再付费） | revision lane改用已有frozen_verification种子（真实reviser+修订后实时复验不变）。`tmp/e5-cover-style-20261011-claude-r2/`：4calls/4991in/9036out完整；两lane均awaiting_review、grounding通过，revision_count=1。唯一失败`original-revision:specific_role_company_need`：修订开头只剩角色+公司。**根因**：生产`style.cover_revision_notes`开头提示写"Employer needs can appear separately"，与writer提示（首段第二句写已验证需求）矛盾，reviser照做移走API reliability。已改为保留在开头段第二句，加回归；cover/pack相关150通过6跳过。人工风格审阅仍待用户 |
 | B6 r2 | 失败（外部来源阻断，非资历修复路径） | `tmp/remaining-live-analyst-20261011-claude-r2/`：1failed/148.54s，24主calls，283232in/8601out完整账本，needs_input/no_progress，0保存0评分0推荐。本次Indeed返回Cloudflare校验（r1可读）、LinkedIn登录、hiringcafe Cloudflare；剩余聚合列表页无单一职位正文，jooble/ziprecruiter HTTP错误，gainam被正确拒为人才库。同一search_jobs参数执行6次（重复守卫需连续2次无进展才启用，中间读取重置计数），未尝试公司招聘板。资历修复未被触发。B6结果依赖实时站点可达性，单次结果波动大（r1 2推荐/r2 0） |
+
+### 续：B6搜索修复后E5 r3 / B6 r3（2026-10-11，用户批准付费）
+
+| 项 | 结果 | 证据与说明 |
+|---|---|---|
+| B6 搜索修复（离线） | 通过 | `task_host`：search_jobs仅当出现本请求未见过的链接才算进展（子集/截断/重排=无新证据），反馈指向公司招聘板；提示词加入来源阻断时改用Greenhouse/Lever/Ashby/Workday boards。回归`test_narrower_or_truncated_repeat_of_observed_search_links_is_not_progress`；全量1768通过131跳过 |
+| E5 r3 | 失败1项（根因已修，未再付费） | `tmp/e5-cover-style-20261011-claude-r3/`：1failed/70.27s，4calls/4963in/9737out完整。**revision lane全部通过**（开头保留"The company is hiring to improve API reliability"，r2修复生效）。唯一失败`writer:specific_role_company_need`：writer本次开头只写角色+公司。根因：writer提示"In a separate sentence it **may** refer to ... need"为可选。已改为验证到需求时首段第二句**必须**写入（保留既有固定短语），加回归；cover/pack 151通过 |
+| B6 r3 | 失败（外部阻断为主） | `tmp/remaining-live-analyst-20261011-claude-r3/`：1failed/268.25s，37主calls，553369in/24171out完整账本（主528120<1M），needs_input/no_progress；1评分（LinkedIn来源Associate Data Analyst 48.13，无资历证据，未推荐——资历修复使其未被误称junior）、0推荐。Indeed链接HTTP错误、ZipRecruiter/Jooble Cloudflare、gainam正确拒绝。**新行为**：agent首次调用公司boards（datadog/braze greenhouse、ramp ashby、plaid lever），但board结果只要求任一查询词，返回"Accounts Payable Analyst""AI Research Scientist - Data"等噪声。已改为与公开搜索相同的角色词规则（≥min(2,角色词数)，排除级别/填充词），回归`test_board_search_needs_role_terms_not_one_shared_word`；全量1770通过131跳过。未再付费复测 |
+
+**B6结论**：三次单跑r1 2推荐(1合格)/r2 0/r3 0评分推荐，主要受实时站点Cloudflare/登录阻断影响；本轮修复（资历证据、搜索进展判定、board回退及匹配）均离线验证，真实两岗目标仍未达成。

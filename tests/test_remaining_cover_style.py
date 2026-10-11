@@ -367,3 +367,10 @@ def test_real_cover_letter_preserves_source_citations_and_specific_natural_openi
             'human_style_review':'pending; automatic style screens do not replace human review'}
         (tmp_path/'cover-style-evidence.json').write_text(json.dumps(evidence,ensure_ascii=False,indent=2),encoding='utf-8')
     assert all(checks.values()),checks
+
+
+def test_writer_prompt_requires_verified_employer_need_in_opening():
+    # E5 live r3: an optional "may refer to the need" let the writer drop it.
+    from agent_runtime.application_pack.workflow import _COVER_SYSTEM
+    assert 'the first paragraph must include it in a separate second sentence' in _COVER_SYSTEM
+    assert 'may refer to' not in _COVER_SYSTEM

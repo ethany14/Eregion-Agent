@@ -386,3 +386,16 @@ def test_level_free_title_needs_opening_level_evidence_for_junior_request():
         recommendation_warning({'levels':['junior'],'strict':True},'Associate Data Analyst','Preferred 1 year.')
     # Senior requests keep the title-only contract.
     assert recommendation_warning({'levels':['senior'],'strict':False},'Backend Engineer','') is not None
+
+
+def test_board_search_needs_role_terms_not_one_shared_word():
+    # B6 live r3: "junior data analyst" on Datadog's board returned
+    # "Accounts Payable Analyst" and "AI Research Scientist - Data".
+    import json as _json
+    from agent_runtime.career.discovery import JobDiscovery
+    discovery=JobDiscovery()
+    jobs=[{'absolute_url':f'https://boards.greenhouse.io/acme/jobs/{i}','title':title,'location':{'name':'New York, NY'}}
+          for i,title in enumerate(['Accounts Payable Analyst','AI Research Scientist - Data','Data Analyst','Junior Data Analyst, Growth'])]
+    discovery.read=lambda url,**_:(_json.dumps({'jobs':jobs}),url)
+    result=discovery.search('junior data analyst','New York, NY',boards=[{'platform':'greenhouse','company':'acme'}])
+    assert [j['title'] for j in result['jobs']]==['Data Analyst','Junior Data Analyst, Growth']

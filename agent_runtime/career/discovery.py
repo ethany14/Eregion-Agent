@@ -89,6 +89,9 @@ def job_location(value):
     return ", ".join(dict.fromkeys(parts)) or plain(value.get("name", ""))
 
 
+ROLE_STOPWORDS={'senior','junior','sr','jr','remote','us','usa','in','the','and','or','jobs','job','careers','career'}
+
+
 def seniority_warning(query,title):
     from .search_policy import seniority
     requested,actual=seniority(query),seniority(title)
@@ -175,8 +178,12 @@ class JobDiscovery:
                         'location':j.get('locationsText','')} for j in json.loads(body)['jobPostings']
                         if j.get('externalPath','').startswith('/job/')]
                 else:raise ValueError('Board platform must be greenhouse, lever, ashby or workday.')
-                words = re.findall(r'\w+',query.casefold())
-                results += [item for item in items if any(w in item['title'].casefold() for w in words)
+                # Same role-term rule as public search: one shared word such as
+                # "analyst" or "data" does not make "Accounts Payable Analyst" a
+                # data-analyst candidate. Level and filler words never count.
+                roles=set(re.findall(r'[a-z]+',query.casefold()))-ROLE_STOPWORDS
+                results += [item for item in items
+                    if len(roles & set(re.findall(r'[a-z]+',item['title'].casefold())))>=min(2,len(roles))
                     and (not location or location_matches(location,item['location']))]
             except Exception as exc:failures.append({'board':board,'source':source,'error':type(exc).__name__,
                 'blocked':isinstance(exc,httpx.HTTPStatusError) and exc.response.status_code in {401,403,429} or 'blocked' in str(exc).casefold(),
@@ -184,8 +191,7 @@ class JobDiscovery:
         if not boards:
             exclusions=[host for host in excluded_hosts if re.fullmatch(r'[a-z0-9.-]+',host)][:8]
             terms=f'{query} {location} jobs careers'+''.join(f' -site:{host}' for host in exclusions)
-            role_terms=set(re.findall(r'[a-z]+',query.casefold()))-{
-                'senior','junior','sr','jr','remote','us','usa','in','the','and','or','jobs','job','careers','career'}
+            role_terms=set(re.findall(r'[a-z]+',query.casefold()))-ROLE_STOPWORDS
             for engine in ('https://html.duckduckgo.com/html/','https://www.bing.com/search'):
                 if engine in excluded_sources:
                     skipped_sources.append(engine)
