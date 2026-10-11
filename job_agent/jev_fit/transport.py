@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import copy
 import json
 import queue
+import re
 import threading
 import time
 import uuid
@@ -14,6 +15,18 @@ from agent_runtime.multi_agent.model_usage import invoke_model, current_model_ca
 from agent_runtime.provider_usage import provider_call, usage_scope, token_counts
 from .core import MAX_PAYLOAD_BYTES, MAX_QUESTIONS, boolean, validate_answers
 from .settings import canonical, digest
+
+
+def semantic_value(value):
+    """Presentation whitespace is irrelevant to yes/no decisions, not offsets.
+
+    Only provider inputs are normalized. Original documents and source spans
+    remain untouched in the analysis and citations.
+    """
+    if isinstance(value,str):return re.sub(r'\s+',' ',value).strip()
+    if isinstance(value,dict):return {k:semantic_value(v) for k,v in value.items()}
+    if isinstance(value,list):return [semantic_value(v) for v in value]
+    return value
 
 
 @dataclass
@@ -49,7 +62,7 @@ class Broker:
 
     def submit(self, *, state, questions, purpose, scope, task_id):
         future = Future()
-        self.queue.put(Pending(copy.deepcopy(state), copy.deepcopy(questions), purpose,
+        self.queue.put(Pending(semantic_value(state), semantic_value(questions), purpose,
                                copy.deepcopy(scope), task_id, copy_context(), future))
         return future.result()
 
@@ -221,5 +234,5 @@ class Client:
         answers,errors=self.broker.submit(state=state,questions=questions,purpose=purpose,
                                           scope=self.scope,task_id=self.task_id)
         if purpose=='condition_category_yes_no':
-            self.categories=answers
+            self.categories.update(answers)
         return answers,errors

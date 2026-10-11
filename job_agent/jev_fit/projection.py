@@ -9,55 +9,38 @@ from .settings import digest
 
 
 def resume_projection(text):
-    """Preserve verbatim sections; only explicit pipe-separated headers get metadata.
-
-    Uncertain layouts retain full source text without assigning an employer or
-    completed degree. Downstream material generation keeps its factual verifier.
-    """
+    """Preserve exact source spans and common inline/wrapped entry headers."""
+    from job_agent.resume_layout import entry_spans
     evidence,entries,education=[],[],[]
     kinds={'summary':'summary','profile':'summary','education':'education','教育':'education',
            'experience':'experience','employment':'experience','work experience':'experience',
            'professional experience':'experience','工作经历':'experience','project':'project',
            'projects':'project','项目经历':'project','skills':'skills','technical skills':'skills','技能':'skills'}
     blocks = []
-    date = re.compile(r'\d{4}(?:-\d{2})?(?:\s*\([^)]*\))?|present|current', re.I)
     for section in resume_blocks(text):
         lines = list(re.finditer(r'(?m)^.*$', section['text']))
         label = lines[0].group().strip().rstrip(':')
         kind = kinds.get(label.casefold(), 'other')
-        # Several positions can share one section heading. A date-delimited
-        # header identifies an entry boundary; never attribute the whole section
-        # to its first employer. Unknown layouts remain unowned exact evidence.
-        headers = [line.start() for line in lines[1:]
-                   if len(line.group().split('|')) >= 3
-                   and date.fullmatch(line.group().split('|')[-1].strip())]
-        if kind in {'experience', 'project', 'education'} and headers:
-            boundaries = [0] + headers[1:] + [len(section['text'])]
-            for a, b in zip(boundaries, boundaries[1:]):
-                blocks.append({'text': section['text'][a:b], 'start': section['start']+a,
-                               'label': label, 'kind': kind})
+        if kind in {'experience', 'project', 'education'}:
+            offset = section['text'].find('\n') + 1
+            body = section['text'][offset:]
+            for a, b, metadata in entry_spans(body, kind):
+                blocks.append({'text': body[a:b], 'start': section['start']+offset+a,
+                               'label': label, 'kind': kind, 'metadata': metadata})
         else:
             blocks.append({**section, 'label': label, 'kind': kind})
     for block in blocks:
         lines=[line.strip()for line in block['text'].splitlines()if line.strip()]
         label, kind = block['label'], block['kind']
-        heading,organization,start,end=None,None,None,None
-        if kind in {'experience','project','education'}:
-            body = lines[1:] if lines and lines[0].rstrip(':').casefold()==label.casefold() else lines
-            fields=[p.strip()for p in body[0].split('|')] if body else []
-            if len(fields)>=3 and date.fullmatch(fields[-1]):
-                heading=fields[0]
-                organization=fields[1] if not date.fullmatch(fields[1]) else None
-                dates=[p for p in fields[1:] if date.fullmatch(p)]
-                if dates:start=dates[0]
-                if len(dates)>1:end=dates[1]
-        if kind=='skills':heading=label
+        metadata=block.get('metadata',{})
+        if kind=='skills':metadata={'heading':label}
+        if not block['text'].strip():continue
         identifier='jev-source-'+digest([block['start'],block['text']])[:16]
         eid=identifier+'-evidence'
         evidence.append(ResumeEvidence(evidence_id=eid,source_entry_id=identifier,
             source_section=label if kind!='other' else 'Resume',exact_text=block['text']))
-        entries.append(ResumeSourceEntry(source_entry_id=identifier,entry_type=kind,heading=heading,
-            organization=organization,start_date=start,end_date=end,evidence_ids=[eid]))
+        entries.append(ResumeSourceEntry(source_entry_id=identifier,entry_type=kind,
+            **metadata,evidence_ids=[eid]))
         if kind=='education':education.append(block['text'])
     analysis=ResumeAnalysis(summary='',skills=[],education=education,evidence=evidence,source_entries=entries)
     analysis=normalize_resume_analysis(complete_source_evidence(analysis,text))
@@ -89,7 +72,10 @@ def project(raw, resume_text, job_text, *, model, expires_at):
         for m in matches if m.requirement_level==level and m.match_status in {'missing','partial'}]
     total=raw['score']
     groups={level:score([m for m in raw['matches']if m['level']==level])['score']for level in ('required','preferred')}
-    match=SkillMatch(matches=matches,explanation='Evidence-based Jev alignment; uncertain requirements retain their weight in the score interval. Personal conditions are reported separately.',
+    resolved=sum(m.get('resolved_by')=='main_model' for m in raw['matches'])
+    explanation=('Evidence-based Jev alignment; uncertain requirements retain their weight in the score interval. Personal conditions are reported separately.'
+        +(f' {resolved} requirement(s) Jev could not decide were resolved by the main model with quoted evidence.' if resolved else ''))
+    match=SkillMatch(matches=matches,explanation=explanation,
         recommendations=['Review unresolved requirements and personal conditions before applying.']if any(m.match_status in {'unknown','needs_confirmation'}for m in matches)else [],
         missing_required_requirements=missing('required'),missing_preferred_requirements=missing('preferred'),
         confirmation_requirements=[r for r in requirements if next(m for m in matches if m.requirement_id==r.requirement_id).match_status=='needs_confirmation'],
@@ -98,6 +84,8 @@ def project(raw, resume_text, job_text, *, model, expires_at):
         decision_details={'model':model,'resume_sha256':raw['resume_sha256'],'jd_sha256':raw['jd_sha256'],
           'extraction':[{'id':u['id'],'start':u['start'],'end':u['end'],'classification':u['classification']}for u in raw['extraction']],
           'decisions':[{'requirement_id':m['requirement_id'],'initial':m['initial_decisions'],'focused':m['focused_decisions'],
+                       'clarified_full_support':m.get('clarified_full_support'),
+                       'resolved_by':m.get('resolved_by','jev'),
                        'citation_scope':m.get('citation_scope'),'citation_verification':m.get('citation_verification'),
                        'citations':[{'sha256':c['sha256'],'spans':c['spans']}for c in m['citations']]}for m in raw['matches']]})
     # A title cannot be inferred safely from an arbitrary first line of a JD.

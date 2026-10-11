@@ -42,6 +42,7 @@ before running both migrations and the server where applicable.
 | `JOB_AGENT_HIDDEN_BROWSER` | `offscreen` | `offscreen` uses a normal Chrome window outside the visible desktop; `headless` uses headless Chrome. |
 | `JOB_AGENT_BROWSER_CHANNEL` | `chrome` | Playwright browser channel. The default uses installed Google Chrome. |
 | `JOB_AGENT_ANALYSIS_WARMUP` | `1` | Precompute uploaded-resume analysis; `0`, `false`, or `off` disables it. Warmup can use model tokens. |
+| `JOB_AGENT_BROWSER_LOCALE` | `en-US` | Page language for agent browsers. Without it, Chrome follows the OS locale and sites can serve localized text that leaks into job descriptions. |
 | `JOB_AGENT_ALLOWED_HOSTS` | Loopback hosts only | Comma-separated additional accepted Host names. This is not user authentication. |
 
 For example, use headless Chrome with two application workers:
@@ -79,13 +80,18 @@ TYPESAFE_CAREER_ENABLED=false
 TYPESAFE_TIMEOUT=2.5
 ```
 
-`TYPESAFE_ENABLED=true` selects **Jev-only fit scoring**, including JD requirement
+`TYPESAFE_ENABLED=true` selects **Jev fit scoring**, including JD requirement
 classification, evidence decisions and citation checks. This applies to chat's
-`score_job` / `score_jobs`, quick analysis and saved-job analysis. There is no
-main-model fallback in these scoring requests. Provider failures remain failures;
-uncertain decisions produce unresolved requirements and a score interval rather
-than an invented exact score. Setting it to `false` selects the original analyze
-pipeline. Resume upload warmup skips main-model extraction while Jev is enabled.
+`score_job` / `score_jobs`, quick analysis and saved-job analysis. Jev answers
+every question it can decide confidently. Requirements it still leaves unknown
+are sent to the main model in **one structured request per job**; a
+matched/partial verdict must quote the resume verbatim, otherwise the requirement
+stays unknown. Benefits, salary, company and EEO/legal text are classified locally
+and never scored. Jev provider failures remain failures; a failed main-model
+resolution keeps Jev's honest score interval rather than an invented exact score.
+Set `TYPESAFE_FIT_RESOLVE_UNKNOWNS=false` for Jev-only intervals with no main-model
+calls. Setting `TYPESAFE_ENABLED` to `false` selects the original analyze pipeline.
+Resume upload warmup skips main-model extraction while Jev is enabled.
 
 The switch also enables general option mapping and job screening.
 `TYPESAFE_CAREER_ENABLED=true` additionally enables eligible memory, question,
@@ -97,6 +103,7 @@ Fit-specific settings:
 | --- | --- | --- |
 | `TYPESAFE_FIT_MODEL` | `jev-1.13.0` | Exact Jev release. When unset, an exact `TYPESAFE_DEFAULT_MODEL` is used; its `jev-latest` / `jev-preview` aliases resolve to the tested `jev-1.13.0` for fit scoring. |
 | `TYPESAFE_FIT_TIMEOUT` | `12` seconds | Timeout for each fit request, from 0.1 to 60 seconds. No automatic paid retries. |
+| `TYPESAFE_FIT_RESOLVE_UNKNOWNS` | `true` | Resolve requirements Jev leaves unknown with one main-model request per job. `false` keeps Jev-only intervals. |
 | `TYPESAFE_FIT_CACHE_PATH` | Database sibling ending in `.jev-fit.sqlite3`; otherwise `.cache/jev-fit.sqlite3` | Persistent local decision cache. Relative overrides resolve from the server's working directory. |
 
 The cache uses exact resume, JD, supplied facts, owner, model release and scoring
@@ -116,7 +123,8 @@ The Jev adapter does not upload resume files, screenshots, passwords, or codes.
 
 The general helper timeout accepts 0.1–10 seconds. Those helpers can fall back
 or skip Jev under their existing cost gate. **Fit scoring uses the separate
-timeout above and never falls back to the main model while enabled.**
+timeout above; only requirements Jev leaves unknown reach the main model, and only
+while `TYPESAFE_FIT_RESOLVE_UNKNOWNS` is on.**
 See [Jev and performance](jev-benchmark.md) for measurements and limitations.
 
 ## Data and credentials

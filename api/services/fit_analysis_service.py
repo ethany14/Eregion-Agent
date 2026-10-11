@@ -124,7 +124,9 @@ class FitAnalysisService:
 
     def cache_signature(self) -> str:
         if self.uses_jev():
-            return 'jev-only:' + self._jev_settings().signature()
+            from job_agent.jev_fit.resolve import identity
+            config=self._jev_settings()
+            return 'jev-only:' + config.signature() + ':' + identity(config.resolve_unknowns)
         # Exact prompts/schemas and model configuration invalidate old results.
         content = [
             FIT_ANALYSIS_VERSION, PROMPT_VERSION, SCHEMA_VERSION,
@@ -155,7 +157,8 @@ class FitAnalysisService:
             from job_agent.jev_fit.settings import digest
             # Short-lived top-level reuse also shares concurrent identical calls.
             # Persisted decision expiry remains authoritative across processes.
-            key=('jev-fit',config.signature(),digest([resume_text,job_description,candidate_facts or {}]))
+            from job_agent.jev_fit.resolve import identity
+            key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
             data,reused=self._cache.get(key,lambda:self._jev_many_sync(resume_text=resume_text,
                 jobs=[{'id':'single','job_description':job_description}],candidate_facts=candidate_facts)['single'],
                 valid=lambda result:(result.skill_match.valid_until or 0)>time.time())

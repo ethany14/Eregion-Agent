@@ -36,6 +36,7 @@ class Settings:
     cache_path: Path | None = None
     ttl: float = 86400
     unknown_ttl: float = 300
+    resolve_unknowns: bool = False  # Settings.load() enables it from the environment.
 
     @classmethod
     def load(cls, *, cache_path=None, environ=None):
@@ -53,14 +54,15 @@ class Settings:
             raise ValueError('TYPESAFE_FIT_TIMEOUT must be between 0.1 and 60 seconds.')
         configured_path = values.get('TYPESAFE_FIT_CACHE_PATH')
         path = Path(configured_path) if configured_path else cache_path
+        resolve = str(values.get('TYPESAFE_FIT_RESOLVE_UNKNOWNS') or 'true').strip().lower() not in {'false', '0', 'no', 'off'}
         return cls(key=str(values.get('TYPESAFE_API_KEY') or '').strip(), model=model,
-                   base_url=base, timeout=timeout,
+                   base_url=base, timeout=timeout, resolve_unknowns=resolve,
                    cache_path=Path(path) if path else ROOT / '.cache' / 'jev-fit.sqlite3')
 
     def signature(self):
         files = ('settings.py', 'core.py', 'cache.py', 'transport.py', 'service.py', 'projection.py')
         code = {name: hashlib.sha256((Path(__file__).parent / name).read_bytes()).hexdigest() for name in files}
-        for name in ('schemas.py', 'domain.py', 'resume_sources.py', 'resume_headers.py'):
+        for name in ('schemas.py', 'domain.py', 'resume_sources.py', 'resume_headers.py', 'resume_layout.py'):
             code[name] = hashlib.sha256((ROOT / 'job_agent' / name).read_bytes()).hexdigest()
         return digest([VERSION, self.model, self.base_url, self.timeout, self.ttl,
                        self.unknown_ttl, digest(self.key), code])

@@ -1,4 +1,4 @@
-"""Production Jev-only analysis boundary; no writer or main-model dependency."""
+"""Production Jev fit boundary. The main model is used only for requirements Jev leaves unknown."""
 from concurrent.futures import ThreadPoolExecutor
 from contextvars import copy_context
 import time
@@ -6,7 +6,7 @@ from .cache import DecisionCache
 from .core import JevFit
 from .projection import project
 from .settings import Settings, digest, canonical
-from .transport import Broker, Client
+from .transport import Broker, Client, semantic_value
 
 
 class JevFitError(RuntimeError):
@@ -14,8 +14,9 @@ class JevFitError(RuntimeError):
 
 
 class JevFitService:
-    def __init__(self, config: Settings, *, owner='local', transport=None, max_requests=160):
+    def __init__(self, config: Settings, *, owner='local', transport=None, max_requests=160, resolver_model=None):
         self.config,self.owner,self.transport,self.max_requests=config,owner,transport,max_requests
+        self.resolver_model=resolver_model
 
     def analyze_many(self, *, resume_text, jobs, candidate_facts=None):
         if not resume_text.strip() or not jobs or len(jobs)>8 or len({j['id']for j in jobs})!=len(jobs):
@@ -28,10 +29,17 @@ class JevFitService:
         evidence=resume_text+('\nUSER PROVIDED FACTS\n'+canonical(candidate_facts)if candidate_facts else '')
         def work(job):
             client=Client(broker,{'owner':self.owner,'resume':digest(resume_text),
-                'facts':digest(candidate_facts or {}),'job':digest(job['job_description'])})
+                'facts':digest(candidate_facts or {}),'job':digest(semantic_value(job['job_description']))})
             raw=JevFit(client).analyze(evidence,jd=job['job_description'])
             if raw.get('provider_errors')or 'matches'not in raw:
                 raise JevFitError('Jev fit analysis could not complete: '+','.join(raw.get('provider_errors')or[raw['status']]))
+            if self.config.resolve_unknowns and any(m['status']=='unknown' for m in raw['matches']):
+                from job_agent.model import shared_model
+                from agent_runtime.provider_usage import usage_scope
+                from .resolve import DecisionStore, resolve_unknowns
+                store=DecisionStore(self.config.cache_path) if self.config.cache_path else None
+                with usage_scope(purpose='jev_fit_resolver'):
+                    raw=resolve_unknowns(raw,evidence,model=self.resolver_model or shared_model(purpose='extraction'),store=store)
             return job,client,raw
         try:
             with ThreadPoolExecutor(max_workers=min(len(jobs),4),thread_name_prefix='jev-fit')as pool:
@@ -52,7 +60,8 @@ class JevFitService:
             resume,parsed_job,match=project(raw,resume_text,job['job_description'],model=self.config.model,expires_at=expires)
             results[job['id']]={'analysis_id':'analysis-'+client.task_id,'status':raw['status'],
                 'resume_analysis':resume,'job_analysis':parsed_job,'skill_match':match,
-                'model_calls':len(records),'main_model_calls':0,'fast_model_calls':len(records),
+                'model_calls':len(records)+raw.get('main_model_calls',0),'main_model_calls':raw.get('main_model_calls',0),
+                'fast_model_calls':len(records),
                 'latency_seconds':max(0,time.perf_counter()-started),
                 'stage_seconds':{'jev_fit':raw['seconds']},
                 'cache_hits':sorted({e['purpose']for e in events if e['hit']}),
@@ -62,5 +71,6 @@ class JevFitService:
                     'input_tokens':sum(r['input_tokens']or 0 for r in records),
                     'output_tokens':sum(r['output_tokens']or 0 for r in records),
                     'unknown_usage_calls':sum(r['input_tokens']is None or r['output_tokens']is None for r in records),
-                    'calls':records}]}
+                    'calls':records},
+                    *([{'purpose':'jev_fit_resolver','model':'main',**raw['resolver']}] if raw.get('resolver') else [])]}
         return results

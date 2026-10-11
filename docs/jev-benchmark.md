@@ -15,8 +15,10 @@ Every semantic scoring question is a native yes/no decision: identify JD
 requirements, distinguish personal conditions, test full/related evidence and
 verify proposed citations. Arithmetic and exact source spans are local. Ambiguous
 answers retain their weight in a score interval; personal conditions stay separate
-from skill alignment. One focused pass can resolve uncertainty. There is no
-main-model fallback or unbounded retry loop.
+from skill alignment. One focused pass can resolve uncertainty. Requirements that
+remain unknown go to the main model in one structured request per job, which must
+quote verbatim resume evidence for any support (`TYPESAFE_FIT_RESOLVE_UNKNOWNS`).
+There is no unbounded retry loop.
 
 The persistent cache includes the exact resume, JD, supplied facts, owner,
 model release and implementation identity. Single and batch entry points share

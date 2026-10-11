@@ -123,6 +123,13 @@ class JevProductionTests(unittest.TestCase):
         model = self.service(config=replace(self.config, model='jev-1.13.1'))
         self.assertGreater(self.analyze(model).model_calls, 0)
 
+    def test_presentation_whitespace_reuses_decisions_but_keeps_original_spans(self):
+        first=self.analyze()
+        spaced=self.jd+'\n'
+        second=self.analyze(job_description=spaced)
+        self.assertEqual(second.model_calls,0)
+        self.assertEqual(first.skill_match.overall_score,second.skill_match.overall_score)
+
     def test_unknown_is_an_interval_and_has_short_expiry(self):
         self.endpoint.unknown = True
         from unittest.mock import patch as patched
