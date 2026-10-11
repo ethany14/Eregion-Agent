@@ -48,6 +48,9 @@ def test_frozen_actual_revision_retains_factual_pass_and_has_specific_advisory_s
     notes=cover_revision_notes(data['content'])
     opening=next(n for n in notes if n['kind']=='opening_perspective')
     assert opening['block_id']=='paragraph-1' and 'focuses on' in opening['text']
+    # E5 live r2: a note saying needs 'can appear separately' made the reviser drop the
+    # verified employer need from the opening; it must stay in the opening paragraph.
+    assert 'second sentence of this opening paragraph' in opening['instruction']
     repeated=next(n for n in notes if n['kind']=='repeated_invitation')
     assert [o['block_id'] for o in repeated['occurrences']]==['paragraph-1','paragraph-3']
     assert 'synonyms' in repeated['instruction']

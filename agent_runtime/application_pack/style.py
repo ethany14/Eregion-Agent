@@ -24,7 +24,7 @@ def cover_revision_notes(content):
         first=re.split(r'(?<=[.!?])\s+',opening.strip())[0]
         if first and not re.match(r'I\b',first):
             notes.append({'kind':'opening_perspective','block_id':'paragraph-1','text':first,
-                'instruction':'Open with one plain first-person application sentence naming only the verified role and company. Do not describe what the role, letter, or contribution focuses/centers on. Employer needs can appear separately; add no enthusiasm or candidate fact.'})
+                'instruction':'Open with one plain first-person application sentence naming only the verified role and company. Do not describe what the role, letter, or contribution focuses/centers on. Keep the employer need verified in the job context as a separate second sentence of this opening paragraph, not moved elsewhere; add no enthusiasm or candidate fact.'})
     invitations=cover_invitation_occurrences(content)
     if len(invitations)>1:
         notes.append({'kind':'repeated_invitation','occurrences':invitations,
