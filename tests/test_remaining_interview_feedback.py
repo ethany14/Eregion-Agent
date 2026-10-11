@@ -57,7 +57,9 @@ def test_feedback_routes_requested_model_and_preserves_ledger_scope(monkeypatch,
     with usage_scope(task_id='synthetic-task',ledger='synthetic-ledger'):
         assert SharedMockInterviewModel(evaluation_purpose=purpose).evaluate({'answer_untrusted':'Built APIs.'})=='structured-result'
     model,schema,scope,context=calls[0]
-    assert model=={'purpose':purpose} and schema=='MockAnswerEvaluation'
+    # Same purpose/model routing; interview calls additionally bound hidden reasoning.
+    assert model['purpose']==purpose and schema=='MockAnswerEvaluation'
+    assert model['environ']['LLM_AGENT_REASONING']=='low'
     assert scope['purpose']=='mock_interview_feedback'
     assert scope['task_id']=='synthetic-task' and scope['ledger']=='synthetic-ledger'
     assert context=={'answer_untrusted':'Built APIs.'}
@@ -154,3 +156,22 @@ def test_real_main_chat_feedback_latency(career,tmp_path,lane,limit):
         (tmp_path/'feedback-latency.json').write_text(json.dumps(evidence,ensure_ascii=False,indent=2),encoding='utf-8')
         assert all(checks.values()),checks
     finally:service.close()
+
+
+def test_interview_reasoning_falls_back_when_provider_rejects_it(monkeypatch):
+    import agent_runtime.mock_interview.model as module
+    monkeypatch.delenv('LLM_INTERVIEW_REASONING',raising=False)
+    monkeypatch.setattr(module,'create_model',lambda **kwargs:kwargs)
+    seen=[]
+    def invoke(model,schema,policy,context):
+        seen.append(model)
+        if 'environ' in model:raise ValueError("Unsupported parameter: 'reasoning_effort'")
+        return 'plain-result'
+    monkeypatch.setattr(module,'invoke_structured',invoke)
+    assert SharedMockInterviewModel(evaluation_purpose='agent').evaluate({'answer_untrusted':'x'})=='plain-result'
+    assert len(seen)==2 and 'environ' not in seen[1]
+    # Unrelated provider errors are not retried.
+    def failing(model,schema,policy,context):raise TimeoutError('provider')
+    monkeypatch.setattr(module,'invoke_structured',failing)
+    import pytest
+    with pytest.raises(TimeoutError):SharedMockInterviewModel(evaluation_purpose='agent').evaluate({'answer_untrusted':'x'})
