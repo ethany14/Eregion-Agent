@@ -22,6 +22,15 @@ class AnalysisOnlyHandler:
         self.steps: list[Step] = []
 
     def execute(self, step: Step, state) -> StepOutcome:
+        # Synthetic transport boundaries: a handler with no model IO must not
+        # silently be counted as three paid provider calls.
+        if step in {Step.ANALYZE_RESUME,Step.ANALYZE_JOB,Step.MATCH_SKILLS}:
+            from agent_runtime.provider_usage import provider_call
+            with provider_call('offline-handler-fixture'):
+                return self.compute(step,state)
+        return self.compute(step,state)
+
+    def compute(self, step: Step, state) -> StepOutcome:
         self.steps.append(step)
         if step == Step.VALIDATE_INPUT:
             if not state.resume_text.strip() or not state.job_description.strip():

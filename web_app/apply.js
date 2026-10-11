@@ -60,14 +60,23 @@ function error(text=''){$('#apply-error').textContent=text;$('#apply-error').hid
 function company(item){if(item.career)return item.title||'Career task';try{const u=new URL(item.url);return /greenhouse\.io$|lever\.co$/.test(u.hostname)?u.pathname.split('/').filter(Boolean)[0]:u.hostname.endsWith('.myworkdayjobs.com')?u.hostname.split('.')[0]:u.hostname;}catch{return 'Application';}}
 function browserHost(item){try{return item.browser?.url&&item.preview_url?.includes('/browser/preview')?new URL(item.browser.url).hostname:'';}catch{return '';}}
 // A conversation about one job is named after that job; anything broader keeps its task title.
+function displayTitle(value,limit=90){
+  const text=(value||'Career task').trim();
+  if(text.length<=limit)return text;
+  const prefix=text.slice(0,limit-1),boundary=prefix.lastIndexOf(' ');
+  return (boundary>0?prefix.slice(0,boundary):'').trimEnd()+'…';
+}
 function heading(item){
-  if(item.custom_title)return {title:item.title,subtitle:''};
+  if(item.custom_title)return {title:displayTitle(item.title),subtitle:''};
   const jobs=item.career?item.jobs||[]:[];
-  if(jobs.length===1&&jobs[0].company)return {title:jobs[0].company,subtitle:jobs[0].title||''};
-  if(item.career)return {title:company(item),subtitle:''};
-  return {title:`Applying at ${browserHost(item)||company(item)}`,subtitle:''};
+  if(jobs.length===1&&jobs[0].company)return {title:displayTitle(jobs[0].company),subtitle:jobs[0].title||''};
+  // Older automatic titles were sliced mid-word in persistence. Recover the
+  // source goal only for automatic prefix titles; never overwrite a custom name.
+  if(item.career)return {title:displayTitle(item.goal?.startsWith(item.title)?item.goal:company(item)),subtitle:''};
+  return {title:displayTitle(`Applying at ${browserHost(item)||company(item)}`),subtitle:''};
 }
 function statusText(item){
+  if(item.status==='cancelled'&&item.career&&!item.application_run_id)return 'Cancelled';
   if(item.reopening)return 'Reopening your saved application';
   if(item.pause_requested&&!terminal.has(item.status))return 'Paused — send “continue” when ready';
   if(item.task_error)return 'Needs attention';
@@ -364,7 +373,7 @@ function renderChronicle(){
     const name=heading(item).title,busy=busyStatuses.has(item.status);
     const state=needsYou(item)?'wait':busy?'now':'done';
     const li=el('li','',state),text=el('button','','chron-entry');text.type='button';text.addEventListener('click',()=>select(item.run_id));
-    text.append(el('time',clock(item.updated_at)),el('b',needsYou(item)?`${name} is waiting on you`:busy?`${name} is under way`:name),el('small',statusText(item)));
+    text.append(el('time',clock(item.updated_at)),el('b',name),el('small',statusText(item)));
     li.append(el('i'),text);list.append(li);
   }
   if(!today.length)list.append(el('li','Quiet so far today. Write to Eregion to begin.','empty'));

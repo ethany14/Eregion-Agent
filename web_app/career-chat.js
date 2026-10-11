@@ -112,9 +112,29 @@ export function renderCareerResults({container,item,el,button,send,review,busy=f
   }}
   for(const practice of item.interviews||[]){
     const card=el('article','','card career-interview');
-    if(practice.latest_feedback){
-      const f=practice.latest_feedback,row=el('div','','feedback'),dims=el('div','','dims');
-      card.append(el('p','Feedback on your last answer','eyebrow'));
+    const question=practice.question;
+    if(question){
+      card.append(el('p','Interview question','eyebrow'));
+      const text=el('div','','interview-question');text.append(renderText(question.question_text||question.text||question.question||'Your next interview question is ready.'));card.append(text);
+      const actions=el('div','','actions');
+      actions.append(button('Answer in chat',()=>document.querySelector('#chat-text').focus(),'primary-button'));
+      for(const [label,verb] of [['Skip question','Skip the current question'],['End practice','End this practice and show my report']]){
+        const b=button(label,()=>send(`${verb}.`,{interview_id:practice.interview.mock_interview_id},item.run_id));b.disabled=busy;actions.append(b);
+      }
+      card.append(actions);
+    }
+    const pending=(practice.feedback_jobs||[]).filter(job=>job.status==='pending').length;
+    if(pending)card.append(el('p',`Feedback is being prepared for ${pending} saved answer${pending===1?'':'s'}. You can continue with the next question.`,'hint'));
+    if((practice.feedback_jobs||[]).some(job=>job.status==='failed')){
+      card.append(el('p','Some feedback could not be prepared. Your answers are saved.','hint'));
+      card.append(button('Retry saved feedback',()=>send('Retry interview feedback.',{interview_id:practice.interview.mock_interview_id},item.run_id)));
+    }
+    const feedbacks=practice.feedback_history?.length?practice.feedback_history:
+      practice.latest_feedback?[{evaluation:practice.latest_feedback}]:[];
+    for(const feedback of feedbacks){
+      const f=feedback.evaluation,row=el('div','','feedback'),dims=el('div','','dims');
+      card.append(el('p',feedback.answer_sequence?`Feedback on answer ${feedback.answer_sequence}`:'Answer feedback','eyebrow'));
+      if(feedback.question_text)card.append(renderText(feedback.question_text));
       row.append(scoreNode(el,f.overall_score,5,'Overall'));
       for(const [key,label] of [['relevance_score','Relevance'],['specificity_score','Specificity'],['evidence_grounding_score','Evidence'],['structure_score','Structure'],['communication_score','Communication']]){
         if(f[key]==null)continue;const dim=el('div');dim.append(el('span',label),el('b',String(f[key])));dims.append(dim);
@@ -129,17 +149,6 @@ export function renderCareerResults({container,item,el,button,send,review,busy=f
       }
       if(f.suggested_structure)notes.append(renderText(f.suggested_structure));
       card.append(notes);
-    }
-    const question=practice.question;
-    if(question){
-      card.append(el('p','Interview question','eyebrow'));
-      const text=el('div','','interview-question');text.append(renderText(question.question_text||question.text||question.question||'Your next interview question is ready.'));card.append(text);
-      const actions=el('div','','actions');
-      actions.append(button('Answer in chat',()=>document.querySelector('#chat-text').focus(),'primary-button'));
-      for(const [label,verb] of [['Skip question','Skip the current question'],['End practice','End this practice and show my report']]){
-        const b=button(label,()=>send(`${verb}.`,{interview_id:practice.interview.mock_interview_id},item.run_id));b.disabled=busy;actions.append(b);
-      }
-      card.append(actions);
     }
     if(practice.report){const r=practice.report,details=el('details','','report');details.open=true;details.append(el('summary','Interview report'));
       if(r.average_scores?.overall!=null)details.append(el('p',`Average score: ${r.average_scores.overall} / 5`));

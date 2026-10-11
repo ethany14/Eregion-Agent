@@ -54,7 +54,7 @@ def posting(url: str) -> tuple[str, str, str]:
     host = parts.hostname or ""
     path = parts.path.rstrip("/")
     if host in GREENHOUSE:
-        match = re.fullmatch(r"/([\w-]+)/jobs/(\d+)", path)
+        match = re.fullmatch(r"/([\w-]+)/jobs/(\d+)(?:/apply)?", path)
         if not match:
             raise ValueError("Use the direct Greenhouse job URL ending in /jobs/JOB_ID.")
         region = "eu" if ".eu." in host else "global"
@@ -82,7 +82,11 @@ def posting(url: str) -> tuple[str, str, str]:
     query = urlencode([(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True)
                        if not k.lower().startswith("utm_") and k.lower() not in {"source", "ref", "referrer"}])
     canonical = urlunsplit(("https", host, path, query, ""))
-    return platform, f"{platform}:" + hashlib.sha256(canonical.encode()).hexdigest(), canonical
+    # The apply screen is a step of the posting, not another job. Keep the
+    # requested URL for navigation; only the durable identity loses the step.
+    identity_path = re.sub(r'/(?:apply|application)(?:/.*)?$', '', path, flags=re.I) or path
+    identity_url = urlunsplit(("https", host, identity_path, query, ""))
+    return platform, f"{platform}:" + hashlib.sha256(identity_url.encode()).hexdigest(), canonical
 
 
 class StrictModel(BaseModel):

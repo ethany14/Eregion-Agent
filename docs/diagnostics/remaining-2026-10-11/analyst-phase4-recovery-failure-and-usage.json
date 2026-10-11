@@ -1,0 +1,3072 @@
+{
+  "task_id": "f01db209-c5a7-4695-9a54-9f019ded74d3",
+  "summary": {
+    "status": "needs_input",
+    "calls": 52,
+    "seconds": 336.75,
+    "jobs": 0,
+    "materials": 0,
+    "applications": 0,
+    "error": "no_progress",
+    "tools": [
+      "browser_read",
+      "browser_read",
+      "search_jobs",
+      "browser_read",
+      "read_job",
+      "search_jobs",
+      "browser_read",
+      "browser_open",
+      "search_jobs",
+      "read_context",
+      "read_job",
+      "search_jobs",
+      "browser_open",
+      "browser_read",
+      "search_jobs",
+      "browser_open",
+      "read_context",
+      "read_context",
+      "read_context",
+      "search_jobs",
+      "read_job",
+      "browser_read",
+      "search_jobs",
+      "browser_open"
+    ],
+    "final": "I stopped because repeated steps produced no new evidence. Saved results are preserved; the requested work is not yet complete. Open the saved results or retry with a different source or approach.",
+    "usage": {
+      "calls": 52,
+      "completed": 52,
+      "failed": 0,
+      "pending": 0,
+      "discarded": 0,
+      "retries": 0,
+      "input_tokens": 715985,
+      "output_tokens": 30044,
+      "unknown_usage_calls": 0,
+      "groups": [
+        {
+          "purpose": "agent",
+          "model": "muse-spark-1.3-contributor",
+          "calls": 52,
+          "input_tokens": 715985,
+          "output_tokens": 30044,
+          "unknown_usage_calls": 0,
+          "cached_input_tokens": 280210,
+          "reasoning_tokens": 23244
+        }
+      ],
+      "cached_input_tokens": 280210,
+      "reasoning_tokens": 23244,
+      "usage_complete": true
+    },
+    "recommendations": [],
+    "schedules": 0,
+    "verified_jobs": [],
+    "tool_evidence": [
+      {
+        "tool": "browser_read",
+        "arguments": {},
+        "result": {
+          "context_ref": "ctx-b7be9d17e519c0d6c9ebdda3",
+          "chars": 73068,
+          "read_with": "read_context",
+          "available_keys": [
+            "title",
+            "page_evidence_hash",
+            "primary_heading",
+            "heading",
+            "text",
+            "text_offset",
+            "text_length",
+            "region_ref",
+            "regions",
+            "controls",
+            "control_offset",
+            "control_count",
+            "errors",
+            "viewport",
+            "url",
+            "frame_url",
+            "tabs",
+            "frames",
+            "query",
+            "observation_id",
+            "no_new_evidence"
+          ],
+          "regions": [
+            {
+              "ref": "b-1a5d00-192",
+              "label": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+              "tag": "MAIN",
+              "text_length": 218162
+            },
+            {
+              "ref": "b-1a5d00-193",
+              "label": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketin",
+              "tag": "SECTION",
+              "text_length": 166
+            },
+            {
+              "ref": "b-1a5d00-194",
+              "label": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+              "tag": "SECTION",
+              "text_length": 217990
+            },
+            {
+              "ref": "b-1a5d00-195",
+              "label": "Popular jobs searches in New York, New York",
+              "tag": "SECTION",
+              "text_length": 296
+            },
+            {
+              "ref": "b-1a5d00-196",
+              "label": "Jobs by neighbourhood",
+              "tag": "SECTION",
+              "text_length": 219
+            },
+            {
+              "ref": "b-1a5d00-197",
+              "label": "Popular junior data analyst jobs locations",
+              "tag": "SECTION",
+              "text_length": 203
+            }
+          ],
+          "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation.",
+          "no_new_evidence": true,
+          "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york",
+          "title": "146 Best junior data analyst Jobs in New York, New York (October 2026) | JOB TODAY",
+          "heading": "Junior data analyst jobs in New York, New YorkCreate job alerts / Popular jobs searches in New York, New York / Jobs by neighbourhood / Popular junior data analyst jobs locations",
+          "observation_id": "5fe51e12-b3a7-4b0d-9d06-e9bf1291d59c",
+          "control_count": 191,
+          "control_offset": 0,
+          "page_evidence_hash": "247375:2092698335:978682493",
+          "primary_heading": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+          "text_offset": 0,
+          "text_length": 219295,
+          "region_ref": null,
+          "text_preview": "Hire staff\nLog in\nFilters\nCleaning\nDriver & Delivery\nKitchen Porter\nChef & Cook\nWaiters\nConstruction & Trades\nSecurity\nQuick Service\nSalon & Beauty\nOffice & Admin\nRetail\nSales & Marketing\nMore\nJunior data analyst jobs in New York, New YorkCreate job alerts\nInsight Global\nBusiness Application Analyst\n2 days ago\nParamus\n\nPosition: Business Application Analyst (Microsoft modules) Location: Paramus NJ 07652 - 2-3x a week onsite Duration: 6 month contract to hire Rate: $55-65 hourly Schedule: M-F 9-5 Job Description Insight Global is seeking a consultative Application Analyst who can bridge the gap between technology and operations. The ideal candidate has strong application support and workflow optimization experience, enjoys solving complex technical and process-related issues, and can effect",
+          "observed_links": [
+            {
+              "url": "https://jobtoday.com/us/jobs-driver-%26-delivery/ny_new-york",
+              "label": "Driver & Delivery",
+              "context": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketing More"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-chef-%26-cook/ny_new-york",
+              "label": "Chef & Cook",
+              "context": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketing More"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-construction-%26-trades/ny_new-york",
+              "label": "Construction & Trades",
+              "context": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketing More"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-salon-%26-beauty/ny_new-york",
+              "label": "Salon & Beauty",
+              "context": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketing More"
+            }
+          ],
+          "controls": {
+            "context_ref": "ctx-dd295945ae1268a277a8c63d",
+            "chars": 1984,
+            "read_with": "read_context",
+            "preview": "[{\"ref\":\"b-1a5d00-1\",\"label\":\"Job Search and Hiring at JOB TODAY\",\"tag\":\"A\",\"type\":\"\",\"role\":\"\",\"hre"
+          },
+          "next_control_offset": 12,
+          "more_controls": "Use browser_read with next_control_offset or a query; path can inspect the archived controls without changing observation_id.",
+          "all_controls": {
+            "ref": "ctx-b7be9d17e519c0d6c9ebdda3",
+            "path": [
+              "controls"
+            ],
+            "instruction": "The controls preview below is only a subset. Read this full source path or use browser_read query/next_control_offset to find job links."
+          }
+        }
+      },
+      {
+        "tool": "browser_read",
+        "arguments": {
+          "observation_id": "5fe51e12-b3a7-4b0d-9d06-e9bf1291d59c",
+          "region_ref": "b-1a5d00-192"
+        },
+        "result": {
+          "context_ref": "ctx-1c6adffc664b0199b9c63529",
+          "chars": 75334,
+          "read_with": "read_context",
+          "available_keys": [
+            "title",
+            "page_evidence_hash",
+            "primary_heading",
+            "heading",
+            "text",
+            "text_offset",
+            "text_length",
+            "region_ref",
+            "regions",
+            "controls",
+            "control_offset",
+            "control_count",
+            "errors",
+            "viewport",
+            "url",
+            "frame_url",
+            "tabs",
+            "frames",
+            "query",
+            "observation_id",
+            "no_new_evidence"
+          ],
+          "regions": [
+            {
+              "ref": "b-1a5d00-192",
+              "label": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+              "tag": "MAIN",
+              "text_length": 218162
+            },
+            {
+              "ref": "b-1a5d00-193",
+              "label": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketin",
+              "tag": "SECTION",
+              "text_length": 166
+            },
+            {
+              "ref": "b-1a5d00-194",
+              "label": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+              "tag": "SECTION",
+              "text_length": 217990
+            }
+          ],
+          "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation.",
+          "no_new_evidence": true,
+          "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york",
+          "title": "146 Best junior data analyst Jobs in New York, New York (October 2026) | JOB TODAY",
+          "heading": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+          "observation_id": "66c373da-fc88-43cc-a484-09df6659cd90",
+          "control_count": 112,
+          "control_offset": 0,
+          "page_evidence_hash": "247375:2092698335:978682493",
+          "primary_heading": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+          "text_offset": 0,
+          "text_length": 218162,
+          "region_ref": "b-1a5d00-192",
+          "text_preview": "Cleaning\nDriver & Delivery\nKitchen Porter\nChef & Cook\nWaiters\nConstruction & Trades\nSecurity\nQuick Service\nSalon & Beauty\nOffice & Admin\nRetail\nSales & Marketing\nMore\nJunior data analyst jobs in New York, New YorkCreate job alerts\nInsight Global\nBusiness Application Analyst\n2 days ago\nParamus\n\nPosition: Business Application Analyst (Microsoft modules) Location: Paramus NJ 07652 - 2-3x a week onsite Duration: 6 month contract to hire Rate: $55-65 hourly Schedule: M-F 9-5 Job Description Insight Global is seeking a consultative Application Analyst who can bridge the gap between technology and operations. The ideal candidate has strong application support and workflow optimization experience, enjoys solving complex technical and process-related issues, and can effectively partner with stakeho",
+          "observed_links": [
+            {
+              "url": "https://jobtoday.com/us/jobs-driver-%26-delivery/ny_new-york",
+              "label": "Driver & Delivery",
+              "context": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketing More"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-chef-%26-cook/ny_new-york",
+              "label": "Chef & Cook",
+              "context": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketing More"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-construction-%26-trades/ny_new-york",
+              "label": "Construction & Trades",
+              "context": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketing More"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-salon-%26-beauty/ny_new-york",
+              "label": "Salon & Beauty",
+              "context": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketing More"
+            }
+          ],
+          "controls": {
+            "context_ref": "ctx-398d389ecb0bab5d8a26afe5",
+            "chars": 2219,
+            "read_with": "read_context",
+            "preview": "[{\"ref\":\"b-1a5d00-8\",\"label\":\"Cleaning\",\"tag\":\"A\",\"type\":\"\",\"role\":\"\",\"href\":\"https://jobtoday.com/u"
+          },
+          "next_control_offset": 12,
+          "more_controls": "Use browser_read with next_control_offset or a query; path can inspect the archived controls without changing observation_id.",
+          "all_controls": {
+            "ref": "ctx-1c6adffc664b0199b9c63529",
+            "path": [
+              "controls"
+            ],
+            "instruction": "The controls preview below is only a subset. Read this full source path or use browser_read query/next_control_offset to find job links."
+          }
+        }
+      },
+      {
+        "tool": "search_jobs",
+        "arguments": {
+          "limit": 10,
+          "location": "New York, NY",
+          "query": "junior data analyst"
+        },
+        "result": {
+          "error": "This exact action already ran without resolving the request.",
+          "error_code": "repeated_action",
+          "next": "Use a different search query/source or finish with the actual limitation. Do not repeat these arguments."
+        }
+      },
+      {
+        "tool": "browser_read",
+        "arguments": {
+          "observation_id": "66c373da-fc88-43cc-a484-09df6659cd90",
+          "query": "Junior Data Analyst New York"
+        },
+        "result": {
+          "context_ref": "ctx-7c307113bcb6ac349269e24d",
+          "chars": 14540,
+          "read_with": "read_context",
+          "available_keys": [
+            "title",
+            "page_evidence_hash",
+            "primary_heading",
+            "heading",
+            "text",
+            "text_offset",
+            "text_length",
+            "region_ref",
+            "regions",
+            "controls",
+            "control_offset",
+            "control_count",
+            "errors",
+            "viewport",
+            "url",
+            "frame_url",
+            "tabs",
+            "frames",
+            "query",
+            "observation_id",
+            "no_new_evidence"
+          ],
+          "regions": [
+            {
+              "ref": "b-1a5d00-192",
+              "label": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+              "tag": "MAIN",
+              "text_length": 218162
+            },
+            {
+              "ref": "b-1a5d00-193",
+              "label": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketin",
+              "tag": "SECTION",
+              "text_length": 166
+            },
+            {
+              "ref": "b-1a5d00-194",
+              "label": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+              "tag": "SECTION",
+              "text_length": 217990
+            },
+            {
+              "ref": "b-1a5d00-195",
+              "label": "Popular jobs searches in New York, New York",
+              "tag": "SECTION",
+              "text_length": 296
+            },
+            {
+              "ref": "b-1a5d00-196",
+              "label": "Jobs by neighbourhood",
+              "tag": "SECTION",
+              "text_length": 219
+            },
+            {
+              "ref": "b-1a5d00-197",
+              "label": "Popular junior data analyst jobs locations",
+              "tag": "SECTION",
+              "text_length": 203
+            }
+          ],
+          "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation.",
+          "no_new_evidence": true,
+          "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york",
+          "title": "146 Best junior data analyst Jobs in New York, New York (October 2026) | JOB TODAY",
+          "heading": "Junior data analyst jobs in New York, New YorkCreate job alerts / Popular jobs searches in New York, New York / Jobs by neighbourhood / Popular junior data analyst jobs locations",
+          "observation_id": "14d8a491-0a01-4054-ae7a-d339365a4be4",
+          "control_count": 6,
+          "control_offset": 0,
+          "page_evidence_hash": "247375:2092698335:978682493",
+          "primary_heading": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+          "text_offset": 0,
+          "text_length": 219295,
+          "region_ref": null,
+          "text_preview": "Hire staff\nLog in\nFilters\nCleaning\nDriver & Delivery\nKitchen Porter\nChef & Cook\nWaiters\nConstruction & Trades\nSecurity\nQuick Service\nSalon & Beauty\nOffice & Admin\nRetail\nSales & Marketing\nMore\nJunior data analyst jobs in New York, New YorkCreate job alerts\nInsight Global\nBusiness Application Analyst\n2 days ago\nParamus\n\nPosition: Business Application Analyst (Microsoft modules) Location: Paramus NJ 07652 - 2-3x a week onsite Duration: 6 month contract to hire Rate: $55-65 hourly Schedule: M-F 9-5 Job Description Insight Global is seeking a consultative Application Analyst who can bridge the gap between technology and operations. The ideal candidate has strong application support and workflow optimization experience, enjoys solving complex technical and process-related issues, and can effect",
+          "observed_links": [
+            {
+              "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york",
+              "label": "New york, ny",
+              "context": "New york, ny"
+            }
+          ],
+          "controls": [
+            {
+              "ref": "b-1a5d00-21",
+              "label": "Create job alerts",
+              "tag": "SPAN",
+              "type": "",
+              "role": "link",
+              "href": null,
+              "disabled": false,
+              "value": null,
+              "checked": null
+            },
+            {
+              "ref": "b-1a5d00-36",
+              "label": "PruTech Solutions, Inc.",
+              "tag": "BUTTON",
+              "type": "submit",
+              "role": "",
+              "href": null,
+              "disabled": false,
+              "value": null,
+              "checked": null
+            },
+            {
+              "ref": "b-1a5d00-37",
+              "label": "Junior Business Analyst 2 days ago Brooklyn Location: New York, NY Work Arrangement: Hybrid / On-site Duration: Contract Experience: 1–3 years Job Description We are looking for a Junior Business Analyst .The ideal candidate will assist with requirements gathering, documentation,",
+              "tag": "BUTTON",
+              "type": "submit",
+              "role": "",
+              "href": null,
+              "disabled": false,
+              "value": null,
+              "checked": null
+            },
+            {
+              "ref": "b-1a5d00-92",
+              "label": "Tresume and Asta CRS",
+              "tag": "BUTTON",
+              "type": "submit",
+              "role": "",
+              "href": null,
+              "disabled": false,
+              "value": null,
+              "checked": null
+            },
+            {
+              "ref": "b-1a5d00-93",
+              "label": "Junior Business Analyst 11 days ago New York Job Description We are seeking a Junior Business Analyst to become an integral part of our team! You will analyze data to understand business and market trends in order to increase company revenue and efficiency. Responsibilities: • Us",
+              "tag": "BUTTON",
+              "type": "submit",
+              "role": "",
+              "href": null,
+              "disabled": false,
+              "value": null,
+              "checked": null
+            },
+            {
+              "ref": "b-1a5d00-156",
+              "label": "New york, ny",
+              "tag": "A",
+              "type": "",
+              "role": "",
+              "href": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york",
+              "disabled": false,
+              "value": null,
+              "checked": null
+            }
+          ]
+        }
+      },
+      {
+        "tool": "read_job",
+        "arguments": {
+          "url": "https://www.indeed.com/rc/clk?jk=1255dc741de28018&bb=xv_1zZWQPqppE3LGIuotBdf6mr4ekhk4olBnIndLT5M8RPw4gAgTxqL6lij2ADCnTmrp-OF55MeBfHTsVfeL0-nzk2EfPBoVVM0op_hGZLLUpp4l-JeZr0jhLvMf9xORmD4yUdDCtdFVkQHbnwPEf534JFp877ZlHgfkPtLiWVQwkgr6wmsh0w%3D%3D&xkcb=SoCs67M2dVez-ZQEDZ0LbzkdCdPP&fccid=848e72c84ce4a7a7&vjs=3"
+        },
+        "result": {
+          "error": "Source blocked in this user turn. Switch to a different public source; changing query or page does not unblock it. The user can sign in using browser control, or retry in a new turn. Do not bypass verification.",
+          "error_code": "tool_error",
+          "next": "Inspect current state and change the approach. Ask only for missing user facts."
+        }
+      },
+      {
+        "tool": "search_jobs",
+        "arguments": {
+          "location": "New York, NY",
+          "query": "junior data analyst"
+        },
+        "result": {
+          "jobs": [
+            {
+              "url": "https://www.zippia.com/junior-data-analyst-new-york-ny-jobs/",
+              "title": "Junior Data Analyst Jobs  in  New York ,  NY  (Hiring Now!) - Zippia",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.linkedin.com/jobs/junior-data-analyst-jobs-new-york",
+              "title": "Junior Data Analyst Jobs  in  New York  (4,000+ Open Roles) | LinkedIn",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.linkedin.com/jobs/data-analyst-%E2%80%93-junior-jobs-new-york-ny",
+              "title": "Data Analyst  –  Junior Jobs  in  New York  (479 Open Roles) | LinkedIn",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york",
+              "title": "Junior data analyst jobs  in  New York ,  New York  - JOB TODAY",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://gainam.com/early-careers-junior-data-analyst-new-york-ny",
+              "title": "Junior Data Analyst  —  New York ,  NY  |  Careers  at Gain America",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.joblist.com/j/junior-data-analyst-jobs/new-york-ny?msockid=06e96a9c49b3669b2ac27d7348ed6734",
+              "title": "Junior Data Analyst Jobs  in  New York ,  NY  (55,604+  Jobs ) | Joblist",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            }
+          ],
+          "errors": [],
+          "sources_checked": [
+            "https://www.bing.com/search"
+          ],
+          "skipped_sources": [
+            "https://html.duckduckgo.com/html/"
+          ],
+          "note": "Read each result to verify a current job posting before saving or scoring it.",
+          "excluded_blocked_hosts": [
+            "hiringcafe.com",
+            "jooble.org",
+            "www.ziprecruiter.com"
+          ],
+          "no_new_evidence": true,
+          "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation."
+        }
+      },
+      {
+        "tool": "browser_read",
+        "arguments": {
+          "observation_id": "14d8a491-0a01-4054-ae7a-d339365a4be4",
+          "region_ref": "b-1a5d00-194"
+        },
+        "result": {
+          "context_ref": "ctx-4ebaabd067771b2207d85dc2",
+          "chars": 78022,
+          "read_with": "read_context",
+          "available_keys": [
+            "title",
+            "page_evidence_hash",
+            "primary_heading",
+            "heading",
+            "text",
+            "text_offset",
+            "text_length",
+            "region_ref",
+            "regions",
+            "controls",
+            "control_offset",
+            "control_count",
+            "errors",
+            "viewport",
+            "url",
+            "frame_url",
+            "tabs",
+            "frames",
+            "query",
+            "observation_id",
+            "no_new_evidence"
+          ],
+          "regions": [
+            {
+              "ref": "b-1a5d00-194",
+              "label": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+              "tag": "SECTION",
+              "text_length": 217990
+            }
+          ],
+          "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation.",
+          "no_new_evidence": true,
+          "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york",
+          "title": "146 Best junior data analyst Jobs in New York, New York (October 2026) | JOB TODAY",
+          "heading": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+          "observation_id": "880bc57c-febb-473f-97aa-4bad8d78843d",
+          "control_count": 97,
+          "control_offset": 0,
+          "page_evidence_hash": "247375:2092698335:978682493",
+          "primary_heading": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+          "text_offset": 0,
+          "text_length": 217990,
+          "region_ref": "b-1a5d00-194",
+          "text_preview": "Junior data analyst jobs in New York, New YorkCreate job alerts\nInsight Global\nBusiness Application Analyst\n2 days ago\nParamus\n\nPosition: Business Application Analyst (Microsoft modules) Location: Paramus NJ 07652 - 2-3x a week onsite Duration: 6 month contract to hire Rate: $55-65 hourly Schedule: M-F 9-5 Job Description Insight Global is seeking a consultative Application Analyst who can bridge the gap between technology and operations. The ideal candidate has strong application support and workflow optimization experience, enjoys solving complex technical and process-related issues, and can effectively partner with stakeholders across the organization. This person should be comfortable managing multiple priorities, leading projects, supporting end users, and driving continuous improveme",
+          "observed_links": [],
+          "controls": {
+            "context_ref": "ctx-b328134cbfb3f7424d379ab9",
+            "chars": 3068,
+            "read_with": "read_context",
+            "preview": "[{\"ref\":\"b-1a5d00-21\",\"label\":\"Create job alerts\",\"tag\":\"SPAN\",\"type\":\"\",\"role\":\"link\",\"href\":null,\""
+          },
+          "next_control_offset": 12,
+          "more_controls": "Use browser_read with next_control_offset or a query; path can inspect the archived controls without changing observation_id.",
+          "all_controls": {
+            "ref": "ctx-4ebaabd067771b2207d85dc2",
+            "path": [
+              "controls"
+            ],
+            "instruction": "The controls preview below is only a subset. Read this full source path or use browser_read query/next_control_offset to find job links."
+          }
+        }
+      },
+      {
+        "tool": "browser_open",
+        "arguments": {
+          "url": "https://www.zippia.com/junior-data-analyst-new-york-ny-jobs/"
+        },
+        "result": {
+          "title": "Get the job you really want - Zippia",
+          "page_evidence_hash": "185:1742618952:1852295668",
+          "primary_heading": "",
+          "heading": "",
+          "text": "Verifying you are human. This may take a few seconds.\n\n(Loading widget...)",
+          "text_offset": 0,
+          "text_length": 74,
+          "region_ref": null,
+          "regions": [],
+          "controls": [],
+          "control_offset": 0,
+          "control_count": 0,
+          "errors": [],
+          "viewport": {
+            "width": 1280,
+            "height": 900,
+            "scroll_x": 0,
+            "scroll_y": 0
+          },
+          "url": "https://www.zippia.com/junior-data-analyst-new-york-ny-jobs/",
+          "frame_url": "https://www.zippia.com/junior-data-analyst-new-york-ny-jobs/",
+          "tabs": [
+            {
+              "id": "e480b3dd",
+              "url": "https://www.zippia.com/junior-data-analyst-new-york-ny-jobs/",
+              "active": true
+            }
+          ],
+          "frames": [
+            {
+              "id": "0",
+              "url": "https://www.zippia.com/junior-data-analyst-new-york-ny-jobs/",
+              "active": true
+            }
+          ],
+          "query": "",
+          "observation_id": "81c6aa13-d2bf-404a-82c2-d801abc5a808"
+        }
+      },
+      {
+        "tool": "search_jobs",
+        "arguments": {
+          "location": "New York, NY",
+          "query": "junior data analyst"
+        },
+        "result": {
+          "jobs": [
+            {
+              "url": "https://www.zippia.com/junior-data-analyst-new-york-ny-jobs/",
+              "title": "Junior Data Analyst Jobs  in  New York ,  NY  (Hiring Now!) - Zippia",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.linkedin.com/jobs/junior-data-analyst-jobs-new-york",
+              "title": "Junior Data Analyst Jobs  in  New York  (4,000+ Open Roles) | LinkedIn",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.linkedin.com/jobs/data-analyst-%E2%80%93-junior-jobs-new-york-ny",
+              "title": "Data Analyst  –  Junior Jobs  in  New York  (479 Open Roles) | LinkedIn",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york",
+              "title": "Junior data analyst jobs  in  New York ,  New York  - JOB TODAY",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://gainam.com/early-careers-junior-data-analyst-new-york-ny",
+              "title": "Junior Data Analyst  —  New York ,  NY  |  Careers  at Gain America",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.joblist.com/j/junior-data-analyst-jobs/new-york-ny?msockid=206450e95ef161452f5147065fc86072",
+              "title": "Junior Data Analyst Jobs  in  New York ,  NY  (55,604+  Jobs ) | Joblist",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            }
+          ],
+          "errors": [],
+          "sources_checked": [
+            "https://www.bing.com/search"
+          ],
+          "skipped_sources": [
+            "https://html.duckduckgo.com/html/"
+          ],
+          "note": "Read each result to verify a current job posting before saving or scoring it.",
+          "excluded_blocked_hosts": [
+            "hiringcafe.com",
+            "jooble.org",
+            "www.ziprecruiter.com"
+          ],
+          "no_new_evidence": true,
+          "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation."
+        }
+      },
+      {
+        "tool": "read_context",
+        "arguments": {
+          "ref": "ctx-6eac18660f61dfd8a1b16edd"
+        },
+        "result": {
+          "ref": "ctx-6eac18660f61dfd8a1b16edd",
+          "offset": 7612,
+          "chars": 7612,
+          "content": "",
+          "next_offset": null,
+          "read_progress": {
+            "historical_access": false,
+            "recent_ranges": [
+              [
+                0,
+                3000
+              ],
+              [
+                3000,
+                6000
+              ],
+              [
+                6000,
+                7612
+              ]
+            ],
+            "ref": "ctx-6eac18660f61dfd8a1b16edd",
+            "path": [],
+            "ranges": [
+              [
+                0,
+                7612
+              ]
+            ],
+            "chars": 7612,
+            "reads": 4,
+            "next_unread_offset": null
+          },
+          "no_new_evidence": true,
+          "available_paths": [
+            {
+              "path": [
+                "url"
+              ],
+              "chars": 89,
+              "type": "str"
+            },
+            {
+              "path": [
+                "title"
+              ],
+              "chars": 14,
+              "type": "str"
+            },
+            {
+              "path": [
+                "company"
+              ],
+              "chars": 2,
+              "type": "str"
+            },
+            {
+              "path": [
+                "location"
+              ],
+              "chars": 20,
+              "type": "str"
+            },
+            {
+              "path": [
+                "description"
+              ],
+              "chars": 7303,
+              "type": "str"
+            },
+            {
+              "path": [
+                "source"
+              ],
+              "chars": 18,
+              "type": "str"
+            },
+            {
+              "path": [
+                "page_url"
+              ],
+              "chars": 89,
+              "type": "str"
+            }
+          ],
+          "requested_offset": 0,
+          "already_read": true,
+          "complete": true,
+          "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation."
+        }
+      },
+      {
+        "tool": "read_job",
+        "arguments": {
+          "url": "https://www.indeed.com/rc/clk?jk=ef947638ab6b849b&bb=xv_1zZWQPqppE3LGIuotBRyssyHX7cM1kEGKdvujlQY9LaRmcP4NTEe0EsY7zy5bcvBCOMhr30SZqVurNme4Nj3yG3-J6tAm_rq2hmwruWmb2QBhm5P2u-Pfa3H0q5lg51ccQ1eC-0GuhYXYAyEyN1jDVusHr3GZF8xcT0gk1UE%3D&xkcb=SoAi67M2dVez-ZQEDZ0MbzkdCdPP&fccid=3b2b55df6cade29d&vjs=3"
+        },
+        "result": {
+          "error": "Source blocked in this user turn. Switch to a different public source; changing query or page does not unblock it. The user can sign in using browser control, or retry in a new turn. Do not bypass verification.",
+          "error_code": "tool_error",
+          "next": "Inspect current state and change the approach. Ask only for missing user facts."
+        }
+      },
+      {
+        "tool": "search_jobs",
+        "arguments": {
+          "location": "New York, NY",
+          "query": "junior data analyst"
+        },
+        "result": {
+          "jobs": [
+            {
+              "url": "https://www.zippia.com/junior-data-analyst-new-york-ny-jobs/",
+              "title": "Junior Data Analyst Jobs  in  New York ,  NY  (Hiring Now!) - Zippia",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.linkedin.com/jobs/junior-data-analyst-jobs-new-york",
+              "title": "Junior Data Analyst Jobs  in  New York  (4,000+ Open Roles) | LinkedIn",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.linkedin.com/jobs/data-analyst-%E2%80%93-junior-jobs-new-york-ny",
+              "title": "Data Analyst  –  Junior Jobs  in  New York  (479 Open Roles) | LinkedIn",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york",
+              "title": "Junior data analyst jobs  in  New York ,  New York  - JOB TODAY",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://gainam.com/early-careers-junior-data-analyst-new-york-ny",
+              "title": "Junior Data Analyst  —  New York ,  NY  |  Careers  at Gain America",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.joblist.com/j/junior-data-analyst-jobs/new-york-ny?msockid=38b68c58385f6d1d02a49bb739f46cef",
+              "title": "Junior Data Analyst Jobs  in  New York ,  NY  (55,604+  Jobs ) | Joblist",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            }
+          ],
+          "errors": [],
+          "sources_checked": [
+            "https://www.bing.com/search"
+          ],
+          "skipped_sources": [
+            "https://html.duckduckgo.com/html/"
+          ],
+          "note": "Read each result to verify a current job posting before saving or scoring it.",
+          "excluded_blocked_hosts": [
+            "hiringcafe.com",
+            "jooble.org",
+            "www.ziprecruiter.com"
+          ],
+          "no_new_evidence": true,
+          "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation."
+        }
+      },
+      {
+        "tool": "browser_open",
+        "arguments": {
+          "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york"
+        },
+        "result": {
+          "context_ref": "ctx-7c6c1e7f7b3b24fdf325ee33",
+          "chars": 73024,
+          "read_with": "read_context",
+          "available_keys": [
+            "title",
+            "page_evidence_hash",
+            "primary_heading",
+            "heading",
+            "text",
+            "text_offset",
+            "text_length",
+            "region_ref",
+            "regions",
+            "controls",
+            "control_offset",
+            "control_count",
+            "errors",
+            "viewport",
+            "url",
+            "frame_url",
+            "tabs",
+            "frames",
+            "query",
+            "observation_id"
+          ],
+          "regions": [
+            {
+              "ref": "b-8h4zyr-192",
+              "label": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+              "tag": "MAIN",
+              "text_length": 218292
+            },
+            {
+              "ref": "b-8h4zyr-193",
+              "label": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketin",
+              "tag": "SECTION",
+              "text_length": 166
+            },
+            {
+              "ref": "b-8h4zyr-194",
+              "label": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+              "tag": "SECTION",
+              "text_length": 218120
+            },
+            {
+              "ref": "b-8h4zyr-195",
+              "label": "Popular jobs searches in New York, New York",
+              "tag": "SECTION",
+              "text_length": 296
+            },
+            {
+              "ref": "b-8h4zyr-196",
+              "label": "Jobs by neighbourhood",
+              "tag": "SECTION",
+              "text_length": 219
+            },
+            {
+              "ref": "b-8h4zyr-197",
+              "label": "Popular junior data analyst jobs locations",
+              "tag": "SECTION",
+              "text_length": 203
+            }
+          ],
+          "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york",
+          "title": "146 Best junior data analyst Jobs in New York, New York (October 2026) | JOB TODAY",
+          "heading": "Junior data analyst jobs in New York, New YorkCreate job alerts / Popular jobs searches in New York, New York / Jobs by neighbourhood / Popular junior data analyst jobs locations",
+          "observation_id": "1465b5a1-e1de-4720-9e98-49035b27704c",
+          "control_count": 191,
+          "control_offset": 0,
+          "page_evidence_hash": "247447:2673687707:1774802427",
+          "primary_heading": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+          "text_offset": 0,
+          "text_length": 219425,
+          "region_ref": null,
+          "text_preview": "Hire staff\nLog in\nFilters\nCleaning\nDriver & Delivery\nKitchen Porter\nChef & Cook\nWaiters\nConstruction & Trades\nSecurity\nQuick Service\nSalon & Beauty\nOffice & Admin\nRetail\nSales & Marketing\nMore\nJunior data analyst jobs in New York, New YorkCreate job alerts\nInsight Global\nBusiness Application Analyst\n2 days ago\nParamus\n\nPosition: Business Application Analyst (Microsoft modules) Location: Paramus NJ 07652 - 2-3x a week onsite Duration: 6 month contract to hire Rate: $55-65 hourly Schedule: M-F 9-5 Job Description Insight Global is seeking a consultative Application Analyst who can bridge the gap between technology and operations. The ideal candidate has strong application support and workflow optimization experience, enjoys solving complex technical and process-related issues, and can effect",
+          "observed_links": [
+            {
+              "url": "https://jobtoday.com/us/jobs-driver-%26-delivery/ny_new-york",
+              "label": "Driver & Delivery",
+              "context": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketing More"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-chef-%26-cook/ny_new-york",
+              "label": "Chef & Cook",
+              "context": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketing More"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-construction-%26-trades/ny_new-york",
+              "label": "Construction & Trades",
+              "context": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketing More"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-salon-%26-beauty/ny_new-york",
+              "label": "Salon & Beauty",
+              "context": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketing More"
+            }
+          ],
+          "controls": {
+            "context_ref": "ctx-dff7ae5d59bbed9327977c08",
+            "chars": 1984,
+            "read_with": "read_context",
+            "preview": "[{\"ref\":\"b-8h4zyr-1\",\"label\":\"Job Search and Hiring at JOB TODAY\",\"tag\":\"A\",\"type\":\"\",\"role\":\"\",\"hre"
+          },
+          "next_control_offset": 12,
+          "more_controls": "Use browser_read with next_control_offset or a query; path can inspect the archived controls without changing observation_id.",
+          "all_controls": {
+            "ref": "ctx-7c6c1e7f7b3b24fdf325ee33",
+            "path": [
+              "controls"
+            ],
+            "instruction": "The controls preview below is only a subset. Read this full source path or use browser_read query/next_control_offset to find job links."
+          }
+        }
+      },
+      {
+        "tool": "browser_read",
+        "arguments": {
+          "observation_id": "1465b5a1-e1de-4720-9e98-49035b27704c",
+          "query": "Junior data analyst"
+        },
+        "result": {
+          "context_ref": "ctx-5ebaf69b35b046eec5e12de1",
+          "chars": 22622,
+          "read_with": "read_context",
+          "available_keys": [
+            "title",
+            "page_evidence_hash",
+            "primary_heading",
+            "heading",
+            "text",
+            "text_offset",
+            "text_length",
+            "region_ref",
+            "regions",
+            "controls",
+            "control_offset",
+            "control_count",
+            "errors",
+            "viewport",
+            "url",
+            "frame_url",
+            "tabs",
+            "frames",
+            "query",
+            "observation_id",
+            "no_new_evidence"
+          ],
+          "regions": [
+            {
+              "ref": "b-8h4zyr-192",
+              "label": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+              "tag": "MAIN",
+              "text_length": 218292
+            },
+            {
+              "ref": "b-8h4zyr-193",
+              "label": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketin",
+              "tag": "SECTION",
+              "text_length": 166
+            },
+            {
+              "ref": "b-8h4zyr-194",
+              "label": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+              "tag": "SECTION",
+              "text_length": 218120
+            },
+            {
+              "ref": "b-8h4zyr-195",
+              "label": "Popular jobs searches in New York, New York",
+              "tag": "SECTION",
+              "text_length": 296
+            },
+            {
+              "ref": "b-8h4zyr-196",
+              "label": "Jobs by neighbourhood",
+              "tag": "SECTION",
+              "text_length": 219
+            },
+            {
+              "ref": "b-8h4zyr-197",
+              "label": "Popular junior data analyst jobs locations",
+              "tag": "SECTION",
+              "text_length": 203
+            }
+          ],
+          "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation.",
+          "no_new_evidence": true,
+          "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york",
+          "title": "146 Best junior data analyst Jobs in New York, New York (October 2026) | JOB TODAY",
+          "heading": "Junior data analyst jobs in New York, New YorkCreate job alerts / Popular jobs searches in New York, New York / Jobs by neighbourhood / Popular junior data analyst jobs locations",
+          "observation_id": "d67aa00f-67f2-480d-ad0e-1d0214e81f76",
+          "control_count": 23,
+          "control_offset": 0,
+          "page_evidence_hash": "247447:2673687707:1774802427",
+          "primary_heading": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+          "text_offset": 0,
+          "text_length": 219425,
+          "region_ref": null,
+          "text_preview": "Hire staff\nLog in\nFilters\nCleaning\nDriver & Delivery\nKitchen Porter\nChef & Cook\nWaiters\nConstruction & Trades\nSecurity\nQuick Service\nSalon & Beauty\nOffice & Admin\nRetail\nSales & Marketing\nMore\nJunior data analyst jobs in New York, New YorkCreate job alerts\nInsight Global\nBusiness Application Analyst\n2 days ago\nParamus\n\nPosition: Business Application Analyst (Microsoft modules) Location: Paramus NJ 07652 - 2-3x a week onsite Duration: 6 month contract to hire Rate: $55-65 hourly Schedule: M-F 9-5 Job Description Insight Global is seeking a consultative Application Analyst who can bridge the gap between technology and operations. The ideal candidate has strong application support and workflow optimization experience, enjoys solving complex technical and process-related issues, and can effect",
+          "observed_links": [
+            {
+              "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york",
+              "label": "New york, ny",
+              "context": "New york, ny"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ca_san-diego",
+              "label": "San diego, ca",
+              "context": "San diego, ca"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ca_los-angeles",
+              "label": "Los angeles, ca",
+              "context": "Los angeles, ca"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-junior-data-analyst/nj_jersey-city",
+              "label": "Jersey city, nj",
+              "context": "Jersey city, nj"
+            }
+          ],
+          "controls": {
+            "context_ref": "ctx-9038c9b5c16b0a6f6c53ded6",
+            "chars": 3059,
+            "read_with": "read_context",
+            "preview": "[{\"ref\":\"b-8h4zyr-21\",\"label\":\"Create job alerts\",\"tag\":\"SPAN\",\"type\":\"\",\"role\":\"link\",\"href\":null,\""
+          },
+          "next_control_offset": 12,
+          "more_controls": "Use browser_read with next_control_offset or a query; path can inspect the archived controls without changing observation_id.",
+          "all_controls": {
+            "ref": "ctx-5ebaf69b35b046eec5e12de1",
+            "path": [
+              "controls"
+            ],
+            "instruction": "The controls preview below is only a subset. Read this full source path or use browser_read query/next_control_offset to find job links."
+          }
+        }
+      },
+      {
+        "tool": "search_jobs",
+        "arguments": {
+          "limit": 20,
+          "location": "New York, NY",
+          "query": "junior data analyst"
+        },
+        "result": {
+          "jobs": [
+            {
+              "url": "https://www.zippia.com/junior-data-analyst-new-york-ny-jobs/",
+              "title": "Junior Data Analyst Jobs  in  New York ,  NY  (Hiring Now!) - Zippia",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.linkedin.com/jobs/junior-data-analyst-jobs-new-york",
+              "title": "Junior Data Analyst Jobs  in  New York  (4,000+ Open Roles) | LinkedIn",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.linkedin.com/jobs/data-analyst-%E2%80%93-junior-jobs-new-york-ny",
+              "title": "Data Analyst  –  Junior Jobs  in  New York  (479 Open Roles) | LinkedIn",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york",
+              "title": "Junior data analyst jobs  in  New York ,  New York  - JOB TODAY",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://gainam.com/early-careers-junior-data-analyst-new-york-ny",
+              "title": "Junior Data Analyst  —  New York ,  NY  |  Careers  at Gain America",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.joblist.com/j/junior-data-analyst-jobs/new-york-ny?msockid=3811ecc7d05a678327dbfb28d12166ff",
+              "title": "Junior Data Analyst Jobs  in  New York ,  NY  (55,604+  Jobs ) | Joblist",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            }
+          ],
+          "errors": [],
+          "sources_checked": [
+            "https://www.bing.com/search"
+          ],
+          "skipped_sources": [
+            "https://html.duckduckgo.com/html/"
+          ],
+          "note": "Read each result to verify a current job posting before saving or scoring it.",
+          "excluded_blocked_hosts": [
+            "hiringcafe.com",
+            "jooble.org",
+            "www.ziprecruiter.com"
+          ],
+          "no_new_evidence": true,
+          "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation."
+        }
+      },
+      {
+        "tool": "browser_open",
+        "arguments": {
+          "url": "https://www.zippia.com/junior-data-analyst-new-york-ny-jobs/"
+        },
+        "result": {
+          "error": "This exact action already ran without resolving the request.",
+          "error_code": "repeated_action",
+          "next": "Use a different search query/source or finish with the actual limitation. Do not repeat these arguments."
+        }
+      },
+      {
+        "tool": "read_context",
+        "arguments": {
+          "ref": "ctx-9735e834110a4b8511fdb584"
+        },
+        "result": {
+          "ref": "ctx-9735e834110a4b8511fdb584",
+          "offset": 0,
+          "chars": 2054,
+          "content": "{\"jobs\":[{\"url\":\"https://www.zippia.com/junior-data-analyst-new-york-ny-jobs/\",\"title\":\"Junior Data Analyst Jobs  in  New York ,  NY  (Hiring Now!) - Zippia\",\"company\":\"\",\"location\":\"\",\"source\":\"public_search\",\"source_engine\":\"https://www.bing.com/search\"},{\"url\":\"https://www.linkedin.com/jobs/junior-data-analyst-jobs-new-york\",\"title\":\"Junior Data Analyst Jobs  in  New York  (4,000+ Open Roles) | LinkedIn\",\"company\":\"\",\"location\":\"\",\"source\":\"public_search\",\"source_engine\":\"https://www.bing.com/search\"},{\"url\":\"https://www.linkedin.com/jobs/data-analyst-%E2%80%93-junior-jobs-new-york-ny\",\"title\":\"Data Analyst  –  Junior Jobs  in  New York  (479 Open Roles) | LinkedIn\",\"company\":\"\",\"location\":\"\",\"source\":\"public_search\",\"source_engine\":\"https://www.bing.com/search\"},{\"url\":\"https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york\",\"title\":\"Junior data analyst jobs  in  New York ,  New York  - JOB TODAY\",\"company\":\"\",\"location\":\"\",\"source\":\"public_search\",\"source_engine\":\"https://www.bing.com/search\"},{\"url\":\"https://gainam.com/early-careers-junior-data-analyst-new-york-ny\",\"title\":\"Junior Data Analyst  —  New York ,  NY  |  Careers  at Gain America\",\"company\":\"\",\"location\":\"\",\"source\":\"public_search\",\"source_engine\":\"https://www.bing.com/search\"},{\"url\":\"https://www.joblist.com/j/junior-data-analyst-jobs/new-york-ny?msockid=3811ecc7d05a678327dbfb28d12166ff\",\"title\":\"Junior Data Analyst Jobs  in  New York ,  NY  (55,604+  Jobs ) | Joblist\",\"company\":\"\",\"location\":\"\",\"source\":\"public_search\",\"source_engine\":\"https://www.bing.com/search\"}],\"errors\":[],\"sources_checked\":[\"https://www.bing.com/search\"],\"skipped_sources\":[\"https://html.duckduckgo.com/html/\"],\"note\":\"Read each result to verify a current job posting before saving or scoring it.\",\"excluded_blocked_hosts\":[\"hiringcafe.com\",\"jooble.org\",\"www.ziprecruiter.com\"],\"no_new_evidence\":true,\"progress_feedback\":\"No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation.\"}",
+          "next_offset": null,
+          "read_progress": {
+            "historical_access": false,
+            "recent_ranges": [
+              [
+                0,
+                2054
+              ]
+            ],
+            "ref": "ctx-9735e834110a4b8511fdb584",
+            "path": [],
+            "ranges": [
+              [
+                0,
+                2054
+              ]
+            ],
+            "chars": 2054,
+            "reads": 1,
+            "next_unread_offset": null
+          },
+          "available_paths": [
+            {
+              "path": [
+                "jobs"
+              ],
+              "chars": 1558,
+              "type": "list"
+            },
+            {
+              "path": [
+                "errors"
+              ],
+              "chars": 2,
+              "type": "list"
+            },
+            {
+              "path": [
+                "sources_checked"
+              ],
+              "chars": 31,
+              "type": "list"
+            },
+            {
+              "path": [
+                "skipped_sources"
+              ],
+              "chars": 37,
+              "type": "list"
+            },
+            {
+              "path": [
+                "note"
+              ],
+              "chars": 79,
+              "type": "str"
+            },
+            {
+              "path": [
+                "excluded_blocked_hosts"
+              ],
+              "chars": 54,
+              "type": "list"
+            },
+            {
+              "path": [
+                "no_new_evidence"
+              ],
+              "chars": 4,
+              "type": "bool"
+            },
+            {
+              "path": [
+                "progress_feedback"
+              ],
+              "chars": 158,
+              "type": "str"
+            }
+          ]
+        }
+      },
+      {
+        "tool": "read_context",
+        "arguments": {
+          "ref": "ctx-9735e834110a4b8511fdb584",
+          "path": [
+            "jobs"
+          ]
+        },
+        "result": {
+          "ref": "ctx-9735e834110a4b8511fdb584",
+          "path": [
+            "jobs"
+          ],
+          "offset": 0,
+          "chars": 1558,
+          "content": "[{\"url\":\"https://www.zippia.com/junior-data-analyst-new-york-ny-jobs/\",\"title\":\"Junior Data Analyst Jobs  in  New York ,  NY  (Hiring Now!) - Zippia\",\"company\":\"\",\"location\":\"\",\"source\":\"public_search\",\"source_engine\":\"https://www.bing.com/search\"},{\"url\":\"https://www.linkedin.com/jobs/junior-data-analyst-jobs-new-york\",\"title\":\"Junior Data Analyst Jobs  in  New York  (4,000+ Open Roles) | LinkedIn\",\"company\":\"\",\"location\":\"\",\"source\":\"public_search\",\"source_engine\":\"https://www.bing.com/search\"},{\"url\":\"https://www.linkedin.com/jobs/data-analyst-%E2%80%93-junior-jobs-new-york-ny\",\"title\":\"Data Analyst  –  Junior Jobs  in  New York  (479 Open Roles) | LinkedIn\",\"company\":\"\",\"location\":\"\",\"source\":\"public_search\",\"source_engine\":\"https://www.bing.com/search\"},{\"url\":\"https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york\",\"title\":\"Junior data analyst jobs  in  New York ,  New York  - JOB TODAY\",\"company\":\"\",\"location\":\"\",\"source\":\"public_search\",\"source_engine\":\"https://www.bing.com/search\"},{\"url\":\"https://gainam.com/early-careers-junior-data-analyst-new-york-ny\",\"title\":\"Junior Data Analyst  —  New York ,  NY  |  Careers  at Gain America\",\"company\":\"\",\"location\":\"\",\"source\":\"public_search\",\"source_engine\":\"https://www.bing.com/search\"},{\"url\":\"https://www.joblist.com/j/junior-data-analyst-jobs/new-york-ny?msockid=3811ecc7d05a678327dbfb28d12166ff\",\"title\":\"Junior Data Analyst Jobs  in  New York ,  NY  (55,604+  Jobs ) | Joblist\",\"company\":\"\",\"location\":\"\",\"source\":\"public_search\",\"source_engine\":\"https://www.bing.com/search\"}]",
+          "next_offset": null,
+          "read_progress": {
+            "historical_access": false,
+            "recent_ranges": [
+              [
+                0,
+                1558
+              ]
+            ],
+            "ref": "ctx-9735e834110a4b8511fdb584",
+            "path": [
+              "jobs"
+            ],
+            "ranges": [
+              [
+                0,
+                1558
+              ]
+            ],
+            "chars": 1558,
+            "reads": 1,
+            "next_unread_offset": null
+          },
+          "available_paths": [
+            {
+              "path": [
+                "jobs",
+                "0"
+              ],
+              "chars": 247,
+              "type": "dict",
+              "identity": {
+                "title": "Junior Data Analyst Jobs  in  New York ,  NY  (Hiring Now!) - Zippia"
+              }
+            },
+            {
+              "path": [
+                "jobs",
+                "1"
+              ],
+              "chars": 252,
+              "type": "dict",
+              "identity": {
+                "title": "Junior Data Analyst Jobs  in  New York  (4,000+ Open Roles) | LinkedIn"
+              }
+            },
+            {
+              "path": [
+                "jobs",
+                "2"
+              ],
+              "chars": 266,
+              "type": "dict",
+              "identity": {
+                "title": "Data Analyst  –  Junior Jobs  in  New York  (479 Open Roles) | LinkedIn"
+              }
+            },
+            {
+              "path": [
+                "jobs",
+                "3"
+              ],
+              "chars": 242,
+              "type": "dict",
+              "identity": {
+                "title": "Junior data analyst jobs  in  New York ,  New York  - JOB TODAY"
+              }
+            },
+            {
+              "path": [
+                "jobs",
+                "4"
+              ],
+              "chars": 250,
+              "type": "dict",
+              "identity": {
+                "title": "Junior Data Analyst  —  New York ,  NY  |  Careers  at Gain America"
+              }
+            },
+            {
+              "path": [
+                "jobs",
+                "5"
+              ],
+              "chars": 294,
+              "type": "dict",
+              "identity": {
+                "title": "Junior Data Analyst Jobs  in  New York ,  NY  (55,604+  Jobs ) | Joblist"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tool": "read_context",
+        "arguments": {
+          "path": [],
+          "ref": "ctx-6eac18660f61dfd8a1b16edd"
+        },
+        "result": {
+          "ref": "ctx-6eac18660f61dfd8a1b16edd",
+          "offset": 7612,
+          "chars": 7612,
+          "content": "",
+          "next_offset": null,
+          "read_progress": {
+            "historical_access": false,
+            "recent_ranges": [
+              [
+                0,
+                3000
+              ],
+              [
+                3000,
+                6000
+              ],
+              [
+                6000,
+                7612
+              ]
+            ],
+            "ref": "ctx-6eac18660f61dfd8a1b16edd",
+            "path": [],
+            "ranges": [
+              [
+                0,
+                7612
+              ]
+            ],
+            "chars": 7612,
+            "reads": 5,
+            "next_unread_offset": null
+          },
+          "no_new_evidence": true,
+          "available_paths": [
+            {
+              "path": [
+                "url"
+              ],
+              "chars": 89,
+              "type": "str"
+            },
+            {
+              "path": [
+                "title"
+              ],
+              "chars": 14,
+              "type": "str"
+            },
+            {
+              "path": [
+                "company"
+              ],
+              "chars": 2,
+              "type": "str"
+            },
+            {
+              "path": [
+                "location"
+              ],
+              "chars": 20,
+              "type": "str"
+            },
+            {
+              "path": [
+                "description"
+              ],
+              "chars": 7303,
+              "type": "str"
+            },
+            {
+              "path": [
+                "source"
+              ],
+              "chars": 18,
+              "type": "str"
+            },
+            {
+              "path": [
+                "page_url"
+              ],
+              "chars": 89,
+              "type": "str"
+            }
+          ],
+          "requested_offset": 0,
+          "already_read": true,
+          "complete": true,
+          "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation."
+        }
+      },
+      {
+        "tool": "search_jobs",
+        "arguments": {
+          "limit": 20,
+          "location": "New York, NY",
+          "query": "junior data analyst"
+        },
+        "result": {
+          "jobs": [
+            {
+              "url": "https://www.zippia.com/junior-data-analyst-new-york-ny-jobs/",
+              "title": "Junior Data Analyst Jobs  in  New York ,  NY  (Hiring Now!) - Zippia",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.linkedin.com/jobs/junior-data-analyst-jobs-new-york",
+              "title": "Junior Data Analyst Jobs  in  New York  (4,000+ Open Roles) | LinkedIn",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.linkedin.com/jobs/data-analyst-%E2%80%93-junior-jobs-new-york-ny",
+              "title": "Data Analyst  –  Junior Jobs  in  New York  (479 Open Roles) | LinkedIn",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york",
+              "title": "Junior data analyst jobs  in  New York ,  New York  - JOB TODAY",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://gainam.com/early-careers-junior-data-analyst-new-york-ny",
+              "title": "Junior Data Analyst  —  New York ,  NY  |  Careers  at Gain America",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.joblist.com/j/junior-data-analyst-jobs/new-york-ny?msockid=182fa6816da46bf021a8b16e6c366ac4",
+              "title": "Junior Data Analyst Jobs  in  New York ,  NY  (55,604+  Jobs ) | Joblist",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            }
+          ],
+          "errors": [],
+          "sources_checked": [
+            "https://www.bing.com/search"
+          ],
+          "skipped_sources": [
+            "https://html.duckduckgo.com/html/"
+          ],
+          "note": "Read each result to verify a current job posting before saving or scoring it.",
+          "excluded_blocked_hosts": [
+            "hiringcafe.com",
+            "jooble.org",
+            "www.ziprecruiter.com"
+          ],
+          "no_new_evidence": true,
+          "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation."
+        }
+      },
+      {
+        "tool": "read_job",
+        "arguments": {
+          "url": "https://www.indeed.com/rc/clk?jk=ef947638ab6b849b&bb=xv_1zZWQPqppE3LGIuotBRyssyHX7cM1kEGKdvujlQY9LaRmcP4NTEe0EsY7zy5bcvBCOMhr30SZqVurNme4Nj3yG3-J6tAm_rq2hmwruWmb2QBhm5P2u-Pfa3H0q5lg51ccQ1eC-0GuhYXYAyEyN1jDVusHr3GZF8xcT0gk1UE%3D&xkcb=SoAi67M2dVez-ZQEDZ0MbzkdCdPP&fccid=3b2b55df6cade29d&vjs=3"
+        },
+        "result": {
+          "error": "This exact action already ran without resolving the request.",
+          "error_code": "repeated_action",
+          "next": "Use a different search query/source or finish with the actual limitation. Do not repeat these arguments."
+        }
+      },
+      {
+        "tool": "browser_read",
+        "arguments": {
+          "observation_id": "d67aa00f-67f2-480d-ad0e-1d0214e81f76",
+          "query": "junior data analyst"
+        },
+        "result": {
+          "context_ref": "ctx-0620a1e12d22ffbffbe0c440",
+          "chars": 22622,
+          "read_with": "read_context",
+          "available_keys": [
+            "title",
+            "page_evidence_hash",
+            "primary_heading",
+            "heading",
+            "text",
+            "text_offset",
+            "text_length",
+            "region_ref",
+            "regions",
+            "controls",
+            "control_offset",
+            "control_count",
+            "errors",
+            "viewport",
+            "url",
+            "frame_url",
+            "tabs",
+            "frames",
+            "query",
+            "observation_id",
+            "no_new_evidence"
+          ],
+          "regions": [
+            {
+              "ref": "b-8h4zyr-192",
+              "label": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+              "tag": "MAIN",
+              "text_length": 218292
+            },
+            {
+              "ref": "b-8h4zyr-193",
+              "label": "Cleaning Driver & Delivery Kitchen Porter Chef & Cook Waiters Construction & Trades Security Quick Service Salon & Beauty Office & Admin Retail Sales & Marketin",
+              "tag": "SECTION",
+              "text_length": 166
+            },
+            {
+              "ref": "b-8h4zyr-194",
+              "label": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+              "tag": "SECTION",
+              "text_length": 218120
+            },
+            {
+              "ref": "b-8h4zyr-195",
+              "label": "Popular jobs searches in New York, New York",
+              "tag": "SECTION",
+              "text_length": 296
+            },
+            {
+              "ref": "b-8h4zyr-196",
+              "label": "Jobs by neighbourhood",
+              "tag": "SECTION",
+              "text_length": 219
+            },
+            {
+              "ref": "b-8h4zyr-197",
+              "label": "Popular junior data analyst jobs locations",
+              "tag": "SECTION",
+              "text_length": 203
+            }
+          ],
+          "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation.",
+          "no_new_evidence": true,
+          "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york",
+          "title": "146 Best junior data analyst Jobs in New York, New York (October 2026) | JOB TODAY",
+          "heading": "Junior data analyst jobs in New York, New YorkCreate job alerts / Popular jobs searches in New York, New York / Jobs by neighbourhood / Popular junior data analyst jobs locations",
+          "observation_id": "c32e8a99-c96c-4211-be5b-f91127bdf571",
+          "control_count": 23,
+          "control_offset": 0,
+          "page_evidence_hash": "247447:2673687707:1774802427",
+          "primary_heading": "Junior data analyst jobs in New York, New YorkCreate job alerts",
+          "text_offset": 0,
+          "text_length": 219425,
+          "region_ref": null,
+          "text_preview": "Hire staff\nLog in\nFilters\nCleaning\nDriver & Delivery\nKitchen Porter\nChef & Cook\nWaiters\nConstruction & Trades\nSecurity\nQuick Service\nSalon & Beauty\nOffice & Admin\nRetail\nSales & Marketing\nMore\nJunior data analyst jobs in New York, New YorkCreate job alerts\nInsight Global\nBusiness Application Analyst\n2 days ago\nParamus\n\nPosition: Business Application Analyst (Microsoft modules) Location: Paramus NJ 07652 - 2-3x a week onsite Duration: 6 month contract to hire Rate: $55-65 hourly Schedule: M-F 9-5 Job Description Insight Global is seeking a consultative Application Analyst who can bridge the gap between technology and operations. The ideal candidate has strong application support and workflow optimization experience, enjoys solving complex technical and process-related issues, and can effect",
+          "observed_links": [
+            {
+              "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york",
+              "label": "New york, ny",
+              "context": "New york, ny"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ca_san-diego",
+              "label": "San diego, ca",
+              "context": "San diego, ca"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ca_los-angeles",
+              "label": "Los angeles, ca",
+              "context": "Los angeles, ca"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-junior-data-analyst/nj_jersey-city",
+              "label": "Jersey city, nj",
+              "context": "Jersey city, nj"
+            }
+          ],
+          "controls": {
+            "context_ref": "ctx-9038c9b5c16b0a6f6c53ded6",
+            "chars": 3059,
+            "read_with": "read_context",
+            "preview": "[{\"ref\":\"b-8h4zyr-21\",\"label\":\"Create job alerts\",\"tag\":\"SPAN\",\"type\":\"\",\"role\":\"link\",\"href\":null,\""
+          },
+          "next_control_offset": 12,
+          "more_controls": "Use browser_read with next_control_offset or a query; path can inspect the archived controls without changing observation_id.",
+          "all_controls": {
+            "ref": "ctx-0620a1e12d22ffbffbe0c440",
+            "path": [
+              "controls"
+            ],
+            "instruction": "The controls preview below is only a subset. Read this full source path or use browser_read query/next_control_offset to find job links."
+          }
+        }
+      },
+      {
+        "tool": "search_jobs",
+        "arguments": {
+          "location": "New York, NY",
+          "query": "junior data analyst"
+        },
+        "result": {
+          "jobs": [
+            {
+              "url": "https://www.zippia.com/junior-data-analyst-new-york-ny-jobs/",
+              "title": "Junior Data Analyst Jobs  in  New York ,  NY  (Hiring Now!) - Zippia",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.linkedin.com/jobs/junior-data-analyst-jobs-new-york",
+              "title": "Junior Data Analyst Jobs  in  New York  (4,000+ Open Roles) | LinkedIn",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.linkedin.com/jobs/data-analyst-%E2%80%93-junior-jobs-new-york-ny",
+              "title": "Data Analyst  –  Junior Jobs  in  New York  (479 Open Roles) | LinkedIn",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://jobtoday.com/us/jobs-junior-data-analyst/ny_new-york",
+              "title": "Junior data analyst jobs  in  New York ,  New York  - JOB TODAY",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://gainam.com/early-careers-junior-data-analyst-new-york-ny",
+              "title": "Junior Data Analyst  —  New York ,  NY  |  Careers  at Gain America",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            },
+            {
+              "url": "https://www.joblist.com/j/junior-data-analyst-jobs/new-york-ny?msockid=1ae07d253079698f23e76aca3127686c",
+              "title": "Junior Data Analyst Jobs  in  New York ,  NY  (55,604+  Jobs ) | Joblist",
+              "company": "",
+              "location": "",
+              "source": "public_search",
+              "source_engine": "https://www.bing.com/search"
+            }
+          ],
+          "errors": [],
+          "sources_checked": [
+            "https://www.bing.com/search"
+          ],
+          "skipped_sources": [
+            "https://html.duckduckgo.com/html/"
+          ],
+          "note": "Read each result to verify a current job posting before saving or scoring it.",
+          "excluded_blocked_hosts": [
+            "hiringcafe.com",
+            "jooble.org",
+            "www.ziprecruiter.com"
+          ],
+          "no_new_evidence": true,
+          "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation."
+        }
+      },
+      {
+        "tool": "browser_open",
+        "arguments": {
+          "url": "https://www.zippia.com/junior-data-analyst-new-york-ny-jobs/"
+        },
+        "result": {
+          "error": "This exact action already ran without resolving the request.",
+          "error_code": "repeated_action",
+          "next": "Use a different search query/source or finish with the actual limitation. Do not repeat these arguments.",
+          "no_new_evidence": true,
+          "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation."
+        }
+      }
+    ]
+  },
+  "acceptance": {
+    "status": "failed",
+    "failures": [
+      "loop_not_completed_cleanly",
+      "fewer_than_two_verified_scored_qualifying_recommendations"
+    ],
+    "qualified_count": 0,
+    "main_input_tokens": 715985,
+    "total_input_tokens": 715985,
+    "limits": {
+      "main_calls": 60,
+      "main_input_tokens": 1000000,
+      "total_input_tokens": 1000000
+    },
+    "jobs": []
+  },
+  "actual_final": "I stopped because repeated steps produced no new evidence. Saved results are preserved; the requested work is not yet complete. Open the saved results or retry with a different source or approach.",
+  "history_boundary": {
+    "retained_actions": 24,
+    "no_new_evidence": 15,
+    "search_jobs": 7,
+    "action_labels_only": [
+      {
+        "tool": "browser_open",
+        "label": "browser_open",
+        "outcome": "completed",
+        "at": "2026-10-11T11:27:09.284709+00:00"
+      },
+      {
+        "tool": "browser_open",
+        "label": "browser_open",
+        "outcome": "completed",
+        "at": "2026-10-11T11:27:13.566328+00:00"
+      },
+      {
+        "tool": "browser_read",
+        "label": "browser_read",
+        "outcome": "completed",
+        "at": "2026-10-11T11:27:16.019620+00:00"
+      },
+      {
+        "tool": "read_job",
+        "label": "read_job",
+        "outcome": "completed",
+        "at": "2026-10-11T11:27:19.130876+00:00"
+      },
+      {
+        "tool": "read_context",
+        "label": "read_context",
+        "outcome": "completed",
+        "at": "2026-10-11T11:27:20.646305+00:00"
+      },
+      {
+        "tool": "read_context",
+        "label": "read_context",
+        "outcome": "completed",
+        "at": "2026-10-11T11:27:25.012645+00:00"
+      },
+      {
+        "tool": "read_context",
+        "label": "read_context",
+        "outcome": "completed",
+        "at": "2026-10-11T11:27:30.356885+00:00"
+      },
+      {
+        "tool": "browser_open",
+        "label": "browser_open",
+        "outcome": "completed",
+        "at": "2026-10-11T11:27:36.123076+00:00"
+      },
+      {
+        "tool": "search_jobs",
+        "label": "search_jobs",
+        "outcome": "completed",
+        "at": "2026-10-11T11:27:39.750431+00:00"
+      },
+      {
+        "tool": "browser_open",
+        "label": "browser_open",
+        "outcome": "completed",
+        "at": "2026-10-11T11:27:44.495328+00:00"
+      },
+      {
+        "tool": "read_job",
+        "label": "read_job",
+        "outcome": "failed",
+        "at": "2026-10-11T11:27:46.652695+00:00"
+      },
+      {
+        "tool": "search_jobs",
+        "label": "search_jobs",
+        "outcome": "completed",
+        "at": "2026-10-11T11:27:51.527132+00:00"
+      },
+      {
+        "tool": "browser_open",
+        "label": "browser_open",
+        "outcome": "completed",
+        "at": "2026-10-11T11:27:59.334952+00:00"
+      },
+      {
+        "tool": "browser_read",
+        "label": "browser_read",
+        "outcome": "completed",
+        "at": "2026-10-11T11:28:04.086700+00:00"
+      },
+      {
+        "tool": "browser_open",
+        "label": "browser_open",
+        "outcome": "completed",
+        "at": "2026-10-11T11:28:12.053483+00:00"
+      },
+      {
+        "tool": "search_jobs",
+        "label": "search_jobs",
+        "outcome": "completed",
+        "at": "2026-10-11T11:28:16.722527+00:00"
+      },
+      {
+        "tool": "browser_open",
+        "label": "browser_open",
+        "outcome": "completed",
+        "at": "2026-10-11T11:28:24.336970+00:00"
+      },
+      {
+        "tool": "search_jobs",
+        "label": "search_jobs",
+        "outcome": "completed",
+        "at": "2026-10-11T11:28:27.401211+00:00"
+      },
+      {
+        "tool": "browser_open",
+        "label": "browser_open",
+        "outcome": "completed",
+        "at": "2026-10-11T11:28:36.028930+00:00"
+      },
+      {
+        "tool": "browser_read",
+        "label": "browser_read",
+        "outcome": "completed",
+        "at": "2026-10-11T11:28:44.243967+00:00"
+      },
+      {
+        "tool": "browser_read",
+        "label": "browser_read",
+        "outcome": "completed",
+        "at": "2026-10-11T11:28:46.681214+00:00"
+      },
+      {
+        "tool": "browser_open",
+        "label": "browser_open",
+        "outcome": "completed",
+        "at": "2026-10-11T11:28:53.238893+00:00"
+      },
+      {
+        "tool": "search_jobs",
+        "label": "search_jobs",
+        "outcome": "completed",
+        "at": "2026-10-11T11:28:58.428715+00:00"
+      },
+      {
+        "tool": "browser_open",
+        "label": "browser_open",
+        "outcome": "completed",
+        "at": "2026-10-11T11:29:11.219852+00:00"
+      },
+      {
+        "tool": "browser_read",
+        "label": "browser_read",
+        "outcome": "completed",
+        "at": "2026-10-11T11:29:15.377126+00:00"
+      },
+      {
+        "tool": "search_jobs",
+        "label": "search_jobs",
+        "outcome": "completed",
+        "at": "2026-10-11T11:29:19.717108+00:00"
+      },
+      {
+        "tool": "import_job",
+        "label": "import_job",
+        "outcome": "failed",
+        "at": "2026-10-11T11:29:29.921872+00:00"
+      },
+      {
+        "tool": "read_context",
+        "label": "read_context",
+        "outcome": "completed",
+        "at": "2026-10-11T11:29:34.649535+00:00"
+      },
+      {
+        "tool": "browser_read",
+        "label": "browser_read",
+        "outcome": "completed",
+        "at": "2026-10-11T11:29:40.745620+00:00"
+      },
+      {
+        "tool": "browser_read",
+        "label": "browser_read",
+        "outcome": "completed",
+        "at": "2026-10-11T11:29:45.018605+00:00"
+      },
+      {
+        "tool": "search_jobs",
+        "label": "search_jobs",
+        "outcome": "failed",
+        "at": "2026-10-11T11:29:49.892322+00:00"
+      },
+      {
+        "tool": "browser_read",
+        "label": "browser_read",
+        "outcome": "completed",
+        "at": "2026-10-11T11:29:57.160832+00:00"
+      },
+      {
+        "tool": "read_job",
+        "label": "read_job",
+        "outcome": "failed",
+        "at": "2026-10-11T11:30:05.017558+00:00"
+      },
+      {
+        "tool": "search_jobs",
+        "label": "search_jobs",
+        "outcome": "completed",
+        "at": "2026-10-11T11:30:09.897106+00:00"
+      },
+      {
+        "tool": "browser_read",
+        "label": "browser_read",
+        "outcome": "completed",
+        "at": "2026-10-11T11:30:16.370204+00:00"
+      },
+      {
+        "tool": "browser_open",
+        "label": "browser_open",
+        "outcome": "completed",
+        "at": "2026-10-11T11:30:22.937618+00:00"
+      },
+      {
+        "tool": "search_jobs",
+        "label": "search_jobs",
+        "outcome": "completed",
+        "at": "2026-10-11T11:30:27.072902+00:00"
+      },
+      {
+        "tool": "read_context",
+        "label": "read_context",
+        "outcome": "completed",
+        "at": "2026-10-11T11:30:33.003969+00:00"
+      },
+      {
+        "tool": "read_job",
+        "label": "read_job",
+        "outcome": "failed",
+        "at": "2026-10-11T11:30:48.033670+00:00"
+      },
+      {
+        "tool": "search_jobs",
+        "label": "search_jobs",
+        "outcome": "completed",
+        "at": "2026-10-11T11:30:52.077871+00:00"
+      },
+      {
+        "tool": "browser_open",
+        "label": "browser_open",
+        "outcome": "completed",
+        "at": "2026-10-11T11:30:57.430206+00:00"
+      },
+      {
+        "tool": "browser_read",
+        "label": "browser_read",
+        "outcome": "completed",
+        "at": "2026-10-11T11:31:01.867054+00:00"
+      },
+      {
+        "tool": "search_jobs",
+        "label": "search_jobs",
+        "outcome": "completed",
+        "at": "2026-10-11T11:31:06.864678+00:00"
+      },
+      {
+        "tool": "browser_open",
+        "label": "browser_open",
+        "outcome": "failed",
+        "at": "2026-10-11T11:31:19.959171+00:00"
+      },
+      {
+        "tool": "read_context",
+        "label": "read_context",
+        "outcome": "completed",
+        "at": "2026-10-11T11:31:32.172652+00:00"
+      },
+      {
+        "tool": "read_context",
+        "label": "read_context",
+        "outcome": "completed",
+        "at": "2026-10-11T11:31:37.637111+00:00"
+      },
+      {
+        "tool": "read_context",
+        "label": "read_context",
+        "outcome": "completed",
+        "at": "2026-10-11T11:31:47.144320+00:00"
+      },
+      {
+        "tool": "search_jobs",
+        "label": "search_jobs",
+        "outcome": "completed",
+        "at": "2026-10-11T11:32:00.821647+00:00"
+      },
+      {
+        "tool": "read_job",
+        "label": "read_job",
+        "outcome": "failed",
+        "at": "2026-10-11T11:32:12.177771+00:00"
+      },
+      {
+        "tool": "browser_read",
+        "label": "browser_read",
+        "outcome": "completed",
+        "at": "2026-10-11T11:32:18.000507+00:00"
+      },
+      {
+        "tool": "search_jobs",
+        "label": "search_jobs",
+        "outcome": "completed",
+        "at": "2026-10-11T11:32:26.015125+00:00"
+      },
+      {
+        "tool": "browser_open",
+        "label": "browser_open",
+        "outcome": "failed",
+        "at": "2026-10-11T11:32:37.083647+00:00"
+      }
+    ],
+    "limitation": "52 durable action labels have timestamps/outcome labels only, not missing early arguments/results. Bounded runtime exchanges/archive cannot reconstruct all earlier decisions."
+  },
+  "ledger": [
+    {
+      "call_id": "1ff6ad95-ea09-4865-9f12-6871d10e8bdd",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 19279,
+      "tool_schema_chars": 7042,
+      "image_count": 0,
+      "input_tokens": 5969,
+      "output_tokens": 129,
+      "cached_input_tokens": 0,
+      "reasoning_tokens": 25,
+      "duration_seconds": 1.246
+    },
+    {
+      "call_id": "4093ddfd-0447-4728-af8c-496152bb437d",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 25254,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 8773,
+      "output_tokens": 271,
+      "cached_input_tokens": 0,
+      "reasoning_tokens": 169,
+      "duration_seconds": 2.938
+    },
+    {
+      "call_id": "5a4a8470-7b6b-4dbd-b271-e6a8b63b0ac6",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 35289,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 12387,
+      "output_tokens": 248,
+      "cached_input_tokens": 5873,
+      "reasoning_tokens": 144,
+      "duration_seconds": 2.279
+    },
+    {
+      "call_id": "bfd76eab-1867-41f6-b934-d55c074610ba",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 39844,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 13614,
+      "output_tokens": 384,
+      "cached_input_tokens": 5873,
+      "reasoning_tokens": 269,
+      "duration_seconds": 2.84
+    },
+    {
+      "call_id": "1f47563d-48c6-4c88-a10e-d3df44918fde",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 35493,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 12569,
+      "output_tokens": 102,
+      "cached_input_tokens": 4209,
+      "reasoning_tokens": 9,
+      "duration_seconds": 1.462
+    },
+    {
+      "call_id": "aba8f043-3b8c-4b19-939f-d1cf21f06b4c",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 39505,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 13480,
+      "output_tokens": 518,
+      "cached_input_tokens": 2545,
+      "reasoning_tokens": 405,
+      "duration_seconds": 4.304
+    },
+    {
+      "call_id": "61d38e24-1a3d-4579-ac68-9cef6a27dc8b",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 42681,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 14159,
+      "output_tokens": 436,
+      "cached_input_tokens": 2545,
+      "reasoning_tokens": 327,
+      "duration_seconds": 5.277
+    },
+    {
+      "call_id": "86519598-0b65-479f-9948-b5649369a48a",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 44302,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 14509,
+      "output_tokens": 781,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 528,
+      "duration_seconds": 5.416
+    },
+    {
+      "call_id": "89c8d420-289b-4a2e-b606-53d98c2bfc4c",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 42612,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 15171,
+      "output_tokens": 260,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 147,
+      "duration_seconds": 2.329
+    },
+    {
+      "call_id": "1aa97dfc-cdc3-4256-b55a-1b5f36b14180",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 40769,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 14292,
+      "output_tokens": 309,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 208,
+      "duration_seconds": 4.062
+    },
+    {
+      "call_id": "4ed7889d-88ca-4ac1-bf69-495b079c1709",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 43994,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 14402,
+      "output_tokens": 162,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 65,
+      "duration_seconds": 1.967
+    },
+    {
+      "call_id": "8d6d516a-d433-48fe-a2ae-389a480741c8",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 45557,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 14813,
+      "output_tokens": 399,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 278,
+      "duration_seconds": 4.211
+    },
+    {
+      "call_id": "404967e8-c9a2-4169-bb22-15891611206f",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 42181,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 13889,
+      "output_tokens": 797,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 687,
+      "duration_seconds": 6.362
+    },
+    {
+      "call_id": "6fb88c27-8dcd-4204-927b-9e7cae2a26d4",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 43693,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 14405,
+      "output_tokens": 383,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 256,
+      "duration_seconds": 4.501
+    },
+    {
+      "call_id": "d1d079ba-f1e3-4019-8943-61c03c8fc8b6",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 49220,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 15947,
+      "output_tokens": 553,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 432,
+      "duration_seconds": 7.443
+    },
+    {
+      "call_id": "258b56ca-203c-450e-ba7d-e7a9f5577e14",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 44037,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 15063,
+      "output_tokens": 291,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 170,
+      "duration_seconds": 3.901
+    },
+    {
+      "call_id": "b327de8c-1b7b-47fe-b900-3f9cd5906716",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 39154,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 13469,
+      "output_tokens": 572,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 478,
+      "duration_seconds": 7.244
+    },
+    {
+      "call_id": "5d4a2e5b-b69d-4dd2-873f-43acae056766",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 38822,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 13556,
+      "output_tokens": 232,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 118,
+      "duration_seconds": 2.361
+    },
+    {
+      "call_id": "b49fde99-2695-4ca3-b177-4b25557236cd",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 40610,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 14026,
+      "output_tokens": 442,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 337,
+      "duration_seconds": 6.597
+    },
+    {
+      "call_id": "e16e1190-a3d0-4a06-bff3-602316037818",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 44462,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 14892,
+      "output_tokens": 192,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 91,
+      "duration_seconds": 7.895
+    },
+    {
+      "call_id": "5698e374-1cd4-423b-b43f-b3e079d10f14",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 49214,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 16182,
+      "output_tokens": 226,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 102,
+      "duration_seconds": 2.071
+    },
+    {
+      "call_id": "4d5c54b5-e23d-4881-8a3d-b4cfa61b7821",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 49313,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 16222,
+      "output_tokens": 638,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 430,
+      "duration_seconds": 6.155
+    },
+    {
+      "call_id": "c6005e6d-c583-4e4f-a9cf-7460127d377c",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 45867,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 15995,
+      "output_tokens": 462,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 345,
+      "duration_seconds": 4.329
+    },
+    {
+      "call_id": "a2dba002-4b50-450a-9a56-35ac24cc3c56",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 40555,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 14054,
+      "output_tokens": 1173,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 906,
+      "duration_seconds": 10.891
+    },
+    {
+      "call_id": "7c62b18e-089b-40e9-b1c2-b109a16584da",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 43558,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 14516,
+      "output_tokens": 494,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 371,
+      "duration_seconds": 3.748
+    },
+    {
+      "call_id": "9a9af629-ee28-4035-b719-68402deb3e8a",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 47451,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 15318,
+      "output_tokens": 352,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 237,
+      "duration_seconds": 3.466
+    },
+    {
+      "call_id": "78719ae5-9780-46a6-abea-dc0fe9a95c39",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 44661,
+      "tool_schema_chars": 7501,
+      "image_count": 0,
+      "input_tokens": 13619,
+      "output_tokens": 1588,
+      "cached_input_tokens": 2801,
+      "reasoning_tokens": 1267,
+      "duration_seconds": 9.897
+    },
+    {
+      "call_id": "45fc4290-fd45-4582-b4ab-ef5792786d46",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 39153,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 13332,
+      "output_tokens": 393,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 300,
+      "duration_seconds": 4.461
+    },
+    {
+      "call_id": "bf2b5a09-61e5-4822-bbbf-5f55aabae77a",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 39512,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 13471,
+      "output_tokens": 582,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 516,
+      "duration_seconds": 5.65
+    },
+    {
+      "call_id": "31313890-1d8a-41f5-9701-ae311b362f0e",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 43231,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 14316,
+      "output_tokens": 320,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 193,
+      "duration_seconds": 3.84
+    },
+    {
+      "call_id": "3ddde8c0-cf5a-489c-9335-ffc8b01e3c80",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 46628,
+      "tool_schema_chars": 7501,
+      "image_count": 0,
+      "input_tokens": 14122,
+      "output_tokens": 462,
+      "cached_input_tokens": 2801,
+      "reasoning_tokens": 352,
+      "duration_seconds": 4.563
+    },
+    {
+      "call_id": "a54ef3e4-09ae-4bc7-a4fe-67ba084bdb30",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 41822,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 13909,
+      "output_tokens": 839,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 640,
+      "duration_seconds": 6.804
+    },
+    {
+      "call_id": "8c865369-ec21-4ebe-a13d-205e514f0664",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 42241,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 14161,
+      "output_tokens": 949,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 687,
+      "duration_seconds": 7.571
+    },
+    {
+      "call_id": "da2be624-cb5d-4f6c-b6fa-5c93005a4e00",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 42513,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 14258,
+      "output_tokens": 388,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 290,
+      "duration_seconds": 3.976
+    },
+    {
+      "call_id": "a7a23444-b6fb-4881-b8ca-9a53271ef2fa",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 40153,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 13601,
+      "output_tokens": 591,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 463,
+      "duration_seconds": 6.018
+    },
+    {
+      "call_id": "ea6cca41-0166-4e1e-9a2b-c117d53729cf",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 39940,
+      "tool_schema_chars": 7501,
+      "image_count": 0,
+      "input_tokens": 12480,
+      "output_tokens": 597,
+      "cached_input_tokens": 5105,
+      "reasoning_tokens": 495,
+      "duration_seconds": 5.415
+    },
+    {
+      "call_id": "93f6c90d-e1e2-4da9-a389-6cf5295e8268",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 39727,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 13455,
+      "output_tokens": 244,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 148,
+      "duration_seconds": 2.993
+    },
+    {
+      "call_id": "70b145f5-bf89-441f-b1b0-d4342fb78ee6",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 38559,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 13220,
+      "output_tokens": 493,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 392,
+      "duration_seconds": 5.625
+    },
+    {
+      "call_id": "fc01c050-b114-47f4-958a-96c902cdb546",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 38783,
+      "tool_schema_chars": 7501,
+      "image_count": 0,
+      "input_tokens": 12187,
+      "output_tokens": 1769,
+      "cached_input_tokens": 5105,
+      "reasoning_tokens": 1502,
+      "duration_seconds": 14.679
+    },
+    {
+      "call_id": "d16e3820-ce07-4bf9-8f78-0150d5ee77c3",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 37251,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 12818,
+      "output_tokens": 294,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 195,
+      "duration_seconds": 3.05
+    },
+    {
+      "call_id": "811fa060-c588-44a7-a75c-fca83311c2a8",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 39207,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 13261,
+      "output_tokens": 508,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 407,
+      "duration_seconds": 4.322
+    },
+    {
+      "call_id": "2d2e76bb-c483-48ef-9fa1-f01256491c88",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 43432,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 14163,
+      "output_tokens": 467,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 347,
+      "duration_seconds": 3.941
+    },
+    {
+      "call_id": "9c9dcdf6-6f70-473b-8a22-ecb949bfb2da",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 47388,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 15232,
+      "output_tokens": 499,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 382,
+      "duration_seconds": 4.038
+    },
+    {
+      "call_id": "8c64985e-b319-4a05-9a49-adff7f039ff1",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 44863,
+      "tool_schema_chars": 7501,
+      "image_count": 0,
+      "input_tokens": 13722,
+      "output_tokens": 1706,
+      "cached_input_tokens": 5105,
+      "reasoning_tokens": 1608,
+      "duration_seconds": 12.712
+    },
+    {
+      "call_id": "1b86cd94-327c-4675-b573-2b83eaea1afa",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 39199,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 13152,
+      "output_tokens": 727,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 631,
+      "duration_seconds": 11.891
+    },
+    {
+      "call_id": "0936f814-782b-4821-a45a-a4bcc92fc130",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 41564,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 13932,
+      "output_tokens": 567,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 458,
+      "duration_seconds": 5.111
+    },
+    {
+      "call_id": "b2935086-3103-4d98-9c89-297b3a70832f",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 41576,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 13994,
+      "output_tokens": 1024,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 913,
+      "duration_seconds": 9.146
+    },
+    {
+      "call_id": "edde1e17-fb23-4fc2-8c8d-43ffd95db400",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 40326,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 13501,
+      "output_tokens": 499,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 387,
+      "duration_seconds": 12.64
+    },
+    {
+      "call_id": "d7505a1a-f5a2-47aa-b04e-f66216a5d553",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 41199,
+      "tool_schema_chars": 7501,
+      "image_count": 0,
+      "input_tokens": 12796,
+      "output_tokens": 1431,
+      "cached_input_tokens": 5105,
+      "reasoning_tokens": 1165,
+      "duration_seconds": 10.881
+    },
+    {
+      "call_id": "f4897fb5-2f44-4f10-aebe-738e973d59f9",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 39290,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 13367,
+      "output_tokens": 417,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 292,
+      "duration_seconds": 5.274
+    },
+    {
+      "call_id": "92b6eff1-11c3-46cd-86a6-7e1edb0da422",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 43518,
+      "tool_schema_chars": 11415,
+      "image_count": 0,
+      "input_tokens": 14410,
+      "output_tokens": 605,
+      "cached_input_tokens": 6001,
+      "reasoning_tokens": 504,
+      "duration_seconds": 6.94
+    },
+    {
+      "call_id": "062969f5-f925-44af-a82f-593be5b84949",
+      "model": "muse-spark-1.3-contributor",
+      "purpose": "agent",
+      "attempt": 1,
+      "status": "completed",
+      "context_chars": 45345,
+      "tool_schema_chars": 7501,
+      "image_count": 0,
+      "input_tokens": 13834,
+      "output_tokens": 1279,
+      "cached_input_tokens": 5105,
+      "reasoning_tokens": 1176,
+      "duration_seconds": 10.706
+    }
+  ],
+  "usage": {
+    "calls": 52,
+    "input": 715985,
+    "output": 30044,
+    "main_input": 715985,
+    "usage_complete": true
+  },
+  "recorded_last_request_metrics": {
+    "request_text_chars": 52846,
+    "limit_chars": 48000,
+    "protected_overflow": true,
+    "archived_values": 15,
+    "request_parts_chars": {
+      "system": 13924,
+      "tools": 7501,
+      "replay_messages": 2855,
+      "live_snapshot": 28566
+    },
+    "snapshot_field_chars": {
+      "goal": 428,
+      "initial_goal": 428,
+      "current_request": 560,
+      "messages": 998,
+      "plan": 2,
+      "history": 4808,
+      "pending_question": 4,
+      "visual_fallback": 5,
+      "budget_remaining": 1,
+      "candidate": 190,
+      "resume_text": 405,
+      "search_recovery": 4089,
+      "known_results": 2053,
+      "scheduled_search": 4,
+      "recommended_jobs": 2,
+      "previous_recommendations": 2,
+      "job_alerts": 2,
+      "browser": 1420,
+      "research_pages": 1215,
+      "search_source_health": 1130,
+      "search_constraints": 540,
+      "search_coverage": 418,
+      "resume_issue": 4,
+      "has_original_pdf": 4,
+      "jobs": 2,
+      "materials": 2,
+      "applications": 2,
+      "material_choices": 2,
+      "capability_versions": 18,
+      "interviews": 2,
+      "must_decide": 4,
+      "decision_reason": 183,
+      "live_resources": 42,
+      "context_evidence": 8032,
+      "decision_history": 2,
+      "context_read_progress": 715,
+      "assistant_progress_history": 86,
+      "research_page_history": 86
+    }
+  },
+  "artifacts": [
+    {
+      "path": "tmp\\remaining-live-analyst-phase4-recovery\\test_long_real_search_conversa0\\summary.json",
+      "sha256": "3e537e427f2b4a6c67b8c2565c69c08f855f05a4830f02db5c9bc463ab2820d2"
+    },
+    {
+      "path": "tmp\\remaining-live-analyst-phase4-recovery\\test_long_real_search_conversa0\\transcript.json",
+      "sha256": "306cdda5499d073cf7706de87d94158f78c1442a3fff04bef9c23717f7ced44c"
+    },
+    {
+      "path": "tmp\\remaining-live-analyst-phase4-recovery\\test_long_real_search_conversa0\\acceptance.json",
+      "sha256": "5ed55608a9d7ee2ba5144a776eccc8f77dcf75fb5c69d61a1658fbbb44a5a184"
+    },
+    {
+      "path": "tmp\\remaining-live-analyst-phase4-recovery.xml",
+      "sha256": "70e5e8229565bb81bb67a0e770ede99ac4332b79599acbfbbe3b84b2fffc00c6"
+    },
+    {
+      "path": "tmp\\remaining-live-analyst-phase4-recovery.log",
+      "sha256": "58715df8a91864cbf79a536d5a9ff57b15ab2620939697821d8795232df54795"
+    },
+    {
+      "path": "tmp\\remaining-live-analyst-phase4-recovery.exitcode",
+      "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04"
+    }
+  ],
+  "tracking_before": {
+    "variants": [
+      "https://www.joblist.com/j/junior-data-analyst-jobs/new-york-ny?msockid=06e96a9c49b3669b2ac27d7348ed6734",
+      "https://www.joblist.com/j/junior-data-analyst-jobs/new-york-ny?msockid=206450e95ef161452f5147065fc86072",
+      "https://www.joblist.com/j/junior-data-analyst-jobs/new-york-ny?msockid=38b68c58385f6d1d02a49bb739f46cef",
+      "https://www.joblist.com/j/junior-data-analyst-jobs/new-york-ny?msockid=3811ecc7d05a678327dbfb28d12166ff",
+      "https://www.joblist.com/j/junior-data-analyst-jobs/new-york-ny?msockid=182fa6816da46bf021a8b16e6c366ac4",
+      "https://www.joblist.com/j/junior-data-analyst-jobs/new-york-ny?msockid=1ae07d253079698f23e76aca3127686c"
+    ],
+    "job_key_count": 6,
+    "search_fingerprint_count": 1
+  }
+}

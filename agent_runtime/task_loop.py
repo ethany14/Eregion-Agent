@@ -144,9 +144,11 @@ class TaskLoop:
                     return self.repository.change(task_id,status='needs_input',error=failure,model_activity=None)
                 if routed:
                     self.repository.append(task_id,role='assistant',text=routed['text'])
-                    return self.repository.change(task_id,lambda s:{'history':[*s['history'],
+                    result=self.repository.change(task_id,lambda s:{'history':[*s['history'],
                         {'tool':routed['tool'],'arguments':{'message_id':message_id},'result':routed['result'],
-                         'chat_revision':s['chat_revision'],'at':now()}][-24:]},status='completed',plan=[])
+                         'chat_revision':s['chat_revision'],'at':now()}][-24:]},status='needs_input' if routed.get('deferred') else 'completed',plan=[])
+                    if routed.get('start'):routed['start']()
+                    return result
             if not hold:self.schedule(task_id)
             return state
 
@@ -226,6 +228,7 @@ class TaskLoop:
 
     def _progress(self, task_id, text):
         state = self.repository.get(task_id)
+        if hasattr(self.harness,'validate_reply'):self.harness.validate_reply(state,text)
         for message in reversed(state['messages']):
             if message.get('role') == 'user':break
             if message.get('role') == 'assistant' and message.get('text','').strip() == text.strip():return False
@@ -238,7 +241,8 @@ class TaskLoop:
         revision = self.repository.get(task_id)['chat_revision']
         try:
             host = TaskHost(self, task_id, self.model_factory())
-            result = AgentLoop(host, self.repository.get(task_id).get('loop_runtime')).run()
+            result = AgentLoop(host, self.repository.get(task_id).get('loop_runtime'),
+                request_chars=getattr(self.harness,'request_chars',64000)).run()
             if result['reason'] == 'invalid_model_response':
                 raise ValueError('The model returned an unusable response.')
             with self.lock:
@@ -269,6 +273,9 @@ class TaskLoop:
         state = self.repository.get(task_id)
         if state.get('input_request'):return state['input_request']
         question = {'id':str(uuid4()),'text':text,'field_keys':[],'fields':[]}
+        if state.get('active_application_run') and hasattr(self.harness,'wait_token'):
+            question.update(application_run_id=state['active_application_run'],
+                application_wait_token=self.harness.wait_token({'id':state['active_application_run']}))
         self.repository.append(task_id,id=question['id'],role='assistant',text=text,kind='question')
         self.repository.change(task_id,input_request=question)
         return question
@@ -313,6 +320,8 @@ class TaskLoop:
             self.harness.validate_finish(self.repository.get(task_id))
             if self.repository.get(task_id).get('input_request'):raise ValueError('A question is still pending.')
             if not isinstance(args['text'],str) or not 0<len(args['text'])<=4000:raise ValueError('Summarize the observed outcome.')
+            if hasattr(self.harness,'validate_reply'):self.harness.validate_reply(self.repository.get(task_id),args['text'])
+            if hasattr(self.harness,'validate_completion'):self.harness.validate_completion(self.repository.get(task_id),args['text'])
             self.repository.append(task_id,role='assistant',text=args['text'])
             # Commit completion together with the action history in _drive.
             return {'completed':True}

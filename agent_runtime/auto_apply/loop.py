@@ -129,9 +129,27 @@ class ApplicationLoop:
                 except Exception:
                     pass
             self._capture_preview(run_id, browser)
+            self._recheck_shared_login(run_id,browser)
             if hasattr(browser, "save_login_state"):
                 browser.save_login_state()
             self._resume_after_handoff(run_id, browser)
+
+    def _recheck_shared_login(self,run_id,browser):
+        with self.lock:
+            state=self._active(run_id)
+            if not state or state['status']!='needs_input' or not state.get('account_request') or state.get('pause_requested') or state.get('paused_for_control'):return
+            revision=state.get('chat_revision',0)
+        reload=getattr(browser,'reload_shared_login',None)
+        if not reload:return
+        try:
+            if not reload() or browser.barrier():return
+        except Exception:return
+        with self.lock:
+            current=self._active(run_id)
+            if not current or current.get('chat_revision',0)!=revision or current.get('pause_requested') or current.get('paused_for_control'):return
+            self.repository.save(current,status='queued',account_request=None,input_request=None,review_digest=None,
+                message='Your existing sign-in is available. Rechecking this application.')
+            self._submit(run_id,self._drive,run_id,None)
 
     def _resume_after_handoff(self, run_id, browser):
         """Continue on its own once the user clears a verification or sign-in page."""
@@ -386,9 +404,15 @@ class ApplicationLoop:
                 raise BrowserBlocked("The attempt is paused or cancelled.")
             # The model chose which field this reply answers. Use it in this run,
             # but reuse it elsewhere only after the user approves it at review.
-            self.repository.save(state, answers={**state["answers"], key: value},
+            updated=self.repository.save(state, answers={**state["answers"], key: value},
                 answer_sources={**state.get("answer_sources", {}), key: {"type": "chat", "message_id": message_id,
                     "interpretation": "model", "pending_approval": True}})
+            self._save_literal_profile_facts(updated,{key:value},message_id)
+
+    def _save_literal_profile_facts(self,state,answers,message_id):
+        message=next((m for m in state.get('messages',[]) if m['id']==message_id and m['role']=='user'),{})
+        changes=self.repository.save_literal_profile_facts(state,answers,message.get('text',''))
+        if changes:self._say(state['run_id'],'Saved '+', '.join(f'{k.title()} = {v}' for k,v in changes.items())+' to your details.')
 
     def _bind_answers(self, run_id, items, chat_revision):
         with self.lock:
@@ -404,8 +428,10 @@ class ApplicationLoop:
                     message["binding_method"] = "model"
             sources = {item["field_key"]: {"type": "chat", "message_id": item["message_id"],
                 "quote": item["quote"], "interpretation": "model", "pending_approval": True} for item in items}
-            self.repository.save(state, answers={**state["answers"], **values},
+            updated=self.repository.save(state, answers={**state["answers"], **values},
                 answer_sources={**state.get("answer_sources", {}), **sources}, messages=messages)
+            for message_id in dict.fromkeys(item['message_id'] for item in items):
+                self._save_literal_profile_facts(updated,{i['field_key']:i['value'] for i in items if i['message_id']==message_id},message_id)
 
     def _recover_chat_answers(self, state):
         # A previously failed model call may have left a compact reply unused.

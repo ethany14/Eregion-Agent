@@ -153,7 +153,7 @@ class FastDecisions:
             from agent_runtime.multi_agent.model_usage import invoke_model
             from agent_runtime.provider_usage import usage_scope
             result.requests = 1
-            with usage_scope(purpose='jev:' + purpose):
+            with usage_scope(purpose='jev:' + purpose, model_route='fast'):
                 response = invoke_model(self._request, payload)
             if response.status_code != 200:
                 result.status = 'http_' + str(response.status_code)

@@ -1,0 +1,1421 @@
+{
+  "schema_version": 1,
+  "dataset_id": "fit-labels-v1",
+  "revision": "primary-ats-r1",
+  "status": "incomplete_sources",
+  "expected": {
+    "applicants": 6,
+    "jobs": 12,
+    "pairs": 72,
+    "fields": 4,
+    "jobs_per_field": 3
+  },
+  "applicants": [
+    {
+      "applicant_id": "analyst",
+      "synthetic": true,
+      "resume": "SYNTHETIC APPLICANT A\nEXPERIENCE\nData Analyst - Fictional Analytics Company, New York, NY (Jul 2024 - Present)\n• Built Python data pipelines and SQL queries in PostgreSQL.\n• Built Tableau dashboards and performed A/B testing with pandas.\nEDUCATION\nB.S. in Statistics, Fictional University (Sep 2020 - May 2024)\nSKILLS\nPython, SQL, Tableau, pandas. No Go, Kubernetes, PyTorch or Figma experience.\n",
+      "resume_sha256": "dcb07b1d97128b3d66883029927c638968f6eb47c3936a425888d75b7caf0e8d"
+    },
+    {
+      "applicant_id": "backend",
+      "synthetic": true,
+      "resume": "SYNTHETIC APPLICANT B\nEXPERIENCE\nSenior Software Engineer - Fictional Payments Company, Chicago, IL (Mar 2021 - Present)\n• Built Go and Python REST APIs. Owned PostgreSQL services in production.\n• Deployed production services on AWS EKS using Kubernetes and Terraform.\nSoftware Engineer - Fictional Logistics Company, Chicago, IL (Jul 2017 - Feb 2021)\n• Built Python APIs and SQL reporting pipelines. Mentored four junior engineers.\nEDUCATION\nB.S. in Computer Science, Fictional University (Aug 2013 - May 2017)\nSKILLS\nGo, Python, PostgreSQL, Kubernetes, Terraform, AWS (EKS, RDS). No PyTorch or Figma experience.\n",
+      "resume_sha256": "044b683c40534bb373ad63c41bed81e60ad435ecf2f0ba0a871d781674d99351"
+    },
+    {
+      "applicant_id": "student",
+      "synthetic": true,
+      "resume": "SYNTHETIC APPLICANT C\nEXPERIENCE\nMachine Learning Intern - Fictional AI Company, San Francisco, CA (May 2026 - Aug 2026)\n• Fine-tuned a language model using PyTorch and LoRA. Built a Python evaluation harness.\n• Served an internal prototype through FastAPI and Docker; no production ownership.\nEDUCATION\nM.S. in Computer Science, Fictional Graduate University (Aug 2025 - May 2027 (expected)) - In progress, not graduated\nB.E. in Computer Science, Fictional University (Aug 2019 - May 2023)\nSKILLS\nPython, PyTorch, LoRA, Docker, SQL. No Kubernetes, Go or Figma experience.\n",
+      "resume_sha256": "3b74eaa28a9d9148c58270829646b960a61160718795601ffd71859f974e52e9"
+    },
+    {
+      "applicant_id": "designer",
+      "synthetic": true,
+      "resume": "SYNTHETIC APPLICANT D\nEXPERIENCE\nUX Design Fellow - Fictional Clinics Company, Austin, TX (Feb 2026 - Present)\n• Designed patient check-in interfaces with Figma and conducted twelve user interviews.\nRegistered Nurse - Fictional Medical Center, Austin, TX (Jun 2019 - Jan 2026)\n• Led a clinical workflow redesign and trained fifteen nurses.\nEDUCATION\nB.S. in Nursing, Fictional University (Aug 2015 - May 2019)\nSKILLS\nFigma, user research, usability testing. No Python, Go, Kubernetes or PyTorch experience.\n",
+      "resume_sha256": "da7941e529636cbe89a972726f4ccc54bc26505b0b96fafec7e083dc8a9817dd"
+    },
+    {
+      "applicant_id": "senior_ds",
+      "synthetic": true,
+      "resume": "SYNTHETIC APPLICANT E\nEXPERIENCE\nSenior Data Scientist - Fictional Research Company (Jan 2020 - Present)\nBuilt Python and SQL pipelines, trained statistical models with scikit-learn and PyTorch.\nDeployed models on AWS and monitored drift. Mentored three data scientists.\nData Scientist - Fictional Retail Company (Jun 2016 - Dec 2019)\nDesigned A/B tests and presented experimental results to product teams.\nEDUCATION\nM.S. in Statistics, Fictional University, 2016. B.S. in Mathematics, 2014.\nSKILLS\nPython, SQL, PyTorch, scikit-learn, AWS, statistical modelling. No Figma, OpenLink or security clearance.\n",
+      "resume_sha256": "a93c31dcfa2e7000e2ed9515ee5c4e8258f9f6d76c1a1b14ab0c3104eb6c7de7"
+    },
+    {
+      "applicant_id": "newgrad_swe",
+      "synthetic": true,
+      "resume": "SYNTHETIC APPLICANT F\nEDUCATION\nB.S. in Computer Science, Fictional University, May 2026.\nPROJECTS\nBuilt a Python Flask REST API and PostgreSQL course project with unit tests.\nSoftware Engineering Intern - Fictional Tools Company (Jun 2025 - Aug 2025)\nImplemented Java API endpoints and wrote automated tests under supervision.\nSKILLS\nPython, Java, SQL, Git, unit testing. No production Kubernetes, leadership, Figma or security clearance.\n",
+      "resume_sha256": "56ab2afb3490ee79a53484eea268cfd8cbcc2bca84601aa2ba0208882f7c5c82"
+    }
+  ],
+  "jobs": [
+    {
+      "job_id": "caseguard-5387488008",
+      "field": "software",
+      "title": "Software Engineer - Backend",
+      "company": "CaseGuard",
+      "location": "Arlington, VA",
+      "url": "https://job-boards.greenhouse.io/caseguard/jobs/5387488008",
+      "revision": "primary-ats-r1",
+      "source": {
+        "api_url": "https://boards-api.greenhouse.io/v1/boards/caseguard/jobs/5387488008",
+        "captured_at": "2026-10-11T10:37:58.067303+00:00",
+        "raw_path": "tmp\\fit-label-source-fetch\\caseguard-5387488008.json",
+        "raw_sha256": "dd8b606cc21001221276d71e8c549851e233d89891934923c8d3d2052ec84eb5",
+        "body_scope": "single ATS job record content; application form and related jobs excluded",
+        "record_id": "5387488008",
+        "board": "caseguard",
+        "boundary_checks": {
+          "identity": true,
+          "title": true,
+          "location": true,
+          "single_record_body": true
+        },
+        "human_review": {
+          "status": "pending",
+          "reviewer": null,
+          "checklist": [
+            "Confirm actual title/company/location against linked primary posting",
+            "Confirm description is target vacancy only; no other company/sidebar/recommended posting",
+            "Mark benefits/EEO/agency notices as non-qualification context, not applicant requirements"
+          ]
+        }
+      },
+      "structured": "Software Engineer - Backend\n\nJob Description:\n\nWe are seeking a highly independent and proactive Software Engineer to join our backend team and play a critical role in building REST API microservices from scratch using ASP.NET Core (C#) and building cloud infrastructure using Infrastructure as Code (IaC) in AWS. In this role, you will contribute to collaborative file redacting tool with exciting features like live editing, image processing and more\n\nWhat you will do:\n\nModel business domains into relational/NoSQL data structures\n\nDesign and build scalable REST APIs for our microservices using ASP.NET Core (C#).\n\nBuild heavy file-processing workers optimized for CPU/memory/throughput\n\nDesign AWS infrastructure with IaC\n\nParticipate in architectural discussions and contribute to decisions for system design and service structure.\n\nQualifications (Required):\n\nBachelor’s degree in Computer Science, Software Engineering, or equivalent experiences\n\n2+ years backend experience with REST APIs\n\nStrong OOP fundamentals and critical thinking under ambiguity\n\nExperience with relational databases and SQL, including schema design, indexes, and transactions. \n\nExperience with Redis or distributed caching. \n\nA track record of modeling business logic into databases\n\nComfort working independently on complex, underspecified problems\n\nQualifications (It’s a plus):\n\nStrong understanding of distributed systems, scalability, and fault-tolerance patterns.\n\nFamiliarity with API design patterns such as Clean Architecture.\n\nExperience processing PDFs, images, videos, or other large binary files. \n\nHands-on experience with AWS services (e.g., EC2, EKS, S3, Lambda, RDS, DynamoDB).\n\nPractical knowledge of IaC tools (e.g., AWS CDK, Terraform, CloudFormation).\n\nExperience with containerization tools (e.g., Docker) and orchestration platforms (e.g., Kubernetes).\n\nFamiliarity with event-driven architectures and message queues (e.g., SNS, SQS, EventBridge).\n\nKnowledge of asynchronous programming and multi-threading in C#.\n\nRelevant AWS certifications (e.g., AWS Certified Solutions Architect, AWS Certified Developer)\n\nBenefits:\n\nCompetitive Salary\n\nStock Option\n\nMedical, Dental, and Vision Insurance\n\n401K\n\nPaid Vacation\n\nTen paid holidays per year\n\nFriendly and Learning environment\n\nAbout CaseGuard\n\nCaseGuard is a software company that helps law enforcement agencies, federal agencies, hospitals, schools, airports, and others manage all their media redaction needs in one easy-to-use redaction software. CaseGuard Studio is one of a kind. Our team is driven by a passion for great software design, creating great products, and creative processes; CaseGuard implements innovative ideas across multiple services and agencies. We invest in people. We nurture skills consistent with our values and our future strategy. Our passionate pursuit of excellence, the application of our creativity to solve our clients’ challenges, our technical expertise, and our collaborative spirit are measures of our success.",
+      "flat": "Software Engineer - Backend Job Description: We are seeking a highly independent and proactive Software Engineer to join our backend team and play a critical role in building REST API microservices from scratch using ASP.NET Core (C#) and building cloud infrastructure using Infrastructure as Code (IaC) in AWS. In this role, you will contribute to collaborative file redacting tool with exciting features like live editing, image processing and more What you will do: Model business domains into relational/NoSQL data structures Design and build scalable REST APIs for our microservices using ASP.NET Core (C#). Build heavy file-processing workers optimized for CPU/memory/throughput Design AWS infrastructure with IaC Participate in architectural discussions and contribute to decisions for system design and service structure. Qualifications (Required): Bachelor’s degree in Computer Science, Software Engineering, or equivalent experiences 2+ years backend experience with REST APIs Strong OOP fundamentals and critical thinking under ambiguity Experience with relational databases and SQL, including schema design, indexes, and transactions. Experience with Redis or distributed caching. A track record of modeling business logic into databases Comfort working independently on complex, underspecified problems Qualifications (It’s a plus): Strong understanding of distributed systems, scalability, and fault-tolerance patterns. Familiarity with API design patterns such as Clean Architecture. Experience processing PDFs, images, videos, or other large binary files. Hands-on experience with AWS services (e.g., EC2, EKS, S3, Lambda, RDS, DynamoDB). Practical knowledge of IaC tools (e.g., AWS CDK, Terraform, CloudFormation). Experience with containerization tools (e.g., Docker) and orchestration platforms (e.g., Kubernetes). Familiarity with event-driven architectures and message queues (e.g., SNS, SQS, EventBridge). Knowledge of asynchronous programming and multi-threading in C#. Relevant AWS certifications (e.g., AWS Certified Solutions Architect, AWS Certified Developer) Benefits: Competitive Salary Stock Option Medical, Dental, and Vision Insurance 401K Paid Vacation Ten paid holidays per year Friendly and Learning environment About CaseGuard CaseGuard is a software company that helps law enforcement agencies, federal agencies, hospitals, schools, airports, and others manage all their media redaction needs in one easy-to-use redaction software. CaseGuard Studio is one of a kind. Our team is driven by a passion for great software design, creating great products, and creative processes; CaseGuard implements innovative ideas across multiple services and agencies. We invest in people. We nurture skills consistent with our values and our future strategy. Our passionate pursuit of excellence, the application of our creativity to solve our clients’ challenges, our technical expertise, and our collaborative spirit are measures of our success.",
+      "structured_sha256": "cf6cba9cda108f2e0206634e82a4c71e0515641c60eaa610c715c7c2c05fe792",
+      "flat_sha256": "4d2d3088f194cb3dfdeb853d9d03901c3e78b465b3f46228a19bc2ab909e0ce2",
+      "requirements_review": {
+        "status": "pending",
+        "reviewer": null,
+        "requirements": [],
+        "excluded_context": [],
+        "instruction": "Human selects atomic requirements with exact structured source spans, level and accepted equivalent wording; do not copy model predictions as gold."
+      }
+    },
+    {
+      "job_id": "pipetechnologies-4265275009",
+      "field": "software",
+      "title": "Senior Software Engineer",
+      "company": "Pipe",
+      "location": "Remote, North America",
+      "url": "https://job-boards.greenhouse.io/pipetechnologies/jobs/4265275009",
+      "revision": "primary-ats-r1",
+      "source": {
+        "api_url": "https://boards-api.greenhouse.io/v1/boards/pipetechnologies/jobs/4265275009",
+        "captured_at": "2026-10-11T10:37:58.088870+00:00",
+        "raw_path": "tmp\\fit-label-source-fetch\\pipetechnologies-4265275009.json",
+        "raw_sha256": "bea72e6b0341e535a63d74b9c1e46ca1b848549af1b91a9612507c3ea1ab2ba9",
+        "body_scope": "single ATS job record content; application form and related jobs excluded",
+        "record_id": "4265275009",
+        "board": "pipetechnologies",
+        "boundary_checks": {
+          "identity": true,
+          "title": true,
+          "location": true,
+          "single_record_body": true
+        },
+        "human_review": {
+          "status": "pending",
+          "reviewer": null,
+          "checklist": [
+            "Confirm actual title/company/location against linked primary posting",
+            "Confirm description is target vacancy only; no other company/sidebar/recommended posting",
+            "Mark benefits/EEO/agency notices as non-qualification context, not applicant requirements"
+          ]
+        }
+      },
+      "structured": "We are hiring a Senior Backend Engineer to work in our Go, Python, and Postgres stack. You’ll work on cloud based APIs and databases that power our capital products. The successful candidate will have production experience with a language like Go, Java, Python, or similar, and experience with a relational database like PostgreSQL or MySQL. Fintech experience is not required.\n\nYour key responsibilities will include:\n\nDesigning, developing, and deploying scalable and reliable backend services, primarily using Go and Python.\n\nArchitecting, optimizing, and maintaining relational database tables in PostgreSQL.\n\nLeading technical projects from concept to launch, ensuring high quality and reliability.\n\nCollaborating with cross-functional teams, including product managers and other engineers, to define requirements and implement solutions.\n\nConducting thorough code reviews and championing engineering best practices.\n\nWe are looking for a motivated, curious Senior Software Engineer with the following required qualifications:\n\n5-7+ years of experience in backend software development.\n\nProduction experience with a language like Go, Java, Python, or similar.\n\nExperience with a relational database like PostgreSQL or MySQL.\n\nExperience building and operating scalable APIs and services.\n\nExperience with cloud infrastructure (e.g., GCP, AWS, or Azure).\n\nWorking knowledge of coding tools such as GitHub, VSCode, or similar.\n\nUnderstanding of software architecture, design patterns, and distributed systems.\n\nGood written and verbal communication skills.\n\nBachelor’s degree in Computer Science, Engineering, or a related technical field.\n\nIn general, you will be successful at Pipe if:\n\nYou want to join a remote-first startup and make an impact.\n\nYou want to be part of a team that holds each other to high standards.\n\nYou have a strong technical foundation, and are passionate about using your skills to help our customers succeed.\n\nYou take end-to-end ownership of your work and enjoy working with different functions across the company.\n\nCompensation and Benefits\n\nWe are a fully remote company and we believe in taking care of our employees. As a Pipe employee, you’ll receive:\n\nThe best equipment to help you do your job.\n\nFlexible vacation and work hours. We believe in a healthy work-life balance (really!)\n\nExcellent health, dental, and vision insurance.\n\nGenerous parental leave for anyone who is growing their family, regardless of gender.\n\nGreat colleagues! We value a culture of authenticity, humility, and excellence. We want you to make a mark on our culture.\n\nThe annual US base salary range for this role is $150,000-220,000. This salary range may be inclusive of several career levels at Pipe and will be narrowed during the interview process based on a number of factors, including the candidate’s experience, qualifications, and location.",
+      "flat": "We are hiring a Senior Backend Engineer to work in our Go, Python, and Postgres stack. You’ll work on cloud based APIs and databases that power our capital products. The successful candidate will have production experience with a language like Go, Java, Python, or similar, and experience with a relational database like PostgreSQL or MySQL. Fintech experience is not required. Your key responsibilities will include: Designing, developing, and deploying scalable and reliable backend services, primarily using Go and Python. Architecting, optimizing, and maintaining relational database tables in PostgreSQL. Leading technical projects from concept to launch, ensuring high quality and reliability. Collaborating with cross-functional teams, including product managers and other engineers, to define requirements and implement solutions. Conducting thorough code reviews and championing engineering best practices. We are looking for a motivated, curious Senior Software Engineer with the following required qualifications: 5-7+ years of experience in backend software development. Production experience with a language like Go, Java, Python, or similar. Experience with a relational database like PostgreSQL or MySQL. Experience building and operating scalable APIs and services. Experience with cloud infrastructure (e.g., GCP, AWS, or Azure). Working knowledge of coding tools such as GitHub, VSCode, or similar. Understanding of software architecture, design patterns, and distributed systems. Good written and verbal communication skills. Bachelor’s degree in Computer Science, Engineering, or a related technical field. In general, you will be successful at Pipe if: You want to join a remote-first startup and make an impact. You want to be part of a team that holds each other to high standards. You have a strong technical foundation, and are passionate about using your skills to help our customers succeed. You take end-to-end ownership of your work and enjoy working with different functions across the company. Compensation and Benefits We are a fully remote company and we believe in taking care of our employees. As a Pipe employee, you’ll receive: The best equipment to help you do your job. Flexible vacation and work hours. We believe in a healthy work-life balance (really!) Excellent health, dental, and vision insurance. Generous parental leave for anyone who is growing their family, regardless of gender. Great colleagues! We value a culture of authenticity, humility, and excellence. We want you to make a mark on our culture. The annual US base salary range for this role is $150,000-220,000. This salary range may be inclusive of several career levels at Pipe and will be narrowed during the interview process based on a number of factors, including the candidate’s experience, qualifications, and location.",
+      "structured_sha256": "8899ae9f50e788b63d926eb66dd1c7182d0ba716f2bc8bc56ac14c94805f3aa9",
+      "flat_sha256": "04007485957fd9b22db8aa98fab6742aa0ef602593c3f9535a807dcc16dd20b3",
+      "requirements_review": {
+        "status": "pending",
+        "reviewer": null,
+        "requirements": [],
+        "excluded_context": [],
+        "instruction": "Human selects atomic requirements with exact structured source spans, level and accepted equivalent wording; do not copy model predictions as gold."
+      }
+    },
+    {
+      "job_id": "capco-8110277",
+      "field": "analytics",
+      "title": "Business Analyst - OpenLink - Houston",
+      "company": "Capco",
+      "location": "US - Houston",
+      "url": "https://job-boards.greenhouse.io/capco/jobs/8110277",
+      "revision": "primary-ats-r1",
+      "source": {
+        "api_url": "https://boards-api.greenhouse.io/v1/boards/capco/jobs/8110277",
+        "captured_at": "2026-10-11T10:37:58.088391+00:00",
+        "raw_path": "tmp\\fit-label-source-fetch\\capco-8110277.json",
+        "raw_sha256": "39349e413068a7635d7f2b5e29ea576730357e3dbc188f81c5a21ac8a81505df",
+        "body_scope": "single ATS job record content; application form and related jobs excluded",
+        "record_id": "8110277",
+        "board": "capco",
+        "boundary_checks": {
+          "identity": true,
+          "title": true,
+          "location": true,
+          "single_record_body": true
+        },
+        "human_review": {
+          "status": "pending",
+          "reviewer": null,
+          "checklist": [
+            "Confirm actual title/company/location against linked primary posting",
+            "Confirm description is target vacancy only; no other company/sidebar/recommended posting",
+            "Mark benefits/EEO/agency notices as non-qualification context, not applicant requirements"
+          ]
+        }
+      },
+      "structured": "Business Analyst – OpenLink\n\nLocation: Houston, Texas | Practice Area: Business Consulting | Type: Permanent\n\nDeliver impactful energy trading solutions by bridging business needs and OpenLink technology\n\nThe Role\n\nAs a Business Analyst within Capco’s Business Consulting practice, you will support clients in the energy sector by translating business requirements into effective OpenLink solutions. You will work closely with stakeholders and technology teams to deliver high-quality consulting outcomes, supporting system implementations and transformation initiatives across trading environments.\n\nWhat You’ll Do\n\nFacilitate client workshops, interviews, and analysis to gather and document requirements\n\nDevelop business requirements, functional specifications, and process documentation\n\nAnalyze current and future state processes to identify gaps and improvement opportunities\n\nSupport testing, training, and go-live activities to ensure successful delivery\n\nProduce clear consulting deliverables including reports, presentations, and proposals\n\nWhat We’re Looking For\n\nExperience as a Business Analyst with OpenLink implementation and configuration\n\nStrong skills in requirements gathering, process mapping, and stakeholder engagement\n\nAbility to translate business needs into functional and technical specifications\n\nExperience supporting testing cycles, user training, and production rollout\n\nBachelor’s degree in a relevant field such as Business, Finance, or Technology\n\nBonus Points For\n\nExperience within a management consulting environment\n\nBackground in energy, utilities, or trading domains\n\nExperience contributing to business cases, proposals, or reusable consulting assets\n\nFamiliarity with project delivery methodologies and lifecycle management\n\nBasic scripting or technical understanding to support system analysis\n\nWhy Join Capco\n\nDeliver high-impact technology solutions for Tier 1 financial institutions\n\nWork in a collaborative, flat, and entrepreneurial consulting culture\n\nAccess continuous learning, training, and industry certifications\n\nBe part of a team shaping the future of digital financial services\n\nHelp shape the future of digital transformation across FS & Energy.\n\nWe offer a competitive, people-first benefits package designed to support every aspect of your life:\n\nMedical, Dental, Vision coverage\n\n401(k) with employer match\n\nMaternity and paternity leave plus dependent care support\n\nTuition reimbursement and wellness reimbursement\n\nHSA, FSA, commuter benefits, and employee discount programs\n\nUse of Artificial Intelligence in Talent Acquisition\n\nAt Capco, we use artificial intelligence (AI) tools to support and enhance several parts of talent acquisition. This includes using AI-enabled features within LinkedIn to help source potential candidates, speeding up routine recruitment communications such as emails and creating compelling and brand-aligned job postings that accurately reflect role requirements, and AI-scheduling applications to improve the efficiency of interview coordination.\n\nAI is used as a support tool only. All hiring decisions are made by talent acquisition and hiring teams.\n\nInclusion at Capco\n\nWe’re committed to making our recruitment process accessible and straightforward for everyone. If you need any adjustments at any stage, just let us know – we’ll be happy to help. We value each person’s unique perspective and contribution. At Capco, we believe that being yourself is your greatest strength. Our #BeYourselfAtWork culture encourages individuality and collaboration – a mindset that shapes how we work with clients and each other every day.",
+      "flat": "Business Analyst – OpenLink Location: Houston, Texas | Practice Area: Business Consulting | Type: Permanent Deliver impactful energy trading solutions by bridging business needs and OpenLink technology The Role As a Business Analyst within Capco’s Business Consulting practice, you will support clients in the energy sector by translating business requirements into effective OpenLink solutions. You will work closely with stakeholders and technology teams to deliver high-quality consulting outcomes, supporting system implementations and transformation initiatives across trading environments. What You’ll Do Facilitate client workshops, interviews, and analysis to gather and document requirements Develop business requirements, functional specifications, and process documentation Analyze current and future state processes to identify gaps and improvement opportunities Support testing, training, and go-live activities to ensure successful delivery Produce clear consulting deliverables including reports, presentations, and proposals What We’re Looking For Experience as a Business Analyst with OpenLink implementation and configuration Strong skills in requirements gathering, process mapping, and stakeholder engagement Ability to translate business needs into functional and technical specifications Experience supporting testing cycles, user training, and production rollout Bachelor’s degree in a relevant field such as Business, Finance, or Technology Bonus Points For Experience within a management consulting environment Background in energy, utilities, or trading domains Experience contributing to business cases, proposals, or reusable consulting assets Familiarity with project delivery methodologies and lifecycle management Basic scripting or technical understanding to support system analysis Why Join Capco Deliver high-impact technology solutions for Tier 1 financial institutions Work in a collaborative, flat, and entrepreneurial consulting culture Access continuous learning, training, and industry certifications Be part of a team shaping the future of digital financial services Help shape the future of digital transformation across FS & Energy. We offer a competitive, people-first benefits package designed to support every aspect of your life: Medical, Dental, Vision coverage 401(k) with employer match Maternity and paternity leave plus dependent care support Tuition reimbursement and wellness reimbursement HSA, FSA, commuter benefits, and employee discount programs Use of Artificial Intelligence in Talent Acquisition At Capco, we use artificial intelligence (AI) tools to support and enhance several parts of talent acquisition. This includes using AI-enabled features within LinkedIn to help source potential candidates, speeding up routine recruitment communications such as emails and creating compelling and brand-aligned job postings that accurately reflect role requirements, and AI-scheduling applications to improve the efficiency of interview coordination. AI is used as a support tool only. All hiring decisions are made by talent acquisition and hiring teams. Inclusion at Capco We’re committed to making our recruitment process accessible and straightforward for everyone. If you need any adjustments at any stage, just let us know – we’ll be happy to help. We value each person’s unique perspective and contribution. At Capco, we believe that being yourself is your greatest strength. Our #BeYourselfAtWork culture encourages individuality and collaboration – a mindset that shapes how we work with clients and each other every day.",
+      "structured_sha256": "24dd9122fe8b9c86c325950ce37377aaa23146e3a5d346404132b92395f15257",
+      "flat_sha256": "2987e7ebe3ec5ab029b8825e102d13c795fea28a86bf1bf91b4c7b09239fcb61",
+      "requirements_review": {
+        "status": "pending",
+        "reviewer": null,
+        "requirements": [],
+        "excluded_context": [],
+        "instruction": "Human selects atomic requirements with exact structured source spans, level and accepted equivalent wording; do not copy model predictions as gold."
+      }
+    },
+    {
+      "job_id": "blockchain-8045355",
+      "field": "analytics",
+      "title": "Business Analyst",
+      "company": "Blockchain.com",
+      "location": "London",
+      "url": "https://job-boards.greenhouse.io/blockchain/jobs/8045355",
+      "revision": "primary-ats-r1",
+      "source": {
+        "api_url": "https://boards-api.greenhouse.io/v1/boards/blockchain/jobs/8045355",
+        "captured_at": "2026-10-11T10:37:58.538241+00:00",
+        "raw_path": "tmp\\fit-label-source-fetch\\blockchain-8045355.json",
+        "raw_sha256": "3cd97e3517df0e5cf4ababa6d2fb3e82b0f5958669dfa209ddff4453d301d155",
+        "body_scope": "single ATS job record content; application form and related jobs excluded",
+        "record_id": "8045355",
+        "board": "blockchain",
+        "boundary_checks": {
+          "identity": true,
+          "title": true,
+          "location": true,
+          "single_record_body": true
+        },
+        "human_review": {
+          "status": "pending",
+          "reviewer": null,
+          "checklist": [
+            "Confirm actual title/company/location against linked primary posting",
+            "Confirm description is target vacancy only; no other company/sidebar/recommended posting",
+            "Mark benefits/EEO/agency notices as non-qualification context, not applicant requirements"
+          ]
+        }
+      },
+      "structured": "Blockchain is connecting the world to the future of finance. As the most trusted and fastest-growing global crypto company, it helps millions of people worldwide safely access cryptocurrency. Since its inception in 2011, Blockchain has earned the trust of over 90 million wallet holders and more than 40 million verified users, facilitating over $1 trillion in crypto transactions.\n\nBlockchain.com is looking for a Business Analyst to support strategic products, markets, and customer segments within the Consumer business.\n\nThis is a high-impact analytical and product-oriented role focused on business performance, growth opportunities, customer insights, product execution, and operational excellence. You will work closely with Business Leads, Product, Engineering, Trading, Risk, Compliance, Marketing, Finance, and Regional teams to help identify opportunities, shape product priorities, build business cases, track performance, and support the launch of new initiatives.\n\nWHAT YOU WILL DO\n\nSupport the strategy, roadmap, and commercial performance of key business areas within Consumer.\n\nAnalyze business performance across users, activity, revenue, margin, retention, volume, conversion, and P&L.\n\nWork with Business Leads and Product Managers to identify product opportunities, define problem statements, and support prioritization.\n\nTranslate business goals, customer insights, and data analysis into clear product recommendations.\n\nBuild dashboards, reports, and analysis to help teams understand performance, diagnose issues, and identify opportunities.\n\nSupport business cases for new products, features, markets, or customer propositions, including market size, customer demand, economics, operational requirements, and risk.\n\nPartner with Product and Engineering to help define requirements, clarify trade-offs, and support delivery of customer-facing features.\n\nSupport product launches by coordinating inputs across Product, Engineering, Marketing, CRM, Growth, Compliance, Operations, and Regional teams.\n\nWork with Trading, Treasury, Risk, Finance, and Compliance to analyze pricing, economics, risk controls, and profitability.\n\nTrack competitors, customer behavior, and market trends to identify opportunities to differentiate and win share.\n\nHelp establish a clear operating cadence around performance tracking, experimentation, launches, product reviews, and business reviews.\n\nWHAT YOU WILL NEED\n\nExperience in business analysis, product analytics, product operations, strategy, growth, fintech, crypto, payments, consulting, or consumer technology.\n\nStrong analytical skills and comfort working with data, business modeling, funnels, unit economics, pricing, conversion, retention, and profitability.\n\nAbility to turn data, customer insights, and business problems into clear product recommendations.\n\nStrong product judgment and strong interest in building customer-facing products.\n\nAbility to work closely with Product and Engineering teams, including helping define requirements, prioritize opportunities, and support execution.\n\nStrong communication skills and ability to present findings clearly to cross-functional stakeholders.\n\nComfort operating in a fast-moving, ambiguous environment.\n\nHigh ownership, attention to detail, and willingness to work across both strategic analysis and hands-on product execution.\n\nInterest in crypto, fintech, consumer products, and high-growth businesses.\n\nCOMPENSATION & PERKS\n\nFull-time salary based on experience and meaningful equity in an industry-leading company\n\nRole based in our London office, with a mandatory in-office presence four days per week\n\nWork from Anywhere Policy: You can work remotely from anywhere in the world for up to 20 days per year.\n\nClassPass \n\nBudgets for learning & professional development \n\nUnlimited vacation policy; work hard and take time when you need it\n\nApple equipment\n\nThe opportunity to be a key player and build your career at a rapidly expanding, global technology company in an emerging field\n\nFlexible work culture  \n\nBlockchain is committed to diversity and inclusion in the workplace and is proud to be an equal opportunity employer. We prohibit discrimination and harassment of any kind based on race, religion, color, national origin, gender, gender expression, sex, sexual orientation, age, marital status, veteran status, disability status or any other characteristic protected by law. This policy applies to all employment practices within our organization, including hiring, recruiting, promotion, termination, layoff, recall, leave of absence, and apprenticeship. Blockchain makes hiring decisions based solely on qualifications, merit, and business needs at the time.\n\nYou may contact our Data Protection Officer by email at dpo@blockchain.com. Your personal data will be processed for the purposes of managing Controller’s recruitment related activities, which include setting up and conducting interviews and tests for applicants, evaluating and assessing the results thereto, and as is otherwise needed in the recruitment and hiring processes. Such processing is legally permissible under Art. 6(1)(f) of Regulation (EU) 2016/679 (General Data Protection Regulation) as necessary for the purposes of the legitimate interests pursued by the Controller, which are the solicitation, evaluation, and selection of applicants for employment.\n\nYour personal data will be shared with Greenhouse Software, Inc., a cloud services provider located in the United States of America and engaged by Controller to help manage its recruitment and hiring process on Controller’s behalf.  Accordingly, if you are located outside of the United States, your personal data will be transferred to the United States once you submit it through this site. Because the European Union Commission has determined that United States data privacy laws do not ensure an adequate level of protection for personal data collected from EU data subjects, the transfer will be subject to appropriate additional safeguards under the standard contractual clauses. \n\nYour personal data will be retained by Controller as long as Controller determines it is necessary to evaluate your application for employment.  Under the GDPR, you have the right to request access to your personal data, to request that your personal data be rectified or erased, and to request that processing of your personal data be restricted. You also have the right to data portability. In addition, you may lodge a complaint with an EU supervisory authority.",
+      "flat": "Blockchain is connecting the world to the future of finance. As the most trusted and fastest-growing global crypto company, it helps millions of people worldwide safely access cryptocurrency. Since its inception in 2011, Blockchain has earned the trust of over 90 million wallet holders and more than 40 million verified users, facilitating over $1 trillion in crypto transactions. Blockchain.com is looking for a Business Analyst to support strategic products, markets, and customer segments within the Consumer business. This is a high-impact analytical and product-oriented role focused on business performance, growth opportunities, customer insights, product execution, and operational excellence. You will work closely with Business Leads, Product, Engineering, Trading, Risk, Compliance, Marketing, Finance, and Regional teams to help identify opportunities, shape product priorities, build business cases, track performance, and support the launch of new initiatives. WHAT YOU WILL DO Support the strategy, roadmap, and commercial performance of key business areas within Consumer. Analyze business performance across users, activity, revenue, margin, retention, volume, conversion, and P&L. Work with Business Leads and Product Managers to identify product opportunities, define problem statements, and support prioritization. Translate business goals, customer insights, and data analysis into clear product recommendations. Build dashboards, reports, and analysis to help teams understand performance, diagnose issues, and identify opportunities. Support business cases for new products, features, markets, or customer propositions, including market size, customer demand, economics, operational requirements, and risk. Partner with Product and Engineering to help define requirements, clarify trade-offs, and support delivery of customer-facing features. Support product launches by coordinating inputs across Product, Engineering, Marketing, CRM, Growth, Compliance, Operations, and Regional teams. Work with Trading, Treasury, Risk, Finance, and Compliance to analyze pricing, economics, risk controls, and profitability. Track competitors, customer behavior, and market trends to identify opportunities to differentiate and win share. Help establish a clear operating cadence around performance tracking, experimentation, launches, product reviews, and business reviews. WHAT YOU WILL NEED Experience in business analysis, product analytics, product operations, strategy, growth, fintech, crypto, payments, consulting, or consumer technology. Strong analytical skills and comfort working with data, business modeling, funnels, unit economics, pricing, conversion, retention, and profitability. Ability to turn data, customer insights, and business problems into clear product recommendations. Strong product judgment and strong interest in building customer-facing products. Ability to work closely with Product and Engineering teams, including helping define requirements, prioritize opportunities, and support execution. Strong communication skills and ability to present findings clearly to cross-functional stakeholders. Comfort operating in a fast-moving, ambiguous environment. High ownership, attention to detail, and willingness to work across both strategic analysis and hands-on product execution. Interest in crypto, fintech, consumer products, and high-growth businesses. COMPENSATION & PERKS Full-time salary based on experience and meaningful equity in an industry-leading company Role based in our London office, with a mandatory in-office presence four days per week Work from Anywhere Policy: You can work remotely from anywhere in the world for up to 20 days per year. ClassPass Budgets for learning & professional development Unlimited vacation policy; work hard and take time when you need it Apple equipment The opportunity to be a key player and build your career at a rapidly expanding, global technology company in an emerging field Flexible work culture Blockchain is committed to diversity and inclusion in the workplace and is proud to be an equal opportunity employer. We prohibit discrimination and harassment of any kind based on race, religion, color, national origin, gender, gender expression, sex, sexual orientation, age, marital status, veteran status, disability status or any other characteristic protected by law. This policy applies to all employment practices within our organization, including hiring, recruiting, promotion, termination, layoff, recall, leave of absence, and apprenticeship. Blockchain makes hiring decisions based solely on qualifications, merit, and business needs at the time. You may contact our Data Protection Officer by email at dpo@blockchain.com. Your personal data will be processed for the purposes of managing Controller’s recruitment related activities, which include setting up and conducting interviews and tests for applicants, evaluating and assessing the results thereto, and as is otherwise needed in the recruitment and hiring processes. Such processing is legally permissible under Art. 6(1)(f) of Regulation (EU) 2016/679 (General Data Protection Regulation) as necessary for the purposes of the legitimate interests pursued by the Controller, which are the solicitation, evaluation, and selection of applicants for employment. Your personal data will be shared with Greenhouse Software, Inc., a cloud services provider located in the United States of America and engaged by Controller to help manage its recruitment and hiring process on Controller’s behalf. Accordingly, if you are located outside of the United States, your personal data will be transferred to the United States once you submit it through this site. Because the European Union Commission has determined that United States data privacy laws do not ensure an adequate level of protection for personal data collected from EU data subjects, the transfer will be subject to appropriate additional safeguards under the standard contractual clauses. Your personal data will be retained by Controller as long as Controller determines it is necessary to evaluate your application for employment. Under the GDPR, you have the right to request access to your personal data, to request that your personal data be rectified or erased, and to request that processing of your personal data be restricted. You also have the right to data portability. In addition, you may lodge a complaint with an EU supervisory authority.",
+      "structured_sha256": "5fb91af5748b2f7ba18ec718c0d57240eeae552761cbc60eedbcadfadd26e5a0",
+      "flat_sha256": "f3afdc57dfeb5e8c49484321086c798adcfd8880e33d90ab0b4917d2757a26df",
+      "requirements_review": {
+        "status": "pending",
+        "reviewer": null,
+        "requirements": [],
+        "excluded_context": [],
+        "instruction": "Human selects atomic requirements with exact structured source spans, level and accepted equivalent wording; do not copy model predictions as gold."
+      }
+    },
+    {
+      "job_id": "workatbackbase-7721248",
+      "field": "analytics",
+      "title": "Senior Business Analyst",
+      "company": "Backbase",
+      "location": "Toronto",
+      "url": "https://job-boards.greenhouse.io/workatbackbase/jobs/7721248",
+      "revision": "primary-ats-r1",
+      "source": {
+        "api_url": "https://boards-api.greenhouse.io/v1/boards/workatbackbase/jobs/7721248",
+        "captured_at": "2026-10-11T10:37:58.539933+00:00",
+        "raw_path": "tmp\\fit-label-source-fetch\\workatbackbase-7721248.json",
+        "raw_sha256": "064802bf993ca1b526fb6e76ffe01c616449676a89fe948ff7c53895479ac43d",
+        "body_scope": "single ATS job record content; application form and related jobs excluded",
+        "record_id": "7721248",
+        "board": "workatbackbase",
+        "boundary_checks": {
+          "identity": true,
+          "title": true,
+          "location": true,
+          "single_record_body": true
+        },
+        "human_review": {
+          "status": "pending",
+          "reviewer": null,
+          "checklist": [
+            "Confirm actual title/company/location against linked primary posting",
+            "Confirm description is target vacancy only; no other company/sidebar/recommended posting",
+            "Mark benefits/EEO/agency notices as non-qualification context, not applicant requirements"
+          ]
+        }
+      },
+      "structured": "The job in short\n\nCapture the essential requirements to help our customers realize their customer experience vision. \n\nMeet the job\n\nYou work closely with both our customers and the Backbase UX design and development teams. You are the product owner for a project and guide the team in making the right choices to maximize success for the project and the customer. Our customers and implementation partners see you as a trusted consultant. Together we work to successfully deliver our enterprise solution and achieve our customers’ goals. \n\nWith the multi-disciplinary and internationally diverse teams at Backbase, you will analyze, capture, and prioritize customer requirements for new customer experience initiatives. You perform business process gap analysis and write user stories. Every project has its own set of unique challenges that must be overcome and it’s up to you to think quickly and provide solutions that work for everyone. \n\nOn the customer side, you will manage expectations and help them translate their vision into a sound project backlog. Due to some customers not working Agile, you will need knowledge of Agile development methodologies and be able to organize engaging workshops with customers to identify all of the technical requirements needed. \n\nHow about you?\n\nYou hold a university degree (preferable business or IT related);\n\nYou have 7+ years working experience as a Business Analyst in the field;\n\nYou have experience working on lending products such as commercial, corporate or construction loans.\n\nYou have excellent communication skills in English and you feel comfortable interacting with stakeholders within Backbase and potential customers and various level;\n\nYou are able to showcase good analytical and evaluative skills, and can translate customer pain points into detailed product requirements;\n\nOrganizational and cultural sensitivity comes naturally to you;\n\nYou are able to execute product gap analysis based on gathered requirements to maximize project and customer success;\n\nYou know your way around requirements management, process modeling and development methodologies.",
+      "flat": "The job in short Capture the essential requirements to help our customers realize their customer experience vision. Meet the job You work closely with both our customers and the Backbase UX design and development teams. You are the product owner for a project and guide the team in making the right choices to maximize success for the project and the customer. Our customers and implementation partners see you as a trusted consultant. Together we work to successfully deliver our enterprise solution and achieve our customers’ goals. With the multi-disciplinary and internationally diverse teams at Backbase, you will analyze, capture, and prioritize customer requirements for new customer experience initiatives. You perform business process gap analysis and write user stories. Every project has its own set of unique challenges that must be overcome and it’s up to you to think quickly and provide solutions that work for everyone. On the customer side, you will manage expectations and help them translate their vision into a sound project backlog. Due to some customers not working Agile, you will need knowledge of Agile development methodologies and be able to organize engaging workshops with customers to identify all of the technical requirements needed. How about you? You hold a university degree (preferable business or IT related); You have 7+ years working experience as a Business Analyst in the field; You have experience working on lending products such as commercial, corporate or construction loans. You have excellent communication skills in English and you feel comfortable interacting with stakeholders within Backbase and potential customers and various level; You are able to showcase good analytical and evaluative skills, and can translate customer pain points into detailed product requirements; Organizational and cultural sensitivity comes naturally to you; You are able to execute product gap analysis based on gathered requirements to maximize project and customer success; You know your way around requirements management, process modeling and development methodologies.",
+      "structured_sha256": "7ab11ecd3fc372fdc252a413a88852557c4bb35fb42a99aee0d87cc67e37f83b",
+      "flat_sha256": "04c9a099ec7c674ddb1db0e43a38cb5f89a742e70313ac502fda56586fe7f555",
+      "requirements_review": {
+        "status": "pending",
+        "reviewer": null,
+        "requirements": [],
+        "excluded_context": [],
+        "instruction": "Human selects atomic requirements with exact structured source spans, level and accepted equivalent wording; do not copy model predictions as gold."
+      }
+    },
+    {
+      "job_id": "inthepocket-8143396",
+      "field": "design",
+      "title": "Product Designer",
+      "company": "In The Pocket",
+      "location": "Belgium",
+      "url": "https://job-boards.greenhouse.io/inthepocket/jobs/8143396",
+      "revision": "primary-ats-r1",
+      "source": {
+        "api_url": "https://boards-api.greenhouse.io/v1/boards/inthepocket/jobs/8143396",
+        "captured_at": "2026-10-11T10:37:58.592222+00:00",
+        "raw_path": "tmp\\fit-label-source-fetch\\inthepocket-8143396.json",
+        "raw_sha256": "ceb3893e0d4179dd2a8d8d908731407c3c5193594919e5b09b01adecadb81045",
+        "body_scope": "single ATS job record content; application form and related jobs excluded",
+        "record_id": "8143396",
+        "board": "inthepocket",
+        "boundary_checks": {
+          "identity": true,
+          "title": true,
+          "location": true,
+          "single_record_body": true
+        },
+        "human_review": {
+          "status": "pending",
+          "reviewer": null,
+          "checklist": [
+            "Confirm actual title/company/location against linked primary posting",
+            "Confirm description is target vacancy only; no other company/sidebar/recommended posting",
+            "Mark benefits/EEO/agency notices as non-qualification context, not applicant requirements"
+          ]
+        }
+      },
+      "structured": "About us\n\nWe're an independent European digital product studio with a strong track record of delivering market-defining strategies and products for enterprises and governments. With about 200 talented people across three countries, premium AI capabilities and a diverse portfolio of international clients, we define, design and ship high-quality digital products, strategies and software. From global cloud-based platforms and large-scale apps to medical devices, banking software and augmented reality experiences. In a nutshell: if it lives and breathes digital, it’s what we do best.\n\nBecome a part of our team\n\nYou'll join a client project team as a senior product designer, owning the design process end-to-end: from discovery and research through to polished, developer-ready UI. You work closely with strategists, engineers, and the client, and you're comfortable leading design decisions while collaborating in a small, autonomous team. \n\nWhat you’ll do \n\nAs a Product designer you connect product strategy to product execution. You enjoy solving complex digital challenges and can drive a creative and collaborative approach to product development. Your ultimate goal is to boost usability and effectiveness through designs that look and work just great. You never take your eyes off the end user, because you know they are the ones who define the success of your work.\n\nProvide best-in-class product design\n\nSolve customer problems through thoughtful and elegant user experience design.\n\nTranslate visions for digital products, platforms and services into compelling UI.\n\nPresent your work to the client in well-crafted deliverables such as wireframes, clickable prototypes or concept presentations.\n\nUse an analytical mindset and critical thinking to validate/test and lead to user-centered solutions.\n\nDocument detailed interaction models, UI specifications and visual language to ensure design consistency.\n\nSee the bigger picture\n\nYou understand that great UX is the result of far more than just great interaction or visual design.\n\nYou start from the Why (i.e. business objectives and user needs), and critically reflect on the best path towards success.\n\nYou can present concepts in a compelling strategic narrative (vs. as a loose collection of features).\n\nYou have strong affinity with user research, service design, business design, and platform-thinking.\n\nYou contribute to shaping product strategy, bringing a design perspective to business decisions.\n\nLead and take charge\n\nGiven that you will be working with leading companies on key strategic challenges, you demonstrate a high degree of ownership and responsibility.\n\nAct as a strong and passionate advocate for users and their needs; champion product quality and experience design.\n\nCommunicate your ideas, opinions and design decisions effectively to ensure successful outcomes.\n\nThrive in uncertainty, you can design a process or workshop to provide clarity when needed.\n\nBe self-managed and coordinate collaboration with the project team to make sure your designs get translated into the actual product with quality and precision.\n\nParticipate in growing our design practice by keeping your eyes open for important evolutions in our sector (including AI and emerging technologies) and sharing ideas to translate them into our projects.\n\nBuild and maintain strong client relationships, acting as a trusted design partner.\n\nTeam & mentorship\n\nActively contribute to the growth and development needs of peers across the design function. As a more experienced designer, you'll be expected to mentor junior colleagues and help elevate the team's capabilities.\n\nIn our team we work by the 4 eye principle; you will work in pairs, often taking the lead role on projects while supporting and guiding others.\n\nShare your expertise and help shape our design culture, processes, and standards.\n\nWho you are \n\n5+ years of experience in Digital Product Design or UX/UI Design, with a proven track record of delivering impactful digital products.\n\nSolid understanding and practical experience with research methods and discovery practices. You can design and lead research activities and translate findings into actionable design decisions.\n\nYou express yourself, your ideas and your work fluently in Dutch and English (both spoken and written).\n\nProficient in working with common design tools (Figma, Sketch, etc.), prototyping tools (Principle, ProtoPie, Framer, etc.) and user testing tools (Useberry, Maze, UserTesting, etc.).\n\nSolid experience working with scalable design systems and atomic design principles. You understand how to build and maintain design consistency across multiple products or platforms.\n\nExcellent communication and presentation skills. You can present confidently to stakeholders at various levels and articulate the value of your design decisions.\n\nStrong organizational skills with the ability to prioritize and manage multiple projects and tasks effectively.\n\nA fresh and innovative perspective on the future of digital design (including AI-driven experiences) and a desire to continually learn, experiment and develop your skill set (both hard and soft skills) to grow and evolve as a designer.\n\nYou understand end-users are diverse and have demonstrated experience designing for accessibility and inclusion.\n\nGood working knowledge of Agile development processes (Scrum, Kanban, Lean UX, etc.).\n\nFamiliarity with frontend technologies (HTML, CSS, React, React Native, etc.) to effectively collaborate with engineers and understand technical possibilities and constraints.\n\nA strategic mindset that connects design decisions to business outcomes and user value.\n\nExperience with brand strategy and visual identity systems is highly valued.\n\nInterest or experience with AI and emerging technologies and how they can enhance product design and user experiences.\n\nWhat we offer  \n\nJoining In The Pocket means becoming part of a team that shapes the future of our clients’ businesses across Europe. Here’s what you can look forward to:\n\nYou’ll start with a permanent contract in a role that comes with responsibility and the opportunity to make a real impact from day one.\n\nWe offer a competitive salary that reflects your experience and the value you bring.\n\nOur benefits package has you covered with hospitalisation and group insurance, meal vouchers, a phone subscription, and more.\n\nYou’ll have a mobility budget that lets you decide how to get around, your way. \n\nLife at In The Pocket isn’t just about work, we host team events throughout the year to celebrate, connect, and have fun together.\n\nLearning never stops here, so after six months, you’ll receive a dedicated learning and development budget to keep growing your skills and exploring new horizons.",
+      "flat": "About us We're an independent European digital product studio with a strong track record of delivering market-defining strategies and products for enterprises and governments. With about 200 talented people across three countries, premium AI capabilities and a diverse portfolio of international clients, we define, design and ship high-quality digital products, strategies and software. From global cloud-based platforms and large-scale apps to medical devices, banking software and augmented reality experiences. In a nutshell: if it lives and breathes digital, it’s what we do best. Become a part of our team You'll join a client project team as a senior product designer, owning the design process end-to-end: from discovery and research through to polished, developer-ready UI. You work closely with strategists, engineers, and the client, and you're comfortable leading design decisions while collaborating in a small, autonomous team. What you’ll do As a Product designer you connect product strategy to product execution. You enjoy solving complex digital challenges and can drive a creative and collaborative approach to product development. Your ultimate goal is to boost usability and effectiveness through designs that look and work just great. You never take your eyes off the end user, because you know they are the ones who define the success of your work. Provide best-in-class product design Solve customer problems through thoughtful and elegant user experience design. Translate visions for digital products, platforms and services into compelling UI. Present your work to the client in well-crafted deliverables such as wireframes, clickable prototypes or concept presentations. Use an analytical mindset and critical thinking to validate/test and lead to user-centered solutions. Document detailed interaction models, UI specifications and visual language to ensure design consistency. See the bigger picture You understand that great UX is the result of far more than just great interaction or visual design. You start from the Why (i.e. business objectives and user needs), and critically reflect on the best path towards success. You can present concepts in a compelling strategic narrative (vs. as a loose collection of features). You have strong affinity with user research, service design, business design, and platform-thinking. You contribute to shaping product strategy, bringing a design perspective to business decisions. Lead and take charge Given that you will be working with leading companies on key strategic challenges, you demonstrate a high degree of ownership and responsibility. Act as a strong and passionate advocate for users and their needs; champion product quality and experience design. Communicate your ideas, opinions and design decisions effectively to ensure successful outcomes. Thrive in uncertainty, you can design a process or workshop to provide clarity when needed. Be self-managed and coordinate collaboration with the project team to make sure your designs get translated into the actual product with quality and precision. Participate in growing our design practice by keeping your eyes open for important evolutions in our sector (including AI and emerging technologies) and sharing ideas to translate them into our projects. Build and maintain strong client relationships, acting as a trusted design partner. Team & mentorship Actively contribute to the growth and development needs of peers across the design function. As a more experienced designer, you'll be expected to mentor junior colleagues and help elevate the team's capabilities. In our team we work by the 4 eye principle; you will work in pairs, often taking the lead role on projects while supporting and guiding others. Share your expertise and help shape our design culture, processes, and standards. Who you are 5+ years of experience in Digital Product Design or UX/UI Design, with a proven track record of delivering impactful digital products. Solid understanding and practical experience with research methods and discovery practices. You can design and lead research activities and translate findings into actionable design decisions. You express yourself, your ideas and your work fluently in Dutch and English (both spoken and written). Proficient in working with common design tools (Figma, Sketch, etc.), prototyping tools (Principle, ProtoPie, Framer, etc.) and user testing tools (Useberry, Maze, UserTesting, etc.). Solid experience working with scalable design systems and atomic design principles. You understand how to build and maintain design consistency across multiple products or platforms. Excellent communication and presentation skills. You can present confidently to stakeholders at various levels and articulate the value of your design decisions. Strong organizational skills with the ability to prioritize and manage multiple projects and tasks effectively. A fresh and innovative perspective on the future of digital design (including AI-driven experiences) and a desire to continually learn, experiment and develop your skill set (both hard and soft skills) to grow and evolve as a designer. You understand end-users are diverse and have demonstrated experience designing for accessibility and inclusion. Good working knowledge of Agile development processes (Scrum, Kanban, Lean UX, etc.). Familiarity with frontend technologies (HTML, CSS, React, React Native, etc.) to effectively collaborate with engineers and understand technical possibilities and constraints. A strategic mindset that connects design decisions to business outcomes and user value. Experience with brand strategy and visual identity systems is highly valued. Interest or experience with AI and emerging technologies and how they can enhance product design and user experiences. What we offer Joining In The Pocket means becoming part of a team that shapes the future of our clients’ businesses across Europe. Here’s what you can look forward to: You’ll start with a permanent contract in a role that comes with responsibility and the opportunity to make a real impact from day one. We offer a competitive salary that reflects your experience and the value you bring. Our benefits package has you covered with hospitalisation and group insurance, meal vouchers, a phone subscription, and more. You’ll have a mobility budget that lets you decide how to get around, your way. Life at In The Pocket isn’t just about work, we host team events throughout the year to celebrate, connect, and have fun together. Learning never stops here, so after six months, you’ll receive a dedicated learning and development budget to keep growing your skills and exploring new horizons.",
+      "structured_sha256": "555acfe97cdda94274715da0ee788634cdcdb2b302437d11e7a767207bda2960",
+      "flat_sha256": "33e055bdac1c526431693fefeb0f689811d24c857ca2ca83efb9f7efb6f53e3a",
+      "requirements_review": {
+        "status": "pending",
+        "reviewer": null,
+        "requirements": [],
+        "excluded_context": [],
+        "instruction": "Human selects atomic requirements with exact structured source spans, level and accepted equivalent wording; do not copy model predictions as gold."
+      }
+    },
+    {
+      "job_id": "livefront-4215612009",
+      "field": "design",
+      "title": "Product Designer",
+      "company": "Livefront",
+      "location": "Remote (USA)",
+      "url": "https://job-boards.greenhouse.io/livefront/jobs/4215612009",
+      "revision": "primary-ats-r1",
+      "source": {
+        "api_url": "https://boards-api.greenhouse.io/v1/boards/livefront/jobs/4215612009",
+        "captured_at": "2026-10-11T10:37:58.585086+00:00",
+        "raw_path": "tmp\\fit-label-source-fetch\\livefront-4215612009.json",
+        "raw_sha256": "cc88d9cfc24bb817c48ea539118f4802f684feb896a8bcfcf4844285a3f28853",
+        "body_scope": "single ATS job record content; application form and related jobs excluded",
+        "record_id": "4215612009",
+        "board": "livefront",
+        "boundary_checks": {
+          "identity": true,
+          "title": true,
+          "location": true,
+          "single_record_body": true
+        },
+        "human_review": {
+          "status": "pending",
+          "reviewer": null,
+          "checklist": [
+            "Confirm actual title/company/location against linked primary posting",
+            "Confirm description is target vacancy only; no other company/sidebar/recommended posting",
+            "Mark benefits/EEO/agency notices as non-qualification context, not applicant requirements"
+          ]
+        }
+      },
+      "structured": "At Livefront, we help companies design and build world-class digital products that command attention and inspire joy. We’ve helped household names like CVS, Samsung, General Mills, and Optum create experiences that have reached millions of people, and startups like HomeSpotter and Credly build entirely new businesses that challenge their industries’ status quo.\n\n \n\nWe’re looking for an outstanding Product Designer to join our team.\n\n \n\n \n\nWho you are\n\nYou’re a versatile designer who thrives at every stage of the product design lifecycle. You are a skilled presenter who is equally comfortable researching user needs, creating user flows, crafting visuals, building prototypes, and bringing ideas to life. You have a track record of leading high-profile product initiatives to great outcomes for users and businesses alike. You’re a terrific communicator who can help steer cross-functional teams from idea to implementation. You have a demonstrated ability to approach multifaceted problems holistically and create elegant, simple solutions. Above all, you’re a self-starter who thrives in autonomy and can work effectively with little oversight.\n\nWhat you will be doing\n\nWork directly with clients, stakeholders, and internal teams to design and build user-friendly digital experiences that align with client goals and user needs.\n\nCollaborate closely with clients to understand their needs and define requirements.\n\nTest and refine designs to deliver flawless user experiences throughout the entire product lifecycle.\n\nMentor and work with other members of the Livefront product design team.\n\nWork with zero-to-one and established design systems to maintain and update style guides, assets, and deliverables.\n\nWork with engineers to answer design questions, make adjustments, and provide assets for the design-to-development hand-off process.\n\nWork within the production constraints of each platform for which we’re designing and/or engineering.\n\nManage your time across a mix of both small and large projects with overlapping priority and urgency.\n\nOrganize and maintain working files inside a collaborative file structure.\n\nAdopt new practices and tools as our work and the design industry evolves.\n\nProofread copy and fix errors and formatting in design source files and production decks.\n\nNote: The above is not meant to be an all-inclusive list of duties and responsibilities, but constitutes a general definition of the position's scope and function within the Livefront design team.\n\nWhy you should apply\n\nYou want to work with passionate and talented people who are always looking for ways to make things better. \n\nYou desire a work environment where respect, mutual trust, and egoless collaboration are paramount. \n\nYou want colleagues who take their work seriously but not themselves, and who know how to find fun in the work.  \n\nYou like being part of a team with a reputation for excellence that gives back to the community by educating, mentoring, and sponsoring. \n\nYou want to work on products and accounts that have outsized impact and reach. \n\nYou believe in sweating the details, committing to quality, and taking pride in going the extra mile.\n\nWhat you bring to the table\n\nA standout portfolio showcasing exemplary visual design chops and product sensibilities.\n\nAt least 3-5 years of relevant experience, ideally in a consulting environment or as part of an in-house, cross-functional product team.\n\nMastery of current UI/UX best practices, as well as modern design tools like Figma, Sketch, Adobe Creative Suite, and various prototyping tools.\n\nExperience designing consumer-facing native applications for iOS and/or Android and a fluent command of each platform’s native design communication skills and a strong ability to present and defend creative choices persuasively at varying levels of resolution.\n\nAbove-average discipline and personal organization skills.\n\nObvious comfort with critique in the context of an iterative design process.\n\nExperience producing design decks to communicate design flows to clients and engineers.\n\nA demonstrated hunger for personal and professional growth within the field.\n\nA self-evident love and care for the craft of product design.\n\nComfort with occasional travel to our HQ in MN.\n\nBonus points if you...\n\nHave experience conducting customer research ranging from qualitative data analysis to hands-on usability testing.\n\nHave illustration, animation, and/or 3D design chops.\n\nHave experience with motion design tools like Adobe After Effects and/or Cinema4D.\n\nWhat to expect\n\nWhen applying, please include a short note about yourself, a summary of your work experience, and a link to your portfolio. Please note that submissions without a portfolio will not be considered.\n\n \n\nOur hiring process moves quickly and consists of several stages for candidates who capture our attention with their initial submission, sometimes including but not limited to a short preliminary phone interview, a series of video interviews, and a short take-home exercise which you'll have up to a week to complete.\n\n \n\nCompensation is $90,000 - $135,000 a year.\n\n \n\nAdditional information\n\nWe go out of our way to evaluate all employees and job applicants equally based on merit, competence, and qualifications. We encourage candidates from all backgrounds to apply and consider all qualified applicants.",
+      "flat": "At Livefront, we help companies design and build world-class digital products that command attention and inspire joy. We’ve helped household names like CVS, Samsung, General Mills, and Optum create experiences that have reached millions of people, and startups like HomeSpotter and Credly build entirely new businesses that challenge their industries’ status quo. We’re looking for an outstanding Product Designer to join our team. Who you are You’re a versatile designer who thrives at every stage of the product design lifecycle. You are a skilled presenter who is equally comfortable researching user needs, creating user flows, crafting visuals, building prototypes, and bringing ideas to life. You have a track record of leading high-profile product initiatives to great outcomes for users and businesses alike. You’re a terrific communicator who can help steer cross-functional teams from idea to implementation. You have a demonstrated ability to approach multifaceted problems holistically and create elegant, simple solutions. Above all, you’re a self-starter who thrives in autonomy and can work effectively with little oversight. What you will be doing Work directly with clients, stakeholders, and internal teams to design and build user-friendly digital experiences that align with client goals and user needs. Collaborate closely with clients to understand their needs and define requirements. Test and refine designs to deliver flawless user experiences throughout the entire product lifecycle. Mentor and work with other members of the Livefront product design team. Work with zero-to-one and established design systems to maintain and update style guides, assets, and deliverables. Work with engineers to answer design questions, make adjustments, and provide assets for the design-to-development hand-off process. Work within the production constraints of each platform for which we’re designing and/or engineering. Manage your time across a mix of both small and large projects with overlapping priority and urgency. Organize and maintain working files inside a collaborative file structure. Adopt new practices and tools as our work and the design industry evolves. Proofread copy and fix errors and formatting in design source files and production decks. Note: The above is not meant to be an all-inclusive list of duties and responsibilities, but constitutes a general definition of the position's scope and function within the Livefront design team. Why you should apply You want to work with passionate and talented people who are always looking for ways to make things better. You desire a work environment where respect, mutual trust, and egoless collaboration are paramount. You want colleagues who take their work seriously but not themselves, and who know how to find fun in the work. You like being part of a team with a reputation for excellence that gives back to the community by educating, mentoring, and sponsoring. You want to work on products and accounts that have outsized impact and reach. You believe in sweating the details, committing to quality, and taking pride in going the extra mile. What you bring to the table A standout portfolio showcasing exemplary visual design chops and product sensibilities. At least 3-5 years of relevant experience, ideally in a consulting environment or as part of an in-house, cross-functional product team. Mastery of current UI/UX best practices, as well as modern design tools like Figma, Sketch, Adobe Creative Suite, and various prototyping tools. Experience designing consumer-facing native applications for iOS and/or Android and a fluent command of each platform’s native design communication skills and a strong ability to present and defend creative choices persuasively at varying levels of resolution. Above-average discipline and personal organization skills. Obvious comfort with critique in the context of an iterative design process. Experience producing design decks to communicate design flows to clients and engineers. A demonstrated hunger for personal and professional growth within the field. A self-evident love and care for the craft of product design. Comfort with occasional travel to our HQ in MN. Bonus points if you... Have experience conducting customer research ranging from qualitative data analysis to hands-on usability testing. Have illustration, animation, and/or 3D design chops. Have experience with motion design tools like Adobe After Effects and/or Cinema4D. What to expect When applying, please include a short note about yourself, a summary of your work experience, and a link to your portfolio. Please note that submissions without a portfolio will not be considered. Our hiring process moves quickly and consists of several stages for candidates who capture our attention with their initial submission, sometimes including but not limited to a short preliminary phone interview, a series of video interviews, and a short take-home exercise which you'll have up to a week to complete. Compensation is $90,000 - $135,000 a year. Additional information We go out of our way to evaluate all employees and job applicants equally based on merit, competence, and qualifications. We encourage candidates from all backgrounds to apply and consider all qualified applicants.",
+      "structured_sha256": "6f1e9a0b15b08bfa09c1cce3f44fa24e4ddd818489b020bc7ccd7035e8cc118d",
+      "flat_sha256": "4b3a5ecbd9f33d5d1c109f312ec72a1b223266bdde1d091a9efe1f53be34202c",
+      "requirements_review": {
+        "status": "pending",
+        "reviewer": null,
+        "requirements": [],
+        "excluded_context": [],
+        "instruction": "Human selects atomic requirements with exact structured source spans, level and accepted equivalent wording; do not copy model predictions as gold."
+      }
+    },
+    {
+      "job_id": "costar-6126531004",
+      "field": "design",
+      "title": "Product Designer",
+      "company": "Co-Star",
+      "location": "Hybrid: New York or San Francisco",
+      "url": "https://job-boards.greenhouse.io/costar/jobs/6126531004",
+      "revision": "primary-ats-r1",
+      "source": {
+        "api_url": "https://boards-api.greenhouse.io/v1/boards/costar/jobs/6126531004",
+        "captured_at": "2026-10-11T10:37:59.018329+00:00",
+        "raw_path": "tmp\\fit-label-source-fetch\\costar-6126531004.json",
+        "raw_sha256": "b29bc4489e1e6ea5425ed71515ca7c9370dffe27747cac0f9c5e33262fa62cd3",
+        "body_scope": "single ATS job record content; application form and related jobs excluded",
+        "record_id": "6126531004",
+        "board": "costar",
+        "boundary_checks": {
+          "identity": true,
+          "title": true,
+          "location": true,
+          "single_record_body": true
+        },
+        "human_review": {
+          "status": "pending",
+          "reviewer": null,
+          "checklist": [
+            "Confirm actual title/company/location against linked primary posting",
+            "Confirm description is target vacancy only; no other company/sidebar/recommended posting",
+            "Mark benefits/EEO/agency notices as non-qualification context, not applicant requirements"
+          ]
+        }
+      },
+      "structured": "Product Designer\n\nIn the 1960s, the Italian artist and inventor Bruno Munari was studying spontaneous forms: shapes that emerge from the interaction of material, function, and environment.\n\nWhen Danese Milano commissioned him to design a lamp that was practical, durable, affordable, and easy to transport, Munari was reminded of the traditional rice paper lanterns he had encountered when traveling in Japan. But rice paper lanterns are fragile, hard to clean, and tend to yellow over time.\n\nLooking for an industrial alternative, he discovered filanca—a synthetic stretch nylon used exclusively for women's stockings at the time.\n\nMunari visited hosiery factories to test the material and see what forms it could take. \"We do not make lamps, sir. Only stockings,\" one factory told him. Munari replied, \"You'll see.\"\n\nThe result was the Falkland lamp: only a few centimeters thick when packaged, as tall as a human when hung, its spontaneous form emerging from the elasticity of the nylon and metal rings of different diameters inserted at regular intervals, enlarged by gravity when suspended from above.\n\nMunari didn't begin with the form of a lamp. He began with the qualities it needed, then looked outside the conventions of lighting to find the right materials and methods. We're looking for a designer who works the same way: someone who studies the systems and materials at hand, then finds a way of putting them together that feels both unexpected and inevitable.\n\nAt Co–Star, the materials are a 4,000-year-old system of astrology, planetary data from NASA, and a corpus written by astrologers and poets. The qualities we're designing for: astrology made accessible without asking anyone to learn a complex system, and a language that lets people share something intimate with their friends.\n\nWe're hiring a Senior Product Designer to continue cultivating those qualities across Co–Star and new experiments. You'll move between product architecture, interaction design, prototyping, and visual design. Ideas rarely arrive as polished specs. You'll help decide what we make next and how it works.\n\n \n\nWhat you'll do\n\nDesign and build products from concept through launch.\n\nWork closely with design and engineering on new features and launches.\n\nYou care about the details—typography, layout, motion, responsiveness, loading states, and performance—that make an experience great.\n\nContribute visual assets for marketing.\n\nPrototype ideas quickly using Figma, Claude, Cursor, and whatever tools helps move the work forward.\n\nYou might be a fit if\n\nYou have 2–5 years of experience designing and building for the web.\n\nYou move fluidly across the full design process, from early concept through final production.\n\nYou have an instinct for the details that make interfaces feel considered: type, spacing, motion, and how they all work together.\n\nYou know enough HTML and CSS to work effectively with engineers—or to build parts of the experience yourself.\n\nYou're comfortable using tools like Claude Code and Cursor as part of your workflow.\n\nYou'd rather prototype than make a presentation.\n\nWork > ego \n\nLogistics\n\nFull-time.\n\nHybrid in San Francisco or New York.\n\nCompensation: $150,500–$185,000 + benefits.\n\nTo apply\n\nA portfolio is required. We care much more about what you've made than where you've worked; if this sounds like you, apply even if you don't check every box.",
+      "flat": "Product Designer In the 1960s, the Italian artist and inventor Bruno Munari was studying spontaneous forms: shapes that emerge from the interaction of material, function, and environment. When Danese Milano commissioned him to design a lamp that was practical, durable, affordable, and easy to transport, Munari was reminded of the traditional rice paper lanterns he had encountered when traveling in Japan. But rice paper lanterns are fragile, hard to clean, and tend to yellow over time. Looking for an industrial alternative, he discovered filanca—a synthetic stretch nylon used exclusively for women's stockings at the time. Munari visited hosiery factories to test the material and see what forms it could take. \"We do not make lamps, sir. Only stockings,\" one factory told him. Munari replied, \"You'll see.\" The result was the Falkland lamp: only a few centimeters thick when packaged, as tall as a human when hung, its spontaneous form emerging from the elasticity of the nylon and metal rings of different diameters inserted at regular intervals, enlarged by gravity when suspended from above. Munari didn't begin with the form of a lamp. He began with the qualities it needed, then looked outside the conventions of lighting to find the right materials and methods. We're looking for a designer who works the same way: someone who studies the systems and materials at hand, then finds a way of putting them together that feels both unexpected and inevitable. At Co–Star, the materials are a 4,000-year-old system of astrology, planetary data from NASA, and a corpus written by astrologers and poets. The qualities we're designing for: astrology made accessible without asking anyone to learn a complex system, and a language that lets people share something intimate with their friends. We're hiring a Senior Product Designer to continue cultivating those qualities across Co–Star and new experiments. You'll move between product architecture, interaction design, prototyping, and visual design. Ideas rarely arrive as polished specs. You'll help decide what we make next and how it works. What you'll do Design and build products from concept through launch. Work closely with design and engineering on new features and launches. You care about the details—typography, layout, motion, responsiveness, loading states, and performance—that make an experience great. Contribute visual assets for marketing. Prototype ideas quickly using Figma, Claude, Cursor, and whatever tools helps move the work forward. You might be a fit if You have 2–5 years of experience designing and building for the web. You move fluidly across the full design process, from early concept through final production. You have an instinct for the details that make interfaces feel considered: type, spacing, motion, and how they all work together. You know enough HTML and CSS to work effectively with engineers—or to build parts of the experience yourself. You're comfortable using tools like Claude Code and Cursor as part of your workflow. You'd rather prototype than make a presentation. Work > ego Logistics Full-time. Hybrid in San Francisco or New York. Compensation: $150,500–$185,000 + benefits. To apply A portfolio is required. We care much more about what you've made than where you've worked; if this sounds like you, apply even if you don't check every box.",
+      "structured_sha256": "5fa442627a8e1c91693062eedf675eaf79fc862420b1b7d9afdaf65678b58c72",
+      "flat_sha256": "b489195a08542709edafa4d5b1261f0c2b45c7f8c0b128e5dd3f3c1e744be3ee",
+      "requirements_review": {
+        "status": "pending",
+        "reviewer": null,
+        "requirements": [],
+        "excluded_context": [],
+        "instruction": "Human selects atomic requirements with exact structured source spans, level and accepted equivalent wording; do not copy model predictions as gold."
+      }
+    },
+    {
+      "job_id": "closure-tech-4251322009",
+      "field": "ml",
+      "title": "Senior Data Scientist",
+      "company": "Closure Technologies",
+      "location": "Chantilly, Virginia",
+      "url": "https://job-boards.greenhouse.io/closure-tech/jobs/4251322009",
+      "revision": "primary-ats-r1",
+      "source": {
+        "api_url": "https://boards-api.greenhouse.io/v1/boards/closure-tech/jobs/4251322009",
+        "captured_at": "2026-10-11T10:37:59.073119+00:00",
+        "raw_path": "tmp\\fit-label-source-fetch\\closure-tech-4251322009.json",
+        "raw_sha256": "02679a7ea1fc340022bba2c5ace2de7e6e1a5f6206cce93c6ce3d0f9a9c96cd2",
+        "body_scope": "single ATS job record content; application form and related jobs excluded",
+        "record_id": "4251322009",
+        "board": "closure-tech",
+        "boundary_checks": {
+          "identity": true,
+          "title": true,
+          "location": true,
+          "single_record_body": true
+        },
+        "human_review": {
+          "status": "pending",
+          "reviewer": null,
+          "checklist": [
+            "Confirm actual title/company/location against linked primary posting",
+            "Confirm description is target vacancy only; no other company/sidebar/recommended posting",
+            "Mark benefits/EEO/agency notices as non-qualification context, not applicant requirements"
+          ]
+        }
+      },
+      "structured": "Closure Technologies is seeking a Senior Data Scientist to analyze complex datasets, develop predictive models, and deliver data-driven insights that support innovative technology solutions for government clients.\n\nClearance Requirement: TS/SCI with Polygraph\n\nKey Responsibilities:\n\nAnalyze data and create data-driven visualizations.\n\nApply skills in artificial intelligence, machine learning, and natural language processing to projects.\n\nDevelop and maintain monitoring applications for statistical or machine learning processes using Python and SQL.\n\nPrepare detailed reports and present findings based on statistical analysis.\n\nContribute to data science and analytics projects\n\nRequired Qualifications:\n\nTS/SCI clearance with Polygraph\n\nBachelor's degree in Computer Science\n\n3+ years of experience in data science or analytics\n\nExperience with the analysis of data and creation of data-driven visualizations\n\nExperience in working with artificial intelligence, machine learning, natural language processing, data mining, statistics, and algorithms\n\nAbility to develop persistent monitoring applications for statistical or machine learning processes using Python and SQL\n\nAbility to create reports and present findings based on statistical analysis\n\nPreferred Qualifications:\n\nExperience programming in an AWS cloud environment\n\nExperience working with LLMs, such as Claude or GPT\n\nExperience with Tableau\n\nPossession of strong communication skills\n\nBusiness Analytics, Data Mining, or Statistical Analysis Certification",
+      "flat": "Closure Technologies is seeking a Senior Data Scientist to analyze complex datasets, develop predictive models, and deliver data-driven insights that support innovative technology solutions for government clients. Clearance Requirement: TS/SCI with Polygraph Key Responsibilities: Analyze data and create data-driven visualizations. Apply skills in artificial intelligence, machine learning, and natural language processing to projects. Develop and maintain monitoring applications for statistical or machine learning processes using Python and SQL. Prepare detailed reports and present findings based on statistical analysis. Contribute to data science and analytics projects Required Qualifications: TS/SCI clearance with Polygraph Bachelor's degree in Computer Science 3+ years of experience in data science or analytics Experience with the analysis of data and creation of data-driven visualizations Experience in working with artificial intelligence, machine learning, natural language processing, data mining, statistics, and algorithms Ability to develop persistent monitoring applications for statistical or machine learning processes using Python and SQL Ability to create reports and present findings based on statistical analysis Preferred Qualifications: Experience programming in an AWS cloud environment Experience working with LLMs, such as Claude or GPT Experience with Tableau Possession of strong communication skills Business Analytics, Data Mining, or Statistical Analysis Certification",
+      "structured_sha256": "5abac1f587e5425e603880d247cbc5b92cceec2f04fc0786e1eb877d24c70658",
+      "flat_sha256": "cb30e6eb109961766e5722f6eecd0e7e2628f749243509b8eca675e39018021b",
+      "requirements_review": {
+        "status": "pending",
+        "reviewer": null,
+        "requirements": [],
+        "excluded_context": [],
+        "instruction": "Human selects atomic requirements with exact structured source spans, level and accepted equivalent wording; do not copy model predictions as gold."
+      }
+    },
+    {
+      "job_id": "awin-8009279003",
+      "field": "ml",
+      "title": "Senior Data Scientist (f/m/d)",
+      "company": "Awin",
+      "location": "Amsterdam, North Holland, Netherlands; Berlin, Berlin, Germany; Hannover, Lower Saxony, Germany; Iași, Iași, Romania; London, England, United Kingdom; Madrid, Madrid, Spain; Manchester, England, United Kingdom; Milano, Milan, Italy; München, Bavaria, Germany; Warsaw, Masovian Voivodeship, Poland",
+      "url": "https://boards.greenhouse.io/awin/jobs/8009279003?gh_jid=8009279003",
+      "revision": "primary-ats-r1",
+      "source": {
+        "api_url": "https://boards-api.greenhouse.io/v1/boards/awin/jobs/8009279003",
+        "captured_at": "2026-10-11T10:37:59.076551+00:00",
+        "raw_path": "tmp\\fit-label-source-fetch\\awin-8009279003.json",
+        "raw_sha256": "9a134ade009e818c5fd319f64294e86ddd00ad229b88aaadefb78a76e7e89ea0",
+        "body_scope": "single ATS job record content; application form and related jobs excluded",
+        "record_id": "8009279003",
+        "board": "awin",
+        "boundary_checks": {
+          "identity": true,
+          "title": true,
+          "location": true,
+          "single_record_body": true
+        },
+        "human_review": {
+          "status": "pending",
+          "reviewer": null,
+          "checklist": [
+            "Confirm actual title/company/location against linked primary posting",
+            "Confirm description is target vacancy only; no other company/sidebar/recommended posting",
+            "Mark benefits/EEO/agency notices as non-qualification context, not applicant requirements"
+          ]
+        }
+      },
+      "structured": "Purpose of the Role\n\nData sits at the heart of the company. This role ensures that Awin can fully leverage the data available across the group, enabling the development of advanced analytical and machine learning capabilities that support stronger commercial decision-making and enhance products used by client-facing teams.\n\nAs a Senior Data Scientist, you will apply advanced statistical techniques, machine learning methods, and analytical approaches to solve complex business problems and deliver actionable insights that guide business strategy. Working across areas such as forecasting, recommendation systems, network intelligence, experimentation, and predictive modelling, you will lead the design, development, evaluation, and deployment of scalable solutions that create measurable business impact.\n\nYou will work closely with business stakeholders, Product, Engineering, and Data teams to identify opportunities, shape problem definitions, and translate business challenges into practical technical solutions. You will be responsible for defining success metrics, establishing evaluation frameworks, and ensuring analytical solutions remain reliable, scalable, and aligned to business objectives.\n\nIn this role, you will lead the development of end-to-end feature pipelines, models, and MVPs, balancing rapid experimentation with long-term sustainability. You will also provide technical leadership to other data scientists, contribute to best practices across the team, and help foster a collaborative, data-driven culture within the organisation.\n\nKey Responsibilities\n\nLead the development and deployment of machine learning, forecasting, recommendation, and analytical solutions that create measurable business impact.\n\nPartner with stakeholders across Product, Commercial, Engineering, and Data teams to identify opportunities and translate business challenges into data-driven solutions.\n\nDesign and implement robust evaluation frameworks, experiments, and success metrics to measure performance and business outcomes.\n\nApply statistical modelling, machine learning, and advanced analytical techniques to solve complex business problems and generate actionable insights.\n\nBuild scalable feature engineering, model development, and deployment workflows in collaboration with Data Engineering and Software Engineering teams.\n\nDrive rapid MVP development, validating ideas quickly while ensuring a path to sustainable production solutions.\n\nDefine and promote best practices for model development, evaluation, monitoring, and governance.\n\nMentor and support other data scientists, contributing to technical capability and knowledge sharing across the team.\n\nCommunicate findings, recommendations, and technical concepts clearly to both technical and non-technical audiences.\n\nContribute to the evolution of the Data Science roadmap, identifying new opportunities to apply advanced analytics and machine learning.\n\nExperience\n\n5+ years of experience working as a Data Scientist, Machine Learning Engineer, Applied Scientist, or similar role.\n\nProven experience delivering machine learning and analytical solutions from discovery through to deployment and business impact.\n\nAdvanced proficiency in Python and relevant data science libraries, including NumPy, PySpark, Scikit-learn, TensorFlow, and/or PyTorch.\n\nStrong experience using Databricks, including Jobs, Asset Bundles, Delta Lake, and MLflow.\n\nExperience working with business stakeholders to define problems, scope solutions, and communicate outcomes effectively.\n\nExperience mentoring data scientists or providing technical leadership within a cross-functional team.\n\nBachelor's degree or higher in Statistics, Mathematics, Computer Science, Data Science, Engineering, or a related quantitative discipline.\n\nSkills & Core Competencies\n\nStrong statistical, analytical, and problem-solving skills, with the ability to turn complex data into actionable business insights.\n\nExpertise in machine learning and predictive modelling, with experience delivering solutions in a production environment.\n\nAbility to evaluate and refine models using appropriate experimentation, performance metrics, and business outcomes.\n\nStrong stakeholder management and communication skills, capable of translating technical concepts for non-technical audiences.\n\nAbility to operate independently, navigate ambiguity, and prioritise work to maximise business impact.\n\nExperience mentoring and supporting the development of other data scientists.\n\nCollaborative mindset with the ability to work effectively across Product, Engineering, Commercial, and Data teams.\n\nOur Offer\n\nFlexi-Week: We prioritise your mental health and wellbeing by offering you a four-day Flexi-Week (with one lighter or completely disconnected day per week) at full pay, with no reduction to your annual holiday allowance.\n\nFlexi-office: We offer an international culture and flexibility through our hybrid/remote working scheme which is designed to foster a culture of mutual trust and working flexibility.\n\nWork Expense Contribution & Remote Working Furniture: You will receive a monthly allowance to cover part of your running costs, as well as a furniture package to support you in setting up a comfortable workspace when working from home.\n\nHealth and Wellbeing: With our support and access to various initiatives and sports offers, you can focus on your mental and physical wellbeing.\n\nDevelopment: We’ve built our extensive training suite, Awin Academy, to cover a wide range of skills that support your professional and personal growth, with trainings conveniently packaged to help your overall development.\n\nAppreciation: Thank and reward colleagues by sending them a voucher through our peer-to-peer recognition programme.\n\nWe are hiring in multiple countries for this role. Additional benefits, including health and wellbeing offerings, will be discussed during the initial interview.\n\nEstablished in 2000, Awin is proud of our dynamic, social and inclusive culture.\n\nLike all businesses, we’ve had to adapt and nurture our culture in a virtual environment. Our virtual ‘Life @ Awin’ hub brings our colleagues from across the globe together for various social activities.\n\nDiversity & Inclusion are paramount to us, and we proudly pursue and hire diverse team members. We champion uniqueness and authenticity; this is who we are at our core. Our network of affiliate partnerships are diverse and transparent, as are the employees powering our vision to build the world’s leading open partner ecosystem. We welcome all backgrounds, identities, and experiences. If you need support at any point in the application or interview process, please let us know.\n\nAwin is part of the Axel Springer group. Learn more at axelspringer.com/en/, and explore the Axel Springer Essentials here: axelspringer.com/en/inside/the-essentials-what-we-have-adapted-and-why  \n\nApply now to begin the next stage of your career at a progressive company that supports both your professional and personal development.\n\n#LI-RS1",
+      "flat": "Purpose of the Role Data sits at the heart of the company. This role ensures that Awin can fully leverage the data available across the group, enabling the development of advanced analytical and machine learning capabilities that support stronger commercial decision-making and enhance products used by client-facing teams. As a Senior Data Scientist, you will apply advanced statistical techniques, machine learning methods, and analytical approaches to solve complex business problems and deliver actionable insights that guide business strategy. Working across areas such as forecasting, recommendation systems, network intelligence, experimentation, and predictive modelling, you will lead the design, development, evaluation, and deployment of scalable solutions that create measurable business impact. You will work closely with business stakeholders, Product, Engineering, and Data teams to identify opportunities, shape problem definitions, and translate business challenges into practical technical solutions. You will be responsible for defining success metrics, establishing evaluation frameworks, and ensuring analytical solutions remain reliable, scalable, and aligned to business objectives. In this role, you will lead the development of end-to-end feature pipelines, models, and MVPs, balancing rapid experimentation with long-term sustainability. You will also provide technical leadership to other data scientists, contribute to best practices across the team, and help foster a collaborative, data-driven culture within the organisation. Key Responsibilities Lead the development and deployment of machine learning, forecasting, recommendation, and analytical solutions that create measurable business impact. Partner with stakeholders across Product, Commercial, Engineering, and Data teams to identify opportunities and translate business challenges into data-driven solutions. Design and implement robust evaluation frameworks, experiments, and success metrics to measure performance and business outcomes. Apply statistical modelling, machine learning, and advanced analytical techniques to solve complex business problems and generate actionable insights. Build scalable feature engineering, model development, and deployment workflows in collaboration with Data Engineering and Software Engineering teams. Drive rapid MVP development, validating ideas quickly while ensuring a path to sustainable production solutions. Define and promote best practices for model development, evaluation, monitoring, and governance. Mentor and support other data scientists, contributing to technical capability and knowledge sharing across the team. Communicate findings, recommendations, and technical concepts clearly to both technical and non-technical audiences. Contribute to the evolution of the Data Science roadmap, identifying new opportunities to apply advanced analytics and machine learning. Experience 5+ years of experience working as a Data Scientist, Machine Learning Engineer, Applied Scientist, or similar role. Proven experience delivering machine learning and analytical solutions from discovery through to deployment and business impact. Advanced proficiency in Python and relevant data science libraries, including NumPy, PySpark, Scikit-learn, TensorFlow, and/or PyTorch. Strong experience using Databricks, including Jobs, Asset Bundles, Delta Lake, and MLflow. Experience working with business stakeholders to define problems, scope solutions, and communicate outcomes effectively. Experience mentoring data scientists or providing technical leadership within a cross-functional team. Bachelor's degree or higher in Statistics, Mathematics, Computer Science, Data Science, Engineering, or a related quantitative discipline. Skills & Core Competencies Strong statistical, analytical, and problem-solving skills, with the ability to turn complex data into actionable business insights. Expertise in machine learning and predictive modelling, with experience delivering solutions in a production environment. Ability to evaluate and refine models using appropriate experimentation, performance metrics, and business outcomes. Strong stakeholder management and communication skills, capable of translating technical concepts for non-technical audiences. Ability to operate independently, navigate ambiguity, and prioritise work to maximise business impact. Experience mentoring and supporting the development of other data scientists. Collaborative mindset with the ability to work effectively across Product, Engineering, Commercial, and Data teams. Our Offer Flexi-Week: We prioritise your mental health and wellbeing by offering you a four-day Flexi-Week (with one lighter or completely disconnected day per week) at full pay, with no reduction to your annual holiday allowance. Flexi-office: We offer an international culture and flexibility through our hybrid/remote working scheme which is designed to foster a culture of mutual trust and working flexibility. Work Expense Contribution & Remote Working Furniture: You will receive a monthly allowance to cover part of your running costs, as well as a furniture package to support you in setting up a comfortable workspace when working from home. Health and Wellbeing: With our support and access to various initiatives and sports offers, you can focus on your mental and physical wellbeing. Development: We’ve built our extensive training suite, Awin Academy, to cover a wide range of skills that support your professional and personal growth, with trainings conveniently packaged to help your overall development. Appreciation: Thank and reward colleagues by sending them a voucher through our peer-to-peer recognition programme. We are hiring in multiple countries for this role. Additional benefits, including health and wellbeing offerings, will be discussed during the initial interview. Established in 2000, Awin is proud of our dynamic, social and inclusive culture. Like all businesses, we’ve had to adapt and nurture our culture in a virtual environment. Our virtual ‘Life @ Awin’ hub brings our colleagues from across the globe together for various social activities. Diversity & Inclusion are paramount to us, and we proudly pursue and hire diverse team members. We champion uniqueness and authenticity; this is who we are at our core. Our network of affiliate partnerships are diverse and transparent, as are the employees powering our vision to build the world’s leading open partner ecosystem. We welcome all backgrounds, identities, and experiences. If you need support at any point in the application or interview process, please let us know. Awin is part of the Axel Springer group. Learn more at axelspringer.com/en/, and explore the Axel Springer Essentials here: axelspringer.com/en/inside/the-essentials-what-we-have-adapted-and-why Apply now to begin the next stage of your career at a progressive company that supports both your professional and personal development. #LI-RS1",
+      "structured_sha256": "4893c01de486b87b8d992a330eaed8816cee7e4017da48e8a2d2597531f272fd",
+      "flat_sha256": "3b6d3c7af7e8608d9a4957d338c5116cb51d9c912072615f6b3a6fbab7eae9a1",
+      "requirements_review": {
+        "status": "pending",
+        "reviewer": null,
+        "requirements": [],
+        "excluded_context": [],
+        "instruction": "Human selects atomic requirements with exact structured source spans, level and accepted equivalent wording; do not copy model predictions as gold."
+      }
+    },
+    {
+      "job_id": "lynxanalytics-8470862002",
+      "field": "ml",
+      "title": "Senior Data Scientist (US)",
+      "company": "Lynx Analytics",
+      "location": "New York, USA; Philadelphia, Pennsylvania, United States; San Francisco, California, United States",
+      "url": "https://job-boards.greenhouse.io/lynxanalytics/jobs/8470862002",
+      "revision": "primary-ats-r1",
+      "source": {
+        "api_url": "https://boards-api.greenhouse.io/v1/boards/lynxanalytics/jobs/8470862002",
+        "captured_at": "2026-10-11T10:37:59.072847+00:00",
+        "raw_path": "tmp\\fit-label-source-fetch\\lynxanalytics-8470862002.json",
+        "raw_sha256": "06cd1d97ccc087c5468ec7332ae6cf63e33a13436c35ed29b547b960b780aba2",
+        "body_scope": "single ATS job record content; application form and related jobs excluded",
+        "record_id": "8470862002",
+        "board": "lynxanalytics",
+        "boundary_checks": {
+          "identity": true,
+          "title": true,
+          "location": true,
+          "single_record_body": true
+        },
+        "human_review": {
+          "status": "pending",
+          "reviewer": null,
+          "checklist": [
+            "Confirm actual title/company/location against linked primary posting",
+            "Confirm description is target vacancy only; no other company/sidebar/recommended posting",
+            "Mark benefits/EEO/agency notices as non-qualification context, not applicant requirements"
+          ]
+        }
+      },
+      "structured": "ROLE SUMMARY\n\nWe are looking for a Senior Data Scientist to lead complex data science engagements that combine traditional statistical modelling with Generative AI. You will work hands-on with very large datasets across disparate systems and formats, translate ambiguous business problems into rigorous analytical solutions, and present those solutions clearly to C-level stakeholders. This is a delivery-first role with a fast track into technical leadership: alongside your own project work, you will help guide junior data scientists and shape how Lynx builds and ships data science solutions.\n\n \n\nKEY RESPONSIBILITIES\n\nSolution Design & Delivery\n\nDesign and deliver end-to-end solutions for defined data science problems, combining classical modelling, data transformation, and Generative AI / LLM techniques.\n\nWork hands-on with very large datasets across disparate stores and formats, from ingestion and transformation through to modelling and validation.\n\nApply statistical and machine learning methods to business problems such as customer retention, campaign management, and commercial performance optimisation.\n\nClient Communication & Leadership\n\nPresent results and prepare client-ready materials for project stakeholders, including C-level audiences, translating technical work into clear business narratives.\n\nLead smaller data science workstreams, with support from internal leadership and the PMO, including day-to-day guidance for junior team members.\n\nPartner with delivery and account teams to scope problems, set realistic timelines, and manage stakeholder expectations.\n\nKnowledge Building\n\nCreate reusable documentation, presentations, and code libraries during projects so future engagements can build on prior work.\n\nParticipate in internal education, research, and knowledge-sharing initiatives that raise the technical bar across the practice.\n\n \n\nSKILLS, QUALIFICATIONS AND EXPERIENCE\n\n8+ years of overall experience in data science, with a track record of leading analytical workstreams independently.\n\nDegree in Mathematics, Statistics, Economics, Computer Science, Engineering, or a related field; MSc or PhD preferred.\n\nSolid grounding in probability theory, statistics, and core data science algorithms, with applied experience in areas such as customer retention and campaign management.\n\nStrong hands-on proficiency in Python for data analysis, modelling (PyTorch, TensorFlow, or JAX), and productionising code.\n\nStrong SQL, and comfort working across common data stores (relational, columnar/warehouse, and vector databases).\n\nGit and GitHub proficiency, including branching workflows and code review; experience with GitHub Actions (or equivalent CI/CD) preferred.\n\nHands-on experience designing and building agentic LLM applications - tool calling, multi-step orchestration, and state management - using at least one modern framework (e.g., LangGraph, Pydantic AI, AWS Bedrock AgentCore, Google ADK, or the OpenAI Agents SDK), beyond simple prompt-and-response use of LLM APIs.\n\nPreferred: practical depth in one or more of MCP-based tool integration, RAG and embedding pipelines (including vector stores), model fine-tuning and RL-based post-training, and LLM guardrails and evaluation (e.g., Ragas, DeepEval, Langfuse, or similar).\n\nExperience with at least one major cloud platform (AWS, GCP, or Azure); Docker and basic containerised deployment preferred.\n\nComfortable working with very large, complex datasets residing in different data stores and formats.\n\nExcellent verbal and written communication skills, with strong data visualisation ability and experience presenting to senior, non-technical stakeholders.\n\nDemonstrated leadership potential and the presence to guide junior team members and represent the company with clients.\n\nNice to have:\n\nSoftware engineering hygiene (preferred): typed Python (Pydantic), testing with pytest, packaging, and dependency management (uv).\n\nExperience shipping LLM applications to production, including observability and cost/latency management (e.g., Langfuse, Phoenix, or similar LLMOps tooling).\n\nExperience in the life sciences industry is preferred.\n\n \n\nKEY COMPETENCIES\n\nExecutive Communication: Translates complex Data Science solutions into plain language for C-level and non-technical stakeholders.\n\nTechnical Depth: Brings rigorous statistical and modelling judgement, paired with fluency in modern GenAI/LLM approaches.\n\nDiscretion & Integrity: Handles sensitive client and internal information with professionalism and sound judgement.\n\nLeadership & Charisma: Guides junior colleagues day to day, even without a formal management title, and takes pride in their growth.\n\nCollaboration: A team player who builds strong working relationships across delivery teams, PMO, and clients.\n\n \n\nWHY YOU WILL LOVE IT HERE\n\nWork on real-world AI and advanced analytics solutions with measurable business impact.\n\nCollaborate with a global team of engineers and data scientists.\n\nExposure to diverse industries, modern cloud platforms, and cutting-edge AI technologies.\n\nA collaborative culture that values real outcomes.\n\nHigh ownership, zero micromanagement.\n\nRapid learning opportunities and diverse challenges.\n\nFlat organisational hierarchy with high visibility and accessibility to our leaders.",
+      "flat": "ROLE SUMMARY We are looking for a Senior Data Scientist to lead complex data science engagements that combine traditional statistical modelling with Generative AI. You will work hands-on with very large datasets across disparate systems and formats, translate ambiguous business problems into rigorous analytical solutions, and present those solutions clearly to C-level stakeholders. This is a delivery-first role with a fast track into technical leadership: alongside your own project work, you will help guide junior data scientists and shape how Lynx builds and ships data science solutions. KEY RESPONSIBILITIES Solution Design & Delivery Design and deliver end-to-end solutions for defined data science problems, combining classical modelling, data transformation, and Generative AI / LLM techniques. Work hands-on with very large datasets across disparate stores and formats, from ingestion and transformation through to modelling and validation. Apply statistical and machine learning methods to business problems such as customer retention, campaign management, and commercial performance optimisation. Client Communication & Leadership Present results and prepare client-ready materials for project stakeholders, including C-level audiences, translating technical work into clear business narratives. Lead smaller data science workstreams, with support from internal leadership and the PMO, including day-to-day guidance for junior team members. Partner with delivery and account teams to scope problems, set realistic timelines, and manage stakeholder expectations. Knowledge Building Create reusable documentation, presentations, and code libraries during projects so future engagements can build on prior work. Participate in internal education, research, and knowledge-sharing initiatives that raise the technical bar across the practice. SKILLS, QUALIFICATIONS AND EXPERIENCE 8+ years of overall experience in data science, with a track record of leading analytical workstreams independently. Degree in Mathematics, Statistics, Economics, Computer Science, Engineering, or a related field; MSc or PhD preferred. Solid grounding in probability theory, statistics, and core data science algorithms, with applied experience in areas such as customer retention and campaign management. Strong hands-on proficiency in Python for data analysis, modelling (PyTorch, TensorFlow, or JAX), and productionising code. Strong SQL, and comfort working across common data stores (relational, columnar/warehouse, and vector databases). Git and GitHub proficiency, including branching workflows and code review; experience with GitHub Actions (or equivalent CI/CD) preferred. Hands-on experience designing and building agentic LLM applications - tool calling, multi-step orchestration, and state management - using at least one modern framework (e.g., LangGraph, Pydantic AI, AWS Bedrock AgentCore, Google ADK, or the OpenAI Agents SDK), beyond simple prompt-and-response use of LLM APIs. Preferred: practical depth in one or more of MCP-based tool integration, RAG and embedding pipelines (including vector stores), model fine-tuning and RL-based post-training, and LLM guardrails and evaluation (e.g., Ragas, DeepEval, Langfuse, or similar). Experience with at least one major cloud platform (AWS, GCP, or Azure); Docker and basic containerised deployment preferred. Comfortable working with very large, complex datasets residing in different data stores and formats. Excellent verbal and written communication skills, with strong data visualisation ability and experience presenting to senior, non-technical stakeholders. Demonstrated leadership potential and the presence to guide junior team members and represent the company with clients. Nice to have: Software engineering hygiene (preferred): typed Python (Pydantic), testing with pytest, packaging, and dependency management (uv). Experience shipping LLM applications to production, including observability and cost/latency management (e.g., Langfuse, Phoenix, or similar LLMOps tooling). Experience in the life sciences industry is preferred. KEY COMPETENCIES Executive Communication: Translates complex Data Science solutions into plain language for C-level and non-technical stakeholders. Technical Depth: Brings rigorous statistical and modelling judgement, paired with fluency in modern GenAI/LLM approaches. Discretion & Integrity: Handles sensitive client and internal information with professionalism and sound judgement. Leadership & Charisma: Guides junior colleagues day to day, even without a formal management title, and takes pride in their growth. Collaboration: A team player who builds strong working relationships across delivery teams, PMO, and clients. WHY YOU WILL LOVE IT HERE Work on real-world AI and advanced analytics solutions with measurable business impact. Collaborate with a global team of engineers and data scientists. Exposure to diverse industries, modern cloud platforms, and cutting-edge AI technologies. A collaborative culture that values real outcomes. High ownership, zero micromanagement. Rapid learning opportunities and diverse challenges. Flat organisational hierarchy with high visibility and accessibility to our leaders.",
+      "structured_sha256": "1f841adf140faaefb8aa8b840f2160fe18994a607be01202fbd9898fa1c90f8c",
+      "flat_sha256": "7c4dcb4a84cce22b06299f9d94bf7ef013467739e635d04207f2daf381f23229",
+      "requirements_review": {
+        "status": "pending",
+        "reviewer": null,
+        "requirements": [],
+        "excluded_context": [],
+        "instruction": "Human selects atomic requirements with exact structured source spans, level and accepted equivalent wording; do not copy model predictions as gold."
+      }
+    }
+  ],
+  "pairs": [
+    {
+      "pair_id": "analyst::caseguard-5387488008",
+      "applicant_id": "analyst",
+      "job_id": "caseguard-5387488008",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "analyst::pipetechnologies-4265275009",
+      "applicant_id": "analyst",
+      "job_id": "pipetechnologies-4265275009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "analyst::capco-8110277",
+      "applicant_id": "analyst",
+      "job_id": "capco-8110277",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "analyst::blockchain-8045355",
+      "applicant_id": "analyst",
+      "job_id": "blockchain-8045355",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "analyst::workatbackbase-7721248",
+      "applicant_id": "analyst",
+      "job_id": "workatbackbase-7721248",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "analyst::inthepocket-8143396",
+      "applicant_id": "analyst",
+      "job_id": "inthepocket-8143396",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "analyst::livefront-4215612009",
+      "applicant_id": "analyst",
+      "job_id": "livefront-4215612009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "analyst::costar-6126531004",
+      "applicant_id": "analyst",
+      "job_id": "costar-6126531004",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "analyst::closure-tech-4251322009",
+      "applicant_id": "analyst",
+      "job_id": "closure-tech-4251322009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "analyst::awin-8009279003",
+      "applicant_id": "analyst",
+      "job_id": "awin-8009279003",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "analyst::lynxanalytics-8470862002",
+      "applicant_id": "analyst",
+      "job_id": "lynxanalytics-8470862002",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "backend::caseguard-5387488008",
+      "applicant_id": "backend",
+      "job_id": "caseguard-5387488008",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "backend::pipetechnologies-4265275009",
+      "applicant_id": "backend",
+      "job_id": "pipetechnologies-4265275009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "backend::capco-8110277",
+      "applicant_id": "backend",
+      "job_id": "capco-8110277",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "backend::blockchain-8045355",
+      "applicant_id": "backend",
+      "job_id": "blockchain-8045355",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "backend::workatbackbase-7721248",
+      "applicant_id": "backend",
+      "job_id": "workatbackbase-7721248",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "backend::inthepocket-8143396",
+      "applicant_id": "backend",
+      "job_id": "inthepocket-8143396",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "backend::livefront-4215612009",
+      "applicant_id": "backend",
+      "job_id": "livefront-4215612009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "backend::costar-6126531004",
+      "applicant_id": "backend",
+      "job_id": "costar-6126531004",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "backend::closure-tech-4251322009",
+      "applicant_id": "backend",
+      "job_id": "closure-tech-4251322009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "backend::awin-8009279003",
+      "applicant_id": "backend",
+      "job_id": "awin-8009279003",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "backend::lynxanalytics-8470862002",
+      "applicant_id": "backend",
+      "job_id": "lynxanalytics-8470862002",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "student::caseguard-5387488008",
+      "applicant_id": "student",
+      "job_id": "caseguard-5387488008",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "student::pipetechnologies-4265275009",
+      "applicant_id": "student",
+      "job_id": "pipetechnologies-4265275009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "student::capco-8110277",
+      "applicant_id": "student",
+      "job_id": "capco-8110277",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "student::blockchain-8045355",
+      "applicant_id": "student",
+      "job_id": "blockchain-8045355",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "student::workatbackbase-7721248",
+      "applicant_id": "student",
+      "job_id": "workatbackbase-7721248",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "student::inthepocket-8143396",
+      "applicant_id": "student",
+      "job_id": "inthepocket-8143396",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "student::livefront-4215612009",
+      "applicant_id": "student",
+      "job_id": "livefront-4215612009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "student::costar-6126531004",
+      "applicant_id": "student",
+      "job_id": "costar-6126531004",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "student::closure-tech-4251322009",
+      "applicant_id": "student",
+      "job_id": "closure-tech-4251322009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "student::awin-8009279003",
+      "applicant_id": "student",
+      "job_id": "awin-8009279003",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "student::lynxanalytics-8470862002",
+      "applicant_id": "student",
+      "job_id": "lynxanalytics-8470862002",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "designer::caseguard-5387488008",
+      "applicant_id": "designer",
+      "job_id": "caseguard-5387488008",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "designer::pipetechnologies-4265275009",
+      "applicant_id": "designer",
+      "job_id": "pipetechnologies-4265275009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "designer::capco-8110277",
+      "applicant_id": "designer",
+      "job_id": "capco-8110277",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "designer::blockchain-8045355",
+      "applicant_id": "designer",
+      "job_id": "blockchain-8045355",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "designer::workatbackbase-7721248",
+      "applicant_id": "designer",
+      "job_id": "workatbackbase-7721248",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "designer::inthepocket-8143396",
+      "applicant_id": "designer",
+      "job_id": "inthepocket-8143396",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "designer::livefront-4215612009",
+      "applicant_id": "designer",
+      "job_id": "livefront-4215612009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "designer::costar-6126531004",
+      "applicant_id": "designer",
+      "job_id": "costar-6126531004",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "designer::closure-tech-4251322009",
+      "applicant_id": "designer",
+      "job_id": "closure-tech-4251322009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "designer::awin-8009279003",
+      "applicant_id": "designer",
+      "job_id": "awin-8009279003",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "designer::lynxanalytics-8470862002",
+      "applicant_id": "designer",
+      "job_id": "lynxanalytics-8470862002",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "senior_ds::caseguard-5387488008",
+      "applicant_id": "senior_ds",
+      "job_id": "caseguard-5387488008",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "senior_ds::pipetechnologies-4265275009",
+      "applicant_id": "senior_ds",
+      "job_id": "pipetechnologies-4265275009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "senior_ds::capco-8110277",
+      "applicant_id": "senior_ds",
+      "job_id": "capco-8110277",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "senior_ds::blockchain-8045355",
+      "applicant_id": "senior_ds",
+      "job_id": "blockchain-8045355",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "senior_ds::workatbackbase-7721248",
+      "applicant_id": "senior_ds",
+      "job_id": "workatbackbase-7721248",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "senior_ds::inthepocket-8143396",
+      "applicant_id": "senior_ds",
+      "job_id": "inthepocket-8143396",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "senior_ds::livefront-4215612009",
+      "applicant_id": "senior_ds",
+      "job_id": "livefront-4215612009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "senior_ds::costar-6126531004",
+      "applicant_id": "senior_ds",
+      "job_id": "costar-6126531004",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "senior_ds::closure-tech-4251322009",
+      "applicant_id": "senior_ds",
+      "job_id": "closure-tech-4251322009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "senior_ds::awin-8009279003",
+      "applicant_id": "senior_ds",
+      "job_id": "awin-8009279003",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "senior_ds::lynxanalytics-8470862002",
+      "applicant_id": "senior_ds",
+      "job_id": "lynxanalytics-8470862002",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "newgrad_swe::caseguard-5387488008",
+      "applicant_id": "newgrad_swe",
+      "job_id": "caseguard-5387488008",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "newgrad_swe::pipetechnologies-4265275009",
+      "applicant_id": "newgrad_swe",
+      "job_id": "pipetechnologies-4265275009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "newgrad_swe::capco-8110277",
+      "applicant_id": "newgrad_swe",
+      "job_id": "capco-8110277",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "newgrad_swe::blockchain-8045355",
+      "applicant_id": "newgrad_swe",
+      "job_id": "blockchain-8045355",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "newgrad_swe::workatbackbase-7721248",
+      "applicant_id": "newgrad_swe",
+      "job_id": "workatbackbase-7721248",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "newgrad_swe::inthepocket-8143396",
+      "applicant_id": "newgrad_swe",
+      "job_id": "inthepocket-8143396",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "newgrad_swe::livefront-4215612009",
+      "applicant_id": "newgrad_swe",
+      "job_id": "livefront-4215612009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "newgrad_swe::costar-6126531004",
+      "applicant_id": "newgrad_swe",
+      "job_id": "costar-6126531004",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "newgrad_swe::closure-tech-4251322009",
+      "applicant_id": "newgrad_swe",
+      "job_id": "closure-tech-4251322009",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "newgrad_swe::awin-8009279003",
+      "applicant_id": "newgrad_swe",
+      "job_id": "awin-8009279003",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    },
+    {
+      "pair_id": "newgrad_swe::lynxanalytics-8470862002",
+      "applicant_id": "newgrad_swe",
+      "job_id": "lynxanalytics-8470862002",
+      "review": {
+        "status": "pending",
+        "reviewer": null
+      },
+      "requirement_statuses": [],
+      "labelled_score": null,
+      "fit_label": null,
+      "notes": "Human must label all reviewed requirements; no model-derived gold."
+    }
+  ],
+  "read_errors": [
+    {
+      "field": "software",
+      "board": "backblaze",
+      "record_id": "5204266008",
+      "status": "source_read_failed_not_empty",
+      "error_type": "HTTPStatusError"
+    }
+  ],
+  "human_gold_policy": "Only explicit human source/requirement/pair review is gold. Pending labels yield null metrics and non-passing coverage, never skipped-case success.",
+  "thresholds": {
+    "format_delta_max": 10,
+    "format_delta_passing_fraction": 0.9,
+    "requirement_count_ratio_min": 0.8,
+    "requirement_count_ratio_max": 1.25,
+    "mismatch_fit_auc_min": 0.9,
+    "mismatch_median_max": 15,
+    "fit_mean_drop_max": 5,
+    "main_four_cold_spread_max": 8,
+    "typical_jd_requirements_max": 30,
+    "concurrent_runs": 32,
+    "concurrency": 6,
+    "allowed_timeouts": 0
+  }
+}

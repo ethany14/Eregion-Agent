@@ -1,0 +1,88 @@
+{
+  "scope": "Synthetic offline providers, production workspace projection/job_summary/recommend_job/completion validation",
+  "provider_calls": 0,
+  "application_id": "345ee279-927d-4903-8320-f7ec10cdccb1",
+  "job_summary": {
+    "application_id": "345ee279-927d-4903-8320-f7ec10cdccb1",
+    "title": "Python Engineer",
+    "company": "Example",
+    "url": "https://www.indeed.com/viewjob?jk=synthetic-second",
+    "location": "Remote",
+    "status": "materials_ready",
+    "match_score": null,
+    "result_at": "2026-10-11T08:59:48.425180+00:00",
+    "qualification_evidence": [],
+    "requirement_counts": {
+      "matched": 1,
+      "partial": 0,
+      "missing": 0,
+      "needs_confirmation": 0,
+      "unknown": 0,
+      "confirmed_condition": 0
+    },
+    "gaps": [],
+    "match_overview": {
+      "explanation": "Grounded match.",
+      "score_range": [
+        20.0,
+        60.0
+      ],
+      "analysis_status": "needs_review",
+      "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+      "matched": [
+        {
+          "requirement": "python",
+          "level": "required"
+        }
+      ],
+      "partial": [],
+      "missing": [],
+      "needs_confirmation": [],
+      "unknown": [],
+      "confirmed_condition": []
+    },
+    "score_range": [
+      20.0,
+      60.0
+    ],
+    "analysis_status": "needs_review",
+    "score_algorithm": "legacy",
+    "score_valid_until": null
+  },
+  "scored_job_evidence": {
+    "345ee279-927d-4903-8320-f7ec10cdccb1": {
+      "application_id": "345ee279-927d-4903-8320-f7ec10cdccb1",
+      "title": "Python Engineer",
+      "company": "Example",
+      "url": "https://www.indeed.com/viewjob?jk=synthetic-second",
+      "location": "Remote",
+      "match_score": null,
+      "qualification_evidence": [],
+      "score_range": [
+        20.0,
+        60.0
+      ]
+    }
+  },
+  "recommendation": {
+    "application_id": "345ee279-927d-4903-8320-f7ec10cdccb1",
+    "title": "Python Engineer",
+    "company": "Example",
+    "location": "Remote",
+    "url": "https://www.indeed.com/viewjob?jk=synthetic-second",
+    "match_score": null,
+    "reason": "Potential fit pending review.",
+    "caveats": "Unresolved qualifications: fit is an interval, not a point score. Qualifications remain unresolved.",
+    "score_range": [
+      20.0,
+      60.0
+    ],
+    "analysis_status": "needs_review"
+  },
+  "accepted_final_before_recommendation": "Read and scored, not recommended: https://www.indeed.com/viewjob?jk=synthetic-second Score range 20-60/100; unresolved qualifications remain.",
+  "rejected_formats": [
+    "fabricated point",
+    "wrong interval",
+    "salary range"
+  ]
+}

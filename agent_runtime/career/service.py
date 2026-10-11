@@ -22,6 +22,8 @@ class CareerService:
         self.alerts=AlertRepository(runtime.database.session_factory)
         self.harness.alerts=self.alerts
         self.loop = TaskLoop(self.repository,self.harness,**({'model_factory':model_factory} if model_factory else {}))
+        inputs=getattr(self.harness,'interview_inputs',None)
+        if inputs:inputs.recover()
         self.alert_scheduler=AlertScheduler(self,start=start_alert_scheduler)
         # Trash empties itself after 30 days: once at startup, then daily, without an external scheduler.
         self._sweeping = Event()
@@ -51,6 +53,12 @@ class CareerService:
         if child and child['status'] in {'needs_input','awaiting_review','submitting'} and not state.get('pause_requested') and state['status']!='cancelled':
             status = child['status']
         own_question = state.get('input_request')
+        child_wait = bool(child and child['status']=='needs_input')
+        if own_question and own_question.get('application_run_id'):
+            linked_id=own_question['application_run_id']
+            if self.harness.wait_token({'id':linked_id})!=own_question.get('application_wait_token'):
+                own_question=None
+                self.repository.change(task_id,input_request=None)
         account_wait = bool(base.get('account_request')) and status == 'needs_input'
         failure = state.get('error')
         if failure and not isinstance(failure,dict):
@@ -72,7 +80,7 @@ class CareerService:
             'input_request':None if account_wait else base.get('input_request') or own_question,
             'task_error':failure,'model_activity':activity or None,
             'tool_activity':tool_activity or None,'timings':state.get('timings',[]),
-            'message':base.get('message') if account_wait else (tool_activity.get('message') or activity.get('message') or 'Working toward your goal.') if state['status'] in {'queued','running'} else
+            'message':base.get('message') if child_wait else (tool_activity.get('message') or activity.get('message') or 'Working toward your goal.') if state['status'] in {'queued','running'} else
                 (failure or {}).get('message') or (own_question or {}).get('text') or base.get('message','Ready for your next message.'),
             'actions':sorted([*state['actions'],*base.get('actions',[])],key=lambda a:a.get('at',''))[-100:],
             'jobs':[self.harness.job_summary(a) for a in state['jobs']],

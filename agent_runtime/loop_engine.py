@@ -136,7 +136,7 @@ class AgentLoop:
                 turn.snapshot = snapshot
                 if not snapshot.get('visual_fallback'):
                     image_inputs = []
-                turn.tools = [t for t in turn.tools if t['function']['name'] != 'read_context'] + [READ_CONTEXT]
+                turn.tools = [t for t in turn.tools if t['function']['name'] != 'read_context'] + ([] if snapshot.get('must_decide') or snapshot.get('completion_required') else [READ_CONTEXT])
                 messages, context_metrics = prepare_request(turn.prompt, turn.tools, self.context, snapshot,
                     self.archive, max_chars=self.request_chars, repair=repair)
                 self.runtime['context_metrics'] = context_metrics

@@ -1,0 +1,115 @@
+{
+  "status": "completed",
+  "calls": 58,
+  "error": null,
+  "applications": 0,
+  "schedules": 0,
+  "final": "Could not complete your request for **two** verified junior data analyst roles in New York.\n\n**Result: 1 verified NY listing found, not 2**\n\n1. **Data Analyst - GoodApple - New York, NY**\n   - Link observed: https://www.indeed.com/jobs?l=New+York%2C+NY&q=junior+data+analyst&vjk=2233e7ae15e45957\n   - Score vs saved resume: **42.78** - limited fit\n   - Key gaps observed:\n     - Build dashboards and supporting SQL setups for weekly/monthly/quarterly client reports\n     - Client-facing presentation / excellent communication to internal teams and clients\n     - Fast learner with advanced SQL, data pipelines, data architecture understanding\n   - Resume match: Python, SQL, Tableau, pandas align; missing advanced pipeline/architecture and client-presentation evidence.\n   - Status: scored, not recommended as strong junior match, no application made.\n\n**Checked but did NOT meet NY requirement:**\n- Junior Data Analyst - Kinertia, LLC - **Pittsburgh, PA, In-Office** - rejected for location\n- Junior Data Analyst - Silvi Materials - **Fairless Hills, PA, In-Office** - rejected for location\n- Junior Data Analyst (Finance Analytics team) - Emerging Travel Group - **Remote, requires GMT+3 timezone, 5 Locations** - no NY / US-remote evidence, rejected for location\n\n**Source coverage / blocks:**\n- LinkedIn: login-blocked, could not verify details\n- Indeed: search list worked, detail pages hit sign-in / Cloudflare block - only 1 NY posting verifiable\n- Built In public boards: accessible, but no second NY junior match found\n\nNo applications submitted, no schedule created. To get to two, I would need more public sources or you to supply specific NY posting text/links.",
+  "usage": {
+    "calls": 66,
+    "completed": 66,
+    "failed": 0,
+    "pending": 0,
+    "discarded": 0,
+    "retries": 0,
+    "input_tokens": 978126,
+    "output_tokens": 31396,
+    "unknown_usage_calls": 0,
+    "groups": [
+      {
+        "purpose": "agent",
+        "model": "muse-spark-1.3-contributor",
+        "calls": 58,
+        "input_tokens": 952827,
+        "output_tokens": 28080,
+        "unknown_usage_calls": 0,
+        "cached_input_tokens": 396984,
+        "reasoning_tokens": 20524
+      },
+      {
+        "purpose": "jev:fit:extract_requirements",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 9719,
+        "output_tokens": 1398,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:refine_extraction_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 3239,
+        "output_tokens": 372,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:condition_category_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 2,
+        "input_tokens": 2964,
+        "output_tokens": 410,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:support_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 4673,
+        "output_tokens": 750,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:focused_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 1686,
+        "output_tokens": 157,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:clarify_full_support_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 1755,
+        "output_tokens": 157,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:verify_citations_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 1263,
+        "output_tokens": 72,
+        "unknown_usage_calls": 0
+      }
+    ],
+    "cached_input_tokens": 396984,
+    "reasoning_tokens": 20524,
+    "usage_complete": true
+  },
+  "recommendations": [
+    {
+      "application_id": "390b1988-24a8-403d-8a9e-0e7d959f8eb2",
+      "title": "Data Analyst",
+      "company": "GoodApple",
+      "location": "New York, NY",
+      "url": "https://www.indeed.com/jobs?l=New+York%2C+NY&q=junior+data+analyst&vjk=2233e7ae15e45957",
+      "match_score": 42.78,
+      "reason": "Verified New York posting matching core resume skills: SQL, dashboards/Tableau-type reporting, and data analysis. Relevant to junior data analyst search despite limited overall score.",
+      "caveats": "Score 42.78/100 - limited fit. Title is Data Analyst (not explicitly Junior) found via junior search; junior-level not explicitly confirmed in description. Location New York, NY verified from posting. Gaps include advanced SQL/data pipelines, client-facing presentation, and regular client reporting. Eligibility/work-mode details unverified."
+    }
+  ],
+  "verified_jobs": [
+    {
+      "application_id": "390b1988-24a8-403d-8a9e-0e7d959f8eb2",
+      "title": "Data Analyst",
+      "company": "GoodApple",
+      "url": "https://www.indeed.com/jobs?l=New+York%2C+NY&q=junior+data+analyst&vjk=2233e7ae15e45957",
+      "location": "New York, NY",
+      "description": "Data Analyst\nNew York, NY\nData Analyst\nGoodApple\nNew York, NY\n$69,000 - $85,000 a year\n -  \nFull-time\nApply on company site\nGood Apple is an independent agency driving an average +30% efficiency while making lives 100% easier. Built on the belief that big agency bureaucracy isn't necessary to drive scalable results, Good Apple operates as that group of friends you love to collaborate with whether you are an employee, agency, publisher, or client partner.\n\n \n\n   As an Apple, you have a unique opportunity to truly create the destiny and pathway that fuels you each day and drives you to deliver the best results for yourself as well as your clients. As a Data Analyst, you will act as a strategic partner to your clients and media team, solving complex problems through metrics and analysis. Our Data Analysts have a curious, logical mindset with an interest in advertising and digital marketing analytics, working internally across disciplines to deliver the most impactful integrated media solution for our clients.\n\n \n\n   Key Responsibilities:\n\n \n  \nCollaborate with internal teams to translate business needs into measurement plans and their implementations via website/ad-server tracking setups and data flows\n\n  \nDemocratize data and insights through data integration and the use of visualization tools\n\n  \nWork with media teams to create marketing plans and ensure measurement requirements are built into the media structure\n\n  \nTurn business requirements into metrics and implement tracking solutions to measure those metrics\n\n  \nLearn what makes an effective media plan so you can be the voice of the data for the media teams and clients to guide media planning and optimization\n\n  \nBuild dashboards and supporting SQL database setups for weekly, monthly, and quarterly reports and analyses for clients\n\n  \nProvide ad-hoc data science-driven regression analyses that discover the connections not discernible from a dashboard or spreadsheet\n\n  \nCreate clean, effective, and actionable presentations for clients and internal teams\n\n  \nExcellent analytical skills and the ability to plainly communicate results to clients and internal teams\n\n  \nLead and contribute to processes (technical or business) improvements for reporting and analysis\n\n  \nDiligently see solutions through to the end and be meticulous on QA\n\n \n \nDesired Skills/Qualifications:\n\n \n  \nBachelor's Degree with 3.0 or higher GPA or equivalent work experience\n\n  \n0-2 years of marketing or analytics experience\n\n  \nCreative problem-solving skills and clear communication of results to a non-technical audience\n\n  \nExcellent communication skills to both internal teams and clients – presenting to clients is an expectation\n\n  \nFast learner, comfortable using advanced SQL, experience working with data pipelines, understanding data architecture\n\n  \nExperience working with 3rd party media tools such as Google Campaign Manager, data visualization tools (Looker, Tableau), Cloud DBs (Snowflake, Redshift), Pipeline tools (Rivery, Fivetran), and AI platforms (Data Robot, Dataiku)\n\n  \nFamiliarity with tag managers, tagging implementation, website architecture, and CMS platforms is a plus\n\n  \nMeticulous attention to detail\n\n  \nBackground in a logic-based field or experience in a logic-focused role is ideal\n\n  \nExperience with Amazon Web Services is a plus\n\n  \nProgramming experience, Python in particular, is a plus\n\n \n \n\n   Additional Role Details\n\n \nWork Authorization: Candidates must be legally authorized to work in the United States. Good Apple is unable to provide employment visa sponsorship for this position.\n\n \nCompensation Range: $85,000 annually\n\n \nThe compensation range reflects the expected base salary for candidates who meet the specific experience, skills, and qualifications required for the role. Final compensation will be determined based on skills, experience, qualifications, and overall alignment with the position.\n\n \nBonus, Benefits & Perks: In addition to base compensation, this position is eligible for bonus opportunities, benefits, and additional employee perks.\n\n \nWork Environment: This position requires employees to work in person four days per week (Monday-Thursday) in our NYC office.\n\n \n\n \nZ8TdorkT0r",
+      "match_score": 42.78,
+      "retrieved": true,
+      "disqualified": false
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "revision": "2026-10-11-cover-style-screen-offline-r1",
+  "scope": "Advisory style checks and real SQLite revision context using frozen failure/synthetic phrasing. No generated new text, no network.",
+  "real_api_calls": 0,
+  "paid_usage": null,
+  "reproduction": "Duplicate invitation uses chance, variable whitespace or uppercase. Production cover_revision_notes flags it, but offline no_repeated_invitation returned true.",
+  "root_cause": "Two separate regex implementations: screen recognized only literal would welcome the opportunity, while production advice also recognized chance and flexible whitespace.",
+  "fix": "Share the finite occurrence matcher, preserving paragraph locations and allowing a single future invitation. No verifier, factual threshold, writer model or prompt version change.",
+  "before": "4 failed/1 passed: three pure variants and one production revision-context disagreement; supported single future invitation passed.",
+  "after": "47 passed/2 opt-in paid tests skipped, including 31 application-pack adjacent cases. No new real-model style verdict.",
+  "frozen_real_revision": {
+    "artifact": {
+      "path": "tests/fixtures/remaining_cover_style_revision.json",
+      "sha256": "bedc077fe35e63642b90c4e1fe3cd746b09a5b5567ee594b3a4de38c12ef09cb",
+      "bytes": 3302
+    },
+    "grounding_passed": true,
+    "current_advisory_screens": {
+      "past_api_claim_once": true,
+      "no_repeated_invitation": false,
+      "first_person_opening": false,
+      "no_stiff_opening": true
+    },
+    "style_status": "FAILED: stiff opening and repeated invitation remain in the original text. Human review pending; frozen content and verification not edited.",
+    "original_usage": {
+      "calls": 2,
+      "completed": 2,
+      "failed": 0,
+      "pending": 0,
+      "discarded": 0,
+      "retries": 0,
+      "input_tokens": 2643,
+      "output_tokens": 4830,
+      "unknown_usage_calls": 0,
+      "groups": [
+        {
+          "purpose": "cover_style_frozen_original_revision:CoverLetter",
+          "model": "muse-spark-1.3-contributor",
+          "calls": 1,
+          "input_tokens": 2159,
+          "output_tokens": 3625,
+          "unknown_usage_calls": 0,
+          "cached_input_tokens": 0,
+          "reasoning_tokens": 3368
+        },
+        {
+          "purpose": "cover_style_frozen_original_revision:ClaimDecisions",
+          "model": "muse-spark-1.3-contributor",
+          "calls": 1,
+          "input_tokens": 484,
+          "output_tokens": 1205,
+          "unknown_usage_calls": 0,
+          "cached_input_tokens": 0,
+          "reasoning_tokens": 1172
+        }
+      ],
+      "cached_input_tokens": 0,
+      "reasoning_tokens": 4540,
+      "usage_complete": true
+    }
+  },
+  "limitations": [
+    "Finite editorial pattern, not semantic detection of all repeated intent.",
+    "Passing screens do not imply a natural letter, human approval, or factual grounding.",
+    "Original real writer/reviser/semantic inconsistency failures and costs remain preserved.",
+    "E5 overall remains FAILED; no blind paid rerun."
+  ],
+  "artifacts": [
+    {
+      "path": "tmp/e5-screen-before-20261011.xml",
+      "sha256": "ac39109288ac9079813c1e0a8f3da0f291b278435e7cbaf61bd02236c334b232",
+      "bytes": 5624,
+      "raw_suite_totals": {
+        "tests": 5,
+        "failures": 4,
+        "errors": 0,
+        "skipped": 0
+      },
+      "seconds": 5.58,
+      "failures": [
+        {
+          "case": "tests.test_remaining_cover_style::test_style_screen_and_production_notes_agree_on_repeated_invitation_variants[I would welcome the chance to discuss the role.]",
+          "message": "assert not True"
+        },
+        {
+          "case": "tests.test_remaining_cover_style::test_style_screen_and_production_notes_agree_on_repeated_invitation_variants[I would  welcome the opportunity to discuss the role.]",
+          "message": "assert not True"
+        },
+        {
+          "case": "tests.test_remaining_cover_style::test_style_screen_and_production_notes_agree_on_repeated_invitation_variants[I WOULD\\nWELCOME THE CHANCE to discuss the role.]",
+          "message": "assert not True"
+        },
+        {
+          "case": "tests.test_remaining_cover_style::test_repeated_chance_invitation_reaches_actual_revision_context",
+          "message": "assert not True"
+        }
+      ],
+      "skipped": []
+    },
+    {
+      "path": "tmp/e5-screen-before-20261011.log",
+      "sha256": "5ffc15bc2fbfc762924688fb5d60307a2a5c4ec7ad1963e791b17b0a4c390d4e",
+      "bytes": 24112
+    },
+    {
+      "path": "tmp/e5-screen-after-20261011.xml",
+      "sha256": "600b5e5172fcbddd38c61bd2e6409f154d3b6840f1274fe1094a80c86602c0cf",
+      "bytes": 7859,
+      "raw_suite_totals": {
+        "tests": 49,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 2
+      },
+      "seconds": 34.677,
+      "failures": [],
+      "skipped": [
+        {
+          "case": "tests.test_remaining_cover_style::test_real_original_failure_revision_with_frozen_provenance",
+          "reason": "Only the unexecuted original-failure revision lane; no writer repeat"
+        },
+        {
+          "case": "tests.test_remaining_cover_style::test_real_cover_letter_preserves_source_citations_and_specific_natural_opening",
+          "reason": "Explicit paid real cover-letter generation and grounding review"
+        }
+      ]
+    },
+    {
+      "path": "tmp/e5-screen-after-20261011.log",
+      "sha256": "feb6fd141f110a3dced7c408825a03d2e5f87d76aceb8183678e116a43becf74",
+      "bytes": 1266
+    }
+  ],
+  "implementation_files": [
+    {
+      "path": "agent_runtime/application_pack/style.py",
+      "sha256": "53fdbc82f48bb81d55038b94041874ff40c33de60267f9d0d70f9093b7d4ecd4",
+      "bytes": 1790
+    },
+    {
+      "path": "evals/cover_style_review.py",
+      "sha256": "fe45f90d7b09b9e03fe5b408b7462b6b30e0aaefc6f350bbb52159c99427eae3",
+      "bytes": 1303
+    },
+    {
+      "path": "tests/test_remaining_cover_style.py",
+      "sha256": "a7b0c6ac309efb562270d6df20ddef6d5217b597de3d292a56122e6bc4941621",
+      "bytes": 23239
+    }
+  ]
+}

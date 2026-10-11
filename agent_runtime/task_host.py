@@ -59,7 +59,22 @@ class TaskHost:
             'budget_remaining': self.loop._budget(state) - state['model_calls'] + state['budget_base'], **observed}
         harness = self.loop.harness
         tools = harness.available_tools(state) if hasattr(harness, 'available_tools') else harness.tools
-        return Turn(harness.prompt, snapshot, CONTROL_TOOLS + tools, state['chat_revision'],
+        controls = CONTROL_TOOLS
+        guard=state.get('progress_guard',{})
+        if guard.get('revision')==state['chat_revision'] and guard.get('count',0)>=2:
+            snapshot['must_decide']=True
+            snapshot['decision_reason']='Repeated reads added no evidence. Use saved results to finish honestly, ask for essential missing input, or take a different action/source. Do not claim unfinished work is complete.'
+            reads={'read_context','browser_read','browser_screenshot','list_jobs','inspect_job',
+                'inspect_materials','inspect_interview','inspect_application',
+                'browser_scroll','browser_wait','screen_jobs'}
+            tools=[t for t in tools if t['function']['name'] not in reads]
+            controls=[t for t in controls if t['function']['name'] in {'finish_task','ask_user','pause_task'}]
+        if snapshot['budget_remaining']<=3:
+            snapshot['completion_required']=True
+            snapshot['completion_reason']='Use the remaining decisions to report the observed results and explicit unfinished work. No additional research or rereading. Do not claim requested constraints were met when they were not. Ask only for genuinely essential missing user input.'
+            tools=[]
+            controls=[t for t in CONTROL_TOOLS if t['function']['name'] in {'finish_task','ask_user'}]
+        return Turn(harness.prompt, snapshot, controls + tools, state['chat_revision'],
                     batchable=frozenset(getattr(harness, 'batchable_tools', ())))
 
     def invoke(self, messages, tools, turn):
@@ -145,12 +160,40 @@ class TaskHost:
                     'next': 'Keep saved progress. Continue another task/source or explain the service failure. Retry after new user input or an actual input change; do not ask the user to repeat saved facts.'}
             result = self.loop._control(self.task_id, call['name'], call['args'], self.observed_state)
         if result is None:
+            # A fresh observation token must not make an already-stalled click
+            # executable again on the same unchanged source. New targets/pages
+            # remain available for recovery, as does the bounded read_job tool.
+            if call['name'] in {'browser_click','browser_open','browser_type','browser_select','browser_key','browser_back'}:
+                browser=state.get('browser') or {}
+                for h in state['history']:
+                    previous=h.get('result') or {}
+                    if (h.get('chat_revision')==turn.revision and h.get('tool')==call['name'] and
+                        isinstance(previous,dict) and (previous.get('no_new_evidence') or h.get('no_new_evidence')) and
+                        outcome_fingerprint(h.get('arguments',{}))==outcome_fingerprint(call['args']) and
+                        (h.get('browser_url') or previous.get('url') or browser.get('url'))==browser.get('url') and
+                        (not h.get('browser_source_hash') or h['browser_source_hash']==browser.get('page_evidence_hash'))):
+                        return {'error':'This action already produced no new evidence on this unchanged page.',
+                            'error_code':'repeated_action','no_new_evidence':True,
+                            'next':'Use the current bounded read_job action, another observed target, or a different public source.'}
+            guard=state.get('progress_guard',{})
+            if guard.get('revision')==turn.revision and guard.get('count',0)>=2 and any(
+                    h.get('tool')==call['name'] and h.get('arguments')==trace_value(call['args']) and
+                    h.get('chat_revision')==turn.revision for h in state['history']):
+                return {'error':'This exact action already ran without resolving the request.',
+                    'error_code':'repeated_action','no_new_evidence':True,
+                    'next':'Use a different search query/source or finish with the actual limitation. Do not repeat these arguments.'}
             from agent_runtime.provider_usage import usage_scope
             with usage_scope(purpose=call['name']):
                 result = self.loop.harness.execute(self.task_id, call['name'], call['args'], call_id=call['id'])
         return result
 
     def action_error(self, exc):
+        from agent_runtime.career.source_health import SourceBlocked
+        if isinstance(exc,SourceBlocked):return {'error':str(exc),'error_code':'source_blocked',
+            'source':exc.source,'no_new_evidence':True,
+            'next':'Use a healthy observed candidate or discover a different public source. This source remains blocked for this user turn.'}
+        from agent_runtime.career.posting_qualification import PostingRejected
+        if isinstance(exc,PostingRejected):return exc.outcome()
         from agent_runtime.model_runtime import model_failure
         failure = model_failure(exc)
         if failure.code != 'model_error':
@@ -169,19 +212,40 @@ class TaskHost:
         self.started = None
         self.loop.repository.change(self.task_id, tool_activity=None)
         state = self.state()
-        if name.startswith('browser_'):
+        progress_updates={}
+        previous=state.get('observation_progress_evidence',{})
+        seen_observations=previous.get('fingerprints',[]) if previous.get('revision')==turn.revision else []
+        if outcome.get('error_code')=='candidate_rejected':
+            fingerprint=outcome_fingerprint(['candidate_rejected',outcome.get('candidate_identity'),outcome.get('body_hash')])
+        elif name.startswith('browser_'):
             from agent_runtime.progress import browser_evidence
             fingerprint = outcome_fingerprint(browser_evidence(outcome))
         elif name == 'read_context':
             # Access counters change on every read, but immutable evidence does not.
             fingerprint = outcome_fingerprint([name, args.get('ref'), args.get('path') or [],
                 outcome.get('offset', args.get('offset', 0)), outcome.get('content'), outcome.get('error')])
+        elif name == 'search_jobs':
+            # Query wording is an intention, not new evidence. Distinct actual
+            # sources or candidate results still allow discovery to advance.
+            from agent_runtime.progress import search_evidence
+            fingerprint = outcome_fingerprint([name,search_evidence(outcome)])
+            previous=state.get('search_progress_evidence',{})
+            seen_searches=previous.get('fingerprints',[]) if previous.get('revision')==turn.revision else []
+            progress_updates['search_progress_evidence']={'revision':turn.revision,
+                'fingerprints':list(dict.fromkeys([*seen_searches,fingerprint]))[-128:]}
         else:
             fingerprint = outcome_fingerprint([name, args, outcome])
         repeated = sum(h.get('outcome_fingerprint') == fingerprint and h.get('chat_revision') == turn.revision for h in state['history'][-12:])
-        if outcome.get('no_new_evidence'): repeated = max(1, repeated)
+        if name=='read_context' or name.startswith('browser_'):
+            if fingerprint in seen_observations:repeated=max(1,repeated)
+            progress_updates['observation_progress_evidence']={'revision':turn.revision,
+                'fingerprints':list(dict.fromkeys([*seen_observations,fingerprint]))[-256:]}
+        if name=='search_jobs' and fingerprint in seen_searches:repeated=max(1,repeated)
+        if outcome.get('no_new_evidence') or outcome.get('error_code') in {'repeated_action','source_blocked'}:
+            repeated = max(1, repeated)
         control = name in {'say', 'update_plan', 'ask_user', 'wait_for_user', 'wait_for_result', 'finish_task', 'pause_task'}
         if repeated >= 1 and not control:
+            outcome['no_new_evidence']=True
             outcome['progress_feedback'] = ('No new evidence from this action. Change query, route, source or capability. '
                 'If alternatives are exhausted, finish with verified results and the limitation.')
         stalled = bool(repeated and not control)
@@ -199,8 +263,14 @@ class TaskHost:
                             'on wake, use the current request and live outcome. Do not replay old instructions.')
         context_result = self.context_archive.tool_result(outcome) if self.context_archive is not None else trace_value(outcome)
         entry = {'tool': name, 'call_id': call['id'], 'arguments': trace_value(args), 'result': context_result, 'at': now(),
-                 'chat_revision': turn.revision, 'outcome_fingerprint': fingerprint}
+                 'chat_revision': turn.revision, 'outcome_fingerprint': fingerprint,
+                 'no_new_evidence':bool(outcome.get('no_new_evidence'))}
+        if name.startswith('browser_'):
+            browser=state.get('browser') or {}
+            entry.update(browser_url=outcome.get('url') or browser.get('url'),
+                browser_source_hash=outcome.get('page_evidence_hash') or browser.get('page_evidence_hash'))
         self.loop.repository.change(self.task_id, lambda s: {'history': [*s['history'], entry][-24:],
+            **progress_updates,
             'actions': [*s['actions'], {'tool': name, 'label': name, 'outcome': 'failed' if 'error' in outcome else 'completed', 'at': now()}][-100:],
             **({'status': 'completed', 'plan': []} if name == 'finish_task' and outcome.get('completed')
                and s['chat_revision'] == turn.revision and self.loop._active(s) else

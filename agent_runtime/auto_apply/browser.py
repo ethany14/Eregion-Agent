@@ -297,6 +297,7 @@ class ApplicationBrowser:
         try:
             self.browser = self._launch(self.headless)
             login_state = session_store.load(owner_key, self.session_site) if session_store and owner_key else None
+            self._session_revision=session_store.revision(owner_key,self.session_site) if session_store and owner_key and hasattr(session_store,'revision') else None
             self.context = self.browser.new_context(viewport={"width": 1280, "height": 900}, **context_options(),
                 **({"storage_state":login_state} if login_state else {}))
             self.context.set_default_timeout(8000)
@@ -423,15 +424,36 @@ class ApplicationBrowser:
     def save_login_state(self, *, force=False):
         if not self.session_store or not self.owner_key or not hasattr(self, "page") or not self.is_open(): return
         if not force and time.monotonic() - self._last_session_save < 10: return
+        if not force and hasattr(self.session_store,'revision') and self.session_store.revision(self.owner_key,self.session_site)!=getattr(self,'_session_revision',None):return
         self._last_session_save = time.monotonic()
         try:
             state = self.context.storage_state()
             self.session_store.save(self.owner_key, self.session_site, state)
+            if hasattr(self.session_store,'revision'):self._session_revision=self.session_store.revision(self.owner_key,self.session_site)
         except OSError as exc:
             # Browsing still works; sign-ins just are not kept between sessions.
             _warn_once("Browser sign-ins are not saved between sessions: %s", exc)
         except Exception:
             pass
+
+    def reload_shared_login(self):
+        if not self.session_store or not self.owner_key or not hasattr(self.session_store,'revision'):return False
+        revision=self.session_store.revision(self.owner_key,self.session_site)
+        if revision==getattr(self,'_session_revision',None):return False
+        state=self.session_store.load(self.owner_key,self.session_site)
+        if not state:return False
+        self._check_page()
+        self.context.add_cookies(state.get('cookies',[]))
+        for origin in state.get('origins',[]):
+            if origin.get('origin')==urlsplit(self.page.url).scheme+'://'+urlsplit(self.page.url).netloc:
+                self.page.evaluate('(items)=>{for(const item of items)localStorage.setItem(item.name,item.value)}',origin.get('localStorage',[]))
+        self._session_revision=revision
+        self.page.reload(wait_until='domcontentloaded',timeout=20000)
+        self.scope=self.page
+        self.option_cache.clear();self.choice_fields.clear();self._choice_queries.clear()
+        self._page_context,self._document_url=None,None
+        self._settle()
+        return True
 
     def _public_host(self, host):
         if host not in self._dns_cache:
@@ -957,7 +979,8 @@ class ApplicationBrowser:
             return
         try:
             if self.browser is not None:
-                self.save_login_state(force=True)
+                if not self.session_store or not hasattr(self.session_store,'revision') or self.session_store.revision(self.owner_key,self.session_site)==getattr(self,'_session_revision',None):
+                    self.save_login_state(force=True)
                 if hasattr(self, 'context'):
                     self.context.close()
                 if _pooled_browser(self.browser):

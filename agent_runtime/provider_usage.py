@@ -13,6 +13,50 @@ from api.db import Base
 
 log = logging.getLogger(__name__)
 _scope = ContextVar('provider_usage_scope', default={})
+_observers = ContextVar('provider_attempt_observers', default=())
+
+
+@contextmanager
+def capture_provider_attempts():
+    """Attempt events independent of ledger availability; copied into workers."""
+    rows = []
+    token = _observers.set((*_observers.get(), rows))
+    try:
+        yield rows
+    finally:
+        _observers.reset(token)
+
+
+def _observe(details):
+    for rows in _observers.get():
+        rows.append(details)
+
+
+@contextmanager
+def adapter_attempt(model='unmetered-analyzer'):
+    """Count an unmetered adapter only when it has no concrete child attempts.
+
+    Adapter fallback has unknown tokens and explicit origin. It never fabricates
+    durable provider records or a zero-cost claim.
+    """
+    started = time.monotonic()
+    scope = current_scope()
+    details = {'model':model, 'purpose':scope.get('purpose','analysis-adapter'),
+        'call_id':str(uuid4()),
+        'model_route':scope.get('model_route','main'), 'attempt':scope.get('attempt',1),
+        'source':'adapter', 'status':'pending'}
+    try:
+        with capture_provider_attempts() as children:
+            try:
+                yield
+                details['status'] = 'completed'
+            except BaseException as exc:
+                details.update(status='failed', error_type=type(exc).__name__)
+                raise
+    finally:
+        details['duration_seconds'] = round(time.monotonic()-started,3)
+        if not children:
+            _observe(details)
 
 
 class ProviderUsageRow(Base):
@@ -136,7 +180,8 @@ def provider_call(model, **sizes):
     ledger = scope.get('ledger')
     started = time.monotonic()
     call_id = str(uuid4())
-    details = {'model': str(model), 'purpose': scope.get('purpose', 'unspecified'),
+    details = {'call_id': call_id, 'model': str(model), 'purpose': scope.get('purpose', 'unspecified'),
+               'model_route': scope.get('model_route', 'main'), 'source': 'provider',
                'attempt': scope.get('attempt', 1),
                'status': 'pending', **{k: v for k, v in sizes.items() if k in
                 {'context_chars', 'tool_schema_chars', 'image_count'}}}
@@ -148,6 +193,7 @@ def provider_call(model, **sizes):
             except Exception as exc:
                 # Telemetry failure must not repeat a paid request or a browser action.
                 log.warning('Provider usage persistence failed: %s', type(exc).__name__)
+    _observe(details)
     persist('start')
     try:
         yield details

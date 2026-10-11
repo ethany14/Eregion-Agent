@@ -86,14 +86,16 @@ def job_key(url):
     # ATS identities ignore locale, application steps and tracking parameters.
     try:platform,key,_=posting(url)
     except ValueError:platform,key='generic',''
-    if platform in {'greenhouse','lever','workday'}:return key
+    if platform!='generic':return key
     p=urlsplit(public_https_url(url));query=dict(parse_qsl(p.query))
     if p.hostname=='linkedin.com' or (p.hostname or '').endswith('.linkedin.com'):
         match=re.search(r'/jobs/view/(?:[^/]*-)?(\d+)/?$',p.path)
         if query.get('currentJobId') or match:return 'linkedin:'+(query.get('currentJobId') or match[1])
     clean=urlencode(sorted((k,v) for k,v in query.items() if not k.lower().startswith(('utm_','tracking'))
-        and k.lower() not in {'source','ref','refid','referrer','gh_src','lever-source','ebp','origin'}))
-    return hashlib.sha256(urlunsplit((p.scheme,p.netloc,p.path.rstrip('/'),clean,'')).encode()).hexdigest()
+        and k.lower() not in {'source','ref','refid','referrer','gh_src','lever-source','ebp','origin',
+            'msockid','msclkid','gclid','fbclid'}))
+    path=re.sub(r'/(?:apply|application)(?:/.*)?$','',p.path.rstrip('/'),flags=re.I) or p.path.rstrip('/')
+    return hashlib.sha256(urlunsplit((p.scheme,p.netloc,path,clean,'')).encode()).hexdigest()
 
 
 class JobAlertRow(Base):

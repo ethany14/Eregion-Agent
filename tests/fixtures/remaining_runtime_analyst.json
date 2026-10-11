@@ -1,0 +1,113 @@
+{
+  "status": "completed",
+  "calls": 26,
+  "error": null,
+  "applications": 0,
+  "schedules": 0,
+  "final": "Found 2 current junior-level Data Analyst positions in New York for your saved resume:\n\n**Sources:**\n- LinkedIn: blocked - sign-in required, could not search without login\n- Indeed: accessible - searched `junior data analyst` in New York, NY, verified 2 postings\n\n**1. Data Analyst - GoodApple - New York, NY**\n- URL: https://www.indeed.com/jobs?l=New+York%2C+NY&q=junior+data+analyst&vjk=2233e7ae15e45957\n- Seniority fit: 0-2 years marketing or analytics experience requested - fits junior\n- Score: 43.45 / completed\n- Matched: Python experience (preferred)\n- Gaps: advanced SQL + pipelines/data architecture, client-facing dashboards/reports, excellent communication/presenting to clients\n- Caveats: In-person 4 days/week Monday-Thursday in NYC office; must be legally authorized to work in US, no visa sponsorship\n\n**2. Associate Data Analyst - Research Foundation of The City University of New York - New York, NY 10007**\n- URL: https://www.indeed.com/jobs?l=New+York%2C+NY&q=junior+data+analyst&vjk=33cd00bb496b557e\n- Seniority fit: Associate level, 1 year data management preferred, bachelor's required - fits junior\n- Score: 47.05 / completed\n- Matched: bachelor's degree (required), basic Python/R/SQL as a plus (preferred)\n- Gaps: cross-functional collaboration/stakeholder response, strong interpersonal skills, advanced Microsoft 365 / Excel / PowerPoint, energy-efficiency domain familiarity\n- Caveats: Hybrid on-site 3 days/week at 1 Centre St, NYC residency may be required; immigration sponsorship not available\n\nBoth scores are below a strong match (43-47), so I am not recommending them as strong fits - disclosing per your seniority and verification request rather than filling a quota. No applications made, no schedule created.",
+  "usage": {
+    "calls": 35,
+    "completed": 35,
+    "failed": 0,
+    "pending": 0,
+    "discarded": 0,
+    "retries": 0,
+    "input_tokens": 427620,
+    "output_tokens": 16607,
+    "unknown_usage_calls": 0,
+    "groups": [
+      {
+        "purpose": "agent",
+        "model": "muse-spark-1.3-contributor",
+        "calls": 26,
+        "input_tokens": 379895,
+        "output_tokens": 9849,
+        "unknown_usage_calls": 0,
+        "cached_input_tokens": 194426,
+        "reasoning_tokens": 6419
+      },
+      {
+        "purpose": "jev:fit:extract_requirements",
+        "model": "jev-1.13.0",
+        "calls": 2,
+        "input_tokens": 21611,
+        "output_tokens": 3084,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:refine_extraction_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 6066,
+        "output_tokens": 750,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:condition_category_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 2,
+        "input_tokens": 5227,
+        "output_tokens": 855,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:support_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 8475,
+        "output_tokens": 1470,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:focused_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 2653,
+        "output_tokens": 282,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:clarify_full_support_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 2246,
+        "output_tokens": 228,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:verify_citations_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 1447,
+        "output_tokens": 89,
+        "unknown_usage_calls": 0
+      }
+    ],
+    "cached_input_tokens": 194426,
+    "reasoning_tokens": 6419,
+    "usage_complete": true
+  },
+  "recommendations": [],
+  "verified_jobs": [
+    {
+      "application_id": "f5d394e4-5cf3-421d-9160-90caa40270c2",
+      "title": "Data Analyst",
+      "company": "GoodApple",
+      "url": "https://www.indeed.com/jobs?l=New+York%2C+NY&q=junior+data+analyst&vjk=2233e7ae15e45957",
+      "location": "New York, NY",
+      "description": "Data Analyst\nNew York, NY\nData Analyst\nGoodApple\nNew York, NY\n$69,000 - $85,000 a year\n -  \nFull-time\nApply on company site\nGood Apple is an independent agency driving an average +30% efficiency while making lives 100% easier. Built on the belief that big agency bureaucracy isn't necessary to drive scalable results, Good Apple operates as that group of friends you love to collaborate with whether you are an employee, agency, publisher, or client partner.\n\n \n\n   As an Apple, you have a unique opportunity to truly create the destiny and pathway that fuels you each day and drives you to deliver the best results for yourself as well as your clients. As a Data Analyst, you will act as a strategic partner to your clients and media team, solving complex problems through metrics and analysis. Our Data Analysts have a curious, logical mindset with an interest in advertising and digital marketing analytics, working internally across disciplines to deliver the most impactful integrated media solution for our clients.\n\n \n\n   Key Responsibilities:\n\n \n  \nCollaborate with internal teams to translate business needs into measurement plans and their implementations via website/ad-server tracking setups and data flows\n\n  \nDemocratize data and insights through data integration and the use of visualization tools\n\n  \nWork with media teams to create marketing plans and ensure measurement requirements are built into the media structure\n\n  \nTurn business requirements into metrics and implement tracking solutions to measure those metrics\n\n  \nLearn what makes an effective media plan so you can be the voice of the data for the media teams and clients to guide media planning and optimization\n\n  \nBuild dashboards and supporting SQL database setups for weekly, monthly, and quarterly reports and analyses for clients\n\n  \nProvide ad-hoc data science-driven regression analyses that discover the connections not discernible from a dashboard or spreadsheet\n\n  \nCreate clean, effective, and actionable presentations for clients and internal teams\n\n  \nExcellent analytical skills and the ability to plainly communicate results to clients and internal teams\n\n  \nLead and contribute to processes (technical or business) improvements for reporting and analysis\n\n  \nDiligently see solutions through to the end and be meticulous on QA\n\n \n \nDesired Skills/Qualifications:\n\n \n  \nBachelor's Degree with 3.0 or higher GPA or equivalent work experience\n\n  \n0-2 years of marketing or analytics experience\n\n  \nCreative problem-solving skills and clear communication of results to a non-technical audience\n\n  \nExcellent communication skills to both internal teams and clients – presenting to clients is an expectation\n\n  \nFast learner, comfortable using advanced SQL, experience working with data pipelines, understanding data architecture\n\n  \nExperience working with 3rd party media tools such as Google Campaign Manager, data visualization tools (Looker, Tableau), Cloud DBs (Snowflake, Redshift), Pipeline tools (Rivery, Fivetran), and AI platforms (Data Robot, Dataiku)\n\n  \nFamiliarity with tag managers, tagging implementation, website architecture, and CMS platforms is a plus\n\n  \nMeticulous attention to detail\n\n  \nBackground in a logic-based field or experience in a logic-focused role is ideal\n\n  \nExperience with Amazon Web Services is a plus\n\n  \nProgramming experience, Python in particular, is a plus\n\n \n \n\n   Additional Role Details\n\n \nWork Authorization: Candidates must be legally authorized to work in the United States. Good Apple is unable to provide employment visa sponsorship for this position.\n\n \nCompensation Range: $85,000 annually\n\n \nThe compensation range reflects the expected base salary for candidates who meet the specific experience, skills, and qualifications required for the role. Final compensation will be determined based on skills, experience, qualifications, and overall alignment with the position.\n\n \nBonus, Benefits & Perks: In addition to base compensation, this position is eligible for bonus opportunities, benefits, and additional employee perks.\n\n \nWork Environment: This position requires employees to work in person four days per week (Monday-Thursday) in our NYC office.\n\n \n\n \nZ8TdorkT0r",
+      "match_score": 43.45,
+      "retrieved": true
+    },
+    {
+      "application_id": "c7df27cc-5242-4e61-8b7b-b776970ab7fe",
+      "title": "Associate Data Analyst",
+      "company": "Research Foundation of The City University of New York",
+      "url": "https://www.indeed.com/jobs?l=New+York%2C+NY&q=junior+data+analyst&vjk=33cd00bb496b557e",
+      "location": "New York, NY 10007",
+      "description": "Associate Data Analyst\nNew York, NY 10007\nAssociate Data Analyst\nResearch Foundation of The City University of New York\n·\n4.2\nNew York, NY 10007\n•\nHybrid work\nUp to $70,000 a year\n -  \nFull-time\nApply on company site\nThank you for considering a career with the Research Foundation of The City University of New York (RFCUNY).\n\n \nThe team at RFCUNY is made up of dedicated, talented professionals committed to providing the services that allow CUNY researchers, faculty, and staff to focus on their intellectual curiosity and scientific discoveries.\n\n \nWe are pleased that you are interested in exploring opportunities to join RFCUNY.\n\n \n\n \nPrimary Location:\nThe CITY COLLEGE of NEW YORK \n \n\n \nBargaining Unit:\n\n \nNo\n\n \n\n \nThe City University of New York's (CUNY) Building Performance Laboratory (CUNY BPL), in partnership with the City of New York, is seeking qualified energy management professionals to join the Department of Citywide Administrative Services (DCAS) Division of Energy Management (DEM). DEM serves as the central hub for energy management across City government operations. It is responsible for developing the City’s annual Heat, Light, and Power Budget; managing the City's electricity, natural gas, and steam accounts; assisting agency partners in identifying and pursuing energy-saving opportunities; overseeing energy efficiency and clean power generation projects across the City’s portfolio; and implementing best practices in operations and maintenance. DEM is specifically tasked with leading the City's efforts to reduce emissions from City government operations by 40% by 2025 and 50% by 2030 from the baseline.\n\n \n\n \nCUNY BPL seeks to hire an Associate Data Analyst to support property and energy data management for the DEM’s Data Analytics & Reporting Team (DART). The Associate Data Analyst will support data collection from City agencies and other sources while maintaining property data in a Salesforce environment and energy data in a SQL database. This role also supports the compliance process required by Local Law 84 of 2009.\n\n \n\n \nThis is a hybrid position working on-site 3 days a week at 1 Centre St, New York, NY 10007. NYC residency may be required for continued employment. Immigration sponsorship is not available.\n\n \n\n \nResponsibilities:\n\n \nUnder this assignment, the person’s responsibilities may include the following:\n\n \n\n \n  \nSupport the annual Local Law 84 building energy benchmarking process for City buildings.\n\n  \nCollect and clean property data to ensure accuracy and integrity.\n\n  \nIdentify and resolve data discrepancies proactively.\n\n  \nCollaborate with cross-functional teams to understand data needs and respond to internal and external stakeholders.\n\n  \nAnalyze problems, propose potential solutions, and implement the most effective solution.\n\n  \nStructure large property and energy data sets to extract usable information.\n\n  \nWork with agency and external teams to support data analysis, reporting, and measurement for all agency-led initiatives.\n\n  \nPrepare property- or energy-related data and input into Salesforce or SQL data front-end, in response to agency communications via emails or extracted from external sources.\n\n  \nWork on formalizing various data maintenance policies.\n\n  \nCollect and analyze datasets to generate actionable insights.\n\n  \nDemonstrate the ability to work effectively both independently and as part of a team.\n\n  \nCollaborate with various departments using strong interpersonal skills.\nUndertake additional responsibilities as needed.\n \n \n\n \nQualifications:\n\n \nThe ideal candidate will bring the following skills and experience to this position:\n\n \n  \nA bachelor’s degree is required.\n\n  \nA minimum of 1 year data management experience is preferred.\n\n  \nStrong, verifiable experience in data analysis, data visualization, and reporting.\n\n  \nFlexibility to handle multiple responsibilities and deadlines simultaneously.\n\n  \nSelf-motivated and able to work independently as well as part of a team.\n\n  \nStrong, verifiable understanding of data management best practices.\n\n  \nStrong analytical skills with ability to collect, organize, analyze, and disseminate significant amounts of information with attention to detail and accuracy.\n\n  \nThoughtful and curious with a data-driven approach to solving business problems.\n\n  \nCommitment to delivering measurable results and a proven ability to manage projects to successful completion.\n\n  \nAdvanced knowledge of Microsoft 365 stack including MS Excel and MS PowerPoint.\n\n  \nBasic knowledge of Python, R, or SQL are a plus.\n\n  \nFamiliarity with issues pertaining to energy efficiency in existing buildings.\n\n \n \n\n \nPay Range:\n\n \nMinimum - Maximum: $70,000 per year\n\n \nRFCUNY Benefits\n\n \n\n \nEqual Employment Opportunity Statement \n\n   The Research Foundation of the City University of New York is an Equal Opportunity/Affirmative Action/Americans with Disabilities Act/E-Verify Employer. It is the policy of the Research Foundation of CUNY to provide equal employment opportunities free of discrimination based on race, color, age, religion, sex, pregnancy, childbirth, national origin, disability, marital status, veteran status, sexual orientation, gender identity, genetic information, marital status, domestic violence victim status, arrest record, criminal conviction history, or any other protected characteristic under applicable law.",
+      "match_score": 47.05,
+      "retrieved": true
+    }
+  ]
+}

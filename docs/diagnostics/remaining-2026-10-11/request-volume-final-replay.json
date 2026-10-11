@@ -1,0 +1,801 @@
+{
+  "scope": "Actual final pre-finish request reconstructed read-only; growth is synthetic capacity, not real search outcomes. Earlier per-call sizes are ledger observations only. No after-fix whole-run cost claim.",
+  "recorded_last": {
+    "request_text_chars": 60308,
+    "limit_chars": 48000,
+    "protected_overflow": true,
+    "archived_values": 8
+  },
+  "baseline_reconstructed": {
+    "request_text_chars": 60333,
+    "limit_chars": 48000,
+    "protected_overflow": true,
+    "archived_values": 8
+  },
+  "baseline_fields_chars": {
+    "goal": 428,
+    "initial_goal": 428,
+    "current_request": 560,
+    "messages": 9724,
+    "plan": 2,
+    "history": 1202,
+    "pending_question": 4,
+    "visual_fallback": 5,
+    "budget_remaining": 1,
+    "candidate": 190,
+    "resume_text": 405,
+    "search_recovery": 4698,
+    "known_results": 1975,
+    "scheduled_search": 4,
+    "recommended_jobs": 317,
+    "previous_recommendations": 2,
+    "job_alerts": 2,
+    "browser": 636,
+    "research_pages": 8763,
+    "search_source_health": 151,
+    "resume_issue": 4,
+    "has_original_pdf": 4,
+    "jobs": 1072,
+    "materials": 2,
+    "applications": 2,
+    "material_choices": 43,
+    "capability_versions": 18,
+    "interviews": 2,
+    "completion_required": 4,
+    "completion_reason": 244,
+    "live_resources": 125,
+    "context_evidence": 9921,
+    "decision_history": 2,
+    "context_read_progress": 1202
+  },
+  "after_with_actual_rejection": {
+    "request_text_chars": 45404,
+    "limit_chars": 48000,
+    "protected_overflow": false,
+    "archived_values": 17,
+    "request_parts_chars": {
+      "system": 13368,
+      "tools": 739,
+      "replay_messages": 3494,
+      "live_snapshot": 27803
+    },
+    "snapshot_field_chars": {
+      "goal": 428,
+      "initial_goal": 428,
+      "current_request": 560,
+      "messages": 968,
+      "plan": 2,
+      "history": 1895,
+      "pending_question": 4,
+      "visual_fallback": 5,
+      "budget_remaining": 1,
+      "candidate": 190,
+      "resume_text": 405,
+      "search_recovery": 4698,
+      "known_results": 2446,
+      "scheduled_search": 4,
+      "recommended_jobs": 317,
+      "previous_recommendations": 2,
+      "job_alerts": 2,
+      "browser": 636,
+      "research_pages": 1199,
+      "search_source_health": 151,
+      "resume_issue": 4,
+      "has_original_pdf": 4,
+      "jobs": 1072,
+      "materials": 2,
+      "applications": 2,
+      "material_choices": 43,
+      "capability_versions": 18,
+      "interviews": 2,
+      "completion_required": 4,
+      "completion_reason": 244,
+      "live_resources": 125,
+      "context_evidence": 9921,
+      "decision_history": 2,
+      "context_read_progress": 1202,
+      "assistant_progress_history": 86,
+      "research_page_history": 86
+    }
+  },
+  "growth": [
+    {
+      "synthetic_exclusion_count": 1,
+      "metrics": {
+        "request_text_chars": 45404,
+        "limit_chars": 48000,
+        "protected_overflow": false,
+        "archived_values": 15,
+        "request_parts_chars": {
+          "system": 13368,
+          "tools": 739,
+          "replay_messages": 3494,
+          "live_snapshot": 27803
+        },
+        "snapshot_field_chars": {
+          "goal": 428,
+          "initial_goal": 428,
+          "current_request": 560,
+          "messages": 968,
+          "plan": 2,
+          "history": 1895,
+          "pending_question": 4,
+          "visual_fallback": 5,
+          "budget_remaining": 1,
+          "candidate": 190,
+          "resume_text": 405,
+          "search_recovery": 4698,
+          "known_results": 2446,
+          "scheduled_search": 4,
+          "recommended_jobs": 317,
+          "previous_recommendations": 2,
+          "job_alerts": 2,
+          "browser": 636,
+          "research_pages": 1199,
+          "search_source_health": 151,
+          "resume_issue": 4,
+          "has_original_pdf": 4,
+          "jobs": 1072,
+          "materials": 2,
+          "applications": 2,
+          "material_choices": 43,
+          "capability_versions": 18,
+          "interviews": 2,
+          "completion_required": 4,
+          "completion_reason": 244,
+          "live_resources": 125,
+          "context_evidence": 9921,
+          "decision_history": 2,
+          "context_read_progress": 1202,
+          "assistant_progress_history": 86,
+          "research_page_history": 86
+        }
+      },
+      "full_registry_exactly_retrievable": true,
+      "qualification_score_url_preserved": true
+    },
+    {
+      "synthetic_exclusion_count": 8,
+      "metrics": {
+        "request_text_chars": 46255,
+        "limit_chars": 48000,
+        "protected_overflow": false,
+        "archived_values": 16,
+        "request_parts_chars": {
+          "system": 13368,
+          "tools": 739,
+          "replay_messages": 3494,
+          "live_snapshot": 28654
+        },
+        "snapshot_field_chars": {
+          "goal": 428,
+          "initial_goal": 428,
+          "current_request": 560,
+          "messages": 968,
+          "plan": 2,
+          "history": 1895,
+          "pending_question": 4,
+          "visual_fallback": 5,
+          "budget_remaining": 1,
+          "candidate": 190,
+          "resume_text": 405,
+          "search_recovery": 4698,
+          "known_results": 3297,
+          "scheduled_search": 4,
+          "recommended_jobs": 317,
+          "previous_recommendations": 2,
+          "job_alerts": 2,
+          "browser": 636,
+          "research_pages": 1199,
+          "search_source_health": 151,
+          "resume_issue": 4,
+          "has_original_pdf": 4,
+          "jobs": 1072,
+          "materials": 2,
+          "applications": 2,
+          "material_choices": 43,
+          "capability_versions": 18,
+          "interviews": 2,
+          "completion_required": 4,
+          "completion_reason": 244,
+          "live_resources": 125,
+          "context_evidence": 9921,
+          "decision_history": 2,
+          "context_read_progress": 1202,
+          "assistant_progress_history": 86,
+          "research_page_history": 86
+        }
+      },
+      "full_registry_exactly_retrievable": true,
+      "qualification_score_url_preserved": true
+    },
+    {
+      "synthetic_exclusion_count": 20,
+      "metrics": {
+        "request_text_chars": 46260,
+        "limit_chars": 48000,
+        "protected_overflow": false,
+        "archived_values": 16,
+        "request_parts_chars": {
+          "system": 13368,
+          "tools": 739,
+          "replay_messages": 3494,
+          "live_snapshot": 28659
+        },
+        "snapshot_field_chars": {
+          "goal": 428,
+          "initial_goal": 428,
+          "current_request": 560,
+          "messages": 968,
+          "plan": 2,
+          "history": 1895,
+          "pending_question": 4,
+          "visual_fallback": 5,
+          "budget_remaining": 1,
+          "candidate": 190,
+          "resume_text": 405,
+          "search_recovery": 4698,
+          "known_results": 3302,
+          "scheduled_search": 4,
+          "recommended_jobs": 317,
+          "previous_recommendations": 2,
+          "job_alerts": 2,
+          "browser": 636,
+          "research_pages": 1199,
+          "search_source_health": 151,
+          "resume_issue": 4,
+          "has_original_pdf": 4,
+          "jobs": 1072,
+          "materials": 2,
+          "applications": 2,
+          "material_choices": 43,
+          "capability_versions": 18,
+          "interviews": 2,
+          "completion_required": 4,
+          "completion_reason": 244,
+          "live_resources": 125,
+          "context_evidence": 9921,
+          "decision_history": 2,
+          "context_read_progress": 1202,
+          "assistant_progress_history": 86,
+          "research_page_history": 86
+        }
+      },
+      "full_registry_exactly_retrievable": true,
+      "qualification_score_url_preserved": true
+    },
+    {
+      "synthetic_exclusion_count": 58,
+      "metrics": {
+        "request_text_chars": 46261,
+        "limit_chars": 48000,
+        "protected_overflow": false,
+        "archived_values": 16,
+        "request_parts_chars": {
+          "system": 13368,
+          "tools": 739,
+          "replay_messages": 3494,
+          "live_snapshot": 28660
+        },
+        "snapshot_field_chars": {
+          "goal": 428,
+          "initial_goal": 428,
+          "current_request": 560,
+          "messages": 968,
+          "plan": 2,
+          "history": 1895,
+          "pending_question": 4,
+          "visual_fallback": 5,
+          "budget_remaining": 1,
+          "candidate": 190,
+          "resume_text": 405,
+          "search_recovery": 4698,
+          "known_results": 3303,
+          "scheduled_search": 4,
+          "recommended_jobs": 317,
+          "previous_recommendations": 2,
+          "job_alerts": 2,
+          "browser": 636,
+          "research_pages": 1199,
+          "search_source_health": 151,
+          "resume_issue": 4,
+          "has_original_pdf": 4,
+          "jobs": 1072,
+          "materials": 2,
+          "applications": 2,
+          "material_choices": 43,
+          "capability_versions": 18,
+          "interviews": 2,
+          "completion_required": 4,
+          "completion_reason": 244,
+          "live_resources": 125,
+          "context_evidence": 9921,
+          "decision_history": 2,
+          "context_read_progress": 1202,
+          "assistant_progress_history": 86,
+          "research_page_history": 86
+        }
+      },
+      "full_registry_exactly_retrievable": true,
+      "qualification_score_url_preserved": true
+    }
+  ],
+  "actual_size_summary": {
+    "calls": 58,
+    "over_48000": 46,
+    "main_input_tokens": 1015665,
+    "all_task_input_tokens": 1040163,
+    "archive_storage_chars": 1025007,
+    "counterfactual_scope": "Only the final request is reconstructed after the fix. Earlier sizes are actual ledger observations, not after-fix estimates."
+  },
+  "actual_main_request_sizes": [
+    {
+      "call": 1,
+      "context_chars": 17682,
+      "tool_schema_chars": 7042,
+      "input_tokens": 5635,
+      "output_tokens": 130,
+      "combined_text_chars": 24724
+    },
+    {
+      "call": 2,
+      "context_chars": 23294,
+      "tool_schema_chars": 11415,
+      "input_tokens": 8328,
+      "output_tokens": 302,
+      "combined_text_chars": 34709
+    },
+    {
+      "call": 3,
+      "context_chars": 26572,
+      "tool_schema_chars": 11415,
+      "input_tokens": 9358,
+      "output_tokens": 219,
+      "combined_text_chars": 37987
+    },
+    {
+      "call": 4,
+      "context_chars": 33506,
+      "tool_schema_chars": 11415,
+      "input_tokens": 11100,
+      "output_tokens": 123,
+      "combined_text_chars": 44921
+    },
+    {
+      "call": 5,
+      "context_chars": 32305,
+      "tool_schema_chars": 11415,
+      "input_tokens": 10815,
+      "output_tokens": 194,
+      "combined_text_chars": 43720
+    },
+    {
+      "call": 6,
+      "context_chars": 35328,
+      "tool_schema_chars": 11415,
+      "input_tokens": 11486,
+      "output_tokens": 294,
+      "combined_text_chars": 46743
+    },
+    {
+      "call": 7,
+      "context_chars": 30534,
+      "tool_schema_chars": 11415,
+      "input_tokens": 10806,
+      "output_tokens": 468,
+      "combined_text_chars": 41949
+    },
+    {
+      "call": 8,
+      "context_chars": 33049,
+      "tool_schema_chars": 11415,
+      "input_tokens": 11541,
+      "output_tokens": 343,
+      "combined_text_chars": 44464
+    },
+    {
+      "call": 9,
+      "context_chars": 35210,
+      "tool_schema_chars": 11415,
+      "input_tokens": 11579,
+      "output_tokens": 96,
+      "combined_text_chars": 46625
+    },
+    {
+      "call": 10,
+      "context_chars": 39212,
+      "tool_schema_chars": 7501,
+      "input_tokens": 12037,
+      "output_tokens": 410,
+      "combined_text_chars": 46713
+    },
+    {
+      "call": 11,
+      "context_chars": 31774,
+      "tool_schema_chars": 11415,
+      "input_tokens": 11214,
+      "output_tokens": 275,
+      "combined_text_chars": 43189
+    },
+    {
+      "call": 12,
+      "context_chars": 32687,
+      "tool_schema_chars": 11415,
+      "input_tokens": 11313,
+      "output_tokens": 298,
+      "combined_text_chars": 44102
+    },
+    {
+      "call": 13,
+      "context_chars": 38038,
+      "tool_schema_chars": 11415,
+      "input_tokens": 12869,
+      "output_tokens": 158,
+      "combined_text_chars": 49453
+    },
+    {
+      "call": 14,
+      "context_chars": 42561,
+      "tool_schema_chars": 11415,
+      "input_tokens": 14094,
+      "output_tokens": 372,
+      "combined_text_chars": 53976
+    },
+    {
+      "call": 15,
+      "context_chars": 43781,
+      "tool_schema_chars": 11415,
+      "input_tokens": 14532,
+      "output_tokens": 312,
+      "combined_text_chars": 55196
+    },
+    {
+      "call": 16,
+      "context_chars": 49260,
+      "tool_schema_chars": 11415,
+      "input_tokens": 15769,
+      "output_tokens": 333,
+      "combined_text_chars": 60675
+    },
+    {
+      "call": 17,
+      "context_chars": 45631,
+      "tool_schema_chars": 7501,
+      "input_tokens": 13806,
+      "output_tokens": 357,
+      "combined_text_chars": 53132
+    },
+    {
+      "call": 18,
+      "context_chars": 41649,
+      "tool_schema_chars": 11415,
+      "input_tokens": 13862,
+      "output_tokens": 438,
+      "combined_text_chars": 53064
+    },
+    {
+      "call": 19,
+      "context_chars": 41042,
+      "tool_schema_chars": 11415,
+      "input_tokens": 13745,
+      "output_tokens": 744,
+      "combined_text_chars": 52457
+    },
+    {
+      "call": 20,
+      "context_chars": 52017,
+      "tool_schema_chars": 11415,
+      "input_tokens": 17766,
+      "output_tokens": 244,
+      "combined_text_chars": 63432
+    },
+    {
+      "call": 21,
+      "context_chars": 57985,
+      "tool_schema_chars": 11415,
+      "input_tokens": 19686,
+      "output_tokens": 222,
+      "combined_text_chars": 69400
+    },
+    {
+      "call": 22,
+      "context_chars": 57876,
+      "tool_schema_chars": 11415,
+      "input_tokens": 19557,
+      "output_tokens": 470,
+      "combined_text_chars": 69291
+    },
+    {
+      "call": 23,
+      "context_chars": 53685,
+      "tool_schema_chars": 11415,
+      "input_tokens": 18539,
+      "output_tokens": 891,
+      "combined_text_chars": 65100
+    },
+    {
+      "call": 24,
+      "context_chars": 54881,
+      "tool_schema_chars": 11415,
+      "input_tokens": 20205,
+      "output_tokens": 565,
+      "combined_text_chars": 66296
+    },
+    {
+      "call": 25,
+      "context_chars": 55503,
+      "tool_schema_chars": 11415,
+      "input_tokens": 19933,
+      "output_tokens": 727,
+      "combined_text_chars": 66918
+    },
+    {
+      "call": 26,
+      "context_chars": 55809,
+      "tool_schema_chars": 11415,
+      "input_tokens": 19595,
+      "output_tokens": 638,
+      "combined_text_chars": 67224
+    },
+    {
+      "call": 27,
+      "context_chars": 61603,
+      "tool_schema_chars": 11415,
+      "input_tokens": 20783,
+      "output_tokens": 495,
+      "combined_text_chars": 73018
+    },
+    {
+      "call": 28,
+      "context_chars": 57966,
+      "tool_schema_chars": 7501,
+      "input_tokens": 18882,
+      "output_tokens": 861,
+      "combined_text_chars": 65467
+    },
+    {
+      "call": 29,
+      "context_chars": 57190,
+      "tool_schema_chars": 11415,
+      "input_tokens": 20134,
+      "output_tokens": 851,
+      "combined_text_chars": 68605
+    },
+    {
+      "call": 30,
+      "context_chars": 54586,
+      "tool_schema_chars": 11415,
+      "input_tokens": 19335,
+      "output_tokens": 788,
+      "combined_text_chars": 66001
+    },
+    {
+      "call": 31,
+      "context_chars": 58743,
+      "tool_schema_chars": 11415,
+      "input_tokens": 20109,
+      "output_tokens": 484,
+      "combined_text_chars": 70158
+    },
+    {
+      "call": 32,
+      "context_chars": 61616,
+      "tool_schema_chars": 11415,
+      "input_tokens": 21028,
+      "output_tokens": 556,
+      "combined_text_chars": 73031
+    },
+    {
+      "call": 33,
+      "context_chars": 60812,
+      "tool_schema_chars": 11415,
+      "input_tokens": 20886,
+      "output_tokens": 745,
+      "combined_text_chars": 72227
+    },
+    {
+      "call": 34,
+      "context_chars": 61862,
+      "tool_schema_chars": 11415,
+      "input_tokens": 20833,
+      "output_tokens": 1400,
+      "combined_text_chars": 73277
+    },
+    {
+      "call": 35,
+      "context_chars": 54589,
+      "tool_schema_chars": 11415,
+      "input_tokens": 19328,
+      "output_tokens": 869,
+      "combined_text_chars": 66004
+    },
+    {
+      "call": 36,
+      "context_chars": 56105,
+      "tool_schema_chars": 11415,
+      "input_tokens": 19428,
+      "output_tokens": 1222,
+      "combined_text_chars": 67520
+    },
+    {
+      "call": 37,
+      "context_chars": 59375,
+      "tool_schema_chars": 11415,
+      "input_tokens": 20243,
+      "output_tokens": 1102,
+      "combined_text_chars": 70790
+    },
+    {
+      "call": 38,
+      "context_chars": 59766,
+      "tool_schema_chars": 11415,
+      "input_tokens": 20326,
+      "output_tokens": 780,
+      "combined_text_chars": 71181
+    },
+    {
+      "call": 39,
+      "context_chars": 61483,
+      "tool_schema_chars": 11415,
+      "input_tokens": 21208,
+      "output_tokens": 334,
+      "combined_text_chars": 72898
+    },
+    {
+      "call": 40,
+      "context_chars": 58432,
+      "tool_schema_chars": 11415,
+      "input_tokens": 20344,
+      "output_tokens": 636,
+      "combined_text_chars": 69847
+    },
+    {
+      "call": 41,
+      "context_chars": 58113,
+      "tool_schema_chars": 11415,
+      "input_tokens": 20424,
+      "output_tokens": 1340,
+      "combined_text_chars": 69528
+    },
+    {
+      "call": 42,
+      "context_chars": 63842,
+      "tool_schema_chars": 11415,
+      "input_tokens": 21566,
+      "output_tokens": 126,
+      "combined_text_chars": 75257
+    },
+    {
+      "call": 43,
+      "context_chars": 64198,
+      "tool_schema_chars": 11415,
+      "input_tokens": 21590,
+      "output_tokens": 668,
+      "combined_text_chars": 75613
+    },
+    {
+      "call": 44,
+      "context_chars": 61641,
+      "tool_schema_chars": 11415,
+      "input_tokens": 21050,
+      "output_tokens": 642,
+      "combined_text_chars": 73056
+    },
+    {
+      "call": 45,
+      "context_chars": 64060,
+      "tool_schema_chars": 7501,
+      "input_tokens": 20706,
+      "output_tokens": 838,
+      "combined_text_chars": 71561
+    },
+    {
+      "call": 46,
+      "context_chars": 63830,
+      "tool_schema_chars": 11415,
+      "input_tokens": 21724,
+      "output_tokens": 737,
+      "combined_text_chars": 75245
+    },
+    {
+      "call": 47,
+      "context_chars": 58271,
+      "tool_schema_chars": 11415,
+      "input_tokens": 20387,
+      "output_tokens": 333,
+      "combined_text_chars": 69686
+    },
+    {
+      "call": 48,
+      "context_chars": 59153,
+      "tool_schema_chars": 11415,
+      "input_tokens": 20621,
+      "output_tokens": 870,
+      "combined_text_chars": 70568
+    },
+    {
+      "call": 49,
+      "context_chars": 64512,
+      "tool_schema_chars": 7501,
+      "input_tokens": 21012,
+      "output_tokens": 184,
+      "combined_text_chars": 72013
+    },
+    {
+      "call": 50,
+      "context_chars": 62979,
+      "tool_schema_chars": 11415,
+      "input_tokens": 21172,
+      "output_tokens": 402,
+      "combined_text_chars": 74394
+    },
+    {
+      "call": 51,
+      "context_chars": 59888,
+      "tool_schema_chars": 11415,
+      "input_tokens": 20546,
+      "output_tokens": 513,
+      "combined_text_chars": 71303
+    },
+    {
+      "call": 52,
+      "context_chars": 60310,
+      "tool_schema_chars": 11415,
+      "input_tokens": 20676,
+      "output_tokens": 675,
+      "combined_text_chars": 71725
+    },
+    {
+      "call": 53,
+      "context_chars": 61280,
+      "tool_schema_chars": 11415,
+      "input_tokens": 20781,
+      "output_tokens": 275,
+      "combined_text_chars": 72695
+    },
+    {
+      "call": 54,
+      "context_chars": 65698,
+      "tool_schema_chars": 11415,
+      "input_tokens": 21826,
+      "output_tokens": 300,
+      "combined_text_chars": 77113
+    },
+    {
+      "call": 55,
+      "context_chars": 65474,
+      "tool_schema_chars": 7501,
+      "input_tokens": 20947,
+      "output_tokens": 321,
+      "combined_text_chars": 72975
+    },
+    {
+      "call": 56,
+      "context_chars": 60850,
+      "tool_schema_chars": 11415,
+      "input_tokens": 20795,
+      "output_tokens": 1408,
+      "combined_text_chars": 72265
+    },
+    {
+      "call": 57,
+      "context_chars": 57521,
+      "tool_schema_chars": 11415,
+      "input_tokens": 19962,
+      "output_tokens": 550,
+      "combined_text_chars": 68936
+    },
+    {
+      "call": 58,
+      "context_chars": 59569,
+      "tool_schema_chars": 739,
+      "input_tokens": 17843,
+      "output_tokens": 736,
+      "combined_text_chars": 60308
+    }
+  ],
+  "regression": "tmp/remaining-request-volume-integrated.xml:107 passed/53.808s",
+  "preserved_first_failure": "tmp/remaining-request-volume-tests.xml:4 passed/1 fixture failure (None hash overwrote real source hash)",
+  "raw_original": "tmp/remaining-live-analyst-interval-completion/test_long_real_search_conversa0",
+  "archive_storage_is_not_provider_input": true
+}

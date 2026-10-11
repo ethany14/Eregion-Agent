@@ -50,3 +50,5 @@ Degree requirements need explicit degree evidence; coursework alone is insuffici
 qualifications (degree OR equivalent experience) and completion constraints exactly as stated.
 A missing/needs_confirmation item can have an empty evidence_ids.
 """
+from job_agent.partial_support import PARTIAL_POLICY
+COMPACT_MATCH_PROMPT += '\n' + PARTIAL_POLICY

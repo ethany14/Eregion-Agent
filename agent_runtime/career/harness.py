@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from agent_runtime.task_loop import TEXT, function
 from agent_runtime.auto_apply.contracts import ChatRequest, StartApplication
-from agent_runtime.auto_apply.repository import DuplicateApplication
+from agent_runtime.auto_apply.repository import DuplicateApplication, ApplyConflict
 from agent_runtime.application_pack.rendering import render_cover_letter
 from agent_runtime.workspace.types import ArtifactType
 from job_agent.rendering import render_tailored_resume_text
@@ -28,9 +28,9 @@ TOOLS = [
         {'message_id':TEXT,'alert_id':TEXT,'enabled':{'type':'boolean'}}),
     function('recommend_job','Recommend an actually read and scored job in this conversation, with fit reasons and uncertainties. Also adds it to the digest when this task was started by a schedule. No schedule is needed for a normal search.',
         {**APP,'reason':TEXT,'caveats':TEXT}),
-    function('search_jobs','Supplementary HTTP/API search when browser search is unavailable or broader coverage helps. Prefer browser tools for normal job discovery, especially requested LinkedIn searches. Optional boards contain platform and company board token.',
+    function('search_jobs','HTTP/API discovery, especially after a browser source is blocked. Requested initial sources must still be attempted. Returns observed posting links; read, import, batch score and recommend them. Optional boards contain platform and company board token.',
         {'query':TEXT,'location':TEXT,'boards':{'type':'array','maxItems':5,'items':{'type':'object',
-            'properties':{'platform':{'type':'string','enum':['greenhouse','lever']},'company':TEXT},
+            'properties':{'platform':{'type':'string','enum':['greenhouse','lever','ashby','workday']},'company':TEXT,'host':TEXT,'site':TEXT},
             'required':['platform','company'],'additionalProperties':False}},'limit':{'type':'integer','minimum':1,'maximum':20}},['query']),
     function('screen_jobs','Quickly rank a batch of actually observed job links against a short search query. Use after browser search to choose which descriptions to read and score. Advisory only; cannot replace score_job or establish eligibility. Unknowns remain available to you.',
         {'urls':{'type':'array','minItems':1,'maxItems':20,'items':TEXT},'query':TEXT}),
@@ -52,8 +52,8 @@ TOOLS = [
     function('remember_evidence','Save a career fact explicitly supplied by the user, quoting their exact words. Use it for grounded materials.',
         {'message_id':TEXT,'quote':TEXT,'application_id':TEXT},['message_id','quote']),
     function('start_application','Open/focus an application using this job\'s current approved documents. Omit pack_id to use explicit per-document choices across packs. Optional pack_id must not conflict with an explicit choice; missing document types use valid explicit choices. Original explicitly selects the saved PDF. Cannot submit.',
-        {**APP,'pack_id':TEXT,'resume_source':{'type':'string','enum':['auto','original','tailored']}},['application_id']),
-    function('open_application_url','Open a direct application URL with the saved original resume when the user wants to apply without analysis, including when the public job description is unreadable. Existing attempts retain their documents. Cannot submit.',{'url':TEXT}),
+        {**APP,'application_ids':{'type':'array','items':TEXT,'minItems':1,'maxItems':4},'pack_id':TEXT,'resume_source':{'type':'string','enum':['auto','original','tailored']}},[]),
+    function('open_application_url','Open one url or up to four urls with the saved original resume. Use urls for apply-to-both requests. Returns actual starts, reuse and failures; never claim more applications than the returned results. Cannot submit.',{'url':TEXT,'urls':{'type':'array','items':TEXT,'minItems':1,'maxItems':4}},[]),
     function('inspect_application','Read the live browser progress, outstanding question and verified outcome. Observed answers are the actual review outcome. include_fields returns compact controls; request field_key only to investigate one original control. Do not reread the entire form to report its outcome. Wait while the worker is running.',{'run_id':TEXT,'include_fields':{'type':'boolean'},'field_key':TEXT},['run_id']),
     function('reply_application','Forward a user message verbatim to the linked application agent. Never invent an answer.',
         {'run_id':TEXT,'message_id':TEXT}),
@@ -69,12 +69,16 @@ TOOLS = [
 
 
 class CareerHarness:
+    # Bound replay cost as well as live observation size. Complete source data
+    # remains in ContextArchive; permission facts/live controls stay protected.
+    request_chars = 48000
     tools, prompt = [*TOOLS,*BROWSER_TOOLS],SYSTEM
     # These reads do not alter browser observation tokens or external state.
     batchable_tools = frozenset({'list_jobs', 'inspect_job', 'inspect_materials', 'inspect_interview'})
 
     def available_tools(self,state):
         from agent_runtime.fast_decisions import configured_decisions
+        from .search_recovery import search_request
         tools=[t for t in self.tools if state.get('visual_fallback') or t['function']['name'] not in VISUAL_NAMES]
         # Offer operations for resources that actually exist in this process.
         # browser_open remains available for independent research at any time.
@@ -89,6 +93,11 @@ class CareerHarness:
         if self.recommendation_run(state):
             allowed=BROWSER_NAMES|{'search_jobs','screen_jobs','read_job','import_job','inspect_job','score_job','score_jobs','recommend_job'}
             return [t for t in tools if t['function']['name'] in allowed]
+        latest_text=latest['text'] if latest else state.get('goal','')
+        positive=re.sub(r'\b(?:do not|don.t|never)\b[^.!?]*','',latest_text,flags=re.I)
+        if search_request(state) and not re.search(r'\b(?:apply|submit|interview|tailor|letter|schedule|alert|write|draft|prepare|materials?|rewrite|update|create)\b',positive,re.I):
+            allowed=BROWSER_NAMES|{'search_jobs','screen_jobs','read_job','import_job','list_jobs','inspect_job','score_job','score_jobs','recommend_job'}
+            tools=[t for t in tools if t['function']['name'] in allowed]
         return tools
 
     def recommendation_run(self,state):
@@ -112,6 +121,8 @@ class CareerHarness:
         self._resume_cache = (None,'')
         self._resume_issue = None
         self._browsing = None
+        from .interview_queue import InterviewQueue
+        self.interview_inputs = InterviewQueue(self)
 
     @property
     def browsing(self):
@@ -121,6 +132,7 @@ class CareerHarness:
         return self._browsing
 
     def close(self):
+        self.interview_inputs.close()
         if self._browsing:self._browsing.close()
 
     def candidate(self):
@@ -144,16 +156,38 @@ class CareerHarness:
         return saved,text
 
     def observe(self,state):
+        from .search_recovery import recovery
+        from .search_policy import constraints
+        from .source_health import coverage, projection
         self.sync_submissions(state)
         saved,text = self.candidate()
         recommendation=self.recommendation_run(state)
+        latest=next((m['text'] for m in reversed(state.get('messages',[])) if m.get('role')=='user'),state['goal'])
+        # Index existing resources rather than duplicating every score, field,
+        # document and interview inside each observation.
+        known={'request':latest,'jobs':list(state['jobs']),
+            'scored_not_recommended':[j for j in state.get('scored_job_evidence',{}).values()
+                if not any(r.get('application_id')==j['application_id'] for r in state.get('recommendations',[]))],
+            'materials':list(state['packs']), 'applications':list(state['application_runs']),
+            'interviews':list(state['interviews']),
+            'recent_outcomes':[{'tool':h['tool'],**{k:h.get('result',{})[k] for k in
+                ('no_new_evidence','error','error_code','blocked','url','next') if isinstance(h.get('result'),dict) and k in h['result']}}
+                for h in state.get('history',[])[-4:]],
+            'instruction':'These IDs index live saved results. Scored is not recommended. For scored_not_recommended, decide whether the actual vacancy meets requested role/location/seniority: call recommend_job with full caveats if eligible, or explain the specific exclusion. Low skill fit alone does not prohibit a disclosed recommendation. Use exact qualification_evidence rather than guessing missing years. Never auto-recommend unverified/ineligible jobs. Final search results include each read/scored URL and actual score even if not recommended.'}
+        from .candidate_health import active_rejections
+        known['excluded_candidates']=active_rejections(state)
         return {'candidate':saved.get('profile',{}),'resume_text':text[:40000],
+            'search_recovery':recovery(state,saved_urls=[self.runtime.workspace.application_job(a).canonical_url for a in state['jobs']]),
+            'known_results':known,
             'scheduled_search':recommendation,
             'recommended_jobs':state.get('recommendations',[]),
             'previous_recommendations':self.alerts.recommended() if recommendation else [],
             'job_alerts':self.alerts.list() if getattr(self,'alerts',None) and not recommendation else [],
             'browser':state.get('browser'),
             'research_pages': [{k: (v[:400] if k == 'excerpt' else [{a:b for a,b in link.items() if a in {'url','label'}} for link in v[:6]] if k == 'links' else v) for k,v in page.items() if k in {'url','title','blocked','links','excerpt'}} for page in state.get('research_pages', [])],
+            'search_source_health':projection(state),
+            'search_constraints':constraints(state),
+            'search_coverage':coverage(state),
             'visual_fallback':bool(state.get('visual_fallback')),
             'resume_issue':self._resume_issue if saved.get('resume_base64') else None,
             'has_original_pdf':bool(saved.get('resume_base64')),
@@ -177,11 +211,21 @@ class CareerHarness:
         result = {'application_id':application_id,'title':job.title,'company':job.company,'url':job.canonical_url,
             'location':job.location,'status':app.status.value,'match_score':match.content.get('overall_score') if match else None,
             'result_at':(match.created_at if match else app.created_at).isoformat()}
+        from .presentation import display_label
+        result['status_label']=display_label(app.status.value)
         if match:
-            result.update(self.requirement_summary(match.content))
-            result['match_overview'] = self.match_overview(match.content)
+            parsed=next((a for a in reversed(artifacts) if a.artifact_type==ArtifactType.JOB_ANALYSIS
+                and a.created_at>=boundary),None)
+            requirements=parsed.content.get('requirements',[]) if parsed else []
+            from job_agent.jev_fit.core import job_units
+            body=rt.workspace.current_snapshot(application_id).cleaned_job_description
+            result['qualification_evidence']=[{'quote':u['text'],'start':u['start'],'end':u['end']}
+                for u in job_units(body) if re.search(r'\b\d+(?:\s*[-–]\s*\d+|\+)?\s+years?\b',u['text'],re.I)][:8]
+            result.update(self.requirement_summary(match.content,requirements))
+            result['match_overview'] = self.match_overview(match.content,requirements)
             result.update(score_range=match.content.get('score_range'),
                 analysis_status=match.content.get('analysis_status','completed'),
+                analysis_status_label=display_label(match.content.get('analysis_status','completed')),
                 score_algorithm=match.content.get('algorithm','legacy'),
                 score_valid_until=match.content.get('valid_until'))
         if detail:
@@ -190,27 +234,34 @@ class CareerHarness:
         return result
 
     @staticmethod
-    def match_overview(report):
+    def match_overview(report,requirements=()):
+        from .presentation import display_label
+        names={r['requirement_id']:r.get('display_name') or r.get('canonical_name') for r in requirements if r.get('requirement_id')}
         matches = [m for m in report.get('matches', []) if isinstance(m, dict)]
         result = {'explanation': report.get('explanation', ''),
                   'score_range':report.get('score_range'),
                   'analysis_status':report.get('analysis_status','completed'),
+                  'analysis_status_label':display_label(report.get('analysis_status','completed')),
                   'detail_hint': 'Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.'}
         for status in ('matched', 'partial', 'missing', 'needs_confirmation', 'unknown', 'confirmed_condition'):
             rows = [m for m in matches if m.get('match_status') == status]
-            result[status] = [{'requirement': m.get('job_skill'), 'level': m.get('requirement_level'),
+            result[status] = [{'requirement': display_label(names.get(m.get('requirement_id')) or m.get('display_name') or m.get('job_skill')),
+                              'display_name':display_label(names.get(m.get('requirement_id')) or m.get('display_name') or m.get('job_skill')),
+                              'status_label':display_label(status),'level': m.get('requirement_level'),
                               **({'satisfied':m.get('condition_satisfied')} if status=='confirmed_condition' else {})}
                               for m in (rows[:8] if status == 'matched' else rows)]
         return result
 
     @staticmethod
-    def requirement_summary(report):
+    def requirement_summary(report,requirements=()):
         """Counts by match status and the first few gaps, for the job card in chat."""
         matches = [m for m in report.get('matches') or [] if isinstance(m,dict)]
         counts = {status:sum(m.get('match_status')==status for m in matches)
             for status in ('matched','partial','missing','needs_confirmation','unknown','confirmed_condition')}
         missing = [*(report.get('missing_required_requirements') or []),*(report.get('missing_preferred_requirements') or [])]
-        gaps = list(dict.fromkeys(str(m.get('canonical_name')).strip() for m in missing
+        from .presentation import display_label
+        names={r.get('canonical_name'):r.get('display_name') for r in requirements if r.get('display_name')}
+        gaps = list(dict.fromkeys(display_label(names.get(m.get('canonical_name')) or m.get('display_name') or m.get('canonical_name')) for m in missing
             if isinstance(m,dict) and str(m.get('canonical_name') or '').strip()))[:3]
         return {'requirement_counts':counts if matches else None,'gaps':gaps}
 
@@ -313,7 +364,9 @@ class CareerHarness:
         return view
 
     def route_user_control(self,state,message):
-        """Route only unambiguous, explicit interview endings without a model."""
+        """Queue interview answers and explicit controls before model routing."""
+        routed=self.interview_inputs.route(state,message)
+        if routed:return routed
         text=message['text'].strip().rstrip('.!。！').casefold()
         if text not in {'end interview','end the interview','end this interview',
                         'finish interview','finish the interview','end this practice and show my report',
@@ -341,6 +394,10 @@ class CareerHarness:
     @staticmethod
     def user_message(state,identifier):
         message = next((m for m in state['messages'] if m['id']==identifier and m['role']=='user'),None)
+        if not message:
+            entry=next((e for e in state.get('interview_queue',[]) if e['message_id']==identifier),None)
+            if entry:message={'id':identifier,'role':'user','text':entry['text'],'at':entry['at'],
+                'context':{'interview_id':entry['interview_id']}}
         if not message:raise ValueError('Cite an actual user message from this conversation.')
         return message
 
@@ -353,13 +410,42 @@ class CareerHarness:
         inputs = [resume_text,snapshot_id,self.analysis.cache_signature(),self.fit_facts()]
         return hashlib.sha256(json.dumps(inputs).encode()).hexdigest()
 
+    def save_scored_evidence(self,task_id,identifiers):
+        results={identifier:{k:v for k,v in self.job_summary(identifier).items() if k in {
+            'application_id','title','company','url','location','match_score','score_range','qualification_evidence'}}
+            for identifier in identifiers}
+        self.repository.change(task_id,lambda s:{'scored_job_evidence':{**s.get('scored_job_evidence',{}),**results}})
+
     def fit_facts(self):
         profile=self.applications.repository.saved_candidate().get('profile',{})
         # Location is explicit saved data, never a proxy for citizenship/permission.
         return {k:profile[k]for k in ('city','country')if profile.get(k)} or None
 
     def execute(self,task_id,name,args,*,call_id):
+        acquisition=name in BROWSER_NAMES or name in {'read_job','import_job'}
+        if acquisition:
+            from .source_health import browser_preflight, record_failure
+            state=self.repository.get(task_id)
+            observed=self._browsing.inspect(task_id) if self._browsing else None
+            # Importing a captured same-posting body is local, like a literal
+            # user quote. Inner candidate preflight and posting validation still
+            # run. A read, an uncached target, or another identity needs access.
+            cached_import=name=='import_job' and any(j.get('url') and j.get('description')
+                and job_key(j['url'])==job_key(args.get('url','')) for j in state.get('retrieved_jobs',{}).values())
+            if not (name=='import_job' and args.get('job_text') or cached_import):
+                browser_preflight(state,name,args,observed)
+        try:return self._execute(task_id,name,args,call_id=call_id)
+        except Exception as exc:
+            if acquisition:
+                record_failure(self.repository,task_id,args.get('url') or (observed or {}).get('url'),exc,observed)
+            raise
+
+    def _execute(self,task_id,name,args,*,call_id):
         state = self.repository.get(task_id)
+        from .candidate_health import preflight
+        if name in {'browser_open','browser_read','read_job','import_job'}:
+            observed=self._browsing.inspect(task_id) if self._browsing else None
+            preflight(state,name,args,observed)
         rt = self.runtime
         key = self.key(state,name,args)
         recommendation=self.recommendation_run(state)
@@ -397,12 +483,17 @@ class CareerHarness:
                 raise ValueError('A confirmed personal condition is not satisfied; this job cannot be recommended as eligible.')
             retrieved=next((j for j in state.get('retrieved_jobs',{}).values() if j.get('url') and job_key(j['url'])==job_key(job['url'])),None)
             if not retrieved:raise ValueError('Read the current posting before recommending it.')
+            from .search_policy import constraints, recommendation_warning
+            policy=constraints(state)
+            warning=recommendation_warning(policy,job['title'] or '')
             if not isinstance(args['reason'],str) or not 1<=len(args['reason'])<=2000 or not isinstance(args['caveats'],str) or len(args['caveats'])>2000:
                 raise ValueError('Keep the recommendation reason and caveats concise.')
             payload={k:job[k] for k in ('application_id','title','company','location','url','match_score')}|{'reason':args['reason'],'caveats':args['caveats']}
+            if warning:
+                payload.update(seniority_warning=warning,caveats=(warning['message']+' '+args['caveats']).strip())
             if job['match_score'] is None:
                 payload.update(score_range=interval,analysis_status=job.get('analysis_status'),
-                    caveats=('Unresolved qualifications: fit is an interval, not a point score. '+args['caveats']).strip())
+                    caveats=('Unresolved qualifications: fit is an interval, not a point score. '+payload['caveats']).strip())
             if recommendation:
                 result=self.alerts.add(recommendation['run_id'],payload)
                 if not result['added']:return result
@@ -418,42 +509,99 @@ class CareerHarness:
                 current=self.repository.get(task_id)
                 return current['chat_revision']==revision and not current.get('pause_requested') and current['status'] not in {'cancelled','completed'}
             result=self.browsing.call(task_id,name,args,visual=bool(state.get('visual_fallback')),active=active)
-            summary={k:result.get(k) for k in ('url','heading','title','blocked','tabs','observation_id')}
+            from .source_health import record_browser
+            record_browser(self.repository,task_id,result)
+            summary={k:result.get(k) for k in ('url','heading','title','blocked','tabs','observation_id','page_evidence_hash','job_detail')}
+            summary['regions']=[{k:r[k] for k in ('ref','label','tag','text_length') if k in r}
+                for r in result.get('regions',[])[:6]]
             from agent_runtime.browser.evidence import research_page
             page = research_page(result)
             def remember(current):
+                from .search_recovery import candidates_from_page, search_request
+                candidates={**current.get('observed_job_candidates',{}),
+                    **candidates_from_page(result,search_request(current))}
                 pages = list(current.get('research_pages', []))
                 prior = next((p for p in pages if p.get('url') == page['url']), None)
                 if not page['links'] and prior:
                     page['links'] = prior.get('links', [])
                 pages = [p for p in pages if p.get('url') != page['url']]
-                return {'browser': summary, 'active_browser': 'research', 'research_pages': [*pages, page][-8:]}
+                return {'browser': summary, 'active_browser': 'research', 'research_pages': [*pages, page][-8:],
+                    'observed_job_candidates':dict(list(candidates.items())[-60:])}
             self.repository.change(task_id, remember)
             return result
         if name=='search_jobs':
-            result = self.discovery.search(**args)
+            from urllib.parse import urlsplit
+            from .source_health import blocked_hosts as persistent_blocked_hosts
+            blocked_hosts=persistent_blocked_hosts(state)
+            search_args={**args,**({'excluded_hosts':blocked_hosts} if blocked_hosts else {})}
+            health=state.get('search_source_health') or {}
+            from .source_health import user_turn
+            turn=user_turn(state)
+            sources=dict(health.get('sources',{})) if health.get('user_turn_id')==turn else {}
+            exhausted=[source for source,item in sources.items() if item.get('blocked') or item.get('empty_count',0)>=2]
+            if exhausted:search_args['excluded_sources']=exhausted
+            # A presentation-only limit change must not refetch the same
+            # exhausted result list. A larger limit can expand a genuinely
+            # truncated list; changed source health/new user input can retry.
+            request_key=hashlib.sha256(json.dumps({
+                'query':str(args['query']).strip().casefold(),
+                'location':str(args.get('location','')).strip().casefold(),
+                'boards':args.get('boards'), 'excluded_hosts':blocked_hosts,
+                'excluded_sources':sorted(exhausted)},sort_keys=True).encode()).hexdigest()
+            attempts=state.get('search_request_cache',{})
+            attempts=dict(attempts.get('requests',{})) if attempts.get('user_turn_id')==turn else {}
+            previous=attempts.get(request_key)
+            if previous and (args.get('limit',10)<=previous['limit'] or len(previous['result'].get('jobs',[]))<previous['limit']):
+                return {**previous['result'],'no_new_evidence':True,
+                    'progress_feedback':'This search/source configuration already returned this list in the current user turn. No HTTP repeated. Verify a healthy observed posting, or discover a genuinely different query/source. Cached snippets are not verified vacancies.'}
+            result = self.discovery.search(**search_args)
+            if blocked_hosts:result['excluded_blocked_hosts']=blocked_hosts
             jobs = result.get('jobs', [])
-            self.repository.change(task_id, lambda s: {'search_candidates': dict(list({
-                **s.get('search_candidates', {}), **{j['url']: j for j in jobs}}.items())[-60:])})
+            for error in result.get('errors',[]):
+                source=error.get('source')
+                if not source:continue
+                old=sources.get(source,{})
+                sources[source]={'blocked':bool(error.get('blocked')),
+                    'empty_count':old.get('empty_count',0)+int(error.get('error')=='no_extracted_results'),
+                    'error':error.get('error'),'last_query':args['query']}
+            for job in jobs:
+                if job.get('source_engine'):sources.pop(job['source_engine'],None)
+            # Keep the entire turn's exclusion table. Truncating to eight lets
+            # old blocked tenants re-enter after other boards were attempted.
+            health={'revision':state['chat_revision'],'user_turn_id':turn,'sources':sources}
+            attempts[request_key]={'limit':args.get('limit',10),'result':result}
+            def remember_search(s):
+                # Preserve navigation URLs but key storage by posting identity;
+                # tracking-only variants must not evict genuinely new targets.
+                candidates={job_key(j['url']):j for j in s.get('search_candidates',{}).values() if j.get('url')}
+                candidates.update({job_key(j['url']):j for j in jobs})
+                return {'search_source_health':health,'search_candidates':dict(list(candidates.items())[-60:]),
+                    'search_request_cache':{'user_turn_id':turn,'requests':dict(list(attempts.items())[-32:])}}
+            self.repository.change(task_id,remember_search)
             from agent_runtime.fast_decisions import configured_decisions
             if jobs and configured_decisions().enabled:
                 screened = self.screen(task_id, state, jobs, args['query'] + ' ' + args.get('location', ''))
                 result.update(screened)
             return result
         if name=='screen_jobs':
-            candidates = {**state.get('search_candidates', {}), **state.get('retrieved_jobs', {})}
+            candidates = {job_key(j['url']):j for j in [*state.get('search_candidates',{}).values(),
+                *state.get('retrieved_jobs',{}).values()] if j.get('url')}
             observed = self._browsing.inspect(task_id) if self._browsing else None
             if observed and not observed.get('blocked'):
                 for control in observed.get('controls', []):
                     url = control.get('href')
                     if url and url.startswith('https://'):
-                        candidates.setdefault(url, {'url':url,'title':control.get('label',''),
+                        candidates.setdefault(job_key(url), {'url':url,'title':control.get('label',''),
                                                    'context':control.get('context','')})
             urls = list(dict.fromkeys(args['urls']))
-            if not 1 <= len(urls) <= 20 or any(url not in candidates for url in urls):
+            if not 1 <= len(urls) <= 20 or any(job_key(url) not in candidates for url in urls):
                 raise ValueError('Screen only links from observed browser/search results or retrieved jobs.')
-            return self.screen(task_id, state, [candidates[url] for url in urls], args['query'])
+            return self.screen(task_id, state, [candidates[job_key(url)] for url in urls], args['query'])
         if name=='read_job':
+            # Persist attempted identities even when the read rejects a blocked or
+            # ambiguous page, so completion recovery cannot force an endless retry.
+            self.repository.change(task_id,lambda s:{'job_read_attempts':dict(list({
+                **s.get('job_read_attempts',{}),job_key(args['url']):state['chat_revision']}.items())[-100:])})
             observed = self._browsing.inspect(task_id) if self._browsing else None
             from agent_runtime.auto_apply.contracts import public_https_url
             url=public_https_url(args['url'])
@@ -464,7 +612,11 @@ class CareerHarness:
                 read_args={k:args[k] for k in ('region_ref','observation_id') if k in args}
                 read_args['job_only']=True
                 first=self.browsing.call(task_id,'browser_read',read_args)
+                from .source_health import record_browser
+                record_browser(self.repository,task_id,first)
                 if first.get('blocked'):raise ValueError('Finish the account/verification step before reading a public job description.')
+                if first.get('body_scope')=='unbounded':
+                    raise ValueError('No single bounded description. Select this posting\'s description region; whole-page text cannot establish its requirements.')
                 linked=any(c.get('href') and c['href'].startswith('https://') and job_key(c['href'])==job_key(url)
                     for c in first.get('controls',[]))
                 if job_key(url)!=job_key(first['url']) and not (args.get('region_ref') and linked):
@@ -475,16 +627,21 @@ class CareerHarness:
                     page_args={'text_offset':offset,'job_only':True}
                     if args.get('region_ref'):page_args.update(region_ref=args['region_ref'],observation_id=latest['observation_id'])
                     part=self.browsing.call(task_id,'browser_read',page_args)
+                    record_browser(self.repository,task_id,part)
                     if part.get('blocked') or part['url']!=first['url'] or part.get('primary_heading')!=first.get('primary_heading'):
                         raise ValueError('The page changed while reading. Inspect it again.')
                     pieces.append(part.get('text',''))
                     latest=part
                 # These are character slices of one string, sometimes inside a word.
-                description=''.join(pieces).strip()
+                description='\n'.join(filter(None,[first.get('primary_heading'),first.get('job_company'),
+                    first.get('job_location'),first.get('job_header_text'),''.join(pieces).strip()]))
                 if len(description)<100:raise ValueError('This panel has too little job detail. Open the posting or expand its description before reading it.')
-                job={'url':url,'title':first.get('primary_heading') or first.get('title'),'company':'','location':'',
+                job={'url':url,'title':first.get('primary_heading') or first.get('title'),
+                    'company':first.get('job_company',''),'location':first.get('job_location',''),
                     'description':description,'source':'rendered_browser','page_url':first['url']}
             else:job = self.discovery.job(args['url'])
+            from .candidate_health import validate_and_record
+            validate_and_record(self.repository,task_id,job,observed)
             self.repository.change(task_id,lambda s:{'retrieved_jobs':dict(list({**s.get('retrieved_jobs',{}),job['url']:job,args['url']:job}.items())[-20:])})
             return job
         if name=='import_job':
@@ -518,6 +675,8 @@ class CareerHarness:
                 raise ValueError('A message ID alone does not identify job text. Use read_job for the posting URL, or provide job_text quoting the pasted JD; never import the task instruction.')
             else:
                 job = self.discovery.job(args['url'])
+            from .candidate_health import validate_and_record
+            validate_and_record(self.repository,task_id,job,self._browsing.inspect(task_id) if self._browsing else None)
             if job.get('source')=='rendered_browser':
                 # Metadata must be present in the captured panel as well.
                 normalize=lambda value:re.sub(r'\s+',' ',str(value)).strip().casefold()
@@ -567,6 +726,7 @@ class CareerHarness:
             asyncio.run(self.analysis.analyze_many(identifiers,resume_text=text,candidate_facts=self.fit_facts()))
             fingerprints={a:self.analysis_fingerprint(text,rt.workspace.get_application(a).current_snapshot_id)for a in identifiers}
             self.repository.change(task_id,lambda s:{'analyses':{**s.get('analyses',{}),**fingerprints}})
+            self.save_scored_evidence(task_id,identifiers)
             return {'jobs':[self.job_summary(a)for a in identifiers]}
         if name=='score_job':
             saved,text = self.candidate()
@@ -578,6 +738,7 @@ class CareerHarness:
                 asyncio.run(self.analysis.analyze(app.application_id,snapshot_id=app.current_snapshot_id,
                     resume_text=text,expected_version=app.version,candidate_facts=self.fit_facts()))
                 self.repository.change(task_id,lambda s:{'analyses':{**s.get('analyses',{}),app.application_id:fingerprint}})
+            self.save_scored_evidence(task_id,[app.application_id])
             return self.job_summary(app.application_id,detail=True)
         if name=='generate_materials':
             artifacts = args['artifacts']
@@ -668,12 +829,34 @@ class CareerHarness:
             message = self.user_message(state,args['message_id'])
             current = rt.mock_interviewer.interviews.get(args['interview_id'])
             if name=='answer_interview':
-                if current.current_question_id!=args['question_id']:raise ValueError('The interview question changed. Inspect it before sending this answer.')
-                rt.mock_interviewer.answer(current.mock_interview_id,message['text'],expected_version=current.version,
-                    idempotency_key=f'career:{message["id"]}:{args["question_id"]}')
+                answer_key=f'career:{message["id"]}:{args["question_id"]}'
+                previous=rt.mock_interviewer.interviews.answer_by_key(current.mock_interview_id,answer_key)
+                if previous and previous.original_text!=message['text']:
+                    raise ValueError('The saved interview answer differs from this message.')
+                from .interview_queue import pending_answers
+                pending=pending_answers(self,state,current.mock_interview_id)
+                if not previous and (not pending or pending[0]['id']!=message['id']):
+                    raise ValueError('Consume the earlier interview answer first, in arrival order (FIFO).')
+                if not previous:
+                    if current.current_question_id!=args['question_id']:raise ValueError('The interview question changed. Inspect it before sending this answer.')
+                rt.mock_interviewer.answer_deferred(current.mock_interview_id,message['text'],
+                    question_id=args['question_id'],idempotency_key=answer_key,
+                    dispatch=lambda:self.interview_inputs.start_feedback(task_id,current.mock_interview_id))
+                self.repository.change(task_id,lambda s:{'interview_answer_receipts':{
+                    **s.get('interview_answer_receipts',{}),current.mock_interview_id:list(dict.fromkeys([
+                        *s.get('interview_answer_receipts',{}).get(current.mock_interview_id,[]),message['id']]))}})
             else:
                 if args['action'] not in {'skip','end','resume'}:raise ValueError('Unsupported interview control.')
-                getattr(rt.mock_interviewer,args['action'])(current.mock_interview_id,expected_version=current.version,idempotency_key=key)
+                if args['action']=='end':
+                    from .interview_queue import pending_answers
+                    if pending_answers(self,state,current.mock_interview_id,before_message_id=message['id']):
+                        raise ValueError('Save earlier pending interview answers before ending the interview.')
+                with rt.mock_interviewer.transition_lock(current.mock_interview_id):
+                    current=rt.mock_interviewer.interviews.get(current.mock_interview_id)
+                    if args['action']=='resume' and rt.mock_interviewer.interviews.feedback_jobs(current.mock_interview_id):
+                        self.interview_inputs.retry(task_id,current.mock_interview_id)
+                        if current.status.value=='planning':rt.mock_interviewer._ask(current)
+                    else:getattr(rt.mock_interviewer,args['action'])(current.mock_interview_id,expected_version=current.version,idempotency_key=key)
             return self.interview(current.mock_interview_id)
         raise ValueError('Unknown career capability.')
 
@@ -715,6 +898,25 @@ class CareerHarness:
 
     def open_application_url(self,state,args,key):
         from agent_runtime.auto_apply.contracts import posting
+        if 'urls' in args:
+            if 'url' in args:raise ValueError('Supply url or urls, not both.')
+            urls=args['urls']
+            if not isinstance(urls,list) or not 1<=len(urls)<=4:raise ValueError('Supply one to four application URLs.')
+            unique={posting(url)[1]:url for url in urls}
+            before={r['run_id'] for r in self.applications.repository.list()}
+            results=[]
+            for index,url in enumerate(unique.values()):
+                try:
+                    run=self.open_application_url(self.repository.get(state['task_id']),{'url':url},f'{key}:{index}')
+                    results.append({'url':url,'started':run['run_id'] not in before,'application':run})
+                    before.add(run['run_id'])
+                except (ValueError,ApplyConflict) as exc:
+                    results.append({'url':url,'started':False,'error':str(exc)})
+            return {'requested_count':len(unique),'started_count':sum(r['started'] for r in results),
+                'opened_or_reused_count':len({r['application']['run_id'] for r in results if 'application' in r}),
+                'resolved_request_count':sum('application' in r for r in results),'results':results,
+                'detail_hint':'These are actual durable attempts. A failed entry did not start; awaiting_review is not submitted.'}
+        if not args.get('url'):raise ValueError('Supply url or urls.')
         saved,_ = self.candidate()
         if not saved.get('resume_base64'):raise ValueError('Upload a resume PDF before opening this application.')
         request = StartApplication(url=args['url'],profile=saved['profile'],resume_base64=saved['resume_base64'],
@@ -757,6 +959,25 @@ class CareerHarness:
         return result
 
     def start_application(self,state,args,key):
+        if 'application_ids' in args:
+            if args.get('application_id') or args.get('pack_id'):raise ValueError('Use application_ids without a single application_id or shared pack_id. Each job uses its own reviewed materials.')
+            ids=args['application_ids']
+            if not isinstance(ids,list) or not 1<=len(ids)<=4:raise ValueError('Supply one to four saved job IDs.')
+            ids=list(dict.fromkeys(ids))
+            for app_id in ids:self.runtime.workspace.get_application(app_id)
+            before={r['run_id'] for r in self.applications.repository.list()}
+            results=[]
+            for index,app_id in enumerate(ids):
+                try:
+                    run=self.start_application(self.repository.get(state['task_id']),
+                        {'application_id':app_id,'resume_source':args.get('resume_source','auto')},f'{key}:{index}')
+                    results.append({'application_id':app_id,'started':run['run_id'] not in before,'application':run})
+                    before.add(run['run_id'])
+                except (ValueError,ApplyConflict) as exc:results.append({'application_id':app_id,'started':False,'error':str(exc)})
+            return {'requested_count':len(ids),'started_count':sum(r['started'] for r in results),
+                'opened_or_reused_count':len({r['application']['run_id'] for r in results if 'application' in r}),
+                'resolved_request_count':sum('application' in r for r in results),'results':results}
+        if not args.get('application_id'):raise ValueError('Supply application_id or application_ids.')
         rt = self.runtime
         app = rt.workspace.get_application(args['application_id'])
         job = rt.workspace.application_job(app.application_id)
@@ -908,6 +1129,84 @@ class CareerHarness:
         for run_id in state['application_runs']:
             child = self.applications.repository.get(run_id)
             if child['status'] in {'queued','running','submitting'}:raise ValueError('A linked application is still working. Wait for its result or continue independent work.')
+        from .search_recovery import recovery
+        pending=recovery(state)
+        remaining=state.get('model_budget',60)-state.get('model_calls',0)+state.get('budget_base',0)
+        if pending and pending['recommended_count']<pending['requested_count'] and pending['pending_candidates'] and remaining>3:
+            raise ValueError('The requested search is incomplete and observed posting links remain unread with '
+                f'{remaining} decisions available. Open a different pending candidate, verify and score it if eligible. '
+                'Do not claim the budget is exhausted. Pending links: '+str(pending['pending_candidates'][:3]))
+
+    def validate_completion(self,state,text):
+        from .source_health import validate_coverage
+        validate_coverage(state,text)
+        from .presentation import validate_final_language
+        validate_final_language(state,text)
+        from .search_recovery import search_request
+        from .reply_evidence import reply_job_evidence
+        if not search_request(state):return
+        observed=list(state.get('scored_job_evidence',{}).values())
+        if self is not None:
+            observed=[self.job_summary(identifier) for identifier in state.get('jobs',[]) if identifier in state.get('analyses',{})]
+        if state.get('analyses') and not observed and not re.search(r'https://[^\s]+',text):
+            raise ValueError('Final read/scored search results must include the observed job URL and score, even when no recommendation was saved.')
+        claimed=re.search(r'\b(\d+)\s+(?:verified\s+match(?:es)?|recommendations?|recommended\s+(?:jobs|roles))\b',text,re.I)
+        if claimed and int(claimed[1])>len(state.get('recommendations',[])):
+            raise ValueError('The final verified match/recommendation count exceeds persisted recommendations. Use recommend_job for a verified eligible scored vacancy; otherwise label it as only read/scored and disclose that it is not recommended.')
+        urls=set()
+        for url in re.findall(r'https://[^\s<>"\]]+',text):
+            try:urls.add(job_key(url.rstrip('.,;!?)')))
+            except ValueError:continue
+        evidence={job_key(r['url']):r for r in [*observed,*state.get('recommendations',[])] if r.get('url')}
+        missing=[r['url'] for r in evidence.values() if job_key(r['url']) not in urls]
+        if missing:raise ValueError('Final search results must include each saved recommendation URL and its observed score, with risks. Missing URLs: '+str(missing))
+        scores={}
+        for url,values in reply_job_evidence(text).items():
+            entry=scores.setdefault(job_key(url),{'scores':[],'ranges':[]})
+            for kind in entry:entry[kind].extend(values[kind])
+        for recommendation in evidence.values():
+            values=scores.get(job_key(recommendation['url']),{'scores':[],'ranges':[]})
+            expected=recommendation.get('match_score')
+            if expected is None:
+                interval=recommendation.get('score_range')
+                valid_interval=(isinstance(interval,list) and len(interval)==2
+                    and all(type(v) in (int,float) and 0<=v<=100 for v in interval) and interval[0]<=interval[1])
+                if not valid_interval or values['scores'] or not values['ranges'] or any(r!=interval for r in values['ranges']):
+                    raise ValueError('Final score interval is missing or differs from the saved observed interval '
+                        f'for {recommendation["url"]}: expected {interval}. Keep unresolved qualifications explicit; do not invent a point score.')
+            elif (type(expected) not in (int,float) or not values['scores'] or values['ranges']
+                    or any(value!=expected for value in values['scores'])):
+                raise ValueError('Final recommendation score is missing or differs from the saved observed score '
+                    f'for {recommendation["url"]}: expected {expected}. Keep each score in its own job entry; salary/age/ID numbers are not scores.')
+
+    def validate_reply(self,state,text):
+        """Fence common plural completion claims against the request's actual URLs."""
+        from agent_runtime.auto_apply.contracts import posting
+        latest=next((m['text'] for m in reversed(state.get('messages',[])) if m.get('role')=='user'),'')
+        requested=set()
+        for url in re.findall(r'https://[^\s<>"\]]+',latest):
+            try:requested.add(posting(url.rstrip('.,;!?)'))[1])
+            except ValueError:continue
+        if len(requested)<2:return
+        runs=[self.applications.repository.get(r) for r in state['application_runs']]
+        states={posting(r['url'])[1]:r['status'] for r in runs}
+        allowed={'ready':{'awaiting_review'},'submitted':{'submitted'},
+            'opened':{'running','needs_input','awaiting_review','submitting','submitted','submission_unknown'},
+            'started':{'queued','running','needs_input','awaiting_review','submitting','submitted','submission_unknown'}}
+        aliases={'launched':'started','打开':'opened','开始':'started','提交':'submitted','准备':'ready'}
+        # A PDF failure elsewhere in the reply cannot negate an application claim.
+        # Only a negation attached to this quantified clause/action is exempt.
+        for clause in re.split(r'[.!?;\n。！？；]|\b(?:but|however|although)\b|但是|不过',text,flags=re.I):
+            plural=re.search(r'\b(?:both|all)\b|两个|两份|全部',clause,re.I)
+            if not plural:continue
+            if re.search(r'\b(?:not\s+(?:both|all)|only one|neither)\b|不是全部|并非全部|只有一个',clause,re.I):continue
+            for action in re.finditer(r'\b(?:opened|started|launched|submitted|ready)\b|打开|开始|提交|准备',clause,re.I):
+                prefix=clause[:action.start()]
+                if re.search(r'\b(?:not|never|cannot|can.t|couldn.t|unable to)\s+(?:\w+\s+){0,3}$|(?:没有|未能|尚未|未|不).{0,5}$',prefix,re.I):continue
+                kind=aliases.get(action.group().casefold(),action.group().casefold())
+                valid={identity for identity,status in states.items() if status in allowed[kind]}
+                if not requested<=valid:
+                    raise ValueError(f'Only {len(requested & valid)} of {len(requested)} requested applications have a confirmed {kind} state. Report each actual state; unrelated failures do not exempt this claim.')
 
     def control(self,state,action):
         if action not in {'pause','resume'}:return

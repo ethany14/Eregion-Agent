@@ -104,9 +104,14 @@ def test_sentence_references_round_trip_exactly():
     text = 'Engineer.\nMust know Python; SQL is preferred.\nBuild APIs.'
     sentences = numbered_sentences(text)
     extraction = ReferencedJobExtraction(title='Engineer', summary='', statements=[{'sentence_id':'s1', 'requirements':[
-        {'canonical_name':'python','display_name':'Python','atomic_text':'Must know Python','category':'skill','verification_mode':'resume_evidence','level':'required'}]}], responsibility_sentence_ids=['s2'])
+        {'canonical_name':'python','display_name':'Python','atomic_text':'Must know Python','category':'skill','verification_mode':'resume_evidence','level':'required'}]},
+        {'sentence_id':'s2','requirements':[{'canonical_name':'sql','display_name':'SQL','atomic_text':'SQL is preferred.',
+            'category':'skill','verification_mode':'resume_evidence','level':'preferred'}]}], responsibility_sentence_ids=['s3'])
     result = extraction.expand(sentences)
-    assert result.requirements[0].source_text == 'Must know Python; SQL is preferred.'
+    assert sentences == {'s0':'Engineer.','s1':'Must know Python;','s2':'SQL is preferred.','s3':'Build APIs.'}
+    assert [r.source_text for r in result.requirements] == ['Must know Python;', 'SQL is preferred.']
+    assert [r.level for r in result.requirements] == ['required','preferred']
+    assert all(value in text for value in sentences.values())
     assert result.responsibilities == ['Build APIs.']
     with pytest.raises(ValueError): extraction.expand({})
 

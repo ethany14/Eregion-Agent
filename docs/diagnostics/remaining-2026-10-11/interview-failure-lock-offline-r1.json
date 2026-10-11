@@ -1,0 +1,576 @@
+{
+  "revision": "2026-10-11-interview-failure-lock-offline-r1",
+  "scope": "Production CareerService/controller/SQLite, event-gated synthetic providers. No network or paid latency test.",
+  "real_api_calls": 0,
+  "paid_usage": null,
+  "reproduction": "Pause Q2 provider; Q1 feedback immediately raises ConnectError. Require FEEDBACK_FAILED committed within 2s before releasing Q2, with original answer/question IDs.",
+  "root_cause": "Deferred answer/evaluation paths held transition_lock across _ask RPC; feedback error persistence needed the same lock.",
+  "fix": "Separate question-draft mutex; deferred paths release transition_lock before question RPC. Short CAS commit sections preserve binding and bounded write-only retries.",
+  "failure_progression": {
+    "before": "Three causal assertions failed; not three distinct defects. Independent v2 is valid before; earlier cwd setup failure is not product evidence.",
+    "after_v1": "3 passed/1 failed. Actual SQLite CANCELLED(sequence7) then QUESTION_FAILED(sequence8), session failed/version8, queue failed ValueError. Not an end/report timeout defect.",
+    "after_v2": "4 passed/7.751s after stale draft/exception terminal guards; original assertions and time limits unchanged.",
+    "integrated": "95 passed/3 skipped/0 failure/0 error/63.389s. 98 total is not 98 passed. Seven new lock cases include cancel/end x late draft/failure."
+  },
+  "terminal_fix": "On question CAS conflict refresh current session; abandon draft if terminal or question changed. Error path also preserves terminal session. No extra answer/question and no rollback of completed count.",
+  "cancel_after_v1_readonly_snapshot": {
+    "scope": "Read-only failed after-v1 SQLite snapshot after test teardown; not a failure-instant capture.",
+    "database": {
+      "path": "tmp/c16-lock-after-cases-20261011/test_cancel_during_question_rp0/career.db",
+      "sha256": "a55859e20a9b29cf9d96af9c5d889b78cdba4b2b66495e12ca7e4da358d6ac47"
+    },
+    "sessions": [
+      {
+        "mock_interview_id": "e8a08ab5-9b8e-490c-bca9-14f5af61382c",
+        "application_id": "512ebe03-4f85-4f1a-a087-4503f3432750",
+        "root_task_id": null,
+        "agent_session_id": "f7fbcda0-cf68-4478-bc21-fed1f7e2a38d",
+        "mode": "mixed",
+        "status": "failed",
+        "difficulty": "standard",
+        "target_question_count": 5,
+        "questions_completed": 1,
+        "max_followups_per_question": 0,
+        "current_question_id": null,
+        "version": 8,
+        "event_sequence": 8,
+        "answer_sequence": 1,
+        "started_at": "2026-10-11 13:32:53.964034",
+        "updated_at": "2026-10-11 13:32:54.029906",
+        "completed_at": "2026-10-11 13:32:54.017671",
+        "error_code": "question_generation_failed"
+      }
+    ],
+    "events": [
+      {
+        "sequence": 1,
+        "event_type": "CREATED",
+        "payload_json": "{\"mode\":\"mixed\",\"plan_id\":\"c765ec41-9f05-53e2-806b-4d635a52d162\"}",
+        "occurred_at": "2026-10-11 13:32:53.968907"
+      },
+      {
+        "sequence": 2,
+        "event_type": "RESUME_REQUESTED",
+        "payload_json": "{}",
+        "occurred_at": "2026-10-11 13:32:53.971756"
+      },
+      {
+        "sequence": 3,
+        "event_type": "QUESTION_ASKED",
+        "payload_json": "{\"plan_item_id\":\"a23fe8e7-9440-54ca-bc8b-59792da32ad7\",\"question_id\":\"a80b136c-0af2-4469-a015-74cfe48d9236\"}",
+        "occurred_at": "2026-10-11 13:32:53.978427"
+      },
+      {
+        "sequence": 4,
+        "event_type": "ANSWER_SAVED",
+        "payload_json": "{\"answer_id\":\"c001876b-0922-472b-9ef5-f068bdf98e87\",\"question_id\":\"a80b136c-0af2-4469-a015-74cfe48d9236\"}",
+        "occurred_at": "2026-10-11 13:32:53.994791"
+      },
+      {
+        "sequence": 5,
+        "event_type": "FEEDBACK_QUEUED",
+        "payload_json": "{\"answer_id\":\"c001876b-0922-472b-9ef5-f068bdf98e87\",\"question_id\":\"a80b136c-0af2-4469-a015-74cfe48d9236\",\"sequence\":1}",
+        "occurred_at": "2026-10-11 13:32:53.998537"
+      },
+      {
+        "sequence": 6,
+        "event_type": "EVALUATION_SAVED",
+        "payload_json": "{\"answer_id\":\"c001876b-0922-472b-9ef5-f068bdf98e87\",\"deferred\":true,\"followup\":false,\"question_id\":\"a80b136c-0af2-4469-a015-74cfe48d9236\"}",
+        "occurred_at": "2026-10-11 13:32:54.013066"
+      },
+      {
+        "sequence": 7,
+        "event_type": "CANCELLED",
+        "payload_json": "{}",
+        "occurred_at": "2026-10-11 13:32:54.018315"
+      },
+      {
+        "sequence": 8,
+        "event_type": "QUESTION_FAILED",
+        "payload_json": "{}",
+        "occurred_at": "2026-10-11 13:32:54.030408"
+      }
+    ],
+    "task_projections": [
+      {
+        "task_id": "05d69c94-83a7-48d5-b057-6812e4a7f801",
+        "status": "needs_input",
+        "error": {
+          "code": "interview_queue_failed",
+          "message": "Interview processing stopped. Saved answers and queued inputs are preserved. Inspect the interview before retrying.",
+          "retryable": true
+        },
+        "interview_queue": [
+          {
+            "message_id": "f4d39e76-c975-4c43-b585-a37923927d8f",
+            "text": "A1: I built Python APIs.",
+            "interview_id": "e8a08ab5-9b8e-490c-bca9-14f5af61382c",
+            "kind": "answer",
+            "status": "failed",
+            "at": "2026-10-11T13:32:53.984963+00:00",
+            "started_at": "2026-10-11T13:32:53.989277+00:00",
+            "question_id": "a80b136c-0af2-4469-a015-74cfe48d9236",
+            "error_type": "ValueError"
+          }
+        ],
+        "interview_answer_receipts": {
+          "e8a08ab5-9b8e-490c-bca9-14f5af61382c": [
+            "f4d39e76-c975-4c43-b585-a37923927d8f"
+          ]
+        }
+      }
+    ]
+  },
+  "event_snapshots": [
+    {
+      "path": "tmp/c16-lock-before-cases-20261011/test_fast_feedback_failure_com0/failure-before-question-release.json",
+      "question_owner": "answer_deferred",
+      "question_still_blocked": true,
+      "feedback_provider_failed": true,
+      "failure_committed_before_question_release": false,
+      "session_status": "planning",
+      "questions_completed": 0,
+      "jobs": [
+        {
+          "answer_id": "47c2bafd-cb05-4335-8ea6-92aa35f5d90a",
+          "question_id": "1147c71f-ecab-4f79-824e-2ea98b13d2e9",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "path": "tmp/c16-lock-before-cases-20261011/test_fast_feedback_failure_com1/failure-before-question-release.json",
+      "question_owner": "evaluate_deferred",
+      "question_still_blocked": true,
+      "feedback_provider_failed": true,
+      "failure_committed_before_question_release": false,
+      "session_status": "planning",
+      "questions_completed": 1,
+      "jobs": [
+        {
+          "answer_id": "12eed132-c36c-4822-a05a-52b45964e374",
+          "question_id": "63057175-bb11-4b69-9a4c-c318de456203",
+          "status": "pending"
+        },
+        {
+          "answer_id": "8ffee705-b02b-4872-b278-4a3995209077",
+          "question_id": "0870f0dc-9fe7-4555-acae-9be79eff600c",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "path": "tmp/c16-lock-after-cases-20261011/test_fast_feedback_failure_com0/failure-before-question-release.json",
+      "question_owner": "answer_deferred",
+      "question_still_blocked": true,
+      "feedback_provider_failed": true,
+      "failure_committed_before_question_release": true,
+      "session_status": "planning",
+      "questions_completed": 0,
+      "jobs": [
+        {
+          "answer_id": "0ce52d8d-ab87-44eb-9746-ecf8fcbecec9",
+          "question_id": "950efa75-ed3e-447a-b9f3-79ab7573bbe8",
+          "status": "failed"
+        }
+      ]
+    },
+    {
+      "path": "tmp/c16-lock-after-cases-20261011/test_fast_feedback_failure_com1/failure-before-question-release.json",
+      "question_owner": "evaluate_deferred",
+      "question_still_blocked": true,
+      "feedback_provider_failed": true,
+      "failure_committed_before_question_release": true,
+      "session_status": "planning",
+      "questions_completed": 1,
+      "jobs": [
+        {
+          "answer_id": "4c489569-0479-49a2-8182-844720686532",
+          "question_id": "d1d47109-d6a1-4be6-86a1-a72a8283767e",
+          "status": "failed"
+        },
+        {
+          "answer_id": "c7ff7be2-b509-431c-bdc2-aac9c96986cf",
+          "question_id": "054c9d80-42a2-498b-a869-1597ee688cbd",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "path": "tmp/c16-lock-after-v2-cases-20261011/test_fast_feedback_failure_com0/failure-before-question-release.json",
+      "question_owner": "answer_deferred",
+      "question_still_blocked": true,
+      "feedback_provider_failed": true,
+      "failure_committed_before_question_release": true,
+      "session_status": "planning",
+      "questions_completed": 0,
+      "jobs": [
+        {
+          "answer_id": "928431f6-21f6-4ab2-8015-4f2a8f112875",
+          "question_id": "21706a38-ca39-4035-942e-b162593b0303",
+          "status": "failed"
+        }
+      ]
+    },
+    {
+      "path": "tmp/c16-lock-after-v2-cases-20261011/test_fast_feedback_failure_com1/failure-before-question-release.json",
+      "question_owner": "evaluate_deferred",
+      "question_still_blocked": true,
+      "feedback_provider_failed": true,
+      "failure_committed_before_question_release": true,
+      "session_status": "planning",
+      "questions_completed": 1,
+      "jobs": [
+        {
+          "answer_id": "a7918ea9-b973-4556-82f6-09a9236c5ffc",
+          "question_id": "ead5639f-1bbf-4470-8861-524ff2b7d04d",
+          "status": "failed"
+        },
+        {
+          "answer_id": "126e54b5-cd77-48bf-9e4a-be725ae0bf65",
+          "question_id": "d28fc1ab-4458-4d84-9af2-73f151ccb3b9",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "path": "tmp/c16-lock-integrated-cases-20261011/test_fast_feedback_failure_com0/failure-before-question-release.json",
+      "question_owner": "answer_deferred",
+      "question_still_blocked": true,
+      "feedback_provider_failed": true,
+      "failure_committed_before_question_release": true,
+      "session_status": "planning",
+      "questions_completed": 0,
+      "jobs": [
+        {
+          "answer_id": "b418f403-e5b7-4d45-8072-48226f38dd70",
+          "question_id": "6a4c71a5-4262-45c6-be07-1651ceec0ae4",
+          "status": "failed"
+        }
+      ]
+    },
+    {
+      "path": "tmp/c16-lock-integrated-cases-20261011/test_fast_feedback_failure_com1/failure-before-question-release.json",
+      "question_owner": "evaluate_deferred",
+      "question_still_blocked": true,
+      "feedback_provider_failed": true,
+      "failure_committed_before_question_release": true,
+      "session_status": "planning",
+      "questions_completed": 1,
+      "jobs": [
+        {
+          "answer_id": "0075d4d2-1501-4f77-9c3b-8bcd96e17369",
+          "question_id": "e570b553-914c-4e40-8755-f1bdda89909c",
+          "status": "failed"
+        },
+        {
+          "answer_id": "2d9ee15f-5cbb-4508-8daa-c9b4fbf6e778",
+          "question_id": "ac436051-af4d-4322-aa37-c59090ea42d0",
+          "status": "done"
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "tmp/c16-lock-before-20261011.xml",
+      "sha256": "8aca927923456b165a04277d8976c938cc8aab6e09bc6e31456a741f77e0a05d",
+      "bytes": 12848,
+      "raw_suite_totals": {
+        "tests": 3,
+        "failures": 3,
+        "errors": 0,
+        "skipped": 0
+      },
+      "seconds": 11.402,
+      "failures": [
+        {
+          "case": "tests.test_remaining_interview_failure_lock::test_fast_feedback_failure_commits_while_next_question_provider_is_blocked[answer_deferred]",
+          "message": "AssertionError: FEEDBACK_FAILED waited for the blocked next-question RPC\nassert False"
+        },
+        {
+          "case": "tests.test_remaining_interview_failure_lock::test_fast_feedback_failure_commits_while_next_question_provider_is_blocked[evaluate_deferred]",
+          "message": "AssertionError: FEEDBACK_FAILED waited for the blocked next-question RPC\nassert False"
+        },
+        {
+          "case": "tests.test_remaining_interview_failure_lock::test_feedback_and_answer_share_one_question_draft_without_holding_transition_lock",
+          "message": "AssertionError: Question provider must not own the transition lock\nassert False"
+        }
+      ],
+      "skipped": []
+    },
+    {
+      "path": "tmp/c16-lock-before-20261011.log",
+      "sha256": "748398c4c907250e777126a9da51f224d416124cda7255f7efce7f97aef922de",
+      "bytes": 64302
+    },
+    {
+      "path": "tmp/c16-lock-after-20261011.xml",
+      "sha256": "6d6e533185b0aa7d163ce8de2195293905edfb94cdf4783330787155bc61e7e6",
+      "bytes": 3311,
+      "raw_suite_totals": {
+        "tests": 4,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0
+      },
+      "seconds": 20.257,
+      "failures": [
+        {
+          "case": "tests.test_remaining_interview_failure_lock::test_cancel_during_question_rpc_keeps_terminal_state_and_discards_late_draft",
+          "message": "AssertionError: FIFO production state did not reach its expected result"
+        }
+      ],
+      "skipped": []
+    },
+    {
+      "path": "tmp/c16-lock-after-20261011.log",
+      "sha256": "792c5f7f540d0d13b9aed4cb642bbb6bfe284dc27bfc34efea37cb75cc5a35f4",
+      "bytes": 18224
+    },
+    {
+      "path": "tmp/c16-lock-after-v2-20261011.xml",
+      "sha256": "863ae08f24a19ed572ece3a52b1ba9bc2851f43b2f5c53f814d4f834abeea936",
+      "bytes": 948,
+      "raw_suite_totals": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "seconds": 7.751,
+      "failures": [],
+      "skipped": []
+    },
+    {
+      "path": "tmp/c16-lock-after-v2-20261011.log",
+      "sha256": "8caab822364718db55169f1394bea4ef77fadbb9b3ee506bc00878fb61d139fb",
+      "bytes": 1240
+    },
+    {
+      "path": "tmp/c16-lock-integrated-20261011.xml",
+      "sha256": "2d366c3ad7e8e1b8f2f5675855402d9da50d4dda06e12cf2911c55fbc79954f0",
+      "bytes": 14600,
+      "raw_suite_totals": {
+        "tests": 98,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 3
+      },
+      "seconds": 63.389,
+      "failures": [],
+      "skipped": [
+        {
+          "case": "tests.test_remaining_interview_feedback::test_real_main_chat_feedback_latency[agent-30]",
+          "reason": "Explicit paid real feedback latency check"
+        },
+        {
+          "case": "tests.test_remaining_interview_feedback::test_real_main_chat_feedback_latency[fast-10]",
+          "reason": "Explicit paid real feedback latency check"
+        },
+        {
+          "case": "tests.test_career_flow::test_configured_model_directs_real_career_tools_with_synthetic_sources",
+          "reason": "Opt-in configured model; synthetic resume and local tool IO only."
+        }
+      ]
+    },
+    {
+      "path": "tmp/c16-lock-integrated-20261011.log",
+      "sha256": "a268581355bf7fd514c20f6ca2e79fa6135badd6b48b913cbe4002c5e2d76910",
+      "bytes": 1448
+    },
+    {
+      "path": "tmp/c16-lock-cancel-after-v1-diagnostic.json",
+      "sha256": "996b5b247519845260da15080dc155f1361376f2872f41b65f9f1d428b6266d2",
+      "bytes": 3966
+    },
+    {
+      "path": "tmp/c16-lock-after-cases-20261011/test_cancel_during_question_rp0/career.db",
+      "sha256": "a55859e20a9b29cf9d96af9c5d889b78cdba4b2b66495e12ca7e4da358d6ac47",
+      "bytes": 1515520
+    },
+    {
+      "path": "tmp/c16-lock-before-cases-20261011/test_fast_feedback_failure_com0/failure-before-question-release.json",
+      "sha256": "11fe7fcf7873e21b7680b2ccca41ebf05185be0c184e93fd9f552cfbff3e1c35",
+      "bytes": 2687
+    },
+    {
+      "path": "tmp/c16-lock-before-cases-20261011/test_fast_feedback_failure_com0/failure-after-question-release.json",
+      "sha256": "98be7d8b404301718babd29b8f020fca20fc59ba42e78d973fd860072f34a5f1",
+      "bytes": 3063
+    },
+    {
+      "path": "tmp/c16-lock-before-cases-20261011/test_fast_feedback_failure_com1/failure-before-question-release.json",
+      "sha256": "a842fd161bd03c9d703701a675989d9eaf24e336074f81e8949479bf2ea0f1a9",
+      "bytes": 4398
+    },
+    {
+      "path": "tmp/c16-lock-before-cases-20261011/test_fast_feedback_failure_com1/failure-after-question-release.json",
+      "sha256": "3525399a63ef6362b2c23ffeb240988e8e369a4c3fbf7d36dd9fa479cd9a4a9f",
+      "bytes": 5136
+    },
+    {
+      "path": "tmp/c16-lock-after-cases-20261011/test_fast_feedback_failure_com0/failure-before-question-release.json",
+      "sha256": "019b30181b631c1eac8de740944d8886f63a8ca669cfd7658c5ab007783b74bf",
+      "bytes": 2917
+    },
+    {
+      "path": "tmp/c16-lock-after-cases-20261011/test_fast_feedback_failure_com0/failure-after-question-release.json",
+      "sha256": "0d4e9517a765723fb513674bebba06bf0c425679e079181006ae9ce9d61ff2fd",
+      "bytes": 3063
+    },
+    {
+      "path": "tmp/c16-lock-after-cases-20261011/test_fast_feedback_failure_com1/failure-before-question-release.json",
+      "sha256": "13f1f5f7d0bb6c9791c791e01d845df4c1b259345e82da4ec50abc1fc3855be8",
+      "bytes": 4629
+    },
+    {
+      "path": "tmp/c16-lock-after-cases-20261011/test_fast_feedback_failure_com1/failure-after-question-release.json",
+      "sha256": "30e4dc01b96c463bcaec5e9f48fe24cec7db4ade61fcb69a21eab95dce870fa7",
+      "bytes": 5136
+    },
+    {
+      "path": "tmp/c16-lock-after-v2-cases-20261011/test_fast_feedback_failure_com0/failure-before-question-release.json",
+      "sha256": "8cdf80a55462f9b3f65b2f10d09d5a51f3505eb6e9b236883fadfbae4a2e43d2",
+      "bytes": 2917
+    },
+    {
+      "path": "tmp/c16-lock-after-v2-cases-20261011/test_fast_feedback_failure_com0/failure-after-question-release.json",
+      "sha256": "0555dc7cb82cd43e441c6a2fc45d9e383d8159093e9abb6c03ac7538f7465a56",
+      "bytes": 3063
+    },
+    {
+      "path": "tmp/c16-lock-after-v2-cases-20261011/test_fast_feedback_failure_com1/failure-before-question-release.json",
+      "sha256": "529045106d49a0eadd5f86d665a333d4c680afaa8e86f38aa25822c972b3e013",
+      "bytes": 4629
+    },
+    {
+      "path": "tmp/c16-lock-after-v2-cases-20261011/test_fast_feedback_failure_com1/failure-after-question-release.json",
+      "sha256": "573a62b03037efd96cf773c9fa12dd11d32034d82aa355f04f1746375e8a601d",
+      "bytes": 5136
+    },
+    {
+      "path": "tmp/c16-lock-integrated-cases-20261011/test_fast_feedback_failure_com0/failure-before-question-release.json",
+      "sha256": "d8035108132c33f1e8c772d0be778105905babe7fc87dcba5809eea2b7c56e07",
+      "bytes": 2917
+    },
+    {
+      "path": "tmp/c16-lock-integrated-cases-20261011/test_fast_feedback_failure_com0/failure-after-question-release.json",
+      "sha256": "b1c0a8ead31e24d2576ff8a91307e9ba948c5ff12d947d2257dd03ee4c750e28",
+      "bytes": 3063
+    },
+    {
+      "path": "tmp/c16-lock-integrated-cases-20261011/test_fast_feedback_failure_com1/failure-before-question-release.json",
+      "sha256": "b98beae35f51635183eda9b870e21ff3d695d297a675e1cdfb9245d27cbc2173",
+      "bytes": 4629
+    },
+    {
+      "path": "tmp/c16-lock-integrated-cases-20261011/test_fast_feedback_failure_com1/failure-after-question-release.json",
+      "sha256": "92ccd8af22b1b98983c78ee83331e5823213d778137778c571bb77610241fd21",
+      "bytes": 5136
+    }
+  ],
+  "independent": [
+    {
+      "path": "C:/Users/zhiyu/Documents/Codex/2026-10-10/computer-use-computer-use-c-users-2/outputs/feedback-lock-before-independent-v2.xml",
+      "bytes": 2783,
+      "sha256": "1953c176b230ddaacc31ef4ad01548bd63527027387892ad336704f3d8299aad",
+      "raw_suite_totals": {
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0
+      },
+      "passed": 0,
+      "seconds": 7.412,
+      "expected_sha256": "1953c176b230ddaacc31ef4ad01548bd63527027387892ad336704f3d8299aad",
+      "origin": "Independent supervisor workspace; read only, not executed by this exporter."
+    },
+    {
+      "path": "C:/Users/zhiyu/Documents/Codex/2026-10-10/computer-use-computer-use-c-users-2/outputs/feedback-lock-after-independent.xml",
+      "bytes": 458,
+      "sha256": "45c4e699c8b29bc48d480a2ef90bbac132191d4a228563492f84555e158abfd2",
+      "raw_suite_totals": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "passed": 1,
+      "seconds": 4.415,
+      "expected_sha256": "45c4e699c8b29bc48d480a2ef90bbac132191d4a228563492f84555e158abfd2",
+      "origin": "Independent supervisor workspace; read only, not executed by this exporter."
+    },
+    {
+      "path": "C:/Users/zhiyu/Documents/Codex/2026-10-10/computer-use-computer-use-c-users-2/outputs/c16-lock-regression-independent.xml",
+      "bytes": 4094,
+      "sha256": "65c978976157857ab6ab0af8992c26a4f2dc2b863f3b10c7bc649de27a559a0a",
+      "raw_suite_totals": {
+        "tests": 21,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "passed": 21,
+      "seconds": 28.205,
+      "expected_sha256": "65c978976157857ab6ab0af8992c26a4f2dc2b863f3b10c7bc649de27a559a0a",
+      "origin": "Independent supervisor workspace; read only, not executed by this exporter."
+    },
+    {
+      "path": "C:/Users/zhiyu/Documents/Codex/2026-10-10/computer-use-computer-use-c-users-2/outputs/c16-terminal-independent.xml",
+      "bytes": 917,
+      "sha256": "451b35ecb3c076e09763d85607d7b63aaaab44b76bb1a0d9baaf0ee14d01e9e5",
+      "raw_suite_totals": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "passed": 4,
+      "seconds": 7.938,
+      "expected_sha256": "451b35ecb3c076e09763d85607d7b63aaaab44b76bb1a0d9baaf0ee14d01e9e5",
+      "origin": "Independent supervisor workspace; read only, not executed by this exporter."
+    },
+    {
+      "path": "C:/Users/zhiyu/Documents/Codex/2026-10-10/computer-use-computer-use-c-users-2/outputs/inspect_interview_timing_db.json",
+      "bytes": 6808,
+      "sha256": "f6d8bf593e19c5463173d6ed162e245b4171db9f718c66f41d830b4db3b44ab7",
+      "expected_sha256": "f6d8bf593e19c5463173d6ed162e245b4171db9f718c66f41d830b4db3b44ab7",
+      "origin": "Independent supervisor workspace; read only, not executed by this exporter."
+    },
+    {
+      "path": "C:/Users/zhiyu/Documents/Codex/2026-10-10/computer-use-computer-use-c-users-2/outputs/interview-async-timing-independent.json",
+      "bytes": 1381,
+      "sha256": "5ca4e63281f91a285b21dd9a181717c978ca870434411d7bd4155af004ef147a",
+      "expected_sha256": "5ca4e63281f91a285b21dd9a181717c978ca870434411d7bd4155af004ef147a",
+      "origin": "Independent supervisor workspace; read only, not executed by this exporter."
+    },
+    {
+      "path": "C:/Users/zhiyu/Documents/Codex/2026-10-10/computer-use-computer-use-c-users-2/outputs/test_feedback_failure_lock_independent.py",
+      "bytes": 1303,
+      "sha256": "fb9a6f45507f882470075bd5050cef2bd21928a4dc59a2425ddb6547f7c24e6b",
+      "expected_sha256": null,
+      "origin": "Independent supervisor workspace; read only, not executed by this exporter."
+    }
+  ],
+  "overlap": "Independent 21-case suite, single failure-lock case and four terminal cases overlap. Do not add them as unique coverage.",
+  "limitations": [
+    "Offline mechanism and local recovery only; C16 overall remains FAILED.",
+    "Original acceptance-to-visible-feedback main p50=110.097s exceeds 30s; async real attempt failed with ConnectError/unknown usage. No new real latency result.",
+    "Fast model ID not configured; <=10s untested. Full acceptance-to-visible clock including queue remains required.",
+    "Fix covers deferred main-chat generation and feedback paths; direct synchronous control callers are not proven free of outer transition locks.",
+    "A5 <=60s remains FAILED/user-deferred; no paid reruns/backend replay/employer submission."
+  ],
+  "implementation_files": [
+    {
+      "path": "agent_runtime/mock_interview/controller.py",
+      "sha256": "6c2b6db5501e5096601e360c555218c8595cabb70f1ec92db149b71af7b86066",
+      "bytes": 35995
+    },
+    {
+      "path": "tests/test_remaining_interview_failure_lock.py",
+      "sha256": "bd4d3cff9c7294af533060bbb032adc988a7f37bd24667d6d4d8c1a6d862b870",
+      "bytes": 8692
+    }
+  ]
+}

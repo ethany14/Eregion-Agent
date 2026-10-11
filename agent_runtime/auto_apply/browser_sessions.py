@@ -48,6 +48,7 @@ class BrowserSessionStore:
             return None
 
     def save(self, owner, site, state):
+        if self.load(owner,site)==state:return
         # Encrypt before creating files: unsupported OSes never write plaintext.
         content = self.codec(json.dumps({"owner":owner, "site":site, "state":state}).encode())
         self.directory.mkdir(parents=True, exist_ok=True)
@@ -58,3 +59,7 @@ class BrowserSessionStore:
             temporary.replace(path)
         finally:
             temporary.unlink(missing_ok=True)
+
+    def revision(self,owner,site):
+        try:return hashlib.sha256(self._path(owner,site).read_bytes()).hexdigest()
+        except OSError:return None

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+from threading import RLock
 from pydantic import ValidationError
 from agent_runtime.model_runtime import model_failure
 
@@ -67,6 +68,12 @@ class MockInterviewController:
         self.context_snapshots = context_snapshots
         self.model = model or SharedMockInterviewModel()
         self.pack_workflow = pack_workflow
+        self._transition_locks={}
+        self._transition_locks_guard=RLock()
+
+    def transition_lock(self, interview_id):
+        with self._transition_locks_guard:
+            return self._transition_locks.setdefault(interview_id,RLock())
 
     def start(self, application_id: str, *, mode: InterviewMode = InterviewMode.MIXED,
               difficulty: Difficulty = Difficulty.STANDARD,
@@ -220,6 +227,23 @@ class MockInterviewController:
         return self.context_snapshots.prepare(snapshot)
 
     def _ask(self, interview: MockInterviewSession) -> MockInterviewSession:
+        # Serialize question drafts separately from durable state transitions.
+        # Feedback workers must be able to commit (including failures) while a
+        # question RPC is outstanding. Another caller can observe the in-flight
+        # planning state; it must not launch a duplicate question RPC.
+        generation = self.transition_lock(('question_generation', interview.mock_interview_id))
+        if not generation.acquire(blocking=False):
+            return self.interviews.get(interview.mock_interview_id)
+        try:
+            with self.transition_lock(interview.mock_interview_id):
+                current = self.interviews.get(interview.mock_interview_id)
+                if current.status not in {MockStatus.PLANNING, MockStatus.FAILED}:
+                    return current
+            return self._generate_question(current)
+        finally:
+            generation.release()
+
+    def _generate_question(self, interview: MockInterviewSession) -> MockInterviewSession:
         plan = self.interviews.plan(interview.mock_interview_id)
         items = self.interviews.plan_items(interview.mock_interview_id)
         previous = None
@@ -232,9 +256,17 @@ class MockInterviewController:
             item = next(value for value in items if value.plan_item_id == prior.plan_item_id)
             parent_id = prior.parent_question_id or prior.question_id
         else:
-            item = next((value for value in items if value.status == "pending"), None)
+            item = next((value for value in items if value.status == 'followup_pending'),None)
             parent_id = None
+            if item is not None:
+                prior=next(turn for turn in reversed(self.interviews.turns(interview.mock_interview_id))
+                    if turn['question']['plan_item_id']==item.plan_item_id and turn['answer'])
+                parent_id=prior['question']['parent_question_id'] or prior['question']['question_id']
+                previous={'question':prior['question']['question_text'],'answer':prior['answer']['original_text']}
+            else:item = next((value for value in items if value.status == "pending"), None)
         if item is None or interview.questions_completed >= interview.target_question_count:
+            if any(job['status']!='done' for job in self.interviews.feedback_jobs(interview.mock_interview_id)):
+                return interview
             return self.end(interview.mock_interview_id,
                 expected_version=interview.version, idempotency_key=f"finish:{interview.mock_interview_id}")
         context = self._context(interview, item, answer=None, previous=previous)
@@ -254,21 +286,41 @@ class MockInterviewController:
             validate_question(question, item,
                 {entry["evidence_id"] for entry in plan.evidence},
                 canonical_json(context))
-            saved = self.interviews.save_question(interview.mock_interview_id,
-                question, interview.version)
+            deferred=bool(self.interviews.feedback_jobs(interview.mock_interview_id))
+            for attempt in range(3):
+                try:
+                    with self.transition_lock(interview.mock_interview_id):
+                        saved = self.interviews.save_question(interview.mock_interview_id,
+                            question, interview.version,feedback_updates=deferred)
+                    break
+                except MockInterviewConflict:
+                    # Feedback can legitimately advance the version during the
+                    # question RPC. Reuse the validated draft, never re-call the
+                    # provider, and require the same pending item/empty slot.
+                    latest=self.interviews.get(interview.mock_interview_id)
+                    if (latest.status in {MockStatus.CANCELLED, MockStatus.COMPLETED}
+                            or latest.current_question_id != interview.current_question_id):
+                        self.context_snapshots.abandon(snapshot.snapshot_id, reason="question_superseded")
+                        return latest
+                    if not deferred or attempt==2:raise
+                    interview=latest
             self.context_snapshots.mark_used(snapshot.snapshot_id)
             return saved
         except Exception:
             self.context_snapshots.abandon(snapshot.snapshot_id, reason="question_failed")
-            try:
-                return self.interviews.change_status(interview.mock_interview_id,
-                    interview.version, MockStatus.FAILED, "QUESTION_FAILED",
-                    error_code="question_generation_failed")
-            except MockInterviewConflict:
-                return self.interviews.get(interview.mock_interview_id)
+            with self.transition_lock(interview.mock_interview_id):
+                current=self.interviews.get(interview.mock_interview_id)
+                if current.status in {MockStatus.CANCELLED, MockStatus.COMPLETED}:
+                    return current
+                try:
+                    return self.interviews.change_status(interview.mock_interview_id,
+                        interview.version, MockStatus.FAILED, "QUESTION_FAILED",
+                        error_code="question_generation_failed")
+                except MockInterviewConflict:
+                    return self.interviews.get(interview.mock_interview_id)
 
-    def _evaluate(self, interview: MockInterviewSession) -> MockInterviewSession:
-        question = self.interviews.question(interview.current_question_id)
+    def _evaluate(self, interview: MockInterviewSession, *, question_id=None, deferred=False) -> MockInterviewSession:
+        question = self.interviews.question(question_id or interview.current_question_id)
         answer = self.interviews.answer_for_question(question.question_id)
         if answer is None:
             raise MockInterviewConflict("No persisted answer to evaluate.")
@@ -310,8 +362,16 @@ class MockInterviewController:
                        for value in self.interviews.turns(interview.mock_interview_id))
             followup = should_follow_up(evaluation, followups_used=used,
                 maximum=interview.max_followups_per_question)
-            saved = self.interviews.save_evaluation(interview.mock_interview_id,
-                evaluation, expected_version=interview.version, followup=followup)
+            if deferred:
+                for attempt in range(3):
+                    try:
+                        saved=self.interviews.save_deferred_evaluation(interview.mock_interview_id,evaluation,followup=followup)
+                        break
+                    except MockInterviewConflict:
+                        if attempt==2:raise
+            else:
+                saved = self.interviews.save_evaluation(interview.mock_interview_id,
+                    evaluation, expected_version=interview.version, followup=followup)
             self.context_snapshots.mark_used(snapshot.snapshot_id)
             try:
                 self._discover_candidate(interview, answer, evaluation)
@@ -324,6 +384,15 @@ class MockInterviewController:
             failure = evaluation_failure(exc)
             logger.warning('Interview evaluation failed: interview=%s details=%s', interview.mock_interview_id, failure)
             self.context_snapshots.abandon(snapshot.snapshot_id, reason="evaluation_failed")
+            if deferred:
+                with self.transition_lock(interview.mock_interview_id):
+                    for attempt in range(3):
+                        try:
+                            return self.interviews.feedback_failed(interview.mock_interview_id,answer.answer_id,failure)
+                        except MockInterviewConflict:
+                            # Another repository instance can still advance the
+                            # durable version. Retry only this write, not the RPC.
+                            if attempt == 2:raise
             try:
                 return self.interviews.change_status(interview.mock_interview_id,
                     interview.version, MockStatus.FAILED, "EVALUATION_FAILED",
@@ -401,6 +470,46 @@ class MockInterviewController:
         return self.resume(interview_id, expected_version=result.version,
             idempotency_key=f"resume:{idempotency_key}")
 
+    def answer_deferred(self, interview_id, text, *, question_id, idempotency_key, dispatch):
+        """Career chat pipeline. Existing direct API retains synchronous semantics."""
+        if not text.strip() or len(text)>20000:raise MockInterviewValidation('Answer must contain 1 to 20,000 characters.')
+        with self.transition_lock(interview_id):
+            current=self.interviews.get(interview_id)
+            answer=self.interviews.answer_by_key(interview_id,idempotency_key)
+            if answer:
+                if answer.original_text!=text or answer.question_id!=question_id:
+                    raise MockInterviewConflict('Idempotency key was reused with different content.')
+            else:
+                if current.current_question_id!=question_id:raise MockInterviewConflict('Question changed.')
+                for attempt in range(3):
+                    try:
+                        answer,_=self.interviews.save_answer(interview_id,question_id,text,current.version,idempotency_key)
+                        break
+                    except MockInterviewConflict:
+                        if attempt==2:raise
+                        current=self.interviews.get(interview_id)
+            if self.interviews.evaluation(answer.answer_id) is None:
+                for attempt in range(3):
+                    try:
+                        current=self.interviews.defer_feedback(interview_id,answer.answer_id)
+                        break
+                    except MockInterviewConflict:
+                        if attempt==2:raise
+                dispatch()
+            current=self.interviews.get(interview_id)
+        return self._ask(current) if current.status==MockStatus.PLANNING else current
+
+    def evaluate_deferred(self, interview_id, job):
+        current=self.interviews.get(interview_id)
+        if current.status in {MockStatus.CANCELLED,MockStatus.COMPLETED}:return current
+        current=self._evaluate(current,question_id=job['question_id'],deferred=True)
+        # A failed evaluation is already durable and requires explicit retry.
+        # Do not make its worker wait for, or initiate, another question RPC.
+        if self.interviews.evaluation(job['answer_id']) is None:return current
+        with self.transition_lock(interview_id):
+            current=self.interviews.get(interview_id)
+        return self._ask(current) if current.status==MockStatus.PLANNING else current
+
     def end(self, interview_id: str, *, expected_version: int,
             idempotency_key: str) -> MockInterviewSession:
         interview = self.interviews.get(interview_id)
@@ -409,6 +518,8 @@ class MockInterviewController:
             return interview
         if interview.version != expected_version:
             raise MockInterviewConflict("Interview version changed.")
+        if any(job['status']!='done' for job in self.interviews.feedback_jobs(interview_id)):
+            raise MockInterviewConflict('Wait for saved answers to finish feedback before ending the interview.')
         turns = self.interviews.turns(interview_id)
         evaluated = [entry for entry in turns if entry["evaluation"]]
         dimensions = ("overall", "relevance", "specificity", "evidence_grounding",
@@ -461,12 +572,17 @@ class MockInterviewController:
 
     def view(self, interview_id: str) -> dict:
         session = self.interviews.get(interview_id)
+        turns=self.interviews.turns(interview_id)
         question = (self.interviews.question(session.current_question_id)
                     if session.current_question_id and session.status == MockStatus.AWAITING_ANSWER
                     else None)
         return {"interview": session.model_dump(mode="json"),
             "question": question.model_dump(mode="json") if question else None,
-            "latest_feedback": next((turn["evaluation"] for turn in reversed(
-                self.interviews.turns(interview_id)) if turn["evaluation"]), None),
+            "latest_feedback": next((turn["evaluation"] for turn in reversed(turns) if turn["evaluation"]), None),
+            "feedback_history":[{'question_id':turn['question']['question_id'],
+                'question_text':turn['question']['question_text'],'answer_id':turn['answer']['answer_id'],
+                'answer_sequence':turn['answer']['sequence'],'evaluation':turn['evaluation']}
+                for turn in turns if turn['answer'] and turn['evaluation']],
+            "feedback_jobs":self.interviews.feedback_jobs(interview_id),
             "report_available": self.interviews.report(interview_id) is not None,
             "failure": self.interviews.last_failure(interview_id) if session.status == MockStatus.FAILED else None}

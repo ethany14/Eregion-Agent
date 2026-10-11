@@ -36,9 +36,7 @@ SCAN = r"""({query, offset, text_offset, ref, region_ref, navigation_only, job_o
   const ids=window.__northstarBrowseIds;
   const mark=e=>{if(!ids.ids.has(e))ids.ids.set(e,`b-${ids.prefix}-${ids.next++}`);const id=ids.ids.get(e);e.setAttribute('data-northstar-browse',id);return id;};
   const elements=all('a[href],button,input,textarea,select,summary,[role="button"],[role="link"],[role="tab"],[role="checkbox"],[role="radio"],[role="combobox"],[role="option"],[role="menuitem"],[contenteditable="true"]')
-    .filter(visible).filter(inside).filter(e=>!e.matches('input[type="hidden"]') && !secret(e))
-    .filter(e=>!navigation_only || (e.tagName==='A' && /^https:\/\//.test(e.href)) ||
-      (e.matches('button,[role="button"]') && e.type!=='submit' && /^(?:close|dismiss|not now|maybe later|关闭|暂不|稍后)(?:\b|$)/i.test(label(e))));
+    .filter(visible).filter(e=>!e.matches('input[type="hidden"]') && !secret(e));
   let controls=elements.map(e=>{
     const ref=mark(e);
     const form=e.form || e.closest('form');
@@ -57,6 +55,19 @@ SCAN = r"""({query, offset, text_offset, ref, region_ref, navigation_only, job_o
       search_form:!!form && (form.getAttribute('role')==='search' || !!form.querySelector('input[type="search"], [role="searchbox"]') ||
         form.method.toLowerCase()==='get' && /search|query|keyword|\bq\b/i.test(form.innerText+' '+[...form.elements].map(x=>x.name).join(' ')))};
   });
+  // A view filter or a fresh token is not a change to the underlying page.
+  // Hash only source state here; no source text is added to model context.
+  const sourceState=[location.href,document.title,document.body?.innerText || '',controls.map(c=>[c.label,c.tag,c.type,c.role,c.href,c.value,c.checked,c.disabled])];
+  const sourceString=JSON.stringify(sourceState);
+  let hashA=2166136261,hashB=5381;
+  for(let i=0;i<sourceString.length;i++){hashA=Math.imul(hashA^sourceString.charCodeAt(i),16777619);hashB=Math.imul(hashB,33)^sourceString.charCodeAt(i);}
+  const sourceHash=`${sourceString.length}:${hashA>>>0}:${hashB>>>0}`;
+  // Filter the returned view only after hashing the complete non-secret source.
+  // Changing region/navigation/query/offset must not reset no-progress guards.
+  controls=controls.filter((c,i)=>inside(elements[i]) && (!navigation_only ||
+    (elements[i].tagName==='A' && /^https:\/\//.test(elements[i].href)) ||
+    (elements[i].matches('button,[role="button"]') && elements[i].type!=='submit' &&
+      /^(?:close|dismiss|not now|maybe later|关闭|暂不|稍后)(?:\b|$)/i.test(label(elements[i])))));
   const needle=query.toLowerCase(),terms=needle.split(/\s+/).filter(Boolean);
   const matches=text=>terms.every(term=>text.toLowerCase().includes(term));
   if(ref) controls=controls.filter(c=>c.ref===ref);
@@ -71,10 +82,31 @@ SCAN = r"""({query, offset, text_offset, ref, region_ref, navigation_only, job_o
   };
   // Keep applicant questions and EEO forms out of a job-description snapshot.
   // Generic browser observations still include every visible control.
-  const descriptions=job_only?all('.job__description,[data-automation-id="jobPostingDescription"],.jobs-description__content').filter(visible).filter(inside):[];
+  const candidates=all('.job-description,.job__description,.posting-description,.simple-job-description-html,#jobDescriptionText,[data-testid="jobsearch-JobComponent-description"],[data-automation-id="jobPostingDescription"],.jobs-description__content,[itemprop="description"]').filter(visible).filter(inside);
+  const descriptions=candidates.filter(e=>!candidates.some(other=>other!==e && e.contains(other)));
   const description=descriptions.length===1 && descriptions[0].innerText.trim().length>=100?descriptions[0]:null;
-  const body=navigation_only?'':(description?description.innerText:[(region || document.body)?.innerText || '',...roots.slice(1).filter(r=>visible(r.host)&&inside(r.host)).map(shadowText)].join('\n')).replace(/\n{3,}/g,'\n\n');
-  const headings=navigation_only?[]:all('h1,h2,h3,[role="heading"]').filter(visible).filter(inside);
+  const articles=all('article').filter(visible).filter(inside).filter(e=>e.querySelectorAll('h1').length===1);
+  const jobRoot=description || (descriptions.length>1?null:region || (articles.length===1?articles[0]:null));
+  let jobText='';
+  if(job_only && jobRoot) {
+    const copy=jobRoot.cloneNode(true);
+    copy.querySelectorAll('script,style,noscript,nav,aside,footer,header,.previous-next,.related-jobs,.recommended-jobs,.similar-jobs,.job-recommendations').forEach(e=>e.remove());
+    // A detached clone has no innerText layout; preserve block boundaries.
+    copy.querySelectorAll('p,div,li,h1,h2,h3,br').forEach(e=>{e.prepend('\n');e.append('\n');});
+    jobText=copy.textContent || '';
+  }
+  const body=navigation_only?'':(job_only?jobText:[(region || document.body)?.innerText || '',...roots.slice(1).filter(r=>visible(r.host)&&inside(r.host)).map(shadowText)].join('\n')).replace(/\n{3,}/g,'\n\n');
+  const detailRoot=description?.closest('article,[data-testid="jobsearch-JobComponent"],.jobsearch-JobComponent,[data-testid="viewjob-main-content"]') || jobRoot;
+  const headingRoot=job_only?detailRoot:region;
+  const detailHeader=detailRoot?.querySelector('[data-testid="desktop-job-header"],.job-header,[itemprop="jobLocation"]');
+  const headerText=detailHeader && visible(detailHeader)?detailHeader.innerText.trim().slice(0,1800):'';
+  const metadata = selector => {
+    if(!detailRoot)return '';
+    const values=[...detailRoot.querySelectorAll(selector)].filter(visible).map(e=>clean(e.innerText)).filter(Boolean);
+    return new Set(values).size===1?values[0]:'';
+  };
+  const headings=navigation_only?[]:all('h1,h2,h3,[role="heading"]').filter(visible).filter(inside)
+    .filter(e=>!headingRoot || headingRoot.contains(e));
   const regions=navigation_only?[]:all('main,article,section,[role="main"],[role="region"],[role="list"],div').filter(visible).filter(inside).filter(e=>{
     const semantic=e.matches('main,article,section,[role="main"],[role="region"],[role="list"]');
     const scrollable=e.scrollHeight>e.clientHeight+30 && /auto|scroll/.test(getComputedStyle(e).overflowY);
@@ -84,9 +116,25 @@ SCAN = r"""({query, offset, text_offset, ref, region_ref, navigation_only, job_o
     tag:e.tagName,text_length:e.innerText.length,scrollable:e.scrollHeight>e.clientHeight+30 && /auto|scroll/.test(getComputedStyle(e).overflowY)}));
   const index=needle?body.toLowerCase().indexOf(needle):-1;
   const start=needle && index>=0?Math.max(0,index-200):text_offset;
-  return {title:navigation_only?'':document.title,primary_heading:clean(headings[0]?.innerText),heading:headings.map(e=>clean(e.innerText)).join(' / ').slice(0,600),
+  const detailTitle=clean(detailRoot?.querySelector('[data-testid="vj-job-title"],h1,h2,[role="heading"]')?.innerText);
+  const locationText=metadata('.listing-location,.job-location,[itemprop="jobLocation"],[data-automation-id="locations"],[data-testid="inlineHeader-companyLocation"],[data-testid="job-location"]') ||
+    headerText.match(/(?:^|\n)([A-Za-z][A-Za-z .'-]+, [A-Z]{2}(?: \d{5})?)(?=\n|$)/)?.[1] || '';
+  // Work-mode badges can be siblings of the postal location. Only the same
+  // bounded job header can supply one; search filters and sidebars cannot.
+  const mode=headerText.match(/(?:^|\n)\s*(Remote|Hybrid|On[- ]site)\s*(?=\n|$)/i)?.[1] || '';
+  const jobLocation=locationText && mode && !locationText.toLowerCase().includes(mode.toLowerCase())?`${locationText}; ${mode}`:locationText;
+  return {title:navigation_only?'':document.title,page_evidence_hash:sourceHash,
+    primary_heading:job_only && detailTitle?detailTitle:clean((headings.find(e=>e.tagName==='H1') || headings[0])?.innerText),heading:headings.map(e=>clean(e.innerText)).join(' / ').slice(0,600),
+    ...(!navigation_only && (description || descriptions.length===0 && articles.length===1)?{job_detail:{body_scope:description?'bounded_selector':'bounded_article',title:detailTitle,
+      instruction:'A single bounded posting body is available. Use read_job to capture it instead of rereading search controls.'}}:{}),
+    ...(job_only?{job_header_text:headerText,
+      job_location:jobLocation,
+      job_company:metadata('[itemprop="hiringOrganization"],[data-testid="inlineHeader-companyName"],.job-company')}:{}),
     text:body.slice(start,start+7000),text_offset:start,text_length:body.length,region_ref:region_ref||null,
-    regions:regions.filter(r=>!needle||matches(r.label+' '+r.context)).slice(0,40),
+    ...(job_only?{body_scope:description?'bounded_selector':region?'explicit_region':jobRoot?'bounded_article':'unbounded'}:{}),
+    // A text query filters content/controls, not the live identity of regions.
+    // Otherwise a filtered read erases a still-visible detail panel's reference.
+    regions:regions.slice(0,40),
     controls:controls.slice(offset,offset+90),control_offset:offset,control_count:controls.length,
     errors:navigation_only?[]:all('[role="alert"],.field-error,.error-message').filter(visible).filter(inside).map(e=>clean(e.innerText)).filter(Boolean).slice(0,12),
     viewport:{width:innerWidth,height:innerHeight,scroll_x:scrollX,scroll_y:scrollY}};
@@ -141,11 +189,18 @@ class BrowserSession:
                 'Account contents are hidden. You can use the observed public links or dismiss controls. If sign-in or verification is required, ask the user to click Control browser in Agent activity, complete it there and reply to continue. Do not ask for credentials in chat.',
                 'controls':navigation['controls'],'control_count':navigation['control_count'],'regions':[],
                 'blocked':'credentials','tabs':tabs}
+            if not self.application:
+                result['next']='This research source requires sign-in. Switch immediately to a public company board or search_jobs; do not repeat the login wall or ask for credentials for public research.'
         else:
             result = {**self.scope.evaluate(SCAN,{'query':query,'offset':offset,'text_offset':text_offset,'region_ref':region_ref,'job_only':job_only}),
                 'url':page.url,'frame_url':self.scope.url,'tabs':tabs,
                 'frames':[{'id':str(i),'url':f.url,'active':f==self.scope} for i,f in enumerate(page.frames)]}
+            if not self.application and re.search(r'just a moment|verif(?:y|ying) you are (?:a )?human|checking your browser|cloudflare ray id|access denied',
+                    ' '.join(str(result.get(k,'')) for k in ('title','primary_heading','text'))[:1200],re.I):
+                result.update(blocked='bot_challenge',next='Switch immediately to another public source or search_jobs. Headless browsers can be blocked; repeating this page will not verify a job.')
         self.observation = {**result,'query':query,'observation_id':str(uuid4())}
+        if self.observation.get('job_detail'):
+            self.observation['job_detail']['read_job_arguments']={'url':page.url}
         return self.observation
 
     def _fresh(self, token):

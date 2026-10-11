@@ -15,6 +15,15 @@ __pycache__/
 uploads/
 .browser-sessions/
 artifacts/browser-eval/
+/tmp/
+
+# Historical raw E2E outputs stay local. Publish their compact hash/count indexes.
+/docs/diagnostics/e2e-2026-10-10/*
+!/docs/diagnostics/e2e-2026-10-10/README.md
+!/docs/diagnostics/e2e-2026-10-10/publication-index.json
+/docs/diagnostics/repairs-2026-10-10/*
+!/docs/diagnostics/repairs-2026-10-10/README.md
+!/docs/diagnostics/repairs-2026-10-10/publication-index.json
 
 # Local frontend design references
 /design/

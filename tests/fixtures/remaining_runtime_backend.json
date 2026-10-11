@@ -1,0 +1,136 @@
+{
+  "status": "completed",
+  "calls": 51,
+  "error": null,
+  "applications": 0,
+  "schedules": 0,
+  "final": "Found 2 current senior backend, remote-US positions verified and scored against your saved resume (Go/Python/Postgres/AWS-EKS):\n\n1. **Senior Backend Software Engineer - Atlassian** - Remote / San Francisco, CA\n   - URL: https://www.indeed.com/jobs?fromage=14&l=Remote&q=senior+backend+engineer&sc=0kf%3Aattr%28DSQF7%29%3B&sort=date&vjk=1b7c6937160979c9\n   - Score: 55.1 - Matched 5+ years backend, Python/Go/Java, Postgres/RDBMS. Partial gaps: cloud/microservices, mentoring evidence. Missing: agile, customer-impact evidence.\n   - Caveat: Indeed shows Remote in SF; confirm US-remote eligibility and open status on apply page.\n\n2. **Senior Backend Engineer (Go/Python) - BearPlex** - Remote Global (includes United States)\n   - URL: https://www.bearplex.com/careers/senior-backend-engineer-go-python\n   - Score: 41.71 - Matches Go/Python, Postgres, Docker/K8s/AWS. Gaps: large-scale distributed/AI workloads, MongoDB/Redis tuning.\n   - Caveat: Global remote listing; confirm US eligibility and open status.\n\nSources: Started with LinkedIn (21k+ results but skewed to Canada/Mexico for US-Remote filter), then used Indeed remote search (last 14 days) + public BearPlex careers board - both verified. Two earlier remoterocketship leads were closed. No applications or schedules created as requested.",
+  "usage": {
+    "calls": 60,
+    "completed": 60,
+    "failed": 0,
+    "pending": 0,
+    "discarded": 0,
+    "retries": 0,
+    "input_tokens": 923481,
+    "output_tokens": 30669,
+    "unknown_usage_calls": 0,
+    "groups": [
+      {
+        "purpose": "agent",
+        "model": "muse-spark-1.3-contributor",
+        "calls": 51,
+        "input_tokens": 874688,
+        "output_tokens": 23785,
+        "unknown_usage_calls": 0,
+        "cached_input_tokens": 384515,
+        "reasoning_tokens": 17014
+      },
+      {
+        "purpose": "jev:fit:extract_requirements",
+        "model": "jev-1.13.0",
+        "calls": 2,
+        "input_tokens": 21983,
+        "output_tokens": 3372,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:refine_extraction_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 5889,
+        "output_tokens": 750,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:condition_category_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 2,
+        "input_tokens": 4973,
+        "output_tokens": 785,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:support_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 8220,
+        "output_tokens": 1398,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:focused_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 3497,
+        "output_tokens": 264,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:clarify_full_support_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 2055,
+        "output_tokens": 192,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:verify_citations_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 2176,
+        "output_tokens": 123,
+        "unknown_usage_calls": 0
+      }
+    ],
+    "cached_input_tokens": 384515,
+    "reasoning_tokens": 17014,
+    "usage_complete": true
+  },
+  "recommendations": [
+    {
+      "application_id": "b14c6708-eb23-46da-b9ac-4895291fcff7",
+      "title": "Senior Backend Engineer (Go/Python)",
+      "company": "BearPlex",
+      "location": "Remote; United States; United Kingdom; Canada; Australia; United Arab Emirates; Saudi Arabia; Qatar; Pakistan",
+      "url": "https://www.bearplex.com/careers/senior-backend-engineer-go-python",
+      "match_score": 41.71,
+      "reason": "Senior-level Go/Python backend role with PostgreSQL, Docker/Kubernetes on AWS matching saved resume Go/Python/Postgres/AWS-EKS background. Verified via public BearPlex careers page.",
+      "caveats": "Remote Global listing includes United States among locations; confirm US eligibility and current open status on BearPlex careers page. Score 41.71 reflects gaps in large-scale distributed systems, MongoDB/Redis tuning, and AI workload experience."
+    },
+    {
+      "application_id": "1d97a234-3be3-43e7-8f0c-438331327101",
+      "title": "Senior Backend Software Engineer",
+      "company": "Atlassian",
+      "location": "San Francisco, CA 94104",
+      "url": "https://www.indeed.com/jobs?fromage=14&l=Remote&q=senior+backend+engineer&sc=0kf%3Aattr%28DSQF7%29%3B&sort=date&vjk=1b7c6937160979c9",
+      "match_score": 55.1,
+      "reason": "Senior-level backend role requiring 5+ years, Python/Go/Java, Postgres/RDBMS, matching saved resume Go/Python/Postgres/AWS-EKS background. Verified via Indeed remote search within last 14 days.",
+      "caveats": "Indeed listing shows as Remote in San Francisco, CA; confirm US-remote eligibility and current open status on Atlassian/Indeed apply page. Score 55.1 reflects partial gaps in cloud/microservices and agile evidence."
+    }
+  ],
+  "verified_jobs": [
+    {
+      "application_id": "1d97a234-3be3-43e7-8f0c-438331327101",
+      "title": "Senior Backend Software Engineer",
+      "company": "Atlassian",
+      "url": "https://www.indeed.com/jobs?fromage=14&l=Remote&q=senior+backend+engineer&sc=0kf%3Aattr%28DSQF7%29%3B&sort=date&vjk=1b7c6937160979c9",
+      "location": "San Francisco, CA 94104",
+      "description": "Senior Backend Software Engineer\nSan Francisco, CA 94104\nSenior Backend Software Engineer\nAtlassian\n·\n3.9\nSan Francisco, CA 94104\n•\nRemote\n$149,400 - $235,000 a year\nApply on company site\nOverview: \n \n Working at Atlassian\n\n \nAtlassians can choose where they work – whether in an office, from home, or a combination of the two. That way, Atlassians have more control over supporting their family, personal goals, and other priorities. We can hire people in any country where we have a legal entity.\n\n \n\n Responsibilities: \n \n What You'll Do:\n\n \n  \n\n   \nDrive large, complex projects autonomously, from technical design to launch\n\n  \n\n   \nTackle complex architecture challenges, apply architectural standards and start using them on new projects\n\n  \n\n   \nLead code reviews & documentation as well as take on complex bug fixes, especially on high-risk problems\n\n  \n\n   \nBe an example for thorough, meaningful code reviews\n\n  \n\n   \nPartner across engineering teams to tackle company-wide initiatives spanning multiple projects\n\n  \n\n   \nTransfer your depth of knowledge from your current language to excel as a Java developer.\n\n  \n\n   \nMentor junior members of the team\n\n  Compensation: \n \nAt Atlassian, we strive to design equitable, explainable, and competitive compensation programs. We follow consistent hiring practices and account for each candidate's skills, knowledge, and experience when setting base pay within the range.\n\n \nPlease visit go.atlassian.com/payzones for more information on which locations are included in each of our geographic pay zones. However, please confirm the zone for your specific location with your recruiter.\n\n \nThis role may also be eligible for benefits, bonuses, commissions, and equity.\n Pay Ranges: \n \nIn The United States, we have three geographic pay zones. For this role, our current base pay ranges for new hires in each zone are:\n\n \n Zone A: $180,000 - $235,000\n\n \n Zone B: $162,000 - $211,500\n\n \n Zone C: $149,400 - $195,050\n Qualifications: \n \n Your Background:\n\n \n  \n\n   \n5+ years experience building and developing backend applications\n\n  \n\n   \nBachelor's or Master's degree with a preference for Computer Science degree - Senior-level experience with one or more prominent languages such as Java, Python, Kotlin, Go, or Scala is required.\n\n  \n\n   \nUnderstanding of SaaS, PaaS, IaaS industry with hands-on experience with public cloud offerings (e.g., AWS, GCP, Azure)\n\n  \n\n   \nFluency in any one database technology (e.g. RDBMS like Oracle or Postgres and/or NoSQL like DynamoDB or Cassandra)\n\n  \n\n   \nExperience crafting and implementing well-tested, highly scalable and performant micro-services and/or other distributed systems\n\n  \n\n   \nPractical knowledge of agile software development methodologies (e.g., XP, scrum)\n\n  \n\n   \nKnowledge to evaluate trade-offs between correctness, robustness, performance, space and time\n\n  \n\n   \nPractice in mentoring other engineers and influencing decision makers throughout the organization -\n\n  \n\n   \nConsiders the customer impact when making technical decisions\n\n \n \n Benefits & Perks\n\n \nAtlassian offers a wide range of perks and benefits designed to support you, your family and to help you engage with your local community. Our offerings include health and wellbeing resources, paid volunteer days, and so much more. To learn more, visit go.atlassian.com/perksandbenefits.\n\n \n About Atlassian\n\n \nAt Atlassian, we're motivated by a common goal: to unleash the potential of every team. Our software products help teams all over the planet and our solutions are designed for all types of work. Team collaboration through our tools makes what may be impossible alone, possible together.\n\n \nWe believe that the unique contributions of all Atlassians create our success. To ensure that our products and culture continue to incorporate everyone's perspectives and experience, we never discriminate based on race, religion, national origin, gender identity or expression, sexual orientation, age, or marital, veteran, or disability status. All your information will be kept confidential according to EEO guidelines.\n\n \nTo provide you the best experience, we can support with accommodations or adjustments at any stage of the recruitment process. Simply inform our Recruitment team during your conversation with them.\n\n \nTo learn more about our culture and hiring process, visit go.atlassian.com/crh.\n\n \n In line with local law, identity verification (which may include use of biometric data) is a condition of employment with Atlassian for employment fraud purposes.",
+      "match_score": 55.1,
+      "retrieved": true,
+      "disqualified": false
+    },
+    {
+      "application_id": "b14c6708-eb23-46da-b9ac-4895291fcff7",
+      "title": "Senior Backend Engineer (Go/Python)",
+      "company": "BearPlex",
+      "url": "https://www.bearplex.com/careers/senior-backend-engineer-go-python",
+      "location": "Remote; United States; United Kingdom; Canada; Australia; United Arab Emirates; Saudi Arabia; Qatar; Pakistan",
+      "description": "The Role\nThe systems BearPlex ships carry real load for regulated enterprises, and the backend is where reliability is won or lost. We need engineers who design for scale and failure from the start, because our clients run these systems in production and expect them to hold.\nThis is a fully remote, senior position building high-scale backend services in Go and Python. You will work on distributed systems and APIs that power AI-heavy workloads, where performance and correctness are not optional.\nWhat You Will Do\n\nBuild high-scale backend services. Design and ship distributed systems in Go and Python that handle heavy, concurrent, AI-driven workloads.\n\nDesign resilient APIs. Build clean, well-versioned interfaces that other teams and client systems depend on, with clear contracts and observability.\n\nOwn data at scale. Model, query, and tune PostgreSQL, MongoDB, and Redis for throughput, consistency, and predictable latency.\n\nEngineer for reliability. Build in retries, backpressure, idempotency, and graceful degradation so systems stay up under real-world conditions.\n\nOptimize performance. Profile hot paths, eliminate bottlenecks, and serve AI inference and data pipelines at the latency our clients require.\n\nShip to production with rigor. Containerize with Docker, deploy on Kubernetes across AWS, GCP, or Azure, and instrument everything for auditability.\n\nRaise the engineering bar. Review code, shape architecture decisions, and mentor peers toward durable, maintainable systems.\nWhat We Are Looking For\n\nSenior backend experience shipping production systems at scale, with strong command of both Go and Python.\n\nDeep distributed systems knowledge, including concurrency, queuing, caching, and consistency tradeoffs.\n\nStrong API design skills and experience operating services that other teams rely on.\n\nSolid database expertise across PostgreSQL and at least one of MongoDB or Redis, including performance tuning.\n\nHands-on cloud and container experience with Docker, Kubernetes, and at least one of AWS, GCP, or Azure.\n\nA reliability-first mindset. You design for failure, measure what you ship, and value architectural integrity over raw speed.\n\nComfort working remotely with strong written communication and the autonomy to own systems end to end.\nNice to Have\n\nExperience serving AI or ML workloads in production, including inference APIs or RAG systems.\n\nRust experience for performance-critical components.\n\nFamiliarity with event-driven or streaming architectures.\n\nBackground building for regulated or audit-heavy environments.\nWhy BearPlex\n\nReal production work. You build systems that run at scale for regulated enterprises, not prototypes or throwaway demos.\n\nSenior peers. Every engineer here has shipped real systems, so code review and architecture conversations are worth your time.\n\nRemote and global. Work from anywhere, with a team spanning Lahore, Austin, and Doha.\n\nLearning budget. Support to deepen your skills in distributed systems, AI infrastructure, and beyond.\n\nClear growth. A path toward technical leadership as our platforms and team scale.",
+      "match_score": 41.71,
+      "retrieved": true,
+      "disqualified": false
+    }
+  ]
+}

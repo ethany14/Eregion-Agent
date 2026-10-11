@@ -33,13 +33,6 @@ class JevFitService:
             raw=JevFit(client).analyze(evidence,jd=job['job_description'])
             if raw.get('provider_errors')or 'matches'not in raw:
                 raise JevFitError('Jev fit analysis could not complete: '+','.join(raw.get('provider_errors')or[raw['status']]))
-            if self.config.resolve_unknowns and any(m['status']=='unknown' for m in raw['matches']):
-                from job_agent.model import shared_model
-                from agent_runtime.provider_usage import usage_scope
-                from .resolve import DecisionStore, resolve_unknowns
-                store=DecisionStore(self.config.cache_path) if self.config.cache_path else None
-                with usage_scope(purpose='jev_fit_resolver'):
-                    raw=resolve_unknowns(raw,evidence,model=self.resolver_model or shared_model(purpose='extraction'),store=store)
             return job,client,raw
         try:
             with ThreadPoolExecutor(max_workers=min(len(jobs),4),thread_name_prefix='jev-fit')as pool:
@@ -47,6 +40,15 @@ class JevFitService:
                 completed=[f.result()for f in futures]
         finally:
             broker.close()
+        if self.config.resolve_unknowns and any(m['status']=='unknown' for _,_,raw in completed for m in raw['matches']):
+            from job_agent.model import shared_model
+            from agent_runtime.provider_usage import usage_scope
+            from .resolve import DecisionStore,resolve_unknowns_many
+            store=DecisionStore(self.config.cache_path) if self.config.cache_path else None
+            with usage_scope(purpose='jev_fit_resolver'):
+                resolved=resolve_unknowns_many({job['id']:raw for job,_,raw in completed},evidence,
+                    model=self.resolver_model or shared_model(purpose='extraction'),store=store)
+            completed=[(job,client,resolved[job['id']]) for job,client,_ in completed]
         # Assign each paid batch to exactly one consumer so aggregates never multiply
         # shared tokens. All consumers still retain cache/call provenance.
         assigned=set()

@@ -67,12 +67,19 @@ class SharedModelAnalyzer:
     def __call__(
         self, schema: type[BaseModel], system_message: str, human_message: str
     ) -> BaseModel:
+        # One fallback per structured transport, not per outer job analysis.
+        # Concrete provider events suppress it; offline/custom transports retain
+        # explicit unknown-usage adapter attempts.
+        def invoke(*args):
+            from agent_runtime.provider_usage import adapter_attempt
+            with adapter_attempt('structured:' + args[1].__name__):
+                return invoke_structured(*args)
         from job_agent.model import shared_model
         model = shared_model(env_path=self._env_path,
             purpose='extraction' if schema in {ResumeAnalysis, JobAnalysis, SkillAssessment} else None)
         if schema is ResumeAnalysis:
             from job_agent.resume_extraction import ResumeExtraction, RESUME_EXTRACTION_PROMPT
-            return invoke_structured(model, ResumeExtraction, RESUME_EXTRACTION_PROMPT, human_message).expand()
+            return invoke(model, ResumeExtraction, RESUME_EXTRACTION_PROMPT, human_message).expand()
         if schema is JobAnalysis:
             from job_agent.job_extraction import ReferencedJobExtraction, REFERENCE_JOB_PROMPT, numbered_sentences
             from job_agent.job_extraction import extract_job
@@ -82,19 +89,19 @@ class SharedModelAnalyzer:
             resume_text, job_text = human_message.removeprefix('Resume analysis:\n').split('\n\nJob analysis:\n', 1)
             resume, job = ResumeAnalysis.model_validate_json(resume_text), JobAnalysis.model_validate_json(job_text)
             content = match_payload(resume, job.requirements)
-            return invoke_structured(model, CompactSkillAssessment, COMPACT_MATCH_PROMPT, content).expand(resume, job)
+            return invoke(model, CompactSkillAssessment, COMPACT_MATCH_PROMPT, content).expand(resume, job)
         if schema is VerificationResult:
             # Quality is checked deterministically below. Requesting it from
             # the model can reject an otherwise valid factual verdict before
             # that check, e.g. passed=false with no structural issues.
             from job_agent.prompt_context import context_instruction
-            result = invoke_structured(model, FactualVerificationResult,
+            result = invoke(model, FactualVerificationResult,
                 system_message + context_instruction(human_message), human_message)
             return VerificationResult.model_validate(result.model_dump())
         if schema is TailoredResume:
             from job_agent.prompt_context import context_instruction
             system_message += context_instruction(human_message)
-        return invoke_structured(model, schema, system_message, human_message)
+        return invoke(model, schema, system_message, human_message)
 
 
 class JobAgentStepHandler:
@@ -108,7 +115,13 @@ class JobAgentStepHandler:
         model_analyzer = analyzer or SharedModelAnalyzer()
         self.analysis_cache = analysis_cache
         self._model_analyzer = model_analyzer
-        self._analyze = lambda *args, **kwargs: invoke_model(model_analyzer, *args, **kwargs)
+        def analyze(*args, **kwargs):
+            from agent_runtime.provider_usage import adapter_attempt
+            if isinstance(model_analyzer, SharedModelAnalyzer):
+                return invoke_model(model_analyzer, *args, **kwargs)
+            with adapter_attempt(type(model_analyzer).__name__):
+                return invoke_model(model_analyzer, *args, **kwargs)
+        self._analyze = analyze
 
     def analysis_cache_namespace(self):
         namespace = getattr(self._model_analyzer,'cache_namespace',None)
@@ -154,6 +167,8 @@ class JobAgentStepHandler:
             # immutable version IDs. Changing evidence cannot reuse an old score.
             content = [state.resume_analysis.model_dump(mode='json'), state.job_analysis.model_dump(mode='json')]
             signature.append(self.analysis_cache_namespace())
+            from agent_runtime.provider_usage import current_scope
+            signature.append(current_scope().get('fit_catalogue_signature'))
         else:
             content = (state.resume_text if kind == 'resume' else state.job_description).replace('\r\n', '\n').strip()
         updates = self.analysis_cache.get(kind, signature, content, compute)

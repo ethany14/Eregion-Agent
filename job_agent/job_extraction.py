@@ -1,6 +1,7 @@
 """Compact provider output; public JobAnalysis and evidence rules stay unchanged."""
 import hashlib
 import json
+import re
 
 from pydantic import Field
 
@@ -34,9 +35,13 @@ class JobExtraction(AnalysisModel):
         requirements, seen = [], set()
         for group_index, statement in enumerate(self.statements):
             for atom_index, atom in enumerate(statement.requirements):
-                # The same requirement repeated in several sentences (or batches) is
-                # scored once; repeats inflate the requirement count and the variance.
-                key = (' '.join(atom.atomic_text.casefold().split()), atom.level)
+                # Cosmetic duplicates are safe only within the same source and
+                # typed constraint. An incomplete atomic_text must never erase a
+                # stronger duration, a different mode/category or source clause.
+                cosmetic = re.sub(r'(?<=\w)[-\u2010\u2011](?=\w)', ' ', atom.atomic_text.casefold())
+                cosmetic = ' '.join(cosmetic.rstrip(' .;').split())
+                key = (cosmetic, ' '.join(statement.source_text.casefold().split()),
+                       atom.category, atom.verification_mode, atom.minimum_years, atom.level)
                 if key in seen:
                     continue
                 seen.add(key)
@@ -68,7 +73,13 @@ IDs, grouping IDs and the legacy original_text copy are assigned by the applicat
 
 
 def extraction_signature():
-    return hashlib.sha256(json.dumps(['bounded-output-v3-context-filter', REFERENCE_JOB_PROMPT, ReferencedJobExtraction.model_json_schema()],
+    from pathlib import Path
+    # Changes to shared segmentation/boilerplate or local constraint handling
+    # invalidate main-model results even when provider prompts are unchanged.
+    implementation = [hashlib.sha256(path.read_bytes()).hexdigest() for path in
+        (Path(__file__), Path(__file__).parent/'jev_fit'/'core.py', Path(__file__).parent/'batch_retry.py',
+         Path(__file__).parent/'domain.py', Path(__file__).parent/'partial_support.py')]
+    return hashlib.sha256(json.dumps(['bounded-output-v4-scoped-units', implementation, REFERENCE_JOB_PROMPT, ReferencedJobExtraction.model_json_schema()],
                                     sort_keys=True).encode()).hexdigest()
 
 
@@ -91,9 +102,20 @@ class ReferencedJobExtraction(AnalysisModel):
             responsibilities=[sentences[k] for k in self.responsibility_sentence_ids]).expand()
 
 def numbered_sentences(text):
-    import re
-    pieces = [part.strip() for part in re.split(r'\n+|(?<=[.!?])\s+(?=[A-Z])', text) if part.strip()]
-    return {f's{i}': part for i, part in enumerate(pieces)}
+    from job_agent.jev_fit.core import job_units
+    return {f's{i}': unit['text'] for i, unit in enumerate(job_units(text))}
+
+
+def context_only(unit):
+    from job_agent.jev_fit.core import boilerplate
+    text = unit['text'].strip()
+    heading = text.rstrip(':').strip().casefold() == (unit.get('section') or '').strip().casefold()
+    # Only a compact role-name line, not a qualification mentioning the role.
+    title = (len(text.split()) <= 12 and re.fullmatch(
+        r'(?:(?:junior|senior|staff|principal|lead|entry[- ]level|associate|backend|frontend|full[- ]stack|'
+        r'software|data|python|product|ux|ui|business|marketing|sales|cloud|devops|security|machine learning)\s+)*'
+        r'(?:engineer|developer|analyst|designer|manager|scientist|architect)[.!]?', text, re.I))
+    return bool(heading or title or boilerplate(unit))
 
 def context_sentence_ids(text, sentences):
     """Sentences inside benefits/salary/company/EEO sections or with legal boilerplate."""
@@ -105,7 +127,7 @@ def context_sentence_ids(text, sentences):
             continue
         cursor = position + len(sentence)
         section = next((u.get('section') for u in reversed(units) if u['start'] <= position), None)
-        if boilerplate({'text': sentence, 'section': section}):
+        if context_only({'text': sentence, 'section': section}):
             found.add(key)
     return found
 
@@ -125,30 +147,31 @@ def extract_job(model, text):
     from concurrent.futures import ThreadPoolExecutor
     from contextvars import copy_context
     from job_agent.model import invoke_structured
+    from job_agent.batch_retry import retry_batch
     sentences = numbered_sentences(text)
     context = context_sentence_ids(text, sentences)
-    # Benefits, salary, company and EEO text stays visible as context but is not
-    # extracted as requirements (it inflated counts to 90 for one posting).
-    ids = [key for key in sentences if key not in context] or list(sentences)
+    # Heading/role context remains visible; boilerplate never becomes a target,
+    # including when every source unit is background. No count-based truncation.
+    ids = [key for key in sentences if key not in context]
+    if not ids:
+        return JobAnalysis(title=None, summary='', requirements=[], responsibilities=[])
+    from job_agent.jev_fit.core import job_units, boilerplate
+    units = job_units(text)
+    sentences = {key: value for (key, value), unit in zip(sentences.items(), units)
+                 if not boilerplate(unit)}
     groups = [ids[i:i + 8] for i in range(0, len(ids), 8)] if len(ids) > 12 else [ids]
     def extract(targets):
         payload = {'source_sentences': sentences, 'extract_sentence_ids': targets}
         prompt = REFERENCE_JOB_PROMPT + "\nExtract requirements and responsibilities ONLY for extract_sentence_ids. Other source sentences provide headings/qualifiers and role context, not additional items."
-        result = invoke_structured(model, ReferencedJobExtraction, prompt,
-                                  json.dumps(payload, ensure_ascii=False, separators=(',', ':')))
+        from agent_runtime.provider_usage import adapter_attempt
+        with adapter_attempt('structured:ReferencedJobExtraction'):
+            result = invoke_structured(model, ReferencedJobExtraction, prompt,
+                                      json.dumps(payload, ensure_ascii=False, separators=(',', ':')))
         if any(s.sentence_id not in targets for s in result.statements) or any(k not in targets for k in result.responsibility_sentence_ids):
             raise ValueError('Job extraction crossed its assigned source sentences.')
         return result
     def extract_with_retry(targets):
-        try:
-            return extract(targets)
-        except Exception as exc:
-            # A provider timeout or dropped connection on one batch retries that
-            # batch once, not the whole analysis.
-            name = type(exc).__name__.casefold()
-            if 'timeout' not in name and 'connection' not in name:
-                raise
-            return extract(targets)
+        return retry_batch(lambda: extract(targets))
     if len(groups) == 1:
         results = [extract_with_retry(groups[0])]
     else:

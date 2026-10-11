@@ -335,7 +335,7 @@ def normalize_job_analysis(
             f"description: {invalid_sources}"
         )
 
-    requirements_by_name: dict[str, JobRequirement] = {}
+    requirements_by_predicate: dict[tuple, JobRequirement] = {}
     for item in analysis.requirements:
         canonical_name = canonicalize_requirement(
             item.canonical_name,
@@ -348,6 +348,8 @@ def normalize_job_analysis(
         minimum_years = extract_minimum_years(item.atomic_text)
         if minimum_years is None:
             minimum_years = extract_minimum_years(item.source_text)
+        if item.minimum_years is not None and item.minimum_years != minimum_years:
+            raise ValueError('Extracted duration conflicts with the quoted requirement; do not silently weaken it.')
 
         normalized = JobRequirement.model_validate(
             {
@@ -367,16 +369,24 @@ def normalize_job_analysis(
                 }
             )
 
-        existing = requirements_by_name.get(canonical_name)
+        # A shared skill label is not a shared predicate: duration, verification
+        # mode, category and the complete atomic clause must remain distinct.
+        key = (canonical_name, normalize_text(normalized.atomic_text), normalized.minimum_years,
+               normalized.verification_mode, normalized.category)
+        existing = requirements_by_predicate.get(key)
         if existing is None or (
             existing.level == "preferred" and normalized.level == "required"
         ):
-            requirements_by_name[canonical_name] = normalized
+            if any(r.requirement_id == normalized.requirement_id for other, r in requirements_by_predicate.items() if other != key):
+                normalized = normalized.model_copy(update={'requirement_id': _stable_id(
+                    'REQ', group_id, normalized.atomic_text, str(normalized.category),
+                    str(normalized.verification_mode), str(normalized.minimum_years))})
+            requirements_by_predicate[key] = normalized
 
     return JobAnalysis.model_validate(
         {
             **analysis.model_dump(mode="python"),
-            "requirements": list(requirements_by_name.values()),
+            "requirements": list(requirements_by_predicate.values()),
         }
     )
 
@@ -436,10 +446,19 @@ def normalize_skill_match(
         normalize_evidence_text(item.exact_text): item.exact_text
         for item in resume.evidence
     }
-    supplied_by_id = {item.requirement_id: item for item in assessment.matches}
-    supplied_by_name = {
-        normalize_text(item.job_skill): item for item in assessment.matches
-    }
+    from collections import Counter
+    ids = [item.requirement_id for item in assessment.matches if item.requirement_id]
+    if len(ids) != len(set(ids)):
+        raise ValueError('Matching returned a duplicate requirement assessment ID.')
+    supplied_by_id = {item.requirement_id: item for item in assessment.matches if item.requirement_id}
+    # Only genuinely ID-less internal legacy records may use a name, and only
+    # with a unique target AND a unique supplied row. A wrong/known ID is never
+    # a name-only record and cannot be borrowed by another predicate.
+    legacy = [item for item in assessment.matches if not item.requirement_id]
+    legacy_counts = Counter(normalize_text(item.job_skill) for item in legacy)
+    target_counts = Counter(normalize_text(r.canonical_name) for r in job.requirements)
+    supplied_by_name = {normalize_text(item.job_skill): item for item in legacy
+        if legacy_counts[normalize_text(item.job_skill)] == target_counts[normalize_text(item.job_skill)] == 1}
     matches: list[SkillEvidence] = []
 
     for requirement in job.requirements:
@@ -515,6 +534,13 @@ def normalize_skill_match(
                         "The resume evidence does not explicitly support the required "
                         f"minimum of {requirement.minimum_years} years."
                     )
+
+        if status == 'partial':
+            from job_agent.partial_support import partial_overlap
+            if not any(partial_overlap(requirement.atomic_text, quote) for quote in valid_evidence):
+                status = 'missing'
+                reason = 'The exact evidence has no requirement content term or listed synonym for partial support.'
+                supported_years = None
 
         matches.append(
             SkillEvidence.model_validate(

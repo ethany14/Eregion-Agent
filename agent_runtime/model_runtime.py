@@ -1,5 +1,6 @@
 """Shared model timing and safe failure classification, independent of a provider."""
 from dataclasses import dataclass
+import httpx
 
 
 MODEL_PAYMENT_MESSAGE = (
@@ -49,6 +50,6 @@ def model_failure(error):
         return ModelFailure("model_payment_required", False, name, status)
     if status == 429:
         return ModelFailure("model_rate_limited", True, name, status, retry_after(error))
-    if isinstance(error, ConnectionError) or "connection" in name.casefold() or (status and status >= 500):
+    if isinstance(error, (ConnectionError,httpx.NetworkError,httpx.ProxyError)) or "connection" in name.casefold() or (status and status >= 500):
         return ModelFailure("model_unavailable", True, name, status)
     return ModelFailure("model_error", False, name, status)

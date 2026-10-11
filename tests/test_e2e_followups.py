@@ -121,7 +121,7 @@ def test_resolver_rejects_fabricated_quotes_and_drops_non_requirements():
         dict(requirement_id='j2', is_candidate_requirement=True, level='required', personal_condition=True, status='missing', reason='condition')))
     by_id = {m['requirement_id']: m for m in result['matches']}
     assert by_id['j0']['status'] == 'unknown'  # unverifiable support is never adopted
-    assert 'j1' not in by_id
+    assert by_id['j1']['status']=='unknown'  # Resolver concerns cannot erase upstream retained requirements.
     assert by_id['j2']['status'] == 'needs_confirmation'
     # The unverified requirement keeps Jev's uncertain probability (.5 -> credit .625); no invented support.
     assert result['score'] == 62.5

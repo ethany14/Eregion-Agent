@@ -1,0 +1,455 @@
+{
+  "scope": "Read-only terminal failure databases after pytest teardown released feedback gates; not an invented timeout-time snapshot. Missing receipts and failed queue bindings remain visible.",
+  "result": "24 tests:2 failed/22 passed/49.778s",
+  "cases": [
+    {
+      "case": "test_main_chat_rapid_answers_a1",
+      "state": {
+        "status": "needs_input",
+        "error": null,
+        "interview_queue": [
+          {
+            "message_id": "9fdc3d9a-de21-4000-a900-dd0ee74c6606",
+            "text": "A1: I built Python APIs.",
+            "interview_id": "cc47d709-3c2f-4929-af40-e0a08d6a1a8b",
+            "kind": "answer",
+            "status": "done",
+            "at": "2026-10-11T09:40:41.196534+00:00",
+            "started_at": "2026-10-11T09:40:41.200832+00:00",
+            "question_id": "c1650433-ad69-4cf8-a47a-a4f0890cd87c",
+            "finished_at": "2026-10-11T09:40:41.231518+00:00"
+          },
+          {
+            "message_id": "27342e0e-e617-4f18-9183-2f2e26d09ccd",
+            "text": "A2: I tested the SQL results.",
+            "interview_id": "cc47d709-3c2f-4929-af40-e0a08d6a1a8b",
+            "kind": "answer",
+            "status": "failed",
+            "at": "2026-10-11T09:40:41.221583+00:00",
+            "started_at": "2026-10-11T09:40:41.233677+00:00",
+            "question_id": "097dbfe3-2a81-4069-9248-0bc60fee3795",
+            "error_type": "ValueError"
+          },
+          {
+            "message_id": "d1da5f38-a61f-4726-844e-8083dbcdab8e",
+            "text": "A3: I explained the result to my team.",
+            "interview_id": "cc47d709-3c2f-4929-af40-e0a08d6a1a8b",
+            "kind": "answer",
+            "status": "pending",
+            "at": "2026-10-11T09:40:41.241952+00:00"
+          },
+          {
+            "message_id": "4da3afb9-ea54-43dc-9413-7983ca0d1d77",
+            "text": "End the interview.",
+            "interview_id": "cc47d709-3c2f-4929-af40-e0a08d6a1a8b",
+            "kind": "end",
+            "status": "pending",
+            "at": "2026-10-11T09:40:41.250591+00:00"
+          }
+        ],
+        "interview_answer_receipts": null
+      },
+      "session": [
+        {
+          "status": "awaiting_answer",
+          "version": 7,
+          "current_question_id": "097dbfe3-2a81-4069-9248-0bc60fee3795",
+          "questions_completed": 1
+        }
+      ],
+      "questions": [
+        {
+          "question_id": "c1650433-ad69-4cf8-a47a-a4f0890cd87c",
+          "plan_item_id": "8bd8a9db-7f1e-5c95-a968-26e492744285",
+          "question_text": "What did you personally do?",
+          "question_type": "role_fit",
+          "competency": "role_fit",
+          "related_requirement_id": null,
+          "related_evidence_ids": [],
+          "is_followup": false,
+          "parent_question_id": null,
+          "reason_for_asking": "Understand a specific contribution.",
+          "expected_answer_elements": [
+            "personal action",
+            "result"
+          ],
+          "created_at": "2026-10-11T09:40:41.188182Z"
+        },
+        {
+          "question_id": "097dbfe3-2a81-4069-9248-0bc60fee3795",
+          "plan_item_id": "bc0d2d68-d0c7-5725-a2cb-0ba3c921f23c",
+          "question_text": "What did you personally do?",
+          "question_type": "collaboration",
+          "competency": "collaboration",
+          "related_requirement_id": null,
+          "related_evidence_ids": [
+            "d1fa6efd-c518-4602-b96e-2c1987bd46f4"
+          ],
+          "is_followup": false,
+          "parent_question_id": null,
+          "reason_for_asking": "Understand a specific contribution.",
+          "expected_answer_elements": [
+            "personal action",
+            "result"
+          ],
+          "created_at": "2026-10-11T09:40:41.220439Z"
+        }
+      ],
+      "answers": [
+        {
+          "answer_id": "06153cf1-7cc6-4516-bbe1-076bb4046f61",
+          "question_id": "c1650433-ad69-4cf8-a47a-a4f0890cd87c",
+          "sequence": 1,
+          "original_text": "A1: I built Python APIs."
+        }
+      ],
+      "feedback": [
+        {
+          "evaluation_id": "33b08292-dee3-4a8f-b74c-d36c4e35f274",
+          "answer_id": "06153cf1-7cc6-4516-bbe1-076bb4046f61",
+          "overall_score": 3,
+          "relevance_score": 3,
+          "specificity_score": 3,
+          "evidence_grounding_score": 3,
+          "structure_score": 3,
+          "communication_score": 3,
+          "strengths": [
+            "You described your work."
+          ],
+          "improvement_areas": [
+            "Explain the outcome."
+          ],
+          "exact_answer_quotes": [
+            "A1: I built Python APIs."
+          ],
+          "unsupported_or_unclear_claims": [],
+          "missing_answer_elements": [
+            "result"
+          ],
+          "suggested_structure": null,
+          "followup_needed": true,
+          "followup_reason": "The personal result is unclear.",
+          "discovered_fact_quote": null,
+          "created_at": "2026-10-11T09:40:41.269372Z"
+        }
+      ],
+      "events": [
+        {
+          "kind": "CREATED",
+          "data": {
+            "mode": "mixed",
+            "plan_id": "e2c6622d-1dfa-5207-9877-e3aaf6cb8a3e"
+          }
+        },
+        {
+          "kind": "RESUME_REQUESTED",
+          "data": {}
+        },
+        {
+          "kind": "QUESTION_ASKED",
+          "data": {
+            "plan_item_id": "8bd8a9db-7f1e-5c95-a968-26e492744285",
+            "question_id": "c1650433-ad69-4cf8-a47a-a4f0890cd87c"
+          }
+        },
+        {
+          "kind": "ANSWER_SAVED",
+          "data": {
+            "answer_id": "06153cf1-7cc6-4516-bbe1-076bb4046f61",
+            "question_id": "c1650433-ad69-4cf8-a47a-a4f0890cd87c"
+          }
+        },
+        {
+          "kind": "FEEDBACK_QUEUED",
+          "data": {
+            "answer_id": "06153cf1-7cc6-4516-bbe1-076bb4046f61",
+            "question_id": "c1650433-ad69-4cf8-a47a-a4f0890cd87c",
+            "sequence": 1
+          }
+        },
+        {
+          "kind": "QUESTION_ASKED",
+          "data": {
+            "plan_item_id": "bc0d2d68-d0c7-5725-a2cb-0ba3c921f23c",
+            "question_id": "097dbfe3-2a81-4069-9248-0bc60fee3795"
+          }
+        },
+        {
+          "kind": "EVALUATION_SAVED",
+          "data": {
+            "answer_id": "06153cf1-7cc6-4516-bbe1-076bb4046f61",
+            "deferred": true,
+            "followup": false,
+            "question_id": "c1650433-ad69-4cf8-a47a-a4f0890cd87c"
+          }
+        }
+      ]
+    },
+    {
+      "case": "test_q2_q3_visible_before_old_0",
+      "state": {
+        "status": "needs_input",
+        "error": {
+          "code": "interview_queue_failed",
+          "message": "Interview processing stopped. Saved answers and queued inputs are preserved. Inspect the interview before retrying.",
+          "retryable": true
+        },
+        "interview_queue": [
+          {
+            "message_id": "6d5dfff9-6d54-4b1e-b8c9-5f9aa6369200",
+            "text": "A1: I built Python APIs.",
+            "interview_id": "a606d34a-46a6-4e3b-b06b-116446be3cd5",
+            "kind": "answer",
+            "status": "done",
+            "at": "2026-10-11T09:40:22.107350+00:00",
+            "started_at": "2026-10-11T09:40:22.112460+00:00",
+            "question_id": "d6c85512-8a0e-4e07-81e7-47f5d539e28d",
+            "finished_at": "2026-10-11T09:40:22.154393+00:00"
+          },
+          {
+            "message_id": "e40db3b8-d352-4e6c-b541-3344172f7f63",
+            "text": "A2: I built Python APIs.",
+            "interview_id": "a606d34a-46a6-4e3b-b06b-116446be3cd5",
+            "kind": "answer",
+            "status": "done",
+            "at": "2026-10-11T09:40:22.161875+00:00",
+            "started_at": "2026-10-11T09:40:22.169769+00:00",
+            "question_id": "ecf2e224-891d-4386-ad29-048918af2b04",
+            "finished_at": "2026-10-11T09:40:22.215043+00:00"
+          },
+          {
+            "message_id": "900bfbc4-c73c-4383-8dfb-7b70bbcf43cf",
+            "text": "A3: I built Python APIs.",
+            "interview_id": "a606d34a-46a6-4e3b-b06b-116446be3cd5",
+            "kind": "answer",
+            "status": "failed",
+            "at": "2026-10-11T09:40:22.208926+00:00",
+            "started_at": "2026-10-11T09:40:22.217034+00:00",
+            "question_id": "71b7dbd6-1523-4188-81d2-f53ffd20babe",
+            "error_type": "ValueError"
+          }
+        ],
+        "interview_answer_receipts": {
+          "a606d34a-46a6-4e3b-b06b-116446be3cd5": [
+            "6d5dfff9-6d54-4b1e-b8c9-5f9aa6369200"
+          ]
+        }
+      },
+      "session": [
+        {
+          "status": "awaiting_answer",
+          "version": 11,
+          "current_question_id": "71b7dbd6-1523-4188-81d2-f53ffd20babe",
+          "questions_completed": 2
+        }
+      ],
+      "questions": [
+        {
+          "question_id": "d6c85512-8a0e-4e07-81e7-47f5d539e28d",
+          "plan_item_id": "181356cb-2155-5f96-81a7-c3a9cf658ba4",
+          "question_text": "What did you personally do?",
+          "question_type": "role_fit",
+          "competency": "role_fit",
+          "related_requirement_id": null,
+          "related_evidence_ids": [],
+          "is_followup": false,
+          "parent_question_id": null,
+          "reason_for_asking": "Understand a specific contribution.",
+          "expected_answer_elements": [
+            "personal action",
+            "result"
+          ],
+          "created_at": "2026-10-11T09:40:22.091680Z"
+        },
+        {
+          "question_id": "ecf2e224-891d-4386-ad29-048918af2b04",
+          "plan_item_id": "052d1f57-537c-5c60-a0e7-b50e51a1e52c",
+          "question_text": "What did you personally do?",
+          "question_type": "collaboration",
+          "competency": "collaboration",
+          "related_requirement_id": null,
+          "related_evidence_ids": [
+            "af1065b4-7197-4bc0-9fb1-f2f43ac7af13"
+          ],
+          "is_followup": false,
+          "parent_question_id": null,
+          "reason_for_asking": "Understand a specific contribution.",
+          "expected_answer_elements": [
+            "personal action",
+            "result"
+          ],
+          "created_at": "2026-10-11T09:40:22.141979Z"
+        },
+        {
+          "question_id": "71b7dbd6-1523-4188-81d2-f53ffd20babe",
+          "plan_item_id": "d0a93a9d-36cf-52a8-a977-040f1228d032",
+          "question_text": "What did you personally do?",
+          "question_type": "requirement_fit",
+          "competency": "requirement_fit",
+          "related_requirement_id": "REQ-f326ecce4b64",
+          "related_evidence_ids": [],
+          "is_followup": false,
+          "parent_question_id": null,
+          "reason_for_asking": "Understand a specific contribution.",
+          "expected_answer_elements": [
+            "personal action",
+            "result"
+          ],
+          "created_at": "2026-10-11T09:40:22.193486Z"
+        }
+      ],
+      "answers": [
+        {
+          "answer_id": "1a52ec22-fbff-49db-961c-83ea632c3419",
+          "question_id": "d6c85512-8a0e-4e07-81e7-47f5d539e28d",
+          "sequence": 1,
+          "original_text": "A1: I built Python APIs."
+        },
+        {
+          "answer_id": "336fc1dc-2ee6-41b9-ab81-7b362429fd4e",
+          "question_id": "ecf2e224-891d-4386-ad29-048918af2b04",
+          "sequence": 2,
+          "original_text": "A2: I built Python APIs."
+        }
+      ],
+      "feedback": [
+        {
+          "evaluation_id": "d1fffb15-dfe1-4c40-a492-58ec03c88784",
+          "answer_id": "1a52ec22-fbff-49db-961c-83ea632c3419",
+          "overall_score": 3,
+          "relevance_score": 3,
+          "specificity_score": 3,
+          "evidence_grounding_score": 3,
+          "structure_score": 3,
+          "communication_score": 3,
+          "strengths": [
+            "You described your work."
+          ],
+          "improvement_areas": [
+            "Explain the outcome."
+          ],
+          "exact_answer_quotes": [
+            "A1: I built Python APIs."
+          ],
+          "unsupported_or_unclear_claims": [],
+          "missing_answer_elements": [
+            "result"
+          ],
+          "suggested_structure": null,
+          "followup_needed": true,
+          "followup_reason": "The personal result is unclear.",
+          "discovered_fact_quote": null,
+          "created_at": "2026-10-11T09:40:34.249553Z"
+        },
+        {
+          "evaluation_id": "71a01760-c66d-46c4-832e-9254a8e5b21e",
+          "answer_id": "336fc1dc-2ee6-41b9-ab81-7b362429fd4e",
+          "overall_score": 3,
+          "relevance_score": 3,
+          "specificity_score": 3,
+          "evidence_grounding_score": 3,
+          "structure_score": 3,
+          "communication_score": 3,
+          "strengths": [
+            "You described your work."
+          ],
+          "improvement_areas": [
+            "Explain the outcome."
+          ],
+          "exact_answer_quotes": [
+            "A2: I built Python APIs."
+          ],
+          "unsupported_or_unclear_claims": [],
+          "missing_answer_elements": [],
+          "suggested_structure": null,
+          "followup_needed": false,
+          "followup_reason": null,
+          "discovered_fact_quote": null,
+          "created_at": "2026-10-11T09:40:34.250667Z"
+        }
+      ],
+      "events": [
+        {
+          "kind": "CREATED",
+          "data": {
+            "mode": "mixed",
+            "plan_id": "e3e09626-0b55-59e1-a5fa-3fe7346307d8"
+          }
+        },
+        {
+          "kind": "RESUME_REQUESTED",
+          "data": {}
+        },
+        {
+          "kind": "QUESTION_ASKED",
+          "data": {
+            "plan_item_id": "181356cb-2155-5f96-81a7-c3a9cf658ba4",
+            "question_id": "d6c85512-8a0e-4e07-81e7-47f5d539e28d"
+          }
+        },
+        {
+          "kind": "ANSWER_SAVED",
+          "data": {
+            "answer_id": "1a52ec22-fbff-49db-961c-83ea632c3419",
+            "question_id": "d6c85512-8a0e-4e07-81e7-47f5d539e28d"
+          }
+        },
+        {
+          "kind": "FEEDBACK_QUEUED",
+          "data": {
+            "answer_id": "1a52ec22-fbff-49db-961c-83ea632c3419",
+            "question_id": "d6c85512-8a0e-4e07-81e7-47f5d539e28d",
+            "sequence": 1
+          }
+        },
+        {
+          "kind": "QUESTION_ASKED",
+          "data": {
+            "plan_item_id": "052d1f57-537c-5c60-a0e7-b50e51a1e52c",
+            "question_id": "ecf2e224-891d-4386-ad29-048918af2b04"
+          }
+        },
+        {
+          "kind": "ANSWER_SAVED",
+          "data": {
+            "answer_id": "336fc1dc-2ee6-41b9-ab81-7b362429fd4e",
+            "question_id": "ecf2e224-891d-4386-ad29-048918af2b04"
+          }
+        },
+        {
+          "kind": "FEEDBACK_QUEUED",
+          "data": {
+            "answer_id": "336fc1dc-2ee6-41b9-ab81-7b362429fd4e",
+            "question_id": "ecf2e224-891d-4386-ad29-048918af2b04",
+            "sequence": 2
+          }
+        },
+        {
+          "kind": "QUESTION_ASKED",
+          "data": {
+            "plan_item_id": "d0a93a9d-36cf-52a8-a977-040f1228d032",
+            "question_id": "71b7dbd6-1523-4188-81d2-f53ffd20babe"
+          }
+        },
+        {
+          "kind": "EVALUATION_SAVED",
+          "data": {
+            "answer_id": "1a52ec22-fbff-49db-961c-83ea632c3419",
+            "deferred": true,
+            "followup": false,
+            "question_id": "d6c85512-8a0e-4e07-81e7-47f5d539e28d"
+          }
+        },
+        {
+          "kind": "EVALUATION_SAVED",
+          "data": {
+            "answer_id": "336fc1dc-2ee6-41b9-ab81-7b362429fd4e",
+            "deferred": true,
+            "followup": false,
+            "question_id": "ecf2e224-891d-4386-ad29-048918af2b04"
+          }
+        }
+      ]
+    }
+  ]
+}

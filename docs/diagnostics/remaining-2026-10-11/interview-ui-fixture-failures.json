@@ -1,0 +1,20 @@
+{
+  "scope": "Fixture failures; do not classify as product ordering/navigation defects",
+  "node_before": {
+    "source": "User independent node --test tests/test_career_chat.mjs run",
+    "result": "3 passed, 1 failed at line 62",
+    "root_cause": "New late-feedback fixture omitted career:true; production renderCareerResults correctly returned before rendering",
+    "fix": "Add career:true to the fixture; retain production career guard",
+    "after": "tmp/remaining-career-chat-fixture-fixed.log: 4 passed, 0 failed"
+  },
+  "chrome_before": {
+    "log": "tmp/remaining-interview-async-chrome.log",
+    "xml": "tmp/remaining-interview-async-chrome.xml",
+    "database": "tmp/remaining-interview-async-chrome/test_current_question_and_late0/career.db",
+    "result": "1 failed in 21.28 seconds at line 65",
+    "observed": "Q2/Q3 first and delayed answer-specific feedback passed before theme reload. Reload returned to Chronicle, as shown by the saved Playwright ARIA snapshot in the log",
+    "root_cause": "Fixture assumed conversation selection survives full reload; current application starts in Chronicle",
+    "fix": "Reopen the saved conversation via its ordinary visible button after each reload; no force click or product selection contract change",
+    "screenshot": "No failure screenshot captured in this first run; retain log ARIA snapshot and database, do not claim one exists"
+  }
+}

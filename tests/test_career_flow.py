@@ -284,10 +284,22 @@ def test_discovery_score_documents_application_and_interview_share_one_task(care
     question=interview['question']['question_id']
     c.repository.append(c.state['task_id'],role='user',id='answer-user',text='Built Python APIs.')
     feedback=execute(c,'answer_interview',interview_id=identifier,question_id=question,message_id='answer-user')
+    # Career answers now return after durable dispatch/next-question generation.
+    # Observe the actual saved job/evaluation, rather than assume synchronous feedback.
+    deadline=time.monotonic()+12
+    while time.monotonic()<deadline:
+        jobs=c.runtime.mock_interviewer.interviews.feedback_jobs(identifier)
+        if any(j['status']=='failed' for j in jobs):raise AssertionError(jobs)
+        if jobs and all(j['status']=='done' for j in jobs):
+            feedback=c.harness.interview(identifier)
+            if feedback.get('latest_feedback'):break
+        time.sleep(.02)
+    assert jobs and all(j['status']=='done' for j in jobs),jobs
     assert feedback['latest_feedback']['exact_answer_quotes']==['Built Python APIs.']
-    with pytest.raises(ValueError,match='changed'):
-        execute(c,'answer_interview',interview_id=identifier,question_id=question,message_id='answer-user')
-    c.repository.append(c.state['task_id'],role='user',id='end-user',text='End this practice.')
+    replay=execute(c,'answer_interview',interview_id=identifier,question_id=question,message_id='answer-user')
+    assert replay['interview']['version']==feedback['interview']['version']
+    assert len([t for t in c.runtime.mock_interviewer.interviews.turns(identifier) if t['answer']])==1
+    c.repository.append(c.state['task_id'],role='user',id='end-user',text='End the interview.')
     result=execute(c,'control_interview',interview_id=identifier,action='end',message_id='end-user')
     assert result['report']['question_answer_summaries'][0]['answer']=='Built Python APIs.'
     restored=TaskRepository(c.runtime.database.session_factory).get(c.state['task_id'])

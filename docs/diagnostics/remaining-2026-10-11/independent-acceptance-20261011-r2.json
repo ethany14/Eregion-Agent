@@ -1,0 +1,67 @@
+{
+  "revision": "2026-10-11-supervisor-supplement-r2",
+  "prior_revision": "independent-acceptance-20261011.json",
+  "provenance": "Independent tests executed by the supervisor; assistant read-only verification of the four supplied XML files, SHA-256 and XML totals. Not newly executed tests by the assistant.",
+  "artifacts": [
+    {
+      "path": "C:/Users/zhiyu/Documents/Codex/2026-10-10/computer-use-computer-use-c-users-2/outputs/catalog-full-permission.xml",
+      "bytes": 2719,
+      "sha256": "6fddb940c8dfb8860b60d60bee2e3a3f54a1fca91a7a0fb335c5a64ce76ac238",
+      "matches_user_supplied_sha256": true,
+      "raw_suite_totals": {
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "seconds": 3.659
+    },
+    {
+      "path": "C:/Users/zhiyu/Documents/Codex/2026-10-10/computer-use-computer-use-c-users-2/outputs/plural-partial-independent.xml",
+      "bytes": 457,
+      "sha256": "7ae9aabe8027b8ed53c49fbc3b99608e321bf4246b0b93b585a50944c587fe1f",
+      "matches_user_supplied_sha256": true,
+      "raw_suite_totals": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "seconds": 5.422
+    },
+    {
+      "path": "C:/Users/zhiyu/Documents/Codex/2026-10-10/computer-use-computer-use-c-users-2/outputs/scope-audit-before-independent.xml",
+      "bytes": 18054,
+      "sha256": "f45109db4aee1f4d94382234a20fd944f630f50e7322ab7124cc7e8717672b15",
+      "matches_user_supplied_sha256": true,
+      "raw_suite_totals": {
+        "tests": 12,
+        "failures": 10,
+        "errors": 0,
+        "skipped": 0
+      },
+      "seconds": 1.166
+    },
+    {
+      "path": "C:/Users/zhiyu/Documents/Codex/2026-10-10/computer-use-computer-use-c-users-2/outputs/scope-audit-after-independent.xml",
+      "bytes": 1873,
+      "sha256": "d84c042f9560faff8108bdd2ae7902b3b465f262249f8f05e97c6b8015461fa2",
+      "matches_user_supplied_sha256": true,
+      "raw_suite_totals": {
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "seconds": 1.301
+    }
+  ],
+  "boundaries": {
+    "catalogue": "Explicit catalogue/preflight only; default A1 route remains pending user choice.",
+    "C11": "Production SQLite and synthetic browser: requested2/started1/opened1/resolved1, second item error; replaystarted0/errorretained. Real-model multiple application conversation remains unmeasured.",
+    "auditor_before": "9 validation gaps plus 1 newly specified return-field contract; not 10 distinct product behavior failures.",
+    "integrity": "Supervisor separately reports all 33 r1 files and all 38 historical originals unchanged. Actual F2 proposal still needs generation/recheck.",
+    "A5": "Original <=60s remains failed; user deferred optimization.",
+    "paid_product_tests_this_turn": 0
+  }
+}

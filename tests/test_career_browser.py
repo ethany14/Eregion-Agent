@@ -59,7 +59,12 @@ def test_rendered_browser_evidence_flows_into_saved_job(career):
     class JobBrowser(LocalWebBrowser):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
-            self.page.locator('body').evaluate("e => e.appendChild(Object.assign(document.createElement('p'),{textContent:'Software engineer: build Python services, analyze data, collaborate with customers, and maintain reliable production systems.'}))")
+            self.page.locator('body').evaluate("""e => {
+                const article=document.createElement('article');
+                article.innerHTML='<h1>Software engineer</h1><p>Build Python services, analyze data, collaborate with customers, and maintain reliable production systems.</p>';
+                article.append(document.querySelector('#loaded'));
+                e.append(article);
+            }""")
     manager=BrowsingManager(factory=JobBrowser);c.harness._browsing=manager
     try:
         opened=execute(c,'browser_open',url='https://first.example/job')

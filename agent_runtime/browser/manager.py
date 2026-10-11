@@ -108,6 +108,12 @@ class BrowsingManager:
                 raise BrowserBlocked('No research browser is open. Resume the task first.')
             session.observation = session.screen = None
             result = control_browser(session.browser, request, scope)
+            if request.action=='end':
+                # Control invalidates the old observation, but inspect() reads
+                # states rather than preview pixels. Capture the actual page
+                # once on this explicit user event before the agent resumes.
+                observed=session.read()
+                with self.lock:self.states[task_id]={k:v for k,v in observed.items() if k!='image'}
             self._preview(task_id, session)
             return result
         return self.worker.submit(control).result()

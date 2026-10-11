@@ -1,0 +1,27 @@
+{
+  "source": "tmp/remaining-real-eight-batch-dedup",
+  "decisions": [
+    {
+      "requirement_id": "job0:j2",
+      "is_candidate_requirement": false,
+      "level": "required",
+      "personal_condition": false,
+      "status": "missing",
+      "evidence_quote": null,
+      "reason": "No evidence of collaborating with internal teams or translating business needs into measurement plans and data flows. Pipeline/SQL work shows technical execution but does not establish collaboration/translation."
+    },
+    {
+      "requirement_id": "job0:j3",
+      "is_candidate_requirement": false,
+      "level": "required",
+      "personal_condition": false,
+      "status": "missing",
+      "evidence_quote": null,
+      "reason": "No evidence of creating presentations for clients/internal teams. Tableau dashboards are distinct deliverables and do not establish presentation creation."
+    }
+  ],
+  "requirements": [
+    "Collaborate with internal teams to translate business needs into measurement plans and data flows.",
+    "Create clean, effective, actionable presentations for clients and internal teams."
+  ]
+}

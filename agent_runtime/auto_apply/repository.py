@@ -2,6 +2,7 @@
 import base64
 import hashlib
 import json
+import re
 import os
 from datetime import UTC, datetime
 from uuid import uuid4
@@ -108,6 +109,16 @@ class ApplyRepository:
         with self.sessions.begin() as session:
             existing = session.scalar(select(AutoApplicationRow).where(
                 AutoApplicationRow.posting_key == identity))
+            if existing is None or existing.status not in SUBMISSION_STATES:
+                # Pre-normalization rows retain their old key. Inspect their
+                # original URL so upgrading/restarting cannot reopen a job
+                # already submitted under its /apply alias. Do not rewrite IDs.
+                aliases=[]
+                for row in session.scalars(select(AutoApplicationRow)):
+                    try:matches=posting(json.loads(row.state_json)['url'])[1]==identity
+                    except (ValueError,KeyError):matches=False
+                    if matches:aliases.append(row)
+                existing=next((r for r in aliases if r.status in SUBMISSION_STATES),existing or next(iter(aliases),None))
             if existing:
                 if existing.idempotency_key == request.idempotency_key and existing.request_hash == fingerprint:
                     return self._state(existing), False
@@ -261,7 +272,7 @@ class ApplyRepository:
                 # out of this flat update; their sources have different scopes.
                 from .contracts import normalized_label
                 contact={'first name':'first_name','last name':'last_name','city':'city','location (city)':'city',
-                    'current city':'city','country of residence':'country','linkedin':'linkedin','linkedin profile':'linkedin',
+                    'current city':'city','country':'country','country of residence':'country','linkedin':'linkedin','linkedin profile':'linkedin',
                     'linkedin url':'linkedin','github':'github','github url':'github','website':'website','portfolio':'website'}
                 member=contact.get(normalized_label(field['label']))
                 identity = question_identity(field["label"])
@@ -294,6 +305,31 @@ class ApplyRepository:
             if self.owner_key(saved['profile'])==owner:
                 try:self.save_candidate({**saved['profile'],**profile_updates})
                 except ValueError:pass # Keep the confirmed answer even if it is too long for a flat contact field.
+
+    def save_literal_profile_facts(self,state,answers,message_text):
+        """Save explicit contact facts, never inferred eligibility or consent.
+
+        Model bindings may be reused only when the selected value is actually
+        present in the user's message and the field has an unambiguous label.
+        """
+        from .contracts import normalized_label
+        contact={'country':'country','country of residence':'country','city':'city','current city':'city',
+                 'location (city)':'city','linkedin':'linkedin','linkedin profile':'linkedin',
+                 'linkedin url':'linkedin','github':'github','github url':'github','website':'website','portfolio':'website'}
+        saved=self.saved_candidate()
+        if self.owner_key(saved['profile'])!=self.owner_key(state['profile']):return {}
+        fields={f['key']:f for f in state.get('fields',[])}
+        changes={}
+        for key,value in answers.items():
+            field=fields.get(key,{})
+            member=contact.get(normalized_label(field.get('label','')))
+            option=next((o for o in field.get('options',[]) if str(o['value'])==str(value)),None)
+            text=option['label'] if option else value
+            if member and isinstance(text,str) and clean(text) and re.search(
+                    r'(?<!\w)'+re.escape(clean(text))+r'(?!\w)',clean(message_text)):
+                if saved['profile'].get(member)!=text:changes[member]=text
+        if changes:self.save_candidate({**saved['profile'],**changes})
+        return changes
 
     def standard_answers(self, profile):
         """Only globally approved answers belong in the all-jobs setup form."""

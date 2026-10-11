@@ -57,6 +57,9 @@ class TaskRepository:
                 'input_request':None, 'wait':None, 'model_calls':0, 'budget_base':0,
                 'visual_fallback':visual_fallback, 'pause_requested':False,
                 'created_at':now(), 'updated_at':now()}
+            from .search_policy import update_constraints
+            state['search_constraints']=update_constraints({},text,state['messages'][0]['id'])
+            state['user_turn_id']=state['messages'][0]['id']
             if context:
                 state['initial_context'] = context
                 state['messages'][0]['context'] = context
@@ -81,17 +84,34 @@ class TaskRepository:
                 key=lambda s:s['updated_at'],reverse=True)
 
     def change(self, task_id, mutation=None, **changes):
-        with self.lock, self.sessions.begin() as db:
-            row = db.get(CareerTaskRow,task_id)
-            if row is None:raise LookupError('Conversation not found.')
-            state = self.decode(row)
-            if mutation:changes = {**mutation(state),**changes}
-            state.update(changes)
-            state['updated_at'] = now()
-            row.version += 1
-            state.pop('version',None)
-            row.state_json = json.dumps(state)
-            return {**state,'version':row.version}
+        # Service, harness and restored workers can have different repository
+        # instances. An instance lock alone cannot protect their shared JSON
+        # blob. Retry a pure mutation against the latest state after a CAS miss.
+        with self.lock:
+            for attempt in range(32):
+                with self.sessions.begin() as db:
+                    row = db.get(CareerTaskRow,task_id)
+                    if row is None:raise LookupError('Conversation not found.')
+                    version=row.version
+                    state=self.decode(row)
+                    state.setdefault('user_turn_id',next((m['id'] for m in reversed(state.get('messages',[])) if m.get('role')=='user'),None))
+                    delta={**(mutation(state) if mutation else {}),**changes}
+                    if 'messages' in delta:
+                        from .search_policy import constraints, update_constraints
+                        policy=constraints(state)
+                        existing={m['id'] for m in state.get('messages',[])}
+                        for message in delta['messages']:
+                            if message.get('role')=='user' and message['id'] not in existing:
+                                policy=update_constraints(policy,message.get('text',''),message['id'])
+                                delta['user_turn_id']=message['id']
+                        delta['search_constraints']=policy
+                    state.update(delta,updated_at=now())
+                    state.pop('version',None)
+                    changed=db.execute(update(CareerTaskRow).where(
+                        CareerTaskRow.task_id==task_id,CareerTaskRow.version==version
+                    ).values(version=version+1,state_json=json.dumps(state)))
+                    if changed.rowcount==1:return {**state,'version':version+1}
+            raise RuntimeError('Conversation update could not acquire its current version.')
 
     def append(self, task_id, **message):
         value = {'id':str(uuid4()),'at':now(),**message}

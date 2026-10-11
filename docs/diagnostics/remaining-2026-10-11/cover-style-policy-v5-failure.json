@@ -1,0 +1,240 @@
+{
+  "scope": "Real configured writer, original failed-draft reviser, and unchanged grounding providers; synthetic applicant/employer; scoring fixture; not submitted",
+  "seconds": 52.55626789999951,
+  "job": {
+    "url": "https://jobs.example.test/python-engineer",
+    "title": "Python Engineer",
+    "company": "Synthetic Harbor Systems",
+    "location": "Remote US",
+    "description": "Synthetic Harbor Systems is hiring a Python Engineer to improve API reliability. The role builds Python APIs and tests error responses. Requires Python API development."
+  },
+  "source_resume": "Synthetic Candidate\nsynthetic@example.com\nEXPERIENCE\nBuilt Python APIs.",
+  "original_failure_fixture": "tests/fixtures/remaining_cover_style_failure.json",
+  "lanes": [
+    {
+      "lane": "writer",
+      "snapshot": {
+        "generation_snapshot_id": "cb2a95b6-239d-4424-a0cb-17b70a5fff30",
+        "pack_id": "4518d97b-20dd-41c6-b4ee-e351f05728b6",
+        "application_id": "4aeb6541-ef02-464e-bc30-9142c2aa240c",
+        "job_snapshot_id": "914fe907-6dc8-4bcc-bf24-e0a48b471b66",
+        "items": [
+          {
+            "evidence_id": "9232ac72-7b8b-49b8-81bd-3c617eaf3c04",
+            "evidence_version_id": "20cdfefd-82df-4bdb-aa12-8233650b0aaa",
+            "content_hash": "b96e03e54f7db7e5553cdac572806cbdfccd58714b8ef2736d67cf948153e039",
+            "source_type": "resume",
+            "selection_reason": "application_link",
+            "associated_requirement_ids": [
+              "REQ-f326ecce4b64"
+            ],
+            "claim_text": "Built Python APIs.",
+            "exact_quote": "Built Python APIs.",
+            "source_section": "Experience",
+            "category": "experience",
+            "employer_or_project": null,
+            "role": "Experience",
+            "start_date": null,
+            "end_date": null,
+            "status_at_selection": "confirmed"
+          }
+        ],
+        "resume_header_lines": [],
+        "preference_versions": [],
+        "prompt_version": "application-pack-v5",
+        "model_config_id": "muse-spark-1.3-contributor",
+        "model_configuration": {
+          "model_id": "muse-spark-1.3-contributor",
+          "temperature": 0.0,
+          "max_retries": 0,
+          "endpoint_hash": "6e319ebacb1092ed7cf1f029afafb633f8e694f8b4aee5f13b013908ef680403"
+        },
+        "effective_tools": [],
+        "evidence_set_hash": "e6d73db2a73190a4a35f9ba4121b45e4c4c962f943b7470467d0878d6eec0945",
+        "created_at": "2026-10-11T10:32:15.101649Z"
+      },
+      "item": {
+        "pack_item_id": "13bf2e3c-eb22-4ae7-b074-20e75263f679",
+        "pack_id": "4518d97b-20dd-41c6-b4ee-e351f05728b6",
+        "artifact_id": "ee624784-833e-44f0-8c34-6fbc41634a5a",
+        "artifact_type": "cover_letter",
+        "status": "awaiting_review",
+        "source_question": null,
+        "max_length": null,
+        "version": 3,
+        "revision_count": 0,
+        "max_revisions": 0,
+        "verification": {
+          "passed": true,
+          "issues": []
+        },
+        "regeneration_feedback": null,
+        "requires_manual_answer": false,
+        "created_at": "2026-10-11T10:32:15.116012Z",
+        "updated_at": "2026-10-11T10:32:49.176855Z"
+      },
+      "content": {
+        "closing": "Sincerely,",
+        "greeting": "Dear Hiring Team,",
+        "paragraphs": [
+          {
+            "evidence_ids": [],
+            "evidence_version_ids": [],
+            "paragraph_type": "opening",
+            "target_requirement_ids": [],
+            "text": "I am applying for the Python Engineer role at Synthetic Harbor Systems, where you are focused on improving API reliability. I would welcome the opportunity to work on that need."
+          },
+          {
+            "evidence_ids": [
+              "9232ac72-7b8b-49b8-81bd-3c617eaf3c04"
+            ],
+            "evidence_version_ids": [
+              "20cdfefd-82df-4bdb-aa12-8233650b0aaa"
+            ],
+            "paragraph_type": "evidence",
+            "target_requirement_ids": [
+              "REQ-f326ecce4b64"
+            ],
+            "text": "In a prior Experience role, I built APIs using Python."
+          },
+          {
+            "evidence_ids": [],
+            "evidence_version_ids": [],
+            "paragraph_type": "motivation",
+            "target_requirement_ids": [],
+            "text": "I am drawn to reliability-focused work that includes testing error responses, and I would welcome the opportunity to contribute to those efforts at Synthetic Harbor Systems."
+          }
+        ],
+        "schema_version": 2,
+        "signer_name": null
+      },
+      "text": "Dear Hiring Team,\n\nI am applying for the Python Engineer role at Synthetic Harbor Systems, where you are focused on improving API reliability. I would welcome the opportunity to work on that need.\n\nIn a prior Experience role, I built APIs using Python.\n\nI am drawn to reliability-focused work that includes testing error responses, and I would welcome the opportunity to contribute to those efforts at Synthetic Harbor Systems.\n\nSincerely,",
+      "versions": [
+        {
+          "artifact_id": "ee624784-833e-44f0-8c34-6fbc41634a5a",
+          "version": 1,
+          "status": "verified",
+          "verification_status": "passed",
+          "content": {
+            "closing": "Sincerely,",
+            "greeting": "Dear Hiring Team,",
+            "paragraphs": [
+              {
+                "evidence_ids": [],
+                "evidence_version_ids": [],
+                "paragraph_type": "opening",
+                "target_requirement_ids": [],
+                "text": "I am applying for the Python Engineer role at Synthetic Harbor Systems, where you are focused on improving API reliability. I would welcome the opportunity to work on that need."
+              },
+              {
+                "evidence_ids": [
+                  "9232ac72-7b8b-49b8-81bd-3c617eaf3c04"
+                ],
+                "evidence_version_ids": [
+                  "20cdfefd-82df-4bdb-aa12-8233650b0aaa"
+                ],
+                "paragraph_type": "evidence",
+                "target_requirement_ids": [
+                  "REQ-f326ecce4b64"
+                ],
+                "text": "In a prior Experience role, I built APIs using Python."
+              },
+              {
+                "evidence_ids": [],
+                "evidence_version_ids": [],
+                "paragraph_type": "motivation",
+                "target_requirement_ids": [],
+                "text": "I am drawn to reliability-focused work that includes testing error responses, and I would welcome the opportunity to contribute to those efforts at Synthetic Harbor Systems."
+              }
+            ],
+            "schema_version": 2,
+            "signer_name": null
+          },
+          "created_at": "2026-10-11T10:32:41.107303+00:00"
+        }
+      ],
+      "checks": {
+        "awaiting_review": true,
+        "grounding_passed": true,
+        "specific_role_company_need": true,
+        "avoids_stiff_opening": true,
+        "first_person": true,
+        "no_repeated_api_building_claim": true,
+        "original_unsupported_clause_removed": true
+      }
+    }
+  ],
+  "usage": {
+    "calls": 3,
+    "completed": 3,
+    "failed": 0,
+    "pending": 0,
+    "discarded": 0,
+    "retries": 0,
+    "input_tokens": 2360,
+    "output_tokens": 7334,
+    "unknown_usage_calls": 0,
+    "groups": [
+      {
+        "purpose": "cover_style_writer_retest:CoverLetter",
+        "model": "muse-spark-1.3-contributor",
+        "calls": 1,
+        "input_tokens": 1242,
+        "output_tokens": 3581,
+        "unknown_usage_calls": 0,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 3317
+      },
+      {
+        "purpose": "cover_style_writer_retest:ClaimDecisions",
+        "model": "muse-spark-1.3-contributor",
+        "calls": 1,
+        "input_tokens": 487,
+        "output_tokens": 1092,
+        "unknown_usage_calls": 0,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 1059
+      },
+      {
+        "purpose": "cover_style_original_revision_retest:ClaimDecisions",
+        "model": "muse-spark-1.3-contributor",
+        "calls": 1,
+        "input_tokens": 631,
+        "output_tokens": 2661,
+        "unknown_usage_calls": 0,
+        "cached_input_tokens": 369,
+        "reasoning_tokens": 2609
+      }
+    ],
+    "cached_input_tokens": 369,
+    "reasoning_tokens": 6985,
+    "usage_complete": true
+  },
+  "checks": {
+    "writer:awaiting_review": true,
+    "writer:grounding_passed": true,
+    "writer:specific_role_company_need": true,
+    "writer:avoids_stiff_opening": true,
+    "writer:first_person": true,
+    "writer:no_repeated_api_building_claim": true,
+    "writer:original_unsupported_clause_removed": true,
+    "two_lanes": false,
+    "complete_usage": true
+  },
+  "human_style_review": "pending; automatic style screens do not replace human review",
+  "persisted_items": [
+    {
+      "pack_item_id": "13bf2e3c-eb22-4ae7-b074-20e75263f679",
+      "pack_id": "4518d97b-20dd-41c6-b4ee-e351f05728b6",
+      "status": "awaiting_review",
+      "verification_json": "{\"passed\":true,\"issues\":[]}"
+    },
+    {
+      "pack_item_id": "dfbbe46b-b699-43ef-ba3d-a48430c0bdca",
+      "pack_id": "7244ebac-7a1c-484b-9245-8218317d95ba",
+      "status": "awaiting_review",
+      "verification_json": "{\"passed\":true,\"issues\":[]}"
+    }
+  ],
+  "seed_decision_scope": "Persisted ArtifactVerification pass and immutable seed text. Positive semantic reasons/raw structured provider response were not retained; not reconstructed."
+}

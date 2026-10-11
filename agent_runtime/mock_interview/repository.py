@@ -221,20 +221,22 @@ class MockInterviewRepository:
             return output
 
     def save_question(self, interview_id: str, question: MockInterviewQuestion,
-                      expected_version: int) -> MockInterviewSession:
+                      expected_version: int, *, feedback_updates=False) -> MockInterviewSession:
         with self._factory.begin() as db:
             row = self._require(db, interview_id)
-            if row.version != expected_version or row.status not in {"planning", "failed"}:
+            if (row.version != expected_version and not feedback_updates) or row.status not in {"planning", "failed"}:
                 raise MockInterviewConflict("Question generation is not current.")
             item = db.get(MockInterviewPlanItemRow, question.plan_item_id)
             if item is None:
                 raise MockInterviewValidation("Question is outside the plan.")
+            if feedback_updates and (row.current_question_id is not None or item.status not in {'pending','followup_pending'}):
+                raise MockInterviewConflict('Question draft no longer belongs to the next pending item.')
             db.add(MockInterviewQuestionRow(question_id=question.question_id,
                 mock_interview_id=interview_id, plan_item_id=question.plan_item_id,
                 parent_question_id=question.parent_question_id,
                 content_json=question.model_dump_json(), created_at=question.created_at))
             item.status = "current"
-            self._advance(db, row, expected_version,
+            self._advance(db, row, row.version if feedback_updates else expected_version,
                 status=MockStatus.AWAITING_ANSWER.value,
                 current_question_id=question.question_id, error_code=None)
             self._event(db, row, "QUESTION_ASKED", payload={"question_id": question.question_id,
@@ -280,6 +282,83 @@ class MockInterviewRepository:
             row = db.scalar(select(MockAnswerEvaluationRow).where(
                 MockAnswerEvaluationRow.answer_id == answer_id))
             return MockAnswerEvaluation.model_validate_json(row.content_json) if row else None
+
+    def feedback_jobs(self, interview_id: str) -> list[dict]:
+        """Durable answer ownership; independent of the current question/window."""
+        with self._factory() as db:
+            self._require(db, interview_id)
+            events=db.scalars(select(MockInterviewEventRow).where(
+                MockInterviewEventRow.mock_interview_id==interview_id,
+                MockInterviewEventRow.event_type.in_(['FEEDBACK_QUEUED','FEEDBACK_FAILED','FEEDBACK_RETRY_REQUESTED'])
+            ).order_by(MockInterviewEventRow.sequence)).all()
+            jobs={}
+            for event in events:
+                data=json.loads(event.payload_json);answer_id=data['answer_id']
+                if event.event_type=='FEEDBACK_QUEUED':jobs[answer_id]={**data,'status':'pending'}
+                elif answer_id in jobs:jobs[answer_id].update(status='failed',failure=data)
+                if event.event_type=='FEEDBACK_RETRY_REQUESTED' and answer_id in jobs:
+                    jobs[answer_id].update(status='pending',failure=None)
+            for answer_id,job in jobs.items():
+                if db.scalar(select(MockAnswerEvaluationRow).where(MockAnswerEvaluationRow.answer_id==answer_id)):
+                    job['status']='done'
+            return list(jobs.values())
+
+    def retry_feedback(self, interview_id, answer_id):
+        with self._factory.begin() as db:
+            row=self._require(db,interview_id)
+            self._advance(db,row,row.version)
+            self._event(db,row,'FEEDBACK_RETRY_REQUESTED',payload={'answer_id':answer_id})
+
+    def defer_feedback(self, interview_id: str, answer_id: str) -> MockInterviewSession:
+        with self._factory.begin() as db:
+            row=self._require(db,interview_id)
+            if db.scalar(select(MockInterviewEventRow).where(
+                    MockInterviewEventRow.mock_interview_id==interview_id,
+                    MockInterviewEventRow.idempotency_key=='feedback:'+answer_id)):
+                return self._view(row)
+            answer=db.get(MockInterviewAnswerRow,answer_id)
+            if not answer or answer.mock_interview_id!=interview_id or answer.question_id!=row.current_question_id or row.status!='evaluating':
+                raise MockInterviewConflict('Saved answer is not current for feedback dispatch.')
+            question=db.get(MockInterviewQuestionRow,answer.question_id)
+            item=db.get(MockInterviewPlanItemRow,question.plan_item_id)
+            item.status='awaiting_feedback'
+            self._advance(db,row,row.version,status='planning',current_question_id=None)
+            self._event(db,row,'FEEDBACK_QUEUED','feedback:'+answer_id,
+                {'answer_id':answer_id,'question_id':answer.question_id,'sequence':answer.sequence})
+            return self._view(row)
+
+    def feedback_failed(self, interview_id: str, answer_id: str, failure: dict) -> MockInterviewSession:
+        with self._factory.begin() as db:
+            row=self._require(db,interview_id)
+            self._advance(db,row,row.version)
+            self._event(db,row,'FEEDBACK_FAILED',payload={**failure,'answer_id':answer_id})
+            return self._view(row)
+
+    def save_deferred_evaluation(self, interview_id: str, evaluation: MockAnswerEvaluation,
+                                 *, followup: bool) -> MockInterviewSession:
+        with self._factory.begin() as db:
+            row=self._require(db,interview_id)
+            answer=db.get(MockInterviewAnswerRow,evaluation.answer_id)
+            if not answer or answer.mock_interview_id!=interview_id:
+                raise MockInterviewValidation('Evaluation belongs to another answer.')
+            if db.scalar(select(MockAnswerEvaluationRow).where(MockAnswerEvaluationRow.answer_id==answer.answer_id)):
+                return self._view(row)  # committed feedback replay never counts twice
+            if row.status in {'completed','cancelled'}:
+                raise MockInterviewConflict('Interview has already ended.')
+            question=db.get(MockInterviewQuestionRow,answer.question_id)
+            item=db.get(MockInterviewPlanItemRow,question.plan_item_id)
+            if item.status!='awaiting_feedback':
+                raise MockInterviewConflict('Answer has no pending feedback ownership.')
+            db.add(MockAnswerEvaluationRow(evaluation_id=evaluation.evaluation_id,
+                answer_id=answer.answer_id,content_json=evaluation.model_dump_json(),created_at=evaluation.created_at))
+            item.status='followup_pending' if followup else 'completed'
+            # An old answer may finish after Q2/Q3 is displayed. Never replace
+            # that question, its status, or count the same answer twice.
+            self._advance(db,row,row.version,
+                questions_completed=row.questions_completed+(0 if followup else 1))
+            self._event(db,row,'EVALUATION_SAVED',payload={'answer_id':answer.answer_id,
+                'question_id':answer.question_id,'followup':followup,'deferred':True})
+            return self._view(row)
 
     def save_evaluation(self, interview_id: str, evaluation: MockAnswerEvaluation,
                         *, expected_version: int, followup: bool) -> MockInterviewSession:

@@ -63,9 +63,12 @@ class ContextArchive:
             return self.stale_result(ref, stale)
         text = encoded(value)
         if path:
+            available = []
             try:
                 value = json.loads(text)
-                for key in path:
+                for index, key in enumerate(path):
+                    children = value.items() if isinstance(value,dict) else enumerate(value) if isinstance(value,list) else []
+                    available = [{'path':[*path[:index],str(k)]} for k,_ in children][:30]
                     if isinstance(value, list):
                         if not key.isdecimal():
                             raise KeyError(key)
@@ -74,11 +77,22 @@ class ContextArchive:
                         value = value[key]
                 text = encoded(value)
             except (KeyError, IndexError, TypeError, ValueError):
-                return {'error': 'That path is not present in the archived result.'}
+                return {'ref':ref,'error': 'That path is not present in the archived result.',
+                    'no_new_evidence':True,'available_paths':available,
+                    'next':'Use an actual available path or the current live detail action; do not repeat the invalid path.'}
         if offset > len(text):
             return {'error': 'Offset is outside the saved context.', 'chars': len(text)}
         end = min(len(text), offset + 3000)
         key = encoded([ref, path or []])
+        # Reading an entire parent already exposed every child. A different
+        # projection is useful access, but does not manufacture new evidence.
+        ancestor_read=False
+        requested_path=path or []
+        for old_key,coverage in self.reads.items():
+            old_ref,old_path=json.loads(old_key)
+            if old_ref==ref and len(old_path)<len(requested_path) and requested_path[:len(old_path)]==old_path:
+                if any(a==0 and b>=coverage.get('chars',0) for a,b in coverage.get('ranges',[])):
+                    ancestor_read=True
         prior = self.reads.get(key, {})
         intervals = prior.get('ranges', [])
         repeated = any(start <= offset and stop >= end for start, stop in intervals)
@@ -108,6 +122,7 @@ class ContextArchive:
                   'next_offset': end if end < len(text) else None,
                   'read_progress': progress}
         if exhausted:result['no_new_evidence']=True
+        if ancestor_read:result.update(no_new_evidence=True,already_read_parent=True)
         # A flag cannot turn an already-visible immutable range into new evidence.
         # Re-fetch it only when compaction actually removed it from the request.
         visible = self.visible_ranges.get(key, [])
@@ -310,8 +325,15 @@ class ContextArchive:
         summary = {**self.reference(stable), 'available_keys': list(stable) if isinstance(stable, dict) else []}
         if not isinstance(result, dict):
             return summary
-        for key in ('error', 'error_code', 'next', 'progress_feedback', 'retryable', 'saved', 'failed', 'action_performed', 'recovery',
+        if isinstance(result.get('jobs'),list):
+            summary['jobs']=compact_resources('jobs',result['jobs'],self)
+        if result.get('job_detail'):summary['job_detail']=result['job_detail']
+        if isinstance(result.get('regions'),list):
+            summary['regions']=[{k:r[k] for k in ('ref','label','tag','text_length') if k in r}
+                for r in result['regions'][:6]]
+        for key in ('error', 'error_code', 'next', 'progress_feedback', 'no_new_evidence', 'retryable', 'saved', 'failed', 'action_performed', 'recovery',
                     'url', 'title', 'heading', 'observation_id', 'blocked', 'control_count', 'control_offset',
+                    'page_evidence_hash','primary_heading','body_scope',
                     'text_offset', 'text_length', 'region_ref', 'application_id', 'pack_id', 'run_id', 'mock_interview_id', 'current_question',
                     'status', 'version', 'match_score', 'requirement_counts', 'gaps', 'result_at',
                     'waiting_for_user', 'outcome', 'needs_review', 'verification', 'match_overview',
@@ -339,11 +361,13 @@ class ContextArchive:
             if len(controls) > 12:
                 summary['next_control_offset'] = result.get('control_offset', 0) + 12
                 summary['more_controls'] = 'Use browser_read with next_control_offset or a query; path can inspect the archived controls without changing observation_id.'
+                summary['all_controls'] = {'ref':summary['context_ref'],'path':['controls'],
+                    'instruction':'The controls preview below is only a subset. Read this full source path or use browser_read query/next_control_offset to find job links.'}
         # Keep valid structured JSON, never a cut fragment of a large JSON dump.
         for key in sorted(list(summary), key=lambda k: len(encoded(summary[k])), reverse=True):
             if len(encoded(summary)) <= 5500:
                 break
-            if key in {'context_ref', 'error_code', 'observation_id', 'progress_feedback', 'next'}:
+            if key in {'context_ref', 'error_code', 'observation_id', 'progress_feedback', 'next','job_detail','regions'}:
                 continue
             if len(encoded(summary[key])) > 500:
                 summary[key] = self.reference(summary[key], preview=100)
@@ -419,7 +443,7 @@ def compact_resources(key,rows,archive):
     keys={'interviews':('mock_interview_id','status','version','interview','question','current_question',
                          'latest_feedback','report_available','failure'),
           'materials':('pack_id','application_id','status','version','material_overview','items'),
-          'jobs':('application_id','title','company','url','status','match_score','score_range',
+          'jobs':('application_id','title','company','url','location','status','match_score','score_range','qualification_evidence',
                   'analysis_status','score_algorithm','score_valid_until','requirement_counts','gaps')}
     result=[]
     for row in rows:
@@ -458,6 +482,19 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
         if k in row} for row in snapshot.get(key, []) if isinstance(row,dict)][-10:]
         for key in ('interviews','materials','jobs') if isinstance(snapshot.get(key),list)}
     if resources:snapshot['live_resources']=resources
+    known=snapshot.get('known_results',{})
+    exclusions=known.get('excluded_candidates',[])
+    if isinstance(exclusions,list) and len(encoded(exclusions))>1600:
+        # The durable table remains authoritative for every research/import
+        # preflight. Do not feed an ever-growing copy of its explanations into
+        # every provider call. Keep recent actionable examples and lossless
+        # indexed access to ALL identities, hashes and reasons.
+        known['excluded_candidate_registry']={**archive.reference(exclusions),
+            'count':len(exclusions),
+            'instruction':'All listed candidates remain excluded for this user turn. Research/import tools check the full durable registry before any I/O, including older entries not shown below. Do not retry via another tool/query. Read this index for an older reason; recheck only changed source evidence or a new user turn.'}
+        known['excluded_candidates']=[{k:row[k] for k in
+            ('revision','url','title','body_hash','rejection_code') if k in row}|
+            {'reason':str(row.get('reason',''))[:240]} for row in exclusions[-2:]]
     rows = snapshot.get('messages', [])
     last_user = next((i for i in range(len(rows)-1, -1, -1) if rows[i].get('role') == 'user'), -1)
     for i, message in enumerate(rows):
@@ -504,6 +541,46 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
                 size += len(encoded(messages[index])) - len(original)
                 if size <= max_chars: break
     if size > max_chars:
+        # Numerous short assistant updates can exceed the budget even though
+        # each is below the per-message compaction threshold. Their evidence
+        # already lives in domain results; retain user messages, the assistant
+        # turn immediately preceding the latest user, and recent updates.
+        rows=live.get('messages',[])
+        latest_user=next((i for i in range(len(rows)-1,-1,-1) if rows[i].get('role')=='user'),-1)
+        preceding=next((i for i in range(latest_user-1,-1,-1) if rows[i].get('role')=='assistant'),None)
+        assistants=[i for i,row in enumerate(rows) if row.get('role')=='assistant']
+        keep=set(assistants[-2:])|{preceding}
+        older=[row for i,row in enumerate(rows) if row.get('role')=='assistant' and i not in keep]
+        if older:
+            before=len(encoded(rows))
+            live['assistant_progress_history']=archive.reference(older)
+            live['messages']=[row for i,row in enumerate(rows) if row.get('role')!='assistant' or i in keep]
+            size+=len(encoded(live['messages']))+len(encoded(live['assistant_progress_history']))-before
+    if size > max_chars and isinstance(live.get('research_pages'),list):
+        # Keep the live page, and retain prior page identity/health inline.
+        # Complete historical links/excerpts stay behind per-page references;
+        # observed pending candidates and bounded target JD facts remain live.
+        before=len(encoded(live['research_pages']))
+        # Without a browser observation (e.g. HTTP research), the newest page
+        # is still the active source. Do not archive its only actionable links
+        # merely because protected original evidence exceeds a tiny budget.
+        current=(live.get('browser') or {}).get('url') or next(
+            (page.get('url') for page in reversed(live['research_pages']) if page.get('url')), None)
+        live['research_pages']=[page if page.get('url')==current else
+            {**archive.reference(page),**{k:page[k] for k in ('url','title','blocked') if k in page}}
+            for page in live['research_pages']]
+        size+=len(encoded(live['research_pages']))-before
+        if size>max_chars:
+            # Historical page URLs can themselves be large redirect/challenge
+            # URLs. Pending actionable links remain in search_recovery, while
+            # the whole past-page index is available through one exact ref.
+            past=[page for page in live['research_pages'] if page.get('url')!=current]
+            if past:
+                before=len(encoded(live['research_pages']))
+                live['research_page_history']=archive.reference(past)
+                live['research_pages']=[page for page in live['research_pages'] if page.get('url')==current]
+                size+=len(encoded(live['research_pages']))+len(encoded(live['research_page_history']))-before
+    if size > max_chars:
         # Completed/auxiliary results can be read; live application fields,
         # candidate facts, pending questions, observation IDs and browser state stay exact.
         for key in ('previous_recommendations', 'recommended_jobs', 'interviews', 'materials', 'jobs', 'job_alerts'):
@@ -526,4 +603,12 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
     actual = sum(len(m.content) if isinstance(m.content, str) else len(encoded(m.content)) for m in messages)
     actual += len(encoded(tools))
     return messages, {'request_text_chars': actual, 'limit_chars': max_chars,
-                      'protected_overflow': actual > max_chars, 'archived_values': len(archive.used)}
+                      'protected_overflow': actual > max_chars, 'archived_values': len(archive.used),
+                      # Sizes only, never source text. These sum to the actual
+                      # request measure, unlike the persistent archive size.
+                      'request_parts_chars': {
+                          'system': len(prompt) + len(repair or ''),
+                          'tools': len(encoded(tools)),
+                          'replay_messages': actual - len(prompt) - len(repair or '') - len(encoded(tools)) - len(encoded(live)),
+                          'live_snapshot': len(encoded(live))},
+                      'snapshot_field_chars': {key: len(encoded(value)) for key, value in live.items()}}

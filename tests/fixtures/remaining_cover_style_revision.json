@@ -1,0 +1,99 @@
+{
+  "provenance": {
+    "path": "docs/diagnostics/remaining-2026-10-11/cover-original-revision-evidence.json",
+    "sha256": "ed7acda1520f0314e96bba9c24a21500cb0b3bf1d7a112d96dc31dde0a329695",
+    "scope": "Frozen actual paid revision; no new generation; factual verification passed but style failed."
+  },
+  "job": {
+    "url": "https://jobs.example.test/python-engineer",
+    "title": "Python Engineer",
+    "company": "Synthetic Harbor Systems",
+    "location": "Remote US",
+    "description": "Synthetic Harbor Systems is hiring a Python Engineer to improve API reliability. The role builds Python APIs and tests error responses. Requires Python API development."
+  },
+  "content": {
+    "closing": "Sincerely,",
+    "greeting": "Dear Hiring Team,",
+    "paragraphs": [
+      {
+        "evidence_ids": [],
+        "evidence_version_ids": [],
+        "paragraph_type": "opening",
+        "target_requirement_ids": [],
+        "text": "Python Engineer at Synthetic Harbor Systems focuses on improving API reliability. I am applying for the role and would welcome the opportunity to contribute to that effort."
+      },
+      {
+        "evidence_ids": [
+          "1d232df6-e222-471a-9ebc-eecd9e5a9ad7"
+        ],
+        "evidence_version_ids": [
+          "d7b75588-c248-42e4-8fe4-36b80ca1479d"
+        ],
+        "paragraph_type": "evidence",
+        "target_requirement_ids": [
+          "REQ-f326ecce4b64"
+        ],
+        "text": "In prior work, I built Python APIs."
+      },
+      {
+        "evidence_ids": [],
+        "evidence_version_ids": [],
+        "paragraph_type": "motivation",
+        "target_requirement_ids": [],
+        "text": "I would welcome the opportunity to work on developing Python APIs and testing error responses to support more reliable API behavior. Thank you for your consideration."
+      }
+    ],
+    "schema_version": 2,
+    "signer_name": null
+  },
+  "verification": {
+    "passed": true,
+    "issues": []
+  },
+  "usage": {
+    "calls": 2,
+    "completed": 2,
+    "failed": 0,
+    "pending": 0,
+    "discarded": 0,
+    "retries": 0,
+    "input_tokens": 2643,
+    "output_tokens": 4830,
+    "unknown_usage_calls": 0,
+    "groups": [
+      {
+        "purpose": "cover_style_frozen_original_revision:CoverLetter",
+        "model": "muse-spark-1.3-contributor",
+        "calls": 1,
+        "input_tokens": 2159,
+        "output_tokens": 3625,
+        "unknown_usage_calls": 0,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 3368
+      },
+      {
+        "purpose": "cover_style_frozen_original_revision:ClaimDecisions",
+        "model": "muse-spark-1.3-contributor",
+        "calls": 1,
+        "input_tokens": 484,
+        "output_tokens": 1205,
+        "unknown_usage_calls": 0,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 1172
+      }
+    ],
+    "cached_input_tokens": 0,
+    "reasoning_tokens": 4540,
+    "usage_complete": true
+  },
+  "checks_at_generation": {
+    "one_revision": true,
+    "awaiting_review": true,
+    "grounding_passed": true,
+    "original_unsupported_clause_removed": true,
+    "section_not_a_role": true,
+    "first_person": true,
+    "no_repeated_api_building_claim": false,
+    "complete_usage": true
+  }
+}

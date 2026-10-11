@@ -1,0 +1,46 @@
+{
+  "revision": "2026-10-11-supervisor-supplement-r1",
+  "provenance": "Independent findings supplied by the user/supervisor in the 2026-10-11 message. These are not new runs by this assistant.",
+  "claims": [
+    {
+      "item": "A1 catalogue preflight and explicit fixed catalogue",
+      "result": "passed_in_local_test_scope",
+      "tests": 16,
+      "seconds": 3.66,
+      "execution": "Reviewed execution permissions; catalogue batch + fixed_catalog tests.",
+      "artifact_path": null,
+      "artifact_note": "Independent XML/output path was not supplied; do not invent a local artifact or digest.",
+      "boundary": "Earlier probes with no output are not product failures. Explicit catalogue and preflight contracts do not complete the pending default route or real A1 stability/quality acceptance."
+    },
+    {
+      "item": "r1 archive integrity",
+      "index": "docs/diagnostics/remaining-2026-10-11/catalogue-attempt-offline-r1.json",
+      "result": "all_present_and_sha256_equal",
+      "files": 33,
+      "boundary": "25 artifact files plus 8 implementation files, as frozen in r1. Integrity does not prove additional product behavior or human gold quality."
+    },
+    {
+      "item": "C11 partial application batch and replay",
+      "result": "passed_in_local_test_scope",
+      "tests": 1,
+      "seconds": 5.42,
+      "storage": "Production SQLite",
+      "browser": "Synthetic browser",
+      "input": "One valid saved posting and a second saved posting with no URL.",
+      "first": {"requested": 2, "started": 1, "opened": 1, "resolved": 1, "second_item": "error"},
+      "replay": {"started": 0, "second_item": "error_retained"},
+      "artifact_path": null,
+      "artifact_note": "Independent artifact path was not supplied. This conclusion is attributed to the supervisor rather than a fabricated local rerun.",
+      "boundary": "No real-model multi-application conversation, real browser, or employer submission is claimed. C11 remains unmeasured for that real-model scope."
+    }
+  ],
+  "unchanged": {
+    "A1_default_route": "pending_real_user_choice",
+    "A5_cold_60_seconds": "failed_89.015_seconds_user_deferred_optimization",
+    "B6_analyst": "failed_52_main_calls_zero_saved_jobs_zero_recommendations",
+    "C16": "main_latency_failed_fast_id_not_configured",
+    "E5": "real_style_failed_offline_policy_only",
+    "A3": "96_human_review_items_pending_no_human_gold",
+    "F1": "push_and_PR_wait_for_user_approval"
+  }
+}

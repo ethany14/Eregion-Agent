@@ -148,9 +148,9 @@ def invoke_structured(
 ) -> Result:
     """Invoke a Pydantic structured model using the baseline message layout."""
     from agent_runtime.multi_agent.model_usage import invoke_model
-    from agent_runtime.provider_usage import current_scope, usage_scope
+    from agent_runtime.provider_usage import current_scope, usage_scope, adapter_attempt
     purpose = current_scope().get('purpose', 'structured')
-    with usage_scope(purpose=purpose + ':' + schema.__name__):
+    with usage_scope(purpose=purpose + ':' + schema.__name__), adapter_attempt(type(model).__name__):
         return invoke_model(_invoke_structured, model, schema, system_message, human_message, config)
 
 

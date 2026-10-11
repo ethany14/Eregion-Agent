@@ -48,3 +48,19 @@ test('job text, materials and interview feedback are inert and have human-readab
   assert.ok(nodes.some(n=>n.href==='/api/packs/pack/items/doc/cover-letter.pdf'));
   nodes.find(n=>n.text==='Approve this version').action();assert.deepEqual(calls,['approve']);
 });
+
+test('late interview feedback keeps its answer number and current question stays first',()=>{
+  const el=(tag,text='',className='')=>({tag,text,className,children:[],append(...n){this.children.push(...n);},replaceChildren(){this.children=[];}});
+  const container=el('div');
+  renderCareerResults({container,el,button:t=>el('button',t),send:()=>{},review:()=>{},item:{career:true,interviews:[{
+    interview:{mock_interview_id:'synthetic'},question:{question_id:'q3',question_text:'Current third question'},
+    feedback_jobs:[{status:'pending'}],feedback_history:[
+      {answer_sequence:1,question_text:'First question',evaluation:{overall_score:3,strengths:['First answer feedback']}},
+      {answer_sequence:2,question_text:'Second question',evaluation:{overall_score:4,strengths:['Second answer feedback']}}
+    ]}]}});
+  const all=n=>[n,...n.children.flatMap(all)],texts=all(container).map(n=>n.text);
+  assert.ok(texts.indexOf('Current third question')<texts.indexOf('Feedback on answer 1'));
+  for(const text of ['Feedback on answer 1','Feedback on answer 2','First question','Second question','First answer feedback','Second answer feedback'])assert.ok(texts.includes(text));
+  assert.ok(!texts.includes('Feedback on your last answer'));
+  assert.ok(texts.some(t=>t.includes('1 saved answer')));
+});

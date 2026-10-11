@@ -500,7 +500,7 @@ class AgentTools:
                 raise BrowserBlocked("Quote an answer actually supplied in a user message.")
             if message.get("field_key") and message["field_key"] != key:
                 raise BrowserBlocked("That message answers a different field.")
-            if "bound_answers" in message:
+            if "bound_answers" in message and (message.get('binding_method')!='model' or key in message['bound_answers']):
                 bound = message["bound_answers"].get(key)
                 candidate = boolean_answer(answer) if field["kind"] == "checkbox" else answer
                 if bound is None or str(candidate).casefold() != str(bound).casefold():

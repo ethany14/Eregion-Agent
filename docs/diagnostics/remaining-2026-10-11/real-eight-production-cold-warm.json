@@ -1,0 +1,2058 @@
+{
+  "entrance": "CareerHarness.execute(score_jobs)",
+  "workload": "8 synthetic saved jobs, real Jev and main resolver",
+  "cold_cache_existed_before": false,
+  "limit_cold_seconds": 60,
+  "status": "passed",
+  "cold_wall_seconds": 57.095621200000096,
+  "cold": {
+    "jobs": [
+      {
+        "application_id": "30eeaae9-7fb9-47a8-a4ab-fec422e7a63d",
+        "title": "Synthetic Data Analyst 0",
+        "company": null,
+        "url": "https://careers.example.com/performance/0",
+        "location": null,
+        "status": "needs_evidence",
+        "match_score": 70.51,
+        "result_at": "2026-10-11T08:07:00.405890+00:00",
+        "requirement_counts": {
+          "matched": 2,
+          "partial": 2,
+          "missing": 0,
+          "needs_confirmation": 0,
+          "unknown": 0,
+          "confirmed_condition": 0
+        },
+        "gaps": [
+          "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+          "Excellent analytical skills and clear communication of results to a non-technical audience."
+        ],
+        "match_overview": {
+          "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 96%). Personal conditions are reported separately. 3 requirement(s) Jev could not decide were resolved by the main model with quoted evidence.",
+          "score_range": [
+            70.51,
+            70.51
+          ],
+          "analysis_status": "completed",
+          "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+          "matched": [
+            {
+              "requirement": "0-2 years of marketing or analytics experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Programming experience, Python in particular, is a plus.",
+              "level": "preferred"
+            }
+          ],
+          "partial": [
+            {
+              "requirement": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Excellent analytical skills and clear communication of results to a non-technical audience.",
+              "level": "required"
+            }
+          ],
+          "missing": [],
+          "needs_confirmation": [],
+          "unknown": [],
+          "confirmed_condition": []
+        },
+        "score_range": [
+          70.51,
+          70.51
+        ],
+        "analysis_status": "completed",
+        "score_algorithm": "jev-only",
+        "score_valid_until": 1791792364.4413526
+      },
+      {
+        "application_id": "05897b89-cb77-47d2-9bdb-424769df7019",
+        "title": "Synthetic Data Analyst 1",
+        "company": null,
+        "url": "https://careers.example.com/performance/1",
+        "location": null,
+        "status": "needs_evidence",
+        "match_score": 70.51,
+        "result_at": "2026-10-11T08:07:00.433539+00:00",
+        "requirement_counts": {
+          "matched": 2,
+          "partial": 2,
+          "missing": 0,
+          "needs_confirmation": 0,
+          "unknown": 0,
+          "confirmed_condition": 0
+        },
+        "gaps": [
+          "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+          "Excellent analytical skills and clear communication of results to a non-technical audience."
+        ],
+        "match_overview": {
+          "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 96%). Personal conditions are reported separately. 3 requirement(s) Jev could not decide were resolved by the main model with quoted evidence.",
+          "score_range": [
+            70.51,
+            70.51
+          ],
+          "analysis_status": "completed",
+          "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+          "matched": [
+            {
+              "requirement": "0-2 years of marketing or analytics experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Programming experience, Python in particular, is a plus.",
+              "level": "preferred"
+            }
+          ],
+          "partial": [
+            {
+              "requirement": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Excellent analytical skills and clear communication of results to a non-technical audience.",
+              "level": "required"
+            }
+          ],
+          "missing": [],
+          "needs_confirmation": [],
+          "unknown": [],
+          "confirmed_condition": []
+        },
+        "score_range": [
+          70.51,
+          70.51
+        ],
+        "analysis_status": "completed",
+        "score_algorithm": "jev-only",
+        "score_valid_until": 1791792364.6527767
+      },
+      {
+        "application_id": "28ae4a41-480c-42c6-afab-55964401fc36",
+        "title": "Synthetic Data Analyst 2",
+        "company": null,
+        "url": "https://careers.example.com/performance/2",
+        "location": null,
+        "status": "needs_evidence",
+        "match_score": 70.59,
+        "result_at": "2026-10-11T08:07:00.459909+00:00",
+        "requirement_counts": {
+          "matched": 2,
+          "partial": 2,
+          "missing": 0,
+          "needs_confirmation": 0,
+          "unknown": 0,
+          "confirmed_condition": 0
+        },
+        "gaps": [
+          "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+          "Excellent analytical skills and clear communication of results to a non-technical audience."
+        ],
+        "match_overview": {
+          "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 97%). Personal conditions are reported separately. 3 requirement(s) Jev could not decide were resolved by the main model with quoted evidence.",
+          "score_range": [
+            70.59,
+            70.59
+          ],
+          "analysis_status": "completed",
+          "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+          "matched": [
+            {
+              "requirement": "0-2 years of marketing or analytics experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Programming experience, Python in particular, is a plus.",
+              "level": "preferred"
+            }
+          ],
+          "partial": [
+            {
+              "requirement": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Excellent analytical skills and clear communication of results to a non-technical audience.",
+              "level": "required"
+            }
+          ],
+          "missing": [],
+          "needs_confirmation": [],
+          "unknown": [],
+          "confirmed_condition": []
+        },
+        "score_range": [
+          70.59,
+          70.59
+        ],
+        "analysis_status": "completed",
+        "score_algorithm": "jev-only",
+        "score_valid_until": 1791792364.8196151
+      },
+      {
+        "application_id": "ea2fe5fb-5bc0-452c-b089-6cf8a8b35f5b",
+        "title": "Synthetic Data Analyst 3",
+        "company": null,
+        "url": "https://careers.example.com/performance/3",
+        "location": null,
+        "status": "needs_evidence",
+        "match_score": 70.59,
+        "result_at": "2026-10-11T08:07:00.489461+00:00",
+        "requirement_counts": {
+          "matched": 2,
+          "partial": 2,
+          "missing": 0,
+          "needs_confirmation": 0,
+          "unknown": 0,
+          "confirmed_condition": 0
+        },
+        "gaps": [
+          "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+          "Excellent analytical skills and clear communication of results to a non-technical audience."
+        ],
+        "match_overview": {
+          "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 97%). Personal conditions are reported separately. 3 requirement(s) Jev could not decide were resolved by the main model with quoted evidence.",
+          "score_range": [
+            70.59,
+            70.59
+          ],
+          "analysis_status": "completed",
+          "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+          "matched": [
+            {
+              "requirement": "0-2 years of marketing or analytics experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Programming experience, Python in particular, is a plus.",
+              "level": "preferred"
+            }
+          ],
+          "partial": [
+            {
+              "requirement": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Excellent analytical skills and clear communication of results to a non-technical audience.",
+              "level": "required"
+            }
+          ],
+          "missing": [],
+          "needs_confirmation": [],
+          "unknown": [],
+          "confirmed_condition": []
+        },
+        "score_range": [
+          70.59,
+          70.59
+        ],
+        "analysis_status": "completed",
+        "score_algorithm": "jev-only",
+        "score_valid_until": 1791792364.9823594
+      },
+      {
+        "application_id": "f748a9c5-7ccc-44b9-a80a-26a3ec66ee1c",
+        "title": "Synthetic Data Analyst 4",
+        "company": null,
+        "url": "https://careers.example.com/performance/4",
+        "location": null,
+        "status": "needs_evidence",
+        "match_score": 71.98,
+        "result_at": "2026-10-11T08:07:00.516403+00:00",
+        "requirement_counts": {
+          "matched": 2,
+          "partial": 2,
+          "missing": 0,
+          "needs_confirmation": 0,
+          "unknown": 0,
+          "confirmed_condition": 0
+        },
+        "gaps": [
+          "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+          "Excellent analytical skills and clear communication of results to a non-technical audience."
+        ],
+        "match_overview": {
+          "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 88%). Personal conditions are reported separately. 2 requirement(s) Jev could not decide were resolved by the main model with quoted evidence.",
+          "score_range": [
+            71.98,
+            71.98
+          ],
+          "analysis_status": "completed",
+          "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+          "matched": [
+            {
+              "requirement": "0-2 years of marketing or analytics experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Programming experience, Python in particular, is a plus.",
+              "level": "preferred"
+            }
+          ],
+          "partial": [
+            {
+              "requirement": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Excellent analytical skills and clear communication of results to a non-technical audience.",
+              "level": "required"
+            }
+          ],
+          "missing": [],
+          "needs_confirmation": [],
+          "unknown": [],
+          "confirmed_condition": []
+        },
+        "score_range": [
+          71.98,
+          71.98
+        ],
+        "analysis_status": "completed",
+        "score_algorithm": "jev-only",
+        "score_valid_until": 1791792366.269923
+      },
+      {
+        "application_id": "0b6db9d5-bef5-43fe-afbf-93a879e7db48",
+        "title": "Synthetic Data Analyst 5",
+        "company": null,
+        "url": "https://careers.example.com/performance/5",
+        "location": null,
+        "status": "needs_evidence",
+        "match_score": 72.05,
+        "result_at": "2026-10-11T08:07:00.542051+00:00",
+        "requirement_counts": {
+          "matched": 2,
+          "partial": 2,
+          "missing": 0,
+          "needs_confirmation": 0,
+          "unknown": 0,
+          "confirmed_condition": 0
+        },
+        "gaps": [
+          "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+          "Excellent analytical skills and clear communication of results to a non-technical audience."
+        ],
+        "match_overview": {
+          "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 89%). Personal conditions are reported separately. 2 requirement(s) Jev could not decide were resolved by the main model with quoted evidence.",
+          "score_range": [
+            72.05,
+            72.05
+          ],
+          "analysis_status": "completed",
+          "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+          "matched": [
+            {
+              "requirement": "0-2 years of marketing or analytics experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Programming experience, Python in particular, is a plus.",
+              "level": "preferred"
+            }
+          ],
+          "partial": [
+            {
+              "requirement": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Excellent analytical skills and clear communication of results to a non-technical audience.",
+              "level": "required"
+            }
+          ],
+          "missing": [],
+          "needs_confirmation": [],
+          "unknown": [],
+          "confirmed_condition": []
+        },
+        "score_range": [
+          72.05,
+          72.05
+        ],
+        "analysis_status": "completed",
+        "score_algorithm": "jev-only",
+        "score_valid_until": 1791792366.4197636
+      },
+      {
+        "application_id": "2167e694-c9b8-4746-88f8-fe8f7520b690",
+        "title": "Synthetic Data Analyst 6",
+        "company": null,
+        "url": "https://careers.example.com/performance/6",
+        "location": null,
+        "status": "needs_evidence",
+        "match_score": 72.08,
+        "result_at": "2026-10-11T08:07:00.571401+00:00",
+        "requirement_counts": {
+          "matched": 2,
+          "partial": 2,
+          "missing": 0,
+          "needs_confirmation": 0,
+          "unknown": 0,
+          "confirmed_condition": 0
+        },
+        "gaps": [
+          "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+          "Excellent analytical skills and clear communication of results to a non-technical audience."
+        ],
+        "match_overview": {
+          "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 89%). Personal conditions are reported separately. 2 requirement(s) Jev could not decide were resolved by the main model with quoted evidence.",
+          "score_range": [
+            72.08,
+            72.08
+          ],
+          "analysis_status": "completed",
+          "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+          "matched": [
+            {
+              "requirement": "0-2 years of marketing or analytics experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Programming experience, Python in particular, is a plus.",
+              "level": "preferred"
+            }
+          ],
+          "partial": [
+            {
+              "requirement": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Excellent analytical skills and clear communication of results to a non-technical audience.",
+              "level": "required"
+            }
+          ],
+          "missing": [],
+          "needs_confirmation": [],
+          "unknown": [],
+          "confirmed_condition": []
+        },
+        "score_range": [
+          72.08,
+          72.08
+        ],
+        "analysis_status": "completed",
+        "score_algorithm": "jev-only",
+        "score_valid_until": 1791792366.5710478
+      },
+      {
+        "application_id": "9d2d2e52-4d06-4856-8c68-ae5e683195c6",
+        "title": "Synthetic Data Analyst 7",
+        "company": null,
+        "url": "https://careers.example.com/performance/7",
+        "location": null,
+        "status": "needs_evidence",
+        "match_score": 71.98,
+        "result_at": "2026-10-11T08:07:00.599774+00:00",
+        "requirement_counts": {
+          "matched": 2,
+          "partial": 2,
+          "missing": 0,
+          "needs_confirmation": 0,
+          "unknown": 0,
+          "confirmed_condition": 0
+        },
+        "gaps": [
+          "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+          "Excellent analytical skills and clear communication of results to a non-technical audience."
+        ],
+        "match_overview": {
+          "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 88%). Personal conditions are reported separately. 2 requirement(s) Jev could not decide were resolved by the main model with quoted evidence.",
+          "score_range": [
+            71.98,
+            71.98
+          ],
+          "analysis_status": "completed",
+          "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+          "matched": [
+            {
+              "requirement": "0-2 years of marketing or analytics experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Programming experience, Python in particular, is a plus.",
+              "level": "preferred"
+            }
+          ],
+          "partial": [
+            {
+              "requirement": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Excellent analytical skills and clear communication of results to a non-technical audience.",
+              "level": "required"
+            }
+          ],
+          "missing": [],
+          "needs_confirmation": [],
+          "unknown": [],
+          "confirmed_condition": []
+        },
+        "score_range": [
+          71.98,
+          71.98
+        ],
+        "analysis_status": "completed",
+        "score_algorithm": "jev-only",
+        "score_valid_until": 1791792366.7459133
+      }
+    ]
+  },
+  "cold_results": {
+    "30eeaae9-7fb9-47a8-a4ab-fec422e7a63d": {
+      "main_model_calls": 1,
+      "fast_model_calls": 7,
+      "routing": [
+        {
+          "purpose": "jev_fit",
+          "model": "jev-1.13.0",
+          "run_id": "95df3804-4081-4a1a-978c-af5fe34ddafe",
+          "requests": 7,
+          "cache_hits": 0,
+          "cache_misses": 44,
+          "input_tokens": 8463,
+          "output_tokens": 835,
+          "unknown_usage_calls": 0,
+          "calls": [
+            {
+              "call_id": "1fbd778d-a51d-4705-abcf-aa1ecc625f78",
+              "model": "jev-1.13.0",
+              "purpose": "extract_requirements",
+              "status": "ok",
+              "input_tokens": 2210,
+              "output_tokens": 282,
+              "question_count": 16,
+              "seconds": 0.8249
+            },
+            {
+              "call_id": "623bc167-7bee-405e-903b-20043c10b14f",
+              "model": "jev-1.13.0",
+              "purpose": "refine_extraction_yes_no",
+              "status": "ok",
+              "input_tokens": 1293,
+              "output_tokens": 123,
+              "question_count": 7,
+              "seconds": 0.1551
+            },
+            {
+              "call_id": "f15c358f-23df-4123-b8de-16a4e9facf20",
+              "model": "jev-1.13.0",
+              "purpose": "condition_category_yes_no",
+              "status": "ok",
+              "input_tokens": 848,
+              "output_tokens": 106,
+              "question_count": 6,
+              "seconds": 0.2427
+            },
+            {
+              "call_id": "a3478e36-63e6-47f1-b45b-40aae0d80794",
+              "model": "jev-1.13.0",
+              "purpose": "support_yes_no",
+              "status": "ok",
+              "input_tokens": 1731,
+              "output_tokens": 210,
+              "question_count": 12,
+              "seconds": 0.1429
+            },
+            {
+              "call_id": "196578ed-fb64-4a34-bc0c-878dad7e23c4",
+              "model": "jev-1.13.0",
+              "purpose": "focused_yes_no",
+              "status": "ok",
+              "input_tokens": 867,
+              "output_tokens": 55,
+              "question_count": 3,
+              "seconds": 0.1964
+            },
+            {
+              "call_id": "7ebe490c-2e9a-42ba-9ed6-8b0654ad42ec",
+              "model": "jev-1.13.0",
+              "purpose": "clarify_full_support_yes_no",
+              "status": "ok",
+              "input_tokens": 862,
+              "output_tokens": 38,
+              "question_count": 2,
+              "seconds": 0.1325
+            },
+            {
+              "call_id": "19616780-7948-4d6c-a911-e15db0bb285a",
+              "model": "jev-1.13.0",
+              "purpose": "verify_citations_yes_no",
+              "status": "ok",
+              "input_tokens": 652,
+              "output_tokens": 21,
+              "question_count": 1,
+              "seconds": 0.1326
+            }
+          ]
+        },
+        {
+          "purpose": "jev_fit_resolver",
+          "model": "main",
+          "status": "completed",
+          "requested": 5,
+          "resolved": 5,
+          "cached": 0,
+          "batch_model_calls": 1,
+          "batch_jobs": 8
+        }
+      ],
+      "score": 70.51,
+      "matches": [
+        {
+          "id": "j4",
+          "status": "partial"
+        },
+        {
+          "id": "j5",
+          "status": "matched"
+        },
+        {
+          "id": "j6",
+          "status": "partial"
+        },
+        {
+          "id": "j7",
+          "status": "matched"
+        }
+      ]
+    },
+    "05897b89-cb77-47d2-9bdb-424769df7019": {
+      "main_model_calls": 0,
+      "fast_model_calls": 1,
+      "routing": [
+        {
+          "purpose": "jev_fit",
+          "model": "jev-1.13.0",
+          "run_id": "95df3804-4081-4a1a-978c-af5fe34ddafe",
+          "requests": 1,
+          "cache_hits": 0,
+          "cache_misses": 44,
+          "input_tokens": 2210,
+          "output_tokens": 282,
+          "unknown_usage_calls": 0,
+          "calls": [
+            {
+              "call_id": "39e0d393-6a55-4ee6-a60c-7b0f51d8321d",
+              "model": "jev-1.13.0",
+              "purpose": "extract_requirements",
+              "status": "ok",
+              "input_tokens": 2210,
+              "output_tokens": 282,
+              "question_count": 16,
+              "seconds": 0.1998
+            }
+          ]
+        },
+        {
+          "purpose": "jev_fit_resolver",
+          "model": "main",
+          "status": "completed",
+          "requested": 5,
+          "resolved": 5,
+          "cached": 5,
+          "batch_model_calls": 1,
+          "batch_jobs": 8
+        }
+      ],
+      "score": 70.51,
+      "matches": [
+        {
+          "id": "j4",
+          "status": "partial"
+        },
+        {
+          "id": "j5",
+          "status": "matched"
+        },
+        {
+          "id": "j6",
+          "status": "partial"
+        },
+        {
+          "id": "j7",
+          "status": "matched"
+        }
+      ]
+    },
+    "28ae4a41-480c-42c6-afab-55964401fc36": {
+      "main_model_calls": 0,
+      "fast_model_calls": 1,
+      "routing": [
+        {
+          "purpose": "jev_fit",
+          "model": "jev-1.13.0",
+          "run_id": "95df3804-4081-4a1a-978c-af5fe34ddafe",
+          "requests": 1,
+          "cache_hits": 0,
+          "cache_misses": 44,
+          "input_tokens": 2210,
+          "output_tokens": 282,
+          "unknown_usage_calls": 0,
+          "calls": [
+            {
+              "call_id": "975ad61e-dda1-417f-9475-38d09fd8f3c8",
+              "model": "jev-1.13.0",
+              "purpose": "extract_requirements",
+              "status": "ok",
+              "input_tokens": 2210,
+              "output_tokens": 282,
+              "question_count": 16,
+              "seconds": 0.1545
+            }
+          ]
+        },
+        {
+          "purpose": "jev_fit_resolver",
+          "model": "main",
+          "status": "completed",
+          "requested": 5,
+          "resolved": 5,
+          "cached": 5,
+          "batch_model_calls": 1,
+          "batch_jobs": 8
+        }
+      ],
+      "score": 70.59,
+      "matches": [
+        {
+          "id": "j4",
+          "status": "partial"
+        },
+        {
+          "id": "j5",
+          "status": "matched"
+        },
+        {
+          "id": "j6",
+          "status": "partial"
+        },
+        {
+          "id": "j7",
+          "status": "matched"
+        }
+      ]
+    },
+    "ea2fe5fb-5bc0-452c-b089-6cf8a8b35f5b": {
+      "main_model_calls": 0,
+      "fast_model_calls": 1,
+      "routing": [
+        {
+          "purpose": "jev_fit",
+          "model": "jev-1.13.0",
+          "run_id": "95df3804-4081-4a1a-978c-af5fe34ddafe",
+          "requests": 1,
+          "cache_hits": 0,
+          "cache_misses": 44,
+          "input_tokens": 2210,
+          "output_tokens": 282,
+          "unknown_usage_calls": 0,
+          "calls": [
+            {
+              "call_id": "4c378bc4-09b3-4fd0-bbcb-18e08d9d1374",
+              "model": "jev-1.13.0",
+              "purpose": "extract_requirements",
+              "status": "ok",
+              "input_tokens": 2210,
+              "output_tokens": 282,
+              "question_count": 16,
+              "seconds": 0.1511
+            }
+          ]
+        },
+        {
+          "purpose": "jev_fit_resolver",
+          "model": "main",
+          "status": "completed",
+          "requested": 5,
+          "resolved": 5,
+          "cached": 5,
+          "batch_model_calls": 1,
+          "batch_jobs": 8
+        }
+      ],
+      "score": 70.59,
+      "matches": [
+        {
+          "id": "j4",
+          "status": "partial"
+        },
+        {
+          "id": "j5",
+          "status": "matched"
+        },
+        {
+          "id": "j6",
+          "status": "partial"
+        },
+        {
+          "id": "j7",
+          "status": "matched"
+        }
+      ]
+    },
+    "f748a9c5-7ccc-44b9-a80a-26a3ec66ee1c": {
+      "main_model_calls": 0,
+      "fast_model_calls": 7,
+      "routing": [
+        {
+          "purpose": "jev_fit",
+          "model": "jev-1.13.0",
+          "run_id": "95df3804-4081-4a1a-978c-af5fe34ddafe",
+          "requests": 7,
+          "cache_hits": 0,
+          "cache_misses": 46,
+          "input_tokens": 8684,
+          "output_tokens": 869,
+          "unknown_usage_calls": 0,
+          "calls": [
+            {
+              "call_id": "05305fcc-cc16-4ec2-92ed-25f929f5c11b",
+              "model": "jev-1.13.0",
+              "purpose": "extract_requirements",
+              "status": "ok",
+              "input_tokens": 2210,
+              "output_tokens": 282,
+              "question_count": 16,
+              "seconds": 0.1368
+            },
+            {
+              "call_id": "e1662e65-e488-4215-a344-2555989414fb",
+              "model": "jev-1.13.0",
+              "purpose": "refine_extraction_yes_no",
+              "status": "ok",
+              "input_tokens": 1293,
+              "output_tokens": 123,
+              "question_count": 7,
+              "seconds": 0.1423
+            },
+            {
+              "call_id": "fa21a68a-b35c-4701-9221-8c208fd74bdb",
+              "model": "jev-1.13.0",
+              "purpose": "condition_category_yes_no",
+              "status": "ok",
+              "input_tokens": 848,
+              "output_tokens": 106,
+              "question_count": 6,
+              "seconds": 0.1377
+            },
+            {
+              "call_id": "8fedac96-e1ad-4970-90d8-d48b0dd45ca4",
+              "model": "jev-1.13.0",
+              "purpose": "support_yes_no",
+              "status": "ok",
+              "input_tokens": 1731,
+              "output_tokens": 210,
+              "question_count": 12,
+              "seconds": 0.1389
+            },
+            {
+              "call_id": "a1670c58-d14c-4ad5-9021-4e5bb61adbfe",
+              "model": "jev-1.13.0",
+              "purpose": "focused_yes_no",
+              "status": "ok",
+              "input_tokens": 961,
+              "output_tokens": 72,
+              "question_count": 4,
+              "seconds": 0.1368
+            },
+            {
+              "call_id": "3b4fe0e5-3eb3-4b98-bb94-3dd1e48b3978",
+              "model": "jev-1.13.0",
+              "purpose": "clarify_full_support_yes_no",
+              "status": "ok",
+              "input_tokens": 989,
+              "output_tokens": 55,
+              "question_count": 3,
+              "seconds": 0.1321
+            },
+            {
+              "call_id": "01ced4d2-2a5c-47b2-bf4e-19452ee6757c",
+              "model": "jev-1.13.0",
+              "purpose": "verify_citations_yes_no",
+              "status": "ok",
+              "input_tokens": 652,
+              "output_tokens": 21,
+              "question_count": 1,
+              "seconds": 0.1693
+            }
+          ]
+        },
+        {
+          "purpose": "jev_fit_resolver",
+          "model": "main",
+          "status": "completed",
+          "requested": 4,
+          "resolved": 4,
+          "cached": 4,
+          "batch_model_calls": 1,
+          "batch_jobs": 8
+        }
+      ],
+      "score": 71.98,
+      "matches": [
+        {
+          "id": "j4",
+          "status": "partial"
+        },
+        {
+          "id": "j5",
+          "status": "matched"
+        },
+        {
+          "id": "j6",
+          "status": "partial"
+        },
+        {
+          "id": "j7",
+          "status": "matched"
+        }
+      ]
+    },
+    "0b6db9d5-bef5-43fe-afbf-93a879e7db48": {
+      "main_model_calls": 0,
+      "fast_model_calls": 1,
+      "routing": [
+        {
+          "purpose": "jev_fit",
+          "model": "jev-1.13.0",
+          "run_id": "95df3804-4081-4a1a-978c-af5fe34ddafe",
+          "requests": 1,
+          "cache_hits": 0,
+          "cache_misses": 46,
+          "input_tokens": 2210,
+          "output_tokens": 282,
+          "unknown_usage_calls": 0,
+          "calls": [
+            {
+              "call_id": "6fc9caf7-1aaf-47dc-a0e6-4e7a1fca7823",
+              "model": "jev-1.13.0",
+              "purpose": "extract_requirements",
+              "status": "ok",
+              "input_tokens": 2210,
+              "output_tokens": 282,
+              "question_count": 16,
+              "seconds": 0.1382
+            }
+          ]
+        },
+        {
+          "purpose": "jev_fit_resolver",
+          "model": "main",
+          "status": "completed",
+          "requested": 4,
+          "resolved": 4,
+          "cached": 4,
+          "batch_model_calls": 1,
+          "batch_jobs": 8
+        }
+      ],
+      "score": 72.05,
+      "matches": [
+        {
+          "id": "j4",
+          "status": "partial"
+        },
+        {
+          "id": "j5",
+          "status": "matched"
+        },
+        {
+          "id": "j6",
+          "status": "partial"
+        },
+        {
+          "id": "j7",
+          "status": "matched"
+        }
+      ]
+    },
+    "2167e694-c9b8-4746-88f8-fe8f7520b690": {
+      "main_model_calls": 0,
+      "fast_model_calls": 1,
+      "routing": [
+        {
+          "purpose": "jev_fit",
+          "model": "jev-1.13.0",
+          "run_id": "95df3804-4081-4a1a-978c-af5fe34ddafe",
+          "requests": 1,
+          "cache_hits": 0,
+          "cache_misses": 46,
+          "input_tokens": 2210,
+          "output_tokens": 282,
+          "unknown_usage_calls": 0,
+          "calls": [
+            {
+              "call_id": "a60de3de-fa01-4571-8161-64f7e60cadbf",
+              "model": "jev-1.13.0",
+              "purpose": "extract_requirements",
+              "status": "ok",
+              "input_tokens": 2210,
+              "output_tokens": 282,
+              "question_count": 16,
+              "seconds": 0.14
+            }
+          ]
+        },
+        {
+          "purpose": "jev_fit_resolver",
+          "model": "main",
+          "status": "completed",
+          "requested": 4,
+          "resolved": 4,
+          "cached": 4,
+          "batch_model_calls": 1,
+          "batch_jobs": 8
+        }
+      ],
+      "score": 72.08,
+      "matches": [
+        {
+          "id": "j4",
+          "status": "partial"
+        },
+        {
+          "id": "j5",
+          "status": "matched"
+        },
+        {
+          "id": "j6",
+          "status": "partial"
+        },
+        {
+          "id": "j7",
+          "status": "matched"
+        }
+      ]
+    },
+    "9d2d2e52-4d06-4856-8c68-ae5e683195c6": {
+      "main_model_calls": 0,
+      "fast_model_calls": 1,
+      "routing": [
+        {
+          "purpose": "jev_fit",
+          "model": "jev-1.13.0",
+          "run_id": "95df3804-4081-4a1a-978c-af5fe34ddafe",
+          "requests": 1,
+          "cache_hits": 0,
+          "cache_misses": 46,
+          "input_tokens": 2210,
+          "output_tokens": 282,
+          "unknown_usage_calls": 0,
+          "calls": [
+            {
+              "call_id": "ced221ef-f748-481f-9c94-c869047a4125",
+              "model": "jev-1.13.0",
+              "purpose": "extract_requirements",
+              "status": "ok",
+              "input_tokens": 2210,
+              "output_tokens": 282,
+              "question_count": 16,
+              "seconds": 0.1624
+            }
+          ]
+        },
+        {
+          "purpose": "jev_fit_resolver",
+          "model": "main",
+          "status": "completed",
+          "requested": 4,
+          "resolved": 4,
+          "cached": 4,
+          "batch_model_calls": 1,
+          "batch_jobs": 8
+        }
+      ],
+      "score": 71.98,
+      "matches": [
+        {
+          "id": "j4",
+          "status": "partial"
+        },
+        {
+          "id": "j5",
+          "status": "matched"
+        },
+        {
+          "id": "j6",
+          "status": "partial"
+        },
+        {
+          "id": "j7",
+          "status": "matched"
+        }
+      ]
+    }
+  },
+  "cold_usage": {
+    "calls": 0,
+    "completed": 0,
+    "failed": 0,
+    "pending": 0,
+    "discarded": 0,
+    "retries": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "unknown_usage_calls": 0,
+    "groups": [],
+    "usage_complete": false
+  },
+  "warm": {
+    "jobs": [
+      {
+        "application_id": "30eeaae9-7fb9-47a8-a4ab-fec422e7a63d",
+        "title": "Synthetic Data Analyst 0",
+        "company": null,
+        "url": "https://careers.example.com/performance/0",
+        "location": null,
+        "status": "needs_evidence",
+        "match_score": 70.51,
+        "result_at": "2026-10-11T08:07:00.405890+00:00",
+        "requirement_counts": {
+          "matched": 2,
+          "partial": 2,
+          "missing": 0,
+          "needs_confirmation": 0,
+          "unknown": 0,
+          "confirmed_condition": 0
+        },
+        "gaps": [
+          "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+          "Excellent analytical skills and clear communication of results to a non-technical audience."
+        ],
+        "match_overview": {
+          "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 96%). Personal conditions are reported separately. 3 requirement(s) Jev could not decide were resolved by the main model with quoted evidence.",
+          "score_range": [
+            70.51,
+            70.51
+          ],
+          "analysis_status": "completed",
+          "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+          "matched": [
+            {
+              "requirement": "0-2 years of marketing or analytics experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Programming experience, Python in particular, is a plus.",
+              "level": "preferred"
+            }
+          ],
+          "partial": [
+            {
+              "requirement": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Excellent analytical skills and clear communication of results to a non-technical audience.",
+              "level": "required"
+            }
+          ],
+          "missing": [],
+          "needs_confirmation": [],
+          "unknown": [],
+          "confirmed_condition": []
+        },
+        "score_range": [
+          70.51,
+          70.51
+        ],
+        "analysis_status": "completed",
+        "score_algorithm": "jev-only",
+        "score_valid_until": 1791792364.4413526
+      },
+      {
+        "application_id": "05897b89-cb77-47d2-9bdb-424769df7019",
+        "title": "Synthetic Data Analyst 1",
+        "company": null,
+        "url": "https://careers.example.com/performance/1",
+        "location": null,
+        "status": "needs_evidence",
+        "match_score": 70.51,
+        "result_at": "2026-10-11T08:07:00.433539+00:00",
+        "requirement_counts": {
+          "matched": 2,
+          "partial": 2,
+          "missing": 0,
+          "needs_confirmation": 0,
+          "unknown": 0,
+          "confirmed_condition": 0
+        },
+        "gaps": [
+          "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+          "Excellent analytical skills and clear communication of results to a non-technical audience."
+        ],
+        "match_overview": {
+          "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 96%). Personal conditions are reported separately. 3 requirement(s) Jev could not decide were resolved by the main model with quoted evidence.",
+          "score_range": [
+            70.51,
+            70.51
+          ],
+          "analysis_status": "completed",
+          "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+          "matched": [
+            {
+              "requirement": "0-2 years of marketing or analytics experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Programming experience, Python in particular, is a plus.",
+              "level": "preferred"
+            }
+          ],
+          "partial": [
+            {
+              "requirement": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Excellent analytical skills and clear communication of results to a non-technical audience.",
+              "level": "required"
+            }
+          ],
+          "missing": [],
+          "needs_confirmation": [],
+          "unknown": [],
+          "confirmed_condition": []
+        },
+        "score_range": [
+          70.51,
+          70.51
+        ],
+        "analysis_status": "completed",
+        "score_algorithm": "jev-only",
+        "score_valid_until": 1791792364.6527767
+      },
+      {
+        "application_id": "28ae4a41-480c-42c6-afab-55964401fc36",
+        "title": "Synthetic Data Analyst 2",
+        "company": null,
+        "url": "https://careers.example.com/performance/2",
+        "location": null,
+        "status": "needs_evidence",
+        "match_score": 70.59,
+        "result_at": "2026-10-11T08:07:00.459909+00:00",
+        "requirement_counts": {
+          "matched": 2,
+          "partial": 2,
+          "missing": 0,
+          "needs_confirmation": 0,
+          "unknown": 0,
+          "confirmed_condition": 0
+        },
+        "gaps": [
+          "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+          "Excellent analytical skills and clear communication of results to a non-technical audience."
+        ],
+        "match_overview": {
+          "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 97%). Personal conditions are reported separately. 3 requirement(s) Jev could not decide were resolved by the main model with quoted evidence.",
+          "score_range": [
+            70.59,
+            70.59
+          ],
+          "analysis_status": "completed",
+          "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+          "matched": [
+            {
+              "requirement": "0-2 years of marketing or analytics experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Programming experience, Python in particular, is a plus.",
+              "level": "preferred"
+            }
+          ],
+          "partial": [
+            {
+              "requirement": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Excellent analytical skills and clear communication of results to a non-technical audience.",
+              "level": "required"
+            }
+          ],
+          "missing": [],
+          "needs_confirmation": [],
+          "unknown": [],
+          "confirmed_condition": []
+        },
+        "score_range": [
+          70.59,
+          70.59
+        ],
+        "analysis_status": "completed",
+        "score_algorithm": "jev-only",
+        "score_valid_until": 1791792364.8196151
+      },
+      {
+        "application_id": "ea2fe5fb-5bc0-452c-b089-6cf8a8b35f5b",
+        "title": "Synthetic Data Analyst 3",
+        "company": null,
+        "url": "https://careers.example.com/performance/3",
+        "location": null,
+        "status": "needs_evidence",
+        "match_score": 70.59,
+        "result_at": "2026-10-11T08:07:00.489461+00:00",
+        "requirement_counts": {
+          "matched": 2,
+          "partial": 2,
+          "missing": 0,
+          "needs_confirmation": 0,
+          "unknown": 0,
+          "confirmed_condition": 0
+        },
+        "gaps": [
+          "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+          "Excellent analytical skills and clear communication of results to a non-technical audience."
+        ],
+        "match_overview": {
+          "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 97%). Personal conditions are reported separately. 3 requirement(s) Jev could not decide were resolved by the main model with quoted evidence.",
+          "score_range": [
+            70.59,
+            70.59
+          ],
+          "analysis_status": "completed",
+          "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+          "matched": [
+            {
+              "requirement": "0-2 years of marketing or analytics experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Programming experience, Python in particular, is a plus.",
+              "level": "preferred"
+            }
+          ],
+          "partial": [
+            {
+              "requirement": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Excellent analytical skills and clear communication of results to a non-technical audience.",
+              "level": "required"
+            }
+          ],
+          "missing": [],
+          "needs_confirmation": [],
+          "unknown": [],
+          "confirmed_condition": []
+        },
+        "score_range": [
+          70.59,
+          70.59
+        ],
+        "analysis_status": "completed",
+        "score_algorithm": "jev-only",
+        "score_valid_until": 1791792364.9823594
+      },
+      {
+        "application_id": "f748a9c5-7ccc-44b9-a80a-26a3ec66ee1c",
+        "title": "Synthetic Data Analyst 4",
+        "company": null,
+        "url": "https://careers.example.com/performance/4",
+        "location": null,
+        "status": "needs_evidence",
+        "match_score": 71.98,
+        "result_at": "2026-10-11T08:07:00.516403+00:00",
+        "requirement_counts": {
+          "matched": 2,
+          "partial": 2,
+          "missing": 0,
+          "needs_confirmation": 0,
+          "unknown": 0,
+          "confirmed_condition": 0
+        },
+        "gaps": [
+          "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+          "Excellent analytical skills and clear communication of results to a non-technical audience."
+        ],
+        "match_overview": {
+          "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 88%). Personal conditions are reported separately. 2 requirement(s) Jev could not decide were resolved by the main model with quoted evidence.",
+          "score_range": [
+            71.98,
+            71.98
+          ],
+          "analysis_status": "completed",
+          "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+          "matched": [
+            {
+              "requirement": "0-2 years of marketing or analytics experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Programming experience, Python in particular, is a plus.",
+              "level": "preferred"
+            }
+          ],
+          "partial": [
+            {
+              "requirement": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Excellent analytical skills and clear communication of results to a non-technical audience.",
+              "level": "required"
+            }
+          ],
+          "missing": [],
+          "needs_confirmation": [],
+          "unknown": [],
+          "confirmed_condition": []
+        },
+        "score_range": [
+          71.98,
+          71.98
+        ],
+        "analysis_status": "completed",
+        "score_algorithm": "jev-only",
+        "score_valid_until": 1791792366.269923
+      },
+      {
+        "application_id": "0b6db9d5-bef5-43fe-afbf-93a879e7db48",
+        "title": "Synthetic Data Analyst 5",
+        "company": null,
+        "url": "https://careers.example.com/performance/5",
+        "location": null,
+        "status": "needs_evidence",
+        "match_score": 72.05,
+        "result_at": "2026-10-11T08:07:00.542051+00:00",
+        "requirement_counts": {
+          "matched": 2,
+          "partial": 2,
+          "missing": 0,
+          "needs_confirmation": 0,
+          "unknown": 0,
+          "confirmed_condition": 0
+        },
+        "gaps": [
+          "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+          "Excellent analytical skills and clear communication of results to a non-technical audience."
+        ],
+        "match_overview": {
+          "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 89%). Personal conditions are reported separately. 2 requirement(s) Jev could not decide were resolved by the main model with quoted evidence.",
+          "score_range": [
+            72.05,
+            72.05
+          ],
+          "analysis_status": "completed",
+          "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+          "matched": [
+            {
+              "requirement": "0-2 years of marketing or analytics experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Programming experience, Python in particular, is a plus.",
+              "level": "preferred"
+            }
+          ],
+          "partial": [
+            {
+              "requirement": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Excellent analytical skills and clear communication of results to a non-technical audience.",
+              "level": "required"
+            }
+          ],
+          "missing": [],
+          "needs_confirmation": [],
+          "unknown": [],
+          "confirmed_condition": []
+        },
+        "score_range": [
+          72.05,
+          72.05
+        ],
+        "analysis_status": "completed",
+        "score_algorithm": "jev-only",
+        "score_valid_until": 1791792366.4197636
+      },
+      {
+        "application_id": "2167e694-c9b8-4746-88f8-fe8f7520b690",
+        "title": "Synthetic Data Analyst 6",
+        "company": null,
+        "url": "https://careers.example.com/performance/6",
+        "location": null,
+        "status": "needs_evidence",
+        "match_score": 72.08,
+        "result_at": "2026-10-11T08:07:00.571401+00:00",
+        "requirement_counts": {
+          "matched": 2,
+          "partial": 2,
+          "missing": 0,
+          "needs_confirmation": 0,
+          "unknown": 0,
+          "confirmed_condition": 0
+        },
+        "gaps": [
+          "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+          "Excellent analytical skills and clear communication of results to a non-technical audience."
+        ],
+        "match_overview": {
+          "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 89%). Personal conditions are reported separately. 2 requirement(s) Jev could not decide were resolved by the main model with quoted evidence.",
+          "score_range": [
+            72.08,
+            72.08
+          ],
+          "analysis_status": "completed",
+          "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+          "matched": [
+            {
+              "requirement": "0-2 years of marketing or analytics experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Programming experience, Python in particular, is a plus.",
+              "level": "preferred"
+            }
+          ],
+          "partial": [
+            {
+              "requirement": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Excellent analytical skills and clear communication of results to a non-technical audience.",
+              "level": "required"
+            }
+          ],
+          "missing": [],
+          "needs_confirmation": [],
+          "unknown": [],
+          "confirmed_condition": []
+        },
+        "score_range": [
+          72.08,
+          72.08
+        ],
+        "analysis_status": "completed",
+        "score_algorithm": "jev-only",
+        "score_valid_until": 1791792366.5710478
+      },
+      {
+        "application_id": "9d2d2e52-4d06-4856-8c68-ae5e683195c6",
+        "title": "Synthetic Data Analyst 7",
+        "company": null,
+        "url": "https://careers.example.com/performance/7",
+        "location": null,
+        "status": "needs_evidence",
+        "match_score": 71.98,
+        "result_at": "2026-10-11T08:07:00.599774+00:00",
+        "requirement_counts": {
+          "matched": 2,
+          "partial": 2,
+          "missing": 0,
+          "needs_confirmation": 0,
+          "unknown": 0,
+          "confirmed_condition": 0
+        },
+        "gaps": [
+          "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+          "Excellent analytical skills and clear communication of results to a non-technical audience."
+        ],
+        "match_overview": {
+          "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 88%). Personal conditions are reported separately. 2 requirement(s) Jev could not decide were resolved by the main model with quoted evidence.",
+          "score_range": [
+            71.98,
+            71.98
+          ],
+          "analysis_status": "completed",
+          "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+          "matched": [
+            {
+              "requirement": "0-2 years of marketing or analytics experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Programming experience, Python in particular, is a plus.",
+              "level": "preferred"
+            }
+          ],
+          "partial": [
+            {
+              "requirement": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience.",
+              "level": "required"
+            },
+            {
+              "requirement": "Excellent analytical skills and clear communication of results to a non-technical audience.",
+              "level": "required"
+            }
+          ],
+          "missing": [],
+          "needs_confirmation": [],
+          "unknown": [],
+          "confirmed_condition": []
+        },
+        "score_range": [
+          71.98,
+          71.98
+        ],
+        "analysis_status": "completed",
+        "score_algorithm": "jev-only",
+        "score_valid_until": 1791792366.7459133
+      }
+    ]
+  },
+  "warm_wall_seconds": 0.4361305000002176,
+  "warm_results": {
+    "30eeaae9-7fb9-47a8-a4ab-fec422e7a63d": {
+      "main_model_calls": 0,
+      "fast_model_calls": 0,
+      "routing": [
+        {
+          "purpose": "jev_fit",
+          "model": "jev-1.13.0",
+          "run_id": "0e0fb2a4-9af2-407a-b3c9-fd32076fd582",
+          "requests": 0,
+          "cache_hits": 44,
+          "cache_misses": 0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "unknown_usage_calls": 0,
+          "calls": []
+        },
+        {
+          "purpose": "jev_fit_resolver",
+          "model": "main",
+          "status": "completed",
+          "requested": 5,
+          "resolved": 5,
+          "cached": 5,
+          "batch_model_calls": 0,
+          "batch_jobs": 8
+        }
+      ],
+      "score": 70.51,
+      "matches": [
+        {
+          "id": "j4",
+          "status": "partial"
+        },
+        {
+          "id": "j5",
+          "status": "matched"
+        },
+        {
+          "id": "j6",
+          "status": "partial"
+        },
+        {
+          "id": "j7",
+          "status": "matched"
+        }
+      ]
+    },
+    "05897b89-cb77-47d2-9bdb-424769df7019": {
+      "main_model_calls": 0,
+      "fast_model_calls": 0,
+      "routing": [
+        {
+          "purpose": "jev_fit",
+          "model": "jev-1.13.0",
+          "run_id": "0e0fb2a4-9af2-407a-b3c9-fd32076fd582",
+          "requests": 0,
+          "cache_hits": 44,
+          "cache_misses": 0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "unknown_usage_calls": 0,
+          "calls": []
+        },
+        {
+          "purpose": "jev_fit_resolver",
+          "model": "main",
+          "status": "completed",
+          "requested": 5,
+          "resolved": 5,
+          "cached": 5,
+          "batch_model_calls": 0,
+          "batch_jobs": 8
+        }
+      ],
+      "score": 70.51,
+      "matches": [
+        {
+          "id": "j4",
+          "status": "partial"
+        },
+        {
+          "id": "j5",
+          "status": "matched"
+        },
+        {
+          "id": "j6",
+          "status": "partial"
+        },
+        {
+          "id": "j7",
+          "status": "matched"
+        }
+      ]
+    },
+    "28ae4a41-480c-42c6-afab-55964401fc36": {
+      "main_model_calls": 0,
+      "fast_model_calls": 0,
+      "routing": [
+        {
+          "purpose": "jev_fit",
+          "model": "jev-1.13.0",
+          "run_id": "0e0fb2a4-9af2-407a-b3c9-fd32076fd582",
+          "requests": 0,
+          "cache_hits": 44,
+          "cache_misses": 0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "unknown_usage_calls": 0,
+          "calls": []
+        },
+        {
+          "purpose": "jev_fit_resolver",
+          "model": "main",
+          "status": "completed",
+          "requested": 5,
+          "resolved": 5,
+          "cached": 5,
+          "batch_model_calls": 0,
+          "batch_jobs": 8
+        }
+      ],
+      "score": 70.59,
+      "matches": [
+        {
+          "id": "j4",
+          "status": "partial"
+        },
+        {
+          "id": "j5",
+          "status": "matched"
+        },
+        {
+          "id": "j6",
+          "status": "partial"
+        },
+        {
+          "id": "j7",
+          "status": "matched"
+        }
+      ]
+    },
+    "ea2fe5fb-5bc0-452c-b089-6cf8a8b35f5b": {
+      "main_model_calls": 0,
+      "fast_model_calls": 0,
+      "routing": [
+        {
+          "purpose": "jev_fit",
+          "model": "jev-1.13.0",
+          "run_id": "0e0fb2a4-9af2-407a-b3c9-fd32076fd582",
+          "requests": 0,
+          "cache_hits": 44,
+          "cache_misses": 0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "unknown_usage_calls": 0,
+          "calls": []
+        },
+        {
+          "purpose": "jev_fit_resolver",
+          "model": "main",
+          "status": "completed",
+          "requested": 5,
+          "resolved": 5,
+          "cached": 5,
+          "batch_model_calls": 0,
+          "batch_jobs": 8
+        }
+      ],
+      "score": 70.59,
+      "matches": [
+        {
+          "id": "j4",
+          "status": "partial"
+        },
+        {
+          "id": "j5",
+          "status": "matched"
+        },
+        {
+          "id": "j6",
+          "status": "partial"
+        },
+        {
+          "id": "j7",
+          "status": "matched"
+        }
+      ]
+    },
+    "f748a9c5-7ccc-44b9-a80a-26a3ec66ee1c": {
+      "main_model_calls": 0,
+      "fast_model_calls": 0,
+      "routing": [
+        {
+          "purpose": "jev_fit",
+          "model": "jev-1.13.0",
+          "run_id": "0e0fb2a4-9af2-407a-b3c9-fd32076fd582",
+          "requests": 0,
+          "cache_hits": 46,
+          "cache_misses": 0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "unknown_usage_calls": 0,
+          "calls": []
+        },
+        {
+          "purpose": "jev_fit_resolver",
+          "model": "main",
+          "status": "completed",
+          "requested": 4,
+          "resolved": 4,
+          "cached": 4,
+          "batch_model_calls": 0,
+          "batch_jobs": 8
+        }
+      ],
+      "score": 71.98,
+      "matches": [
+        {
+          "id": "j4",
+          "status": "partial"
+        },
+        {
+          "id": "j5",
+          "status": "matched"
+        },
+        {
+          "id": "j6",
+          "status": "partial"
+        },
+        {
+          "id": "j7",
+          "status": "matched"
+        }
+      ]
+    },
+    "0b6db9d5-bef5-43fe-afbf-93a879e7db48": {
+      "main_model_calls": 0,
+      "fast_model_calls": 0,
+      "routing": [
+        {
+          "purpose": "jev_fit",
+          "model": "jev-1.13.0",
+          "run_id": "0e0fb2a4-9af2-407a-b3c9-fd32076fd582",
+          "requests": 0,
+          "cache_hits": 46,
+          "cache_misses": 0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "unknown_usage_calls": 0,
+          "calls": []
+        },
+        {
+          "purpose": "jev_fit_resolver",
+          "model": "main",
+          "status": "completed",
+          "requested": 4,
+          "resolved": 4,
+          "cached": 4,
+          "batch_model_calls": 0,
+          "batch_jobs": 8
+        }
+      ],
+      "score": 72.05,
+      "matches": [
+        {
+          "id": "j4",
+          "status": "partial"
+        },
+        {
+          "id": "j5",
+          "status": "matched"
+        },
+        {
+          "id": "j6",
+          "status": "partial"
+        },
+        {
+          "id": "j7",
+          "status": "matched"
+        }
+      ]
+    },
+    "2167e694-c9b8-4746-88f8-fe8f7520b690": {
+      "main_model_calls": 0,
+      "fast_model_calls": 0,
+      "routing": [
+        {
+          "purpose": "jev_fit",
+          "model": "jev-1.13.0",
+          "run_id": "0e0fb2a4-9af2-407a-b3c9-fd32076fd582",
+          "requests": 0,
+          "cache_hits": 46,
+          "cache_misses": 0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "unknown_usage_calls": 0,
+          "calls": []
+        },
+        {
+          "purpose": "jev_fit_resolver",
+          "model": "main",
+          "status": "completed",
+          "requested": 4,
+          "resolved": 4,
+          "cached": 4,
+          "batch_model_calls": 0,
+          "batch_jobs": 8
+        }
+      ],
+      "score": 72.08,
+      "matches": [
+        {
+          "id": "j4",
+          "status": "partial"
+        },
+        {
+          "id": "j5",
+          "status": "matched"
+        },
+        {
+          "id": "j6",
+          "status": "partial"
+        },
+        {
+          "id": "j7",
+          "status": "matched"
+        }
+      ]
+    },
+    "9d2d2e52-4d06-4856-8c68-ae5e683195c6": {
+      "main_model_calls": 0,
+      "fast_model_calls": 0,
+      "routing": [
+        {
+          "purpose": "jev_fit",
+          "model": "jev-1.13.0",
+          "run_id": "0e0fb2a4-9af2-407a-b3c9-fd32076fd582",
+          "requests": 0,
+          "cache_hits": 46,
+          "cache_misses": 0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "unknown_usage_calls": 0,
+          "calls": []
+        },
+        {
+          "purpose": "jev_fit_resolver",
+          "model": "main",
+          "status": "completed",
+          "requested": 4,
+          "resolved": 4,
+          "cached": 4,
+          "batch_model_calls": 0,
+          "batch_jobs": 8
+        }
+      ],
+      "score": 71.98,
+      "matches": [
+        {
+          "id": "j4",
+          "status": "partial"
+        },
+        {
+          "id": "j5",
+          "status": "matched"
+        },
+        {
+          "id": "j6",
+          "status": "partial"
+        },
+        {
+          "id": "j7",
+          "status": "matched"
+        }
+      ]
+    }
+  },
+  "calls": [
+    {
+      "schema": "UnknownResolution",
+      "wire_ids": [
+        "job0:j2",
+        "job0:j3",
+        "job0:j4",
+        "job0:j5",
+        "job0:j6",
+        "job1:j2",
+        "job1:j3",
+        "job1:j4",
+        "job1:j5",
+        "job1:j6",
+        "job2:j2",
+        "job2:j3",
+        "job2:j4",
+        "job2:j5",
+        "job2:j6",
+        "job3:j2",
+        "job3:j3",
+        "job3:j4",
+        "job3:j5",
+        "job3:j6",
+        "job4:j2",
+        "job4:j3",
+        "job4:j5",
+        "job4:j6",
+        "job5:j2",
+        "job5:j3",
+        "job5:j5",
+        "job5:j6",
+        "job6:j2",
+        "job6:j3",
+        "job6:j5",
+        "job6:j6",
+        "job7:j2",
+        "job7:j3",
+        "job7:j5",
+        "job7:j6"
+      ],
+      "wall_seconds": 52.45729819999997
+    }
+  ],
+  "cold_resolver_calls": 1,
+  "warm_new_resolver_calls": 0,
+  "warm_usage": {
+    "calls": 0,
+    "completed": 0,
+    "failed": 0,
+    "pending": 0,
+    "discarded": 0,
+    "retries": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "unknown_usage_calls": 0,
+    "groups": [],
+    "usage_complete": false
+  },
+  "restart": "new DB connection, repositories, ApplicationLoop, CareerHarness and FitAnalysisService",
+  "checks": {
+    "eight_cold_jobs": true,
+    "real_cold_within_60s": true,
+    "one_resolver_call": true,
+    "resolver_eight_job_prefixes": true,
+    "attributed_main_calls": true,
+    "jev_real_cold_calls": true,
+    "warm_zero_new_provider_calls": true,
+    "warm_equal_scores": true,
+    "warm_zero_usage": true,
+    "no_warm_cache_before_cold": true
+  }
+}

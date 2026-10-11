@@ -1,0 +1,296 @@
+{
+  "scope": "Only unexecuted original-draft reviser and final unchanged real grounding; no new writer generation",
+  "provenance": {
+    "fixture": "C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\tests\\fixtures\\remaining_cover_style_failure.json",
+    "fixture_sha256": "15db1eef2f576aa0b46073ff97439faa4b58346458ed8f7a3c89592f6f01cf2a",
+    "source_verification": {
+      "passed": false,
+      "issues": [
+        {
+          "block_id": "paragraph-2",
+          "unsupported_text": "Prior work has included building Python APIs, which corresponds to the stated requirement for Python API development and supports efforts to improve reliability.",
+          "reason": "The cited evidence does not entail the complete claim. Evidence shows building Python APIs but never mentions reliability; 'supports efforts to improve reliability' adds unsupported causation/effectiveness.",
+          "cited_evidence_ids": [
+            "d8e29e4c-472f-400d-b0db-1fa54bf9aef1"
+          ],
+          "revision_instruction": "Verify against the cited evidence; remove any added facts."
+        }
+      ]
+    },
+    "replayed_verification": {
+      "passed": false,
+      "issues": [
+        {
+          "block_id": "paragraph-2",
+          "unsupported_text": "Prior work has included building Python APIs, which corresponds to the stated requirement for Python API development and supports efforts to improve reliability.",
+          "reason": "The cited evidence does not entail the complete claim. Evidence shows building Python APIs but never mentions reliability; 'supports efforts to improve reliability' adds unsupported causation/effectiveness.",
+          "cited_evidence_ids": [
+            "1d232df6-e222-471a-9ebc-eecd9e5a9ad7"
+          ],
+          "revision_instruction": "Verify against the cited evidence; remove any added facts."
+        }
+      ]
+    },
+    "original_evidence": [
+      {
+        "evidence_id": "d8e29e4c-472f-400d-b0db-1fa54bf9aef1",
+        "evidence_version_id": "ddfd24a2-c283-4fbe-a6d6-af3311f67c94",
+        "content_hash": "c8c61f73032755062120ef1e2db70603d0c1802bc7cee5f4f6c48360ed6f84a9",
+        "source_type": "resume",
+        "selection_reason": "application_link",
+        "associated_requirement_ids": [
+          "REQ-f326ecce4b64"
+        ],
+        "claim_text": "Built Python APIs.",
+        "exact_quote": "Built Python APIs.",
+        "source_section": "Experience",
+        "category": "experience",
+        "employer_or_project": null,
+        "role": "Experience",
+        "start_date": null,
+        "end_date": null,
+        "status_at_selection": "confirmed"
+      }
+    ],
+    "local_evidence": [
+      {
+        "evidence_id": "1d232df6-e222-471a-9ebc-eecd9e5a9ad7",
+        "evidence_version_id": "d7b75588-c248-42e4-8fe4-36b80ca1479d",
+        "content_hash": "b96e03e54f7db7e5553cdac572806cbdfccd58714b8ef2736d67cf948153e039",
+        "source_type": "resume",
+        "selection_reason": "application_link",
+        "associated_requirement_ids": [
+          "REQ-f326ecce4b64"
+        ],
+        "claim_text": "Built Python APIs.",
+        "exact_quote": "Built Python APIs.",
+        "source_section": "Experience",
+        "category": "experience",
+        "employer_or_project": null,
+        "role": "Experience",
+        "start_date": null,
+        "end_date": null,
+        "status_at_selection": "confirmed"
+      }
+    ],
+    "policy": "Only same-quote citation IDs rebound; frozen FAILED verdict, never a manual PASS"
+  },
+  "job": {
+    "url": "https://jobs.example.test/python-engineer",
+    "title": "Python Engineer",
+    "company": "Synthetic Harbor Systems",
+    "location": "Remote US",
+    "description": "Synthetic Harbor Systems is hiring a Python Engineer to improve API reliability. The role builds Python APIs and tests error responses. Requires Python API development."
+  },
+  "source_resume": "Synthetic Candidate\nsynthetic@example.com\nEXPERIENCE\nBuilt Python APIs.",
+  "seconds": 27.18221420000009,
+  "item": {
+    "pack_item_id": "ebdca868-d1e9-427e-9ecd-d0f56d28900c",
+    "pack_id": "0e31a7e1-55d9-412a-a02b-e838497c5061",
+    "artifact_id": "7796a558-fe5d-4cab-915c-75d1d1003a38",
+    "artifact_type": "cover_letter",
+    "status": "awaiting_review",
+    "source_question": null,
+    "max_length": null,
+    "version": 5,
+    "revision_count": 1,
+    "max_revisions": 1,
+    "verification": {
+      "passed": true,
+      "issues": []
+    },
+    "regeneration_feedback": null,
+    "requires_manual_answer": false,
+    "created_at": "2026-10-11T10:36:54.847937Z",
+    "updated_at": "2026-10-11T10:37:22.042194Z"
+  },
+  "content": {
+    "closing": "Sincerely,",
+    "greeting": "Dear Hiring Team,",
+    "paragraphs": [
+      {
+        "evidence_ids": [],
+        "evidence_version_ids": [],
+        "paragraph_type": "opening",
+        "target_requirement_ids": [],
+        "text": "Python Engineer at Synthetic Harbor Systems focuses on improving API reliability. I am applying for the role and would welcome the opportunity to contribute to that effort."
+      },
+      {
+        "evidence_ids": [
+          "1d232df6-e222-471a-9ebc-eecd9e5a9ad7"
+        ],
+        "evidence_version_ids": [
+          "d7b75588-c248-42e4-8fe4-36b80ca1479d"
+        ],
+        "paragraph_type": "evidence",
+        "target_requirement_ids": [
+          "REQ-f326ecce4b64"
+        ],
+        "text": "In prior work, I built Python APIs."
+      },
+      {
+        "evidence_ids": [],
+        "evidence_version_ids": [],
+        "paragraph_type": "motivation",
+        "target_requirement_ids": [],
+        "text": "I would welcome the opportunity to work on developing Python APIs and testing error responses to support more reliable API behavior. Thank you for your consideration."
+      }
+    ],
+    "schema_version": 2,
+    "signer_name": null
+  },
+  "text": "Dear Hiring Team,\n\nPython Engineer at Synthetic Harbor Systems focuses on improving API reliability. I am applying for the role and would welcome the opportunity to contribute to that effort.\n\nIn prior work, I built Python APIs.\n\nI would welcome the opportunity to work on developing Python APIs and testing error responses to support more reliable API behavior. Thank you for your consideration.\n\nSincerely,",
+  "versions": [
+    {
+      "artifact_id": "6b842585-152b-4ff7-8c3b-1473839cff2e",
+      "version": 1,
+      "status": "draft",
+      "verification_status": "failed",
+      "content": {
+        "closing": "Sincerely,",
+        "greeting": "Dear Hiring Team,",
+        "paragraphs": [
+          {
+            "evidence_ids": [
+              "1d232df6-e222-471a-9ebc-eecd9e5a9ad7"
+            ],
+            "evidence_version_ids": [
+              "d7b75588-c248-42e4-8fe4-36b80ca1479d"
+            ],
+            "paragraph_type": "opening",
+            "target_requirement_ids": [
+              "REQ-f326ecce4b64"
+            ],
+            "text": "Python Engineer at Synthetic Harbor Systems centers on improving API reliability through Python APIs, work that aligns with prior experience building Python APIs."
+          },
+          {
+            "evidence_ids": [
+              "1d232df6-e222-471a-9ebc-eecd9e5a9ad7"
+            ],
+            "evidence_version_ids": [
+              "d7b75588-c248-42e4-8fe4-36b80ca1479d"
+            ],
+            "paragraph_type": "evidence",
+            "target_requirement_ids": [
+              "REQ-f326ecce4b64"
+            ],
+            "text": "Prior work has included building Python APIs, which corresponds to the stated requirement for Python API development and supports efforts to improve reliability."
+          },
+          {
+            "evidence_ids": [],
+            "evidence_version_ids": [],
+            "paragraph_type": "motivation",
+            "target_requirement_ids": [],
+            "text": "Contribution would center on the core tasks described for the role — developing Python APIs and testing error responses to support more reliable API behavior."
+          },
+          {
+            "evidence_ids": [],
+            "evidence_version_ids": [],
+            "paragraph_type": "closing",
+            "target_requirement_ids": [],
+            "text": "Thank you for your consideration."
+          }
+        ],
+        "schema_version": 2,
+        "signer_name": null
+      },
+      "created_at": "2026-10-11T10:36:54.851756+00:00"
+    },
+    {
+      "artifact_id": "7796a558-fe5d-4cab-915c-75d1d1003a38",
+      "version": 2,
+      "status": "verified",
+      "verification_status": "passed",
+      "content": {
+        "closing": "Sincerely,",
+        "greeting": "Dear Hiring Team,",
+        "paragraphs": [
+          {
+            "evidence_ids": [],
+            "evidence_version_ids": [],
+            "paragraph_type": "opening",
+            "target_requirement_ids": [],
+            "text": "Python Engineer at Synthetic Harbor Systems focuses on improving API reliability. I am applying for the role and would welcome the opportunity to contribute to that effort."
+          },
+          {
+            "evidence_ids": [
+              "1d232df6-e222-471a-9ebc-eecd9e5a9ad7"
+            ],
+            "evidence_version_ids": [
+              "d7b75588-c248-42e4-8fe4-36b80ca1479d"
+            ],
+            "paragraph_type": "evidence",
+            "target_requirement_ids": [
+              "REQ-f326ecce4b64"
+            ],
+            "text": "In prior work, I built Python APIs."
+          },
+          {
+            "evidence_ids": [],
+            "evidence_version_ids": [],
+            "paragraph_type": "motivation",
+            "target_requirement_ids": [],
+            "text": "I would welcome the opportunity to work on developing Python APIs and testing error responses to support more reliable API behavior. Thank you for your consideration."
+          }
+        ],
+        "schema_version": 2,
+        "signer_name": null
+      },
+      "created_at": "2026-10-11T10:37:15.494920+00:00"
+    }
+  ],
+  "usage": {
+    "calls": 2,
+    "completed": 2,
+    "failed": 0,
+    "pending": 0,
+    "discarded": 0,
+    "retries": 0,
+    "input_tokens": 2643,
+    "output_tokens": 4830,
+    "unknown_usage_calls": 0,
+    "groups": [
+      {
+        "purpose": "cover_style_frozen_original_revision:CoverLetter",
+        "model": "muse-spark-1.3-contributor",
+        "calls": 1,
+        "input_tokens": 2159,
+        "output_tokens": 3625,
+        "unknown_usage_calls": 0,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 3368
+      },
+      {
+        "purpose": "cover_style_frozen_original_revision:ClaimDecisions",
+        "model": "muse-spark-1.3-contributor",
+        "calls": 1,
+        "input_tokens": 484,
+        "output_tokens": 1205,
+        "unknown_usage_calls": 0,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 1172
+      }
+    ],
+    "cached_input_tokens": 0,
+    "reasoning_tokens": 4540,
+    "usage_complete": true
+  },
+  "checks": {
+    "one_revision": true,
+    "awaiting_review": true,
+    "grounding_passed": true,
+    "original_unsupported_clause_removed": true,
+    "section_not_a_role": true,
+    "first_person": true,
+    "no_repeated_api_building_claim": false,
+    "complete_usage": true
+  },
+  "human_style_review": "pending",
+  "offline_style_replay": {
+    "past_api_claim_once": true,
+    "no_repeated_invitation": false,
+    "first_person_opening": false,
+    "no_stiff_opening": true
+  },
+  "scope_note": "Original paid XML remains failed. Past fact versus future task is no longer miscounted; duplicate invitation and impersonal opening still fail style. No additional paid calls."
+}

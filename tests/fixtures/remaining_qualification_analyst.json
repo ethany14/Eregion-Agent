@@ -1,0 +1,1427 @@
+{
+  "goal": "Find two current junior data analyst in New York positions for my saved resume. Start with LinkedIn or Indeed; if blocked or login is required, immediately use public company career boards or other sources. Read and score jobs you can verify, recommend any you can verify, and summarize the actual result. Respect the requested seniority and disclose blocked sources or insufficient results. Do not apply or create a schedule.",
+  "final": "Result: Found 1 verifiable junior-eligible role, not 2.\n\nVerified and scored:\n- Data Analyst - GoodApple, New York, NY - Score 43.85 / needs_evidence\n  - Matched: Python experience (preferred)\n  - Partial: dashboards/SQL reporting, advanced SQL/pipelines, Looker/Tableau/Snowflake etc.\n  - Missing/needs confirmation: client-facing communication, tagging/CMS, AWS, US work authorization to confirm\n  - Gaps include client presentations and advanced SQL/pipeline depth vs your resume (Python, SQL/PostgreSQL, Tableau, pandas, A/B testing).\n\nNot delivered: second current junior Data Analyst in New York with verified description + score.\n\nBlocked / insufficient sources disclosed:\n- LinkedIn: sign-in required - not usable for public research\n- Indeed search/detail links: Cloudflare / sign-in wall (credentials blocked), including 8 pending Indeed detail links that could not be verified\n- Jooble: bot challenge\n- Gain America Junior Data Analyst page (2026-10-09): rejected as talent-network/program page, not a specific current vacancy - not scored/recommended\n- No applications made, no schedule created, per request.",
+  "analyses": {
+    "f6f88a3b-3c0a-4604-8400-b99982a9e2fe": "02d2df141731b0e658a4c4d472d9fbda9636dd65fe977e651863ee11dbc499dc"
+  },
+  "recommendations": [],
+  "verified_jobs": [
+    {
+      "application_id": "f6f88a3b-3c0a-4604-8400-b99982a9e2fe",
+      "title": "Data Analyst",
+      "company": "GoodApple",
+      "url": "https://www.indeed.com/jobs?l=New+York%2C+NY&q=junior+data+analyst&vjk=2233e7ae15e45957",
+      "location": "New York, NY",
+      "status": "needs_evidence",
+      "match_score": 43.85,
+      "result_at": "2026-10-11T08:36:19.240598+00:00",
+      "requirement_counts": {
+        "matched": 1,
+        "partial": 3,
+        "missing": 3,
+        "needs_confirmation": 1,
+        "unknown": 12,
+        "confirmed_condition": 0
+      },
+      "gaps": [
+        "Build dashboards and supporting SQL database setups for weekly, monthly, and quarterly reports and analyses for clients",
+        "Excellent communication skills to both internal teams and clients – presenting to clients is an expectation",
+        "Fast learner, comfortable using advanced SQL, experience working with data pipelines, understanding data architecture"
+      ],
+      "match_overview": {
+        "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 68%). Personal conditions are reported separately.",
+        "score_range": [
+          43.85,
+          43.85
+        ],
+        "analysis_status": "completed",
+        "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+        "matched": [
+          {
+            "requirement": "Programming experience, Python in particular, is a plus",
+            "level": "preferred"
+          }
+        ],
+        "partial": [
+          {
+            "requirement": "Build dashboards and supporting SQL database setups for weekly, monthly, and quarterly reports and analyses for clients",
+            "level": "required"
+          },
+          {
+            "requirement": "Fast learner, comfortable using advanced SQL, experience working with data pipelines, understanding data architecture",
+            "level": "required"
+          },
+          {
+            "requirement": "Experience working with 3rd party media tools such as Google Campaign Manager, data visualization tools (Looker, Tableau), Cloud DBs (Snowflake, Redshift), Pipeline tools (Rivery, Fivetran), and AI platforms (Data Robot, Dataiku)",
+            "level": "required"
+          }
+        ],
+        "missing": [
+          {
+            "requirement": "Excellent communication skills to both internal teams and clients – presenting to clients is an expectation",
+            "level": "required"
+          },
+          {
+            "requirement": "Familiarity with tag managers, tagging implementation, website architecture, and CMS platforms is a plus",
+            "level": "preferred"
+          },
+          {
+            "requirement": "Experience with Amazon Web Services is a plus",
+            "level": "preferred"
+          }
+        ],
+        "needs_confirmation": [
+          {
+            "requirement": "Candidates must be legally authorized to work in the United States.",
+            "level": "required"
+          }
+        ],
+        "unknown": [
+          {
+            "requirement": "Turn business requirements into metrics and implement tracking solutions to measure those metrics",
+            "level": "required"
+          },
+          {
+            "requirement": "Provide ad-hoc data science-driven regression analyses that discover the connections not discernible from a dashboard or spreadsheet",
+            "level": "required"
+          },
+          {
+            "requirement": "Create clean, effective, and actionable presentations for clients and internal teams",
+            "level": "required"
+          },
+          {
+            "requirement": "Excellent analytical skills and the ability to plainly communicate results to clients and internal teams",
+            "level": "required"
+          },
+          {
+            "requirement": "Lead and contribute to processes (technical or business) improvements for reporting and analysis",
+            "level": "required"
+          },
+          {
+            "requirement": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience",
+            "level": "required"
+          },
+          {
+            "requirement": "0-2 years of marketing or analytics experience",
+            "level": "required"
+          },
+          {
+            "requirement": "Creative problem-solving skills and clear communication of results to a non-technical audience",
+            "level": "required"
+          },
+          {
+            "requirement": "Meticulous attention to detail",
+            "level": "required"
+          },
+          {
+            "requirement": "Background in a logic-based field or experience in a logic-focused role is ideal",
+            "level": "preferred"
+          },
+          {
+            "requirement": "Good Apple is unable to provide employment visa sponsorship for this position.",
+            "level": "required"
+          },
+          {
+            "requirement": "This position requires employees to work in person four days per week (Monday-Thursday) in our NYC office.",
+            "level": "required"
+          }
+        ],
+        "confirmed_condition": []
+      },
+      "score_range": [
+        43.85,
+        43.85
+      ],
+      "analysis_status": "completed",
+      "score_algorithm": "jev-only",
+      "score_valid_until": 1791794177.8307827,
+      "description": "Data Analyst\nNew York, NY\nData Analyst\nGoodApple\nNew York, NY\n$69,000 - $85,000 a year\n -  \nFull-time\nApply on company site\nGood Apple is an independent agency driving an average +30% efficiency while making lives 100% easier. Built on the belief that big agency bureaucracy isn't necessary to drive scalable results, Good Apple operates as that group of friends you love to collaborate with whether you are an employee, agency, publisher, or client partner.\n\n \n\n   As an Apple, you have a unique opportunity to truly create the destiny and pathway that fuels you each day and drives you to deliver the best results for yourself as well as your clients. As a Data Analyst, you will act as a strategic partner to your clients and media team, solving complex problems through metrics and analysis. Our Data Analysts have a curious, logical mindset with an interest in advertising and digital marketing analytics, working internally across disciplines to deliver the most impactful integrated media solution for our clients.\n\n \n\n   Key Responsibilities:\n\n \n  \nCollaborate with internal teams to translate business needs into measurement plans and their implementations via website/ad-server tracking setups and data flows\n\n  \nDemocratize data and insights through data integration and the use of visualization tools\n\n  \nWork with media teams to create marketing plans and ensure measurement requirements are built into the media structure\n\n  \nTurn business requirements into metrics and implement tracking solutions to measure those metrics\n\n  \nLearn what makes an effective media plan so you can be the voice of the data for the media teams and clients to guide media planning and optimization\n\n  \nBuild dashboards and supporting SQL database setups for weekly, monthly, and quarterly reports and analyses for clients\n\n  \nProvide ad-hoc data science-driven regression analyses that discover the connections not discernible from a dashboard or spreadsheet\n\n  \nCreate clean, effective, and actionable presentations for clients and internal teams\n\n  \nExcellent analytical skills and the ability to plainly communicate results to clients and internal teams\n\n  \nLead and contribute to processes (technical or business) improvements for reporting and analysis\n\n  \nDiligently see solutions through to the end and be meticulous on QA\n\n \n \nDesired Skills/Qualifications:\n\n \n  \nBachelor's Degree with 3.0 or higher GPA or equivalent work experience\n\n  \n0-2 years of marketing or analytics experience\n\n  \nCreative problem-solving skills and clear communication of results to a non-technical audience\n\n  \nExcellent communication skills to both internal teams and clients – presenting to clients is an expectation\n\n  \nFast learner, comfortable using advanced SQL, experience working with data pipelines, understanding data architecture\n\n  \nExperience working with 3rd party media tools such as Google Campaign Manager, data visualization tools (Looker, Tableau), Cloud DBs (Snowflake, Redshift), Pipeline tools (Rivery, Fivetran), and AI platforms (Data Robot, Dataiku)\n\n  \nFamiliarity with tag managers, tagging implementation, website architecture, and CMS platforms is a plus\n\n  \nMeticulous attention to detail\n\n  \nBackground in a logic-based field or experience in a logic-focused role is ideal\n\n  \nExperience with Amazon Web Services is a plus\n\n  \nProgramming experience, Python in particular, is a plus\n\n \n \n\n   Additional Role Details\n\n \nWork Authorization: Candidates must be legally authorized to work in the United States. Good Apple is unable to provide employment visa sponsorship for this position.\n\n \nCompensation Range: $85,000 annually\n\n \nThe compensation range reflects the expected base salary for candidates who meet the specific experience, skills, and qualifications required for the role. Final compensation will be determined based on skills, experience, qualifications, and overall alignment with the position.\n\n \nBonus, Benefits & Perks: In addition to base compensation, this position is eligible for bonus opportunities, benefits, and additional employee perks.\n\n \nWork Environment: This position requires employees to work in person four days per week (Monday-Thursday) in our NYC office.\n\n \n\n \nZ8TdorkT0r",
+      "match_report": {
+        "algorithm": "jev-only",
+        "analysis_status": "completed",
+        "confirmation_requirements": [
+          {
+            "atomic_text": "Candidates must be legally authorized to work in the United States.",
+            "canonical_name": "Candidates must be legally authorized to work in the United States.",
+            "category": "eligibility",
+            "display_name": "Candidates must be legally authorized to work in the United States.",
+            "level": "required",
+            "minimum_years": null,
+            "original_text": "Candidates must be legally authorized to work in the United States.",
+            "requirement_group_id": "j34",
+            "requirement_id": "j34",
+            "source_text": "Candidates must be legally authorized to work in the United States.",
+            "verification_mode": "user_confirmation"
+          }
+        ],
+        "decision_details": {
+          "decisions": [
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": {
+                "noul": 0.07,
+                "type": "noul"
+              },
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.2,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.61,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j11",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": "full_evaluated_source",
+              "citation_verification": {
+                "noul": 0.68,
+                "type": "noul"
+              },
+              "citations": [
+                {
+                  "sha256": "ce99fe4ed9c890e67921d593778822b23a9896ac8e62c329fa1d3aa8e15c1569",
+                  "spans": [
+                    [
+                      0,
+                      395
+                    ]
+                  ]
+                }
+              ],
+              "clarified_full_support": {
+                "noul": 0.07,
+                "type": "noul"
+              },
+              "focused": {
+                "f": {
+                  "noul": 0.14,
+                  "type": "noul"
+                },
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.18,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.88,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j13",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": {
+                  "noul": 0.68,
+                  "type": "noul"
+                }
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.15,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.75,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j14",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.1,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.5,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j15",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": {
+                "noul": 0.08,
+                "type": "noul"
+              },
+              "focused": {
+                "f": {
+                  "noul": 0.05,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.59,
+                  "type": "noul"
+                }
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.17,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.81,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j16",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": {
+                "noul": 0.08,
+                "type": "noul"
+              },
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.09,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.16,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.65,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j17",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": {
+                "noul": 0.16,
+                "type": "noul"
+              },
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.27,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.88,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j21",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": {
+                "noul": 0.5,
+                "type": "noul"
+              },
+              "focused": {
+                "f": {
+                  "noul": 0.4,
+                  "type": "noul"
+                },
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.77,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.86,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j22",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": {
+                  "noul": 0.21,
+                  "type": "noul"
+                }
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.03,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.09,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.47,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j23",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.07,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.11,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j24",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": "full_evaluated_source",
+              "citation_verification": {
+                "noul": 0.64,
+                "type": "noul"
+              },
+              "citations": [
+                {
+                  "sha256": "ce99fe4ed9c890e67921d593778822b23a9896ac8e62c329fa1d3aa8e15c1569",
+                  "spans": [
+                    [
+                      0,
+                      395
+                    ]
+                  ]
+                }
+              ],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.15,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.9,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j25",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": "full_evaluated_source",
+              "citation_verification": {
+                "noul": 0.5,
+                "type": "noul"
+              },
+              "citations": [
+                {
+                  "sha256": "ce99fe4ed9c890e67921d593778822b23a9896ac8e62c329fa1d3aa8e15c1569",
+                  "spans": [
+                    [
+                      0,
+                      395
+                    ]
+                  ]
+                }
+              ],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.03,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.9,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j26",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.05,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.05,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.07,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j27",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.06,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.07,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.25,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j28",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": {
+                "noul": 0.56,
+                "type": "noul"
+              },
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.05,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.67,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.86,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j29",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.05,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.06,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j30",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": "verified_excerpt",
+              "citation_verification": {
+                "noul": 0.91,
+                "type": "noul"
+              },
+              "citations": [
+                {
+                  "sha256": "8142a55fbbb113f4f08a21c3c60b91697d23912fd22155a2c06bf6d278126f7a",
+                  "spans": [
+                    [
+                      311,
+                      395
+                    ]
+                  ]
+                },
+                {
+                  "sha256": "e2a34593235634cb0be09b17589da2f354ad4464c3cedc01f3d4334c5234a593",
+                  "spans": [
+                    [
+                      22,
+                      238
+                    ]
+                  ]
+                }
+              ],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.96,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.97,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j31",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.97,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.05,
+                  "type": "noul"
+                },
+                "r": null
+              },
+              "requirement_id": "j34",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.82,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.05,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j35",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.84,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.27,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j42",
+              "resolved_by": "jev"
+            }
+          ],
+          "extraction": [
+            {
+              "classification": "context",
+              "end": 86,
+              "id": "j0",
+              "start": 0
+            },
+            {
+              "classification": "context",
+              "end": 226,
+              "id": "j1",
+              "start": 88
+            },
+            {
+              "classification": "context",
+              "end": 458,
+              "id": "j2",
+              "start": 227
+            },
+            {
+              "classification": "context",
+              "end": 653,
+              "id": "j3",
+              "start": 466
+            },
+            {
+              "classification": "context",
+              "end": 795,
+              "id": "j4",
+              "start": 654
+            },
+            {
+              "classification": "context",
+              "end": 1021,
+              "id": "j5",
+              "start": 796
+            },
+            {
+              "classification": "context",
+              "end": 1032,
+              "id": "j6",
+              "start": 1029
+            },
+            {
+              "classification": "context",
+              "end": 1050,
+              "id": "j7",
+              "start": 1033
+            },
+            {
+              "classification": "context",
+              "end": 1218,
+              "id": "j8",
+              "start": 1057
+            },
+            {
+              "classification": "context",
+              "end": 1312,
+              "id": "j9",
+              "start": 1223
+            },
+            {
+              "classification": "context",
+              "end": 1435,
+              "id": "j10",
+              "start": 1317
+            },
+            {
+              "classification": "unknown",
+              "end": 1537,
+              "id": "j11",
+              "start": 1440
+            },
+            {
+              "classification": "context",
+              "end": 1691,
+              "id": "j12",
+              "start": 1542
+            },
+            {
+              "classification": "unknown",
+              "end": 1815,
+              "id": "j13",
+              "start": 1696
+            },
+            {
+              "classification": "unknown",
+              "end": 1952,
+              "id": "j14",
+              "start": 1820
+            },
+            {
+              "classification": "unknown",
+              "end": 2041,
+              "id": "j15",
+              "start": 1957
+            },
+            {
+              "classification": "unknown",
+              "end": 2150,
+              "id": "j16",
+              "start": 2046
+            },
+            {
+              "classification": "unknown",
+              "end": 2251,
+              "id": "j17",
+              "start": 2155
+            },
+            {
+              "classification": "context",
+              "end": 2323,
+              "id": "j18",
+              "start": 2256
+            },
+            {
+              "classification": "context",
+              "end": 2344,
+              "id": "j19",
+              "start": 2329
+            },
+            {
+              "classification": "context",
+              "end": 2359,
+              "id": "j20",
+              "start": 2344
+            },
+            {
+              "classification": "required",
+              "end": 2436,
+              "id": "j21",
+              "start": 2366
+            },
+            {
+              "classification": "required",
+              "end": 2487,
+              "id": "j22",
+              "start": 2441
+            },
+            {
+              "classification": "unknown",
+              "end": 2586,
+              "id": "j23",
+              "start": 2492
+            },
+            {
+              "classification": "required",
+              "end": 2698,
+              "id": "j24",
+              "start": 2591
+            },
+            {
+              "classification": "required",
+              "end": 2820,
+              "id": "j25",
+              "start": 2703
+            },
+            {
+              "classification": "unknown",
+              "end": 3054,
+              "id": "j26",
+              "start": 2825
+            },
+            {
+              "classification": "preferred",
+              "end": 3163,
+              "id": "j27",
+              "start": 3059
+            },
+            {
+              "classification": "unknown",
+              "end": 3198,
+              "id": "j28",
+              "start": 3168
+            },
+            {
+              "classification": "preferred",
+              "end": 3283,
+              "id": "j29",
+              "start": 3203
+            },
+            {
+              "classification": "preferred",
+              "end": 3333,
+              "id": "j30",
+              "start": 3288
+            },
+            {
+              "classification": "preferred",
+              "end": 3393,
+              "id": "j31",
+              "start": 3338
+            },
+            {
+              "classification": "context",
+              "end": 3426,
+              "id": "j32",
+              "start": 3403
+            },
+            {
+              "classification": "context",
+              "end": 3449,
+              "id": "j33",
+              "start": 3430
+            },
+            {
+              "classification": "required",
+              "end": 3517,
+              "id": "j34",
+              "start": 3450
+            },
+            {
+              "classification": "required",
+              "end": 3596,
+              "id": "j35",
+              "start": 3518
+            },
+            {
+              "classification": "context",
+              "end": 3619,
+              "id": "j36",
+              "start": 3600
+            },
+            {
+              "classification": "context",
+              "end": 3636,
+              "id": "j37",
+              "start": 3620
+            },
+            {
+              "classification": "context",
+              "end": 3795,
+              "id": "j38",
+              "start": 3640
+            },
+            {
+              "classification": "context",
+              "end": 3919,
+              "id": "j39",
+              "start": 3796
+            },
+            {
+              "classification": "context",
+              "end": 4073,
+              "id": "j40",
+              "start": 3923
+            },
+            {
+              "classification": "context",
+              "end": 4094,
+              "id": "j41",
+              "start": 4077
+            },
+            {
+              "classification": "unknown",
+              "end": 4201,
+              "id": "j42",
+              "start": 4095
+            },
+            {
+              "classification": "context",
+              "end": 4218,
+              "id": "j43",
+              "start": 4208
+            }
+          ],
+          "jd_sha256": "956f58114630dc7f42a7f5f0aa5598526b5b22927cbb9efa15fae6edd562839f",
+          "model": "jev-1.13.0",
+          "resume_sha256": "ce99fe4ed9c890e67921d593778822b23a9896ac8e62c329fa1d3aa8e15c1569"
+        },
+        "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 68%). Personal conditions are reported separately.",
+        "matches": [
+          {
+            "condition_satisfied": null,
+            "confidence": 0.61,
+            "job_skill": "Turn business requirements into metrics and implement tracking solutions to measure those metrics",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j11",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.88,
+            "job_skill": "Build dashboards and supporting SQL database setups for weekly, monthly, and quarterly reports and analyses for clients",
+            "match_reason": "JD classification needs review; source span retained.",
+            "match_status": "partial",
+            "requirement_id": "j13",
+            "requirement_level": "required",
+            "resume_evidence": [
+              "SYNTHETIC APPLICANT A\nEXPERIENCE\nData Analyst - Fictional Analytics Company, New York, NY (Jul 2024 - Present)\n Built Python data pipelines and SQL queries in PostgreSQL.\n Built Tableau dashboards and performed A/B testing with pandas.\nEDUCATION\nB.S. in Statistics, Fictional University (Sep 2020 - May 2024)\nSKILLS\nPython, SQL, Tableau, pandas. No Go, Kubernetes, PyTorch or Figma experience."
+            ],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.75,
+            "job_skill": "Provide ad-hoc data science-driven regression analyses that discover the connections not discernible from a dashboard or spreadsheet",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j14",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.5,
+            "job_skill": "Create clean, effective, and actionable presentations for clients and internal teams",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j15",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.81,
+            "job_skill": "Excellent analytical skills and the ability to plainly communicate results to clients and internal teams",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j16",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.65,
+            "job_skill": "Lead and contribute to processes (technical or business) improvements for reporting and analysis",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j17",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.73,
+            "job_skill": "Bachelor's Degree with 3.0 or higher GPA or equivalent work experience",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j21",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.77,
+            "job_skill": "0-2 years of marketing or analytics experience",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j22",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.53,
+            "job_skill": "Creative problem-solving skills and clear communication of results to a non-technical audience",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j23",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.89,
+            "job_skill": "Excellent communication skills to both internal teams and clients – presenting to clients is an expectation",
+            "match_reason": "Independent yes/no evidence decisions, combined deterministically.",
+            "match_status": "missing",
+            "requirement_id": "j24",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.85,
+            "job_skill": "Fast learner, comfortable using advanced SQL, experience working with data pipelines, understanding data architecture",
+            "match_reason": "Independent yes/no evidence decisions, combined deterministically.",
+            "match_status": "partial",
+            "requirement_id": "j25",
+            "requirement_level": "required",
+            "resume_evidence": [
+              "SYNTHETIC APPLICANT A\nEXPERIENCE\nData Analyst - Fictional Analytics Company, New York, NY (Jul 2024 - Present)\n Built Python data pipelines and SQL queries in PostgreSQL.\n Built Tableau dashboards and performed A/B testing with pandas.\nEDUCATION\nB.S. in Statistics, Fictional University (Sep 2020 - May 2024)\nSKILLS\nPython, SQL, Tableau, pandas. No Go, Kubernetes, PyTorch or Figma experience."
+            ],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.9,
+            "job_skill": "Experience working with 3rd party media tools such as Google Campaign Manager, data visualization tools (Looker, Tableau), Cloud DBs (Snowflake, Redshift), Pipeline tools (Rivery, Fivetran), and AI platforms (Data Robot, Dataiku)",
+            "match_reason": "JD classification needs review; source span retained.",
+            "match_status": "partial",
+            "requirement_id": "j26",
+            "requirement_level": "required",
+            "resume_evidence": [
+              "SYNTHETIC APPLICANT A\nEXPERIENCE\nData Analyst - Fictional Analytics Company, New York, NY (Jul 2024 - Present)\n Built Python data pipelines and SQL queries in PostgreSQL.\n Built Tableau dashboards and performed A/B testing with pandas.\nEDUCATION\nB.S. in Statistics, Fictional University (Sep 2020 - May 2024)\nSKILLS\nPython, SQL, Tableau, pandas. No Go, Kubernetes, PyTorch or Figma experience."
+            ],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.9299999999999999,
+            "job_skill": "Familiarity with tag managers, tagging implementation, website architecture, and CMS platforms is a plus",
+            "match_reason": "Independent yes/no evidence decisions, combined deterministically.",
+            "match_status": "missing",
+            "requirement_id": "j27",
+            "requirement_level": "preferred",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.75,
+            "job_skill": "Meticulous attention to detail",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j28",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.67,
+            "job_skill": "Background in a logic-based field or experience in a logic-focused role is ideal",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j29",
+            "requirement_level": "preferred",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.94,
+            "job_skill": "Experience with Amazon Web Services is a plus",
+            "match_reason": "Independent yes/no evidence decisions, combined deterministically.",
+            "match_status": "missing",
+            "requirement_id": "j30",
+            "requirement_level": "preferred",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.96,
+            "job_skill": "Programming experience, Python in particular, is a plus",
+            "match_reason": "Independent yes/no evidence decisions, combined deterministically.",
+            "match_status": "matched",
+            "requirement_id": "j31",
+            "requirement_level": "preferred",
+            "resume_evidence": [
+              "SKILLS\nPython, SQL, Tableau, pandas. No Go, Kubernetes, PyTorch or Figma experience.",
+              "EXPERIENCE\nData Analyst - Fictional Analytics Company, New York, NY (Jul 2024 - Present)\n Built Python data pipelines and SQL queries in PostgreSQL.\n Built Tableau dashboards and performed A/B testing with pandas.\n"
+            ],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.95,
+            "job_skill": "Candidates must be legally authorized to work in the United States.",
+            "match_reason": "Independent yes/no evidence decisions, combined deterministically.",
+            "match_status": "needs_confirmation",
+            "requirement_id": "j34",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.82,
+            "job_skill": "Good Apple is unable to provide employment visa sponsorship for this position.",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j35",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.73,
+            "job_skill": "This position requires employees to work in person four days per week (Monday-Thursday) in our NYC office.",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j42",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          }
+        ],
+        "missing_preferred_requirements": [
+          {
+            "canonical_name": "Familiarity with tag managers, tagging implementation, website architecture, and CMS platforms is a plus",
+            "minimum_years": null,
+            "original_text": "Familiarity with tag managers, tagging implementation, website architecture, and CMS platforms is a plus"
+          },
+          {
+            "canonical_name": "Experience with Amazon Web Services is a plus",
+            "minimum_years": null,
+            "original_text": "Experience with Amazon Web Services is a plus"
+          }
+        ],
+        "missing_required_requirements": [
+          {
+            "canonical_name": "Build dashboards and supporting SQL database setups for weekly, monthly, and quarterly reports and analyses for clients",
+            "minimum_years": null,
+            "original_text": "Build dashboards and supporting SQL database setups for weekly, monthly, and quarterly reports and analyses for clients"
+          },
+          {
+            "canonical_name": "Excellent communication skills to both internal teams and clients – presenting to clients is an expectation",
+            "minimum_years": null,
+            "original_text": "Excellent communication skills to both internal teams and clients – presenting to clients is an expectation"
+          },
+          {
+            "canonical_name": "Fast learner, comfortable using advanced SQL, experience working with data pipelines, understanding data architecture",
+            "minimum_years": null,
+            "original_text": "Fast learner, comfortable using advanced SQL, experience working with data pipelines, understanding data architecture"
+          },
+          {
+            "canonical_name": "Experience working with 3rd party media tools such as Google Campaign Manager, data visualization tools (Looker, Tableau), Cloud DBs (Snowflake, Redshift), Pipeline tools (Rivery, Fivetran), and AI platforms (Data Robot, Dataiku)",
+            "minimum_years": null,
+            "original_text": "Experience working with 3rd party media tools such as Google Campaign Manager, data visualization tools (Looker, Tableau), Cloud DBs (Snowflake, Redshift), Pipeline tools (Rivery, Fivetran), and AI platforms (Data Robot, Dataiku)"
+          }
+        ],
+        "overall_score": 43.85,
+        "recommendations": [
+          "Review unresolved requirements and personal conditions before applying."
+        ],
+        "score_breakdown": {
+          "overall_score": 43.85,
+          "preferred_score": 49.0,
+          "required_score": 42.62
+        },
+        "score_range": [
+          43.85,
+          43.85
+        ],
+        "valid_until": 1791794177.8307827
+      },
+      "retrieved": true,
+      "disqualified": false
+    }
+  ],
+  "retrieved_jobs": {
+    "https://www.indeed.com/jobs?q=junior+data+analyst&l=New+York%2C+NY&vjk=2233e7ae15e45957": {
+      "url": "https://www.indeed.com/jobs?q=junior+data+analyst&l=New+York%2C+NY&vjk=2233e7ae15e45957",
+      "title": "Data Analyst",
+      "company": "",
+      "location": "New York, NY",
+      "description": "Data Analyst\nNew York, NY\nData Analyst\nGoodApple\nNew York, NY\n$69,000 - $85,000 a year\n -  \nFull-time\nApply on company site\nGood Apple is an independent agency driving an average +30% efficiency while making lives 100% easier. Built on the belief that big agency bureaucracy isn't necessary to drive scalable results, Good Apple operates as that group of friends you love to collaborate with whether you are an employee, agency, publisher, or client partner.\n\n \n\n   As an Apple, you have a unique opportunity to truly create the destiny and pathway that fuels you each day and drives you to deliver the best results for yourself as well as your clients. As a Data Analyst, you will act as a strategic partner to your clients and media team, solving complex problems through metrics and analysis. Our Data Analysts have a curious, logical mindset with an interest in advertising and digital marketing analytics, working internally across disciplines to deliver the most impactful integrated media solution for our clients.\n\n \n\n   Key Responsibilities:\n\n \n  \nCollaborate with internal teams to translate business needs into measurement plans and their implementations via website/ad-server tracking setups and data flows\n\n  \nDemocratize data and insights through data integration and the use of visualization tools\n\n  \nWork with media teams to create marketing plans and ensure measurement requirements are built into the media structure\n\n  \nTurn business requirements into metrics and implement tracking solutions to measure those metrics\n\n  \nLearn what makes an effective media plan so you can be the voice of the data for the media teams and clients to guide media planning and optimization\n\n  \nBuild dashboards and supporting SQL database setups for weekly, monthly, and quarterly reports and analyses for clients\n\n  \nProvide ad-hoc data science-driven regression analyses that discover the connections not discernible from a dashboard or spreadsheet\n\n  \nCreate clean, effective, and actionable presentations for clients and internal teams\n\n  \nExcellent analytical skills and the ability to plainly communicate results to clients and internal teams\n\n  \nLead and contribute to processes (technical or business) improvements for reporting and analysis\n\n  \nDiligently see solutions through to the end and be meticulous on QA\n\n \n \nDesired Skills/Qualifications:\n\n \n  \nBachelor's Degree with 3.0 or higher GPA or equivalent work experience\n\n  \n0-2 years of marketing or analytics experience\n\n  \nCreative problem-solving skills and clear communication of results to a non-technical audience\n\n  \nExcellent communication skills to both internal teams and clients – presenting to clients is an expectation\n\n  \nFast learner, comfortable using advanced SQL, experience working with data pipelines, understanding data architecture\n\n  \nExperience working with 3rd party media tools such as Google Campaign Manager, data visualization tools (Looker, Tableau), Cloud DBs (Snowflake, Redshift), Pipeline tools (Rivery, Fivetran), and AI platforms (Data Robot, Dataiku)\n\n  \nFamiliarity with tag managers, tagging implementation, website architecture, and CMS platforms is a plus\n\n  \nMeticulous attention to detail\n\n  \nBackground in a logic-based field or experience in a logic-focused role is ideal\n\n  \nExperience with Amazon Web Services is a plus\n\n  \nProgramming experience, Python in particular, is a plus\n\n \n \n\n   Additional Role Details\n\n \nWork Authorization: Candidates must be legally authorized to work in the United States. Good Apple is unable to provide employment visa sponsorship for this position.\n\n \nCompensation Range: $85,000 annually\n\n \nThe compensation range reflects the expected base salary for candidates who meet the specific experience, skills, and qualifications required for the role. Final compensation will be determined based on skills, experience, qualifications, and overall alignment with the position.\n\n \nBonus, Benefits & Perks: In addition to base compensation, this position is eligible for bonus opportunities, benefits, and additional employee perks.\n\n \nWork Environment: This position requires employees to work in person four days per week (Monday-Thursday) in our NYC office.\n\n \n\n \nZ8TdorkT0r",
+      "source": "rendered_browser",
+      "page_url": "https://www.indeed.com/jobs?q=junior+data+analyst&l=New+York%2C+NY&vjk=2233e7ae15e45957"
+    }
+  },
+  "source": "tmp\\remaining-live-analyst-qualification-recovery\\test_long_real_search_conversa0",
+  "calls": 58,
+  "usage": {
+    "calls": 66,
+    "completed": 66,
+    "failed": 0,
+    "pending": 0,
+    "discarded": 0,
+    "retries": 0,
+    "input_tokens": 978020,
+    "output_tokens": 38310,
+    "unknown_usage_calls": 0,
+    "groups": [
+      {
+        "purpose": "agent",
+        "model": "muse-spark-1.3-contributor",
+        "calls": 58,
+        "input_tokens": 953893,
+        "output_tokens": 35151,
+        "unknown_usage_calls": 0,
+        "cached_input_tokens": 314537,
+        "reasoning_tokens": 27460
+      },
+      {
+        "purpose": "jev:fit:extract_requirements",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 9719,
+        "output_tokens": 1398,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:refine_extraction_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 3091,
+        "output_tokens": 354,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:condition_category_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 2,
+        "input_tokens": 2857,
+        "output_tokens": 392,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:support_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 4464,
+        "output_tokens": 714,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:focused_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 1239,
+        "output_tokens": 106,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:clarify_full_support_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 1494,
+        "output_tokens": 123,
+        "unknown_usage_calls": 0
+      },
+      {
+        "purpose": "jev:fit:verify_citations_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 1263,
+        "output_tokens": 72,
+        "unknown_usage_calls": 0
+      }
+    ],
+    "cached_input_tokens": 314537,
+    "reasoning_tokens": 27460,
+    "usage_complete": true
+  }
+}

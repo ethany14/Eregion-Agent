@@ -3,7 +3,7 @@ from agent_runtime.fast_decisions import accepted, DecisionBatch, record_routing
 from job_agent.prompts import MATCH_PROMPT
 from job_agent.schemas import SkillAssessment, SkillEvidence
 
-MATCH_ROUTING_VERSION = 'adaptive-compact-v6-source-evidence'
+MATCH_ROUTING_VERSION = 'adaptive-compact-v8-batch-retry-predicate-identity-partial'
 
 
 def matching_batches(resume, requirements, *, max_requirements=24, target_chars=40_000):
@@ -139,8 +139,10 @@ def assess_skills(resume, job, analyze, service):
                 raise ValueError('Matching chunk returned an incomplete or duplicate requirement set.')
             return result
         chunks = matching_batches(resume, pending)
+        from job_agent.batch_retry import retry_batch
         with ThreadPoolExecutor(max_workers=3, thread_name_prefix='match') as pool:
-            results = [f.result() for f in [pool.submit(copy_context().run, chunk, items) for items in chunks]]
+            results = [f.result() for f in [pool.submit(copy_context().run, retry_batch,
+                       lambda items=items: chunk(items)) for items in chunks]]
         fallback = SkillAssessment(matches=[m for result in results for m in result.matches],
             explanation='Grounded requirement assessment.',
             recommendations=[r for result in results for r in result.recommendations])

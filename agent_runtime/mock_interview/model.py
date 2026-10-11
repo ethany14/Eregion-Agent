@@ -31,12 +31,21 @@ class MockInterviewModel(Protocol):
 
 
 class SharedMockInterviewModel:
+    def __init__(self, *, evaluation_purpose: str = 'fast'):
+        if evaluation_purpose not in {'agent', 'fast'}:
+            raise ValueError('Interview feedback must use the main or configured fast model.')
+        self.evaluation_purpose = evaluation_purpose
+
     def question(self, context: dict) -> MockInterviewQuestion:
         from agent_runtime.security import canonical_json
-        return invoke_structured(create_model(), MockInterviewQuestion,
-            QUESTION_POLICY, canonical_json(context))
+        from agent_runtime.provider_usage import usage_scope
+        with usage_scope(purpose='mock_interview_question'):
+            return invoke_structured(create_model(), MockInterviewQuestion,
+                QUESTION_POLICY, canonical_json(context))
 
     def evaluate(self, context: dict) -> MockAnswerEvaluation:
         from agent_runtime.security import canonical_json
-        return invoke_structured(create_model(), MockAnswerEvaluation,
-            EVALUATION_POLICY, canonical_json(context))
+        from agent_runtime.provider_usage import usage_scope
+        with usage_scope(purpose='mock_interview_feedback'):
+            return invoke_structured(create_model(purpose=self.evaluation_purpose), MockAnswerEvaluation,
+                EVALUATION_POLICY, canonical_json(context))

@@ -67,7 +67,7 @@ class Settings:
     def signature(self):
         files = ('settings.py', 'core.py', 'cache.py', 'transport.py', 'service.py', 'projection.py')
         code = {name: hashlib.sha256((Path(__file__).parent / name).read_bytes()).hexdigest() for name in files}
-        for name in ('schemas.py', 'domain.py', 'resume_sources.py', 'resume_headers.py', 'resume_layout.py'):
+        for name in ('schemas.py', 'domain.py', 'partial_support.py', 'resume_sources.py', 'resume_headers.py', 'resume_layout.py'):
             code[name] = hashlib.sha256((ROOT / 'job_agent' / name).read_bytes()).hexdigest()
         return digest([VERSION, self.model, self.base_url, self.timeout, self.ttl,
                        self.unknown_ttl, digest(self.key), code])
