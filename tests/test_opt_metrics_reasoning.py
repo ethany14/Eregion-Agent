@@ -165,11 +165,12 @@ def test_old_report_does_not_invent_missing_fields(tmp_path):
     with sqlite3.connect(path) as db:
         db.execute('CREATE TABLE provider_usage (details_json TEXT, adopted BOOLEAN)')
         db.execute('INSERT INTO provider_usage VALUES (?,1)', (json.dumps({'status':'completed',
-            'input_tokens':100, 'output_tokens':20}),))
+            'input_tokens':100, 'output_tokens':20, 'duration_seconds':1.25}),))
     result = report(path)
     assert result['cache_hit_ratio'] is None and result['reasoning_share'] is None
     assert result['composition_samples'] == 0
     assert result['timing_seconds']['provider_duration_seconds'] is None
+    assert result['timing_seconds']['duration_seconds'] == {'count':1,'p50':1.25,'p95':1.25,'max':1.25}
 
 
 def test_career_kernel_provider_rows_include_repair_and_timing(tmp_path):

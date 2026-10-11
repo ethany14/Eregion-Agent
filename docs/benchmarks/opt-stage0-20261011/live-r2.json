@@ -23,6 +23,12 @@
       "composition_samples": 0,
       "composition_averages": {},
       "timing_seconds": {
+        "duration_seconds": {
+          "count": 2,
+          "p50": 13.323,
+          "p95": 14.8593,
+          "max": 15.03
+        },
         "queue_wait_seconds": null,
         "provider_duration_seconds": null,
         "persistence_seconds": null
@@ -59,6 +65,12 @@
       "composition_samples": 0,
       "composition_averages": {},
       "timing_seconds": {
+        "duration_seconds": {
+          "count": 24,
+          "p50": 3.612,
+          "p95": 8.313849999999997,
+          "max": 35.766
+        },
         "queue_wait_seconds": null,
         "provider_duration_seconds": null,
         "persistence_seconds": null
@@ -90,6 +102,12 @@
   "composition_samples": 0,
   "composition_averages": {},
   "timing_seconds": {
+    "duration_seconds": {
+      "count": 26,
+      "p50": 3.6455,
+      "p95": 14.176499999999999,
+      "max": 35.766
+    },
     "queue_wait_seconds": null,
     "provider_duration_seconds": null,
     "persistence_seconds": null

@@ -1,0 +1,98 @@
+{
+  "implementation_commit": "e5127b4d2369f1a886396a0055c377eba2337d51",
+  "metrics_commit": "104c5ae",
+  "pytest_summary": "9 failed, 1900 passed, 132 skipped, 1 warning, 4 errors, 4 subtests passed in 674.65s (0:11:14)",
+  "counts": {
+    "passed": 1900,
+    "failed": 9,
+    "skipped": 132,
+    "errors": 4,
+    "subtests_passed": 4
+  },
+  "exceptions": [
+    {
+      "test": "tests.test_auto_apply_review_fixes.ChromeChecks::test_confirmation_negative_and_positive_pages",
+      "kind": "error",
+      "named_pipe_permission_denied": true
+    },
+    {
+      "test": "tests.test_auto_apply_review_fixes.ChromeChecks::test_one_submit_click_then_confirmation",
+      "kind": "error",
+      "named_pipe_permission_denied": true
+    },
+    {
+      "test": "tests.test_auto_apply_review_fixes.ChromeChecks::test_real_standard_answer_form_only_sends_edits",
+      "kind": "error",
+      "named_pipe_permission_denied": true
+    },
+    {
+      "test": "tests.test_auto_apply_review_fixes.ChromeChecks::test_success_url_without_a_receipt_is_not_confirmation",
+      "kind": "error",
+      "named_pipe_permission_denied": true
+    },
+    {
+      "test": "tests.test_browser_runtime_recovery::test_parallel_context_owner_and_last_task_close",
+      "kind": "failure",
+      "named_pipe_permission_denied": true
+    },
+    {
+      "test": "tests.test_browser_runtime_recovery::test_changed_url_and_control_refresh_without_replaying_old_action",
+      "kind": "failure",
+      "named_pipe_permission_denied": true
+    },
+    {
+      "test": "tests.test_browser_runtime_recovery::test_closed_chrome_during_creation_recovers_once_with_actual_observation",
+      "kind": "failure",
+      "named_pipe_permission_denied": true
+    },
+    {
+      "test": "tests.test_browser_runtime_recovery::test_repeated_transport_failure_remains_error_not_site_block",
+      "kind": "failure",
+      "named_pipe_permission_denied": true
+    },
+    {
+      "test": "tests.test_mcp_app::test_fastapi_lifecycle_health_effective_tools_and_snapshot",
+      "kind": "failure",
+      "named_pipe_permission_denied": true
+    },
+    {
+      "test": "tests.test_mcp_runtime::test_local_stdio_server_end_to_end_persists_both_tools",
+      "kind": "failure",
+      "named_pipe_permission_denied": false
+    },
+    {
+      "test": "tests.test_mcp_runtime::test_timed_out_stdio_connection_is_not_reused",
+      "kind": "failure",
+      "named_pipe_permission_denied": true
+    },
+    {
+      "test": "tests.test_mcp_runtime::test_stdio_call_uses_owned_thread_boundary_from_running_event_loop",
+      "kind": "failure",
+      "named_pipe_permission_denied": true
+    },
+    {
+      "test": "tests.test_mcp_runtime::test_one_stdio_connection_supports_two_concurrent_session_calls",
+      "kind": "failure",
+      "named_pipe_permission_denied": true
+    }
+  ],
+  "targeted": "194 passed, 1 skipped, 4 subtests passed in 27.45s",
+  "no_live_calls": true,
+  "project_env_read": false,
+  "git_root_writable": false,
+  "logs": {
+    "full": ".codex-runs/opt-stage01/full-final-verified.log",
+    "junit": ".codex-runs/opt-stage01/full-final-verified.xml",
+    "targeted": ".codex-runs/opt-stage01/targeted-complete.log"
+  },
+  "reporting_followup": {
+    "passed": 5,
+    "seconds": 13.87,
+    "log": ".codex-runs/opt-stage01/report-final.log",
+    "junit": ".codex-runs/opt-stage01/report-final.xml"
+  },
+  "fit_cache_regression": {
+    "passed": 10,
+    "seconds": 2.39
+  }
+}

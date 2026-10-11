@@ -27,11 +27,12 @@
         "tools": 10661.636363636364
       },
       "timing_seconds": {
+        "duration_seconds": null,
         "queue_wait_seconds": {
           "count": 11,
-          "p50": 6.38999990769662e-05,
-          "p95": 0.0002856999999494292,
-          "max": 0.0004907999991701217
+          "p50": 6.270000085351057e-05,
+          "p95": 0.00015115000132936984,
+          "max": 0.0001830000001064036
         },
         "provider_duration_seconds": null,
         "persistence_seconds": null
@@ -67,11 +68,12 @@
     "tools": 10661.636363636364
   },
   "timing_seconds": {
+    "duration_seconds": null,
     "queue_wait_seconds": {
       "count": 11,
-      "p50": 6.38999990769662e-05,
-      "p95": 0.0002856999999494292,
-      "max": 0.0004907999991701217
+      "p50": 6.270000085351057e-05,
+      "p95": 0.00015115000132936984,
+      "max": 0.0001830000001064036
     },
     "provider_duration_seconds": null,
     "persistence_seconds": null

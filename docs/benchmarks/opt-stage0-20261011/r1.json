@@ -27,11 +27,12 @@
         "tools": 11196.35
       },
       "timing_seconds": {
+        "duration_seconds": null,
         "queue_wait_seconds": {
           "count": 20,
-          "p50": 6.780000057915458e-05,
-          "p95": 0.00024952000103439803,
-          "max": 0.00043990000085614156
+          "p50": 6.634999954258092e-05,
+          "p95": 0.00039646500172239033,
+          "max": 0.00043569999979808927
         },
         "provider_duration_seconds": null,
         "persistence_seconds": null
@@ -67,11 +68,12 @@
     "tools": 11196.35
   },
   "timing_seconds": {
+    "duration_seconds": null,
     "queue_wait_seconds": {
       "count": 20,
-      "p50": 6.780000057915458e-05,
-      "p95": 0.00024952000103439803,
-      "max": 0.00043990000085614156
+      "p50": 6.634999954258092e-05,
+      "p95": 0.00039646500172239033,
+      "max": 0.00043569999979808927
     },
     "provider_duration_seconds": null,
     "persistence_seconds": null

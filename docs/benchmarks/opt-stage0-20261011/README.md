@@ -33,6 +33,8 @@ They deliberately differ from narrower totals quoted in the parent plan.
 | r3 | 47 | 554,656 | 29,269 | 36.73% | 70.04% | 8 / 8 | 53,575 |
 
 All historical attempts lack per-attempt composition and the new split timings.
+Their existing `duration_seconds` percentiles remain available under that original
+name; they are not relabelled as provider-only duration or queue wait.
 Eviction frequency is unknown. Saved last-request snapshots are included separately
 in `live-r*.json`; they cannot recover an average or eviction frequency. Cache and
 reasoning shares with missing counters are known-counter lower bounds, not complete

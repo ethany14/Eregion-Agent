@@ -29,7 +29,7 @@ def metrics(rows):
         k: statistics.mean(p[k] for p in parts if k in p)
         for k in sorted({k for p in parts for k in p})},
         'timing_seconds': {k: percentiles([r[k] for r in rows if isinstance(r.get(k), (int, float))])
-            for k in ('queue_wait_seconds', 'provider_duration_seconds', 'persistence_seconds')},
+            for k in ('duration_seconds', 'queue_wait_seconds', 'provider_duration_seconds', 'persistence_seconds')},
         'missing': {k: sum(k not in r for r in rows) for k in
             ('context_metrics', 'queue_wait_seconds', 'provider_duration_seconds', 'persistence_seconds',
              'input_tokens', 'output_tokens', 'cached_input_tokens', 'reasoning_tokens')}}

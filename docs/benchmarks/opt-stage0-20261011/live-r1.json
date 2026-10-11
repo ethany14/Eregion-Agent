@@ -23,6 +23,12 @@
       "composition_samples": 0,
       "composition_averages": {},
       "timing_seconds": {
+        "duration_seconds": {
+          "count": 2,
+          "p50": 22.1025,
+          "p95": 32.24865,
+          "max": 33.376
+        },
         "queue_wait_seconds": null,
         "provider_duration_seconds": null,
         "persistence_seconds": null
@@ -59,6 +65,12 @@
       "composition_samples": 0,
       "composition_averages": {},
       "timing_seconds": {
+        "duration_seconds": {
+          "count": 20,
+          "p50": 3.5795,
+          "p95": 8.372750000000018,
+          "max": 32.612
+        },
         "queue_wait_seconds": null,
         "provider_duration_seconds": null,
         "persistence_seconds": null
@@ -93,6 +105,12 @@
       "composition_samples": 0,
       "composition_averages": {},
       "timing_seconds": {
+        "duration_seconds": {
+          "count": 2,
+          "p50": 0.8925,
+          "p95": 0.96405,
+          "max": 0.972
+        },
         "queue_wait_seconds": null,
         "provider_duration_seconds": null,
         "persistence_seconds": null
@@ -127,6 +145,12 @@
       "composition_samples": 0,
       "composition_averages": {},
       "timing_seconds": {
+        "duration_seconds": {
+          "count": 2,
+          "p50": 0.21350000000000002,
+          "p95": 0.25265,
+          "max": 0.257
+        },
         "queue_wait_seconds": null,
         "provider_duration_seconds": null,
         "persistence_seconds": null
@@ -161,6 +185,12 @@
       "composition_samples": 0,
       "composition_averages": {},
       "timing_seconds": {
+        "duration_seconds": {
+          "count": 4,
+          "p50": 0.2265,
+          "p95": 0.258,
+          "max": 0.258
+        },
         "queue_wait_seconds": null,
         "provider_duration_seconds": null,
         "persistence_seconds": null
@@ -195,6 +225,12 @@
       "composition_samples": 0,
       "composition_averages": {},
       "timing_seconds": {
+        "duration_seconds": {
+          "count": 2,
+          "p50": 0.23249999999999998,
+          "p95": 0.25815,
+          "max": 0.261
+        },
         "queue_wait_seconds": null,
         "provider_duration_seconds": null,
         "persistence_seconds": null
@@ -229,6 +265,12 @@
       "composition_samples": 0,
       "composition_averages": {},
       "timing_seconds": {
+        "duration_seconds": {
+          "count": 2,
+          "p50": 0.1955,
+          "p95": 0.24725,
+          "max": 0.253
+        },
         "queue_wait_seconds": null,
         "provider_duration_seconds": null,
         "persistence_seconds": null
@@ -263,6 +305,12 @@
       "composition_samples": 0,
       "composition_averages": {},
       "timing_seconds": {
+        "duration_seconds": {
+          "count": 2,
+          "p50": 0.2185,
+          "p95": 0.24955,
+          "max": 0.253
+        },
         "queue_wait_seconds": null,
         "provider_duration_seconds": null,
         "persistence_seconds": null
@@ -297,6 +345,12 @@
       "composition_samples": 0,
       "composition_averages": {},
       "timing_seconds": {
+        "duration_seconds": {
+          "count": 2,
+          "p50": 0.20850000000000002,
+          "p95": 0.25395,
+          "max": 0.259
+        },
         "queue_wait_seconds": null,
         "provider_duration_seconds": null,
         "persistence_seconds": null
@@ -328,6 +382,12 @@
   "composition_samples": 0,
   "composition_averages": {},
   "timing_seconds": {
+    "duration_seconds": {
+      "count": 38,
+      "p50": 2.1215,
+      "p95": 14.096449999999969,
+      "max": 33.376
+    },
     "queue_wait_seconds": null,
     "provider_duration_seconds": null,
     "persistence_seconds": null
