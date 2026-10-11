@@ -45,6 +45,9 @@ def interview_model(purpose=None):
 
 def _invoke_interview(purpose, schema, policy, content):
     model = interview_model(purpose)
+    from job_agent.model import ProviderCompatibleChatOpenAI
+    if isinstance(model, ProviderCompatibleChatOpenAI):
+        model._interview_rejection_retry = True
     try:
         return invoke_structured(model, schema, policy, content)
     except Exception as exc:

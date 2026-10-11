@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 import json
 import logging
 import time
+import os
 from functools import wraps
 from uuid import uuid4
 
@@ -14,6 +15,40 @@ from api.db import Base
 log = logging.getLogger(__name__)
 _scope = ContextVar('provider_usage_scope', default={})
 _observers = ContextVar('provider_attempt_observers', default=())
+
+
+class TaskProviderBudgetExceeded(BaseException):
+    """Control-flow stop: semantic fallbacks must never swallow a task limit."""
+    def __init__(self, reason):
+        self.reason = reason
+        super().__init__(reason)
+
+
+def task_limits():
+    result = {}
+    for metric, name in (('provider_attempts', 'JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS'),
+                         ('input_tokens', 'JOB_AGENT_TASK_MAX_INPUT_TOKENS')):
+        value = os.getenv(name, '').strip()
+        if value:
+            try:
+                number = int(value)
+                if number < 0: raise ValueError()
+            except ValueError:
+                raise TaskProviderBudgetExceeded('invalid_' + name)
+            result[metric] = number
+    return result
+
+
+def input_reservation(payload):
+    """Conservative text reservation; exact provider usage replaces it on finish.
+
+    UTF-8 bytes plus framing allowance, rather than pretending chars are tokens.
+    Images have provider-specific accounting and fail closed under an input cap.
+    """
+    encoded = json.dumps(payload, ensure_ascii=False, default=str)
+    if 'image_url' in encoded or 'input_audio' in encoded:
+        return None
+    return len(encoded.encode('utf-8')) + 1024
 
 
 @contextmanager
@@ -121,8 +156,25 @@ class UsageLedger:
     def __init__(self, sessions):
         self.sessions = sessions
 
-    def start(self, call_id, scope, details):
+    def start(self, call_id, scope, details, *, limits=None):
         with self.sessions.begin() as db:
+            if limits and scope.get('task_id'):
+                # Serialize reservations across workers AND restarted processes.
+                # Production task stores use SQLite; pending rows reserve capacity.
+                if db.bind.dialect.name != 'sqlite':
+                    raise TaskProviderBudgetExceeded('unsupported_budget_store')
+                db.connection().exec_driver_sql('BEGIN IMMEDIATE')
+                rows = [json.loads(r.details_json) for r in db.scalars(select(ProviderUsageRow)
+                    .where(ProviderUsageRow.task_id == scope['task_id']))]
+                total = summarize(rows)
+                if 'provider_attempts' in limits and total['calls'] + 1 > limits['provider_attempts']:
+                    raise TaskProviderBudgetExceeded('provider_attempts')
+                if 'input_tokens' in limits:
+                    reserve = details.get('reserved_input_tokens')
+                    unknown = any(r.get('source') != 'tool_action' and 'input_tokens' not in r
+                                  and r.get('reserved_input_tokens') is None for r in rows)
+                    if unknown or reserve is None or total['budget_input_tokens'] + reserve > limits['input_tokens']:
+                        raise TaskProviderBudgetExceeded('input_tokens')
             discarded = scope.get('request_discarded')
             db.add(ProviderUsageRow(call_id=call_id, task_id=scope.get('task_id'),
                 run_id=scope.get('run_id'), request_id=scope.get('request_id'), adopted=not (discarded and discarded.is_set()),
@@ -151,12 +203,14 @@ class UsageLedger:
 
 def summarize(rows):
     result = {'calls': 0, 'completed': 0, 'failed': 0, 'pending': 0, 'discarded': 0, 'retries': 0,
-              'input_tokens': 0, 'output_tokens': 0, 'unknown_usage_calls': 0, 'groups': []}
+              'input_tokens': 0, 'output_tokens': 0, 'unknown_usage_calls': 0, 'groups': [],
+              'budget_input_tokens': 0}
     groups = {}
     for row in rows:
         if row.get('source') == 'tool_action':
             continue
         result['calls'] += 1
+        result['budget_input_tokens'] += row.get('input_tokens', row.get('reserved_input_tokens', 0))
         result[row.get('status', 'pending')] += 1
         result['discarded'] += int(not row.get('adopted', True))
         result['retries'] += int(row.get('attempt', 1) > 1)
@@ -178,6 +232,7 @@ def summarize(rows):
         target['reasoning_share'] = (target['reasoning_tokens'] / target['output_tokens']
             if target.get('output_tokens') and 'reasoning_tokens' in target else None)
     result['usage_complete'] = result['calls'] > 0 and result['unknown_usage_calls'] == 0
+    result['provider_attempts'] = result['calls']
     return result
 
 
@@ -185,6 +240,7 @@ def summarize(rows):
 def provider_call(model, **sizes):
     scope = current_scope()
     ledger = scope.get('ledger')
+    limits = task_limits() if scope.get('task_id') else {}
     started = time.monotonic()
     call_id = str(uuid4())
     details = {'call_id': call_id, 'model': str(model), 'purpose': scope.get('purpose', 'unspecified'),
@@ -195,21 +251,30 @@ def provider_call(model, **sizes):
     for key in ('context_metrics', 'queue_wait_seconds', 'reasoning_escalation', 'reasoning_fallback', 'effective_reasoning'):
         if key in scope:
             details[key] = scope[key]
+    if limits:
+        if ledger is None:
+            raise TaskProviderBudgetExceeded('missing_usage_ledger')
+        if 'input_tokens' in limits:
+            details['reserved_input_tokens'] = sizes.get('input_token_reservation')
+            if details['reserved_input_tokens'] is None:
+                raise TaskProviderBudgetExceeded('unknown_input_size')
     persistence = 0.0
     def persist(method):
         nonlocal persistence
         if ledger is not None:
             before = time.monotonic()
             try:
-                if method == 'start': ledger.start(call_id, scope, details)
+                if method == 'start': ledger.start(call_id, scope, details, **({'limits': limits} if limits else {}))
                 else: ledger.finish(call_id, details)
             except Exception as exc:
+                if limits:
+                    raise TaskProviderBudgetExceeded('usage_persistence_failed') from exc
                 # Telemetry failure must not repeat a paid request or a browser action.
                 log.warning('Provider usage persistence failed: %s', type(exc).__name__)
             finally:
                 persistence += time.monotonic() - before
-    _observe(details)
     persist('start')
+    _observe(details)
     provider_started = time.monotonic()
     try:
         yield details

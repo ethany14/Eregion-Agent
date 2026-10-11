@@ -12,7 +12,7 @@ import uuid
 
 import httpx
 from agent_runtime.multi_agent.model_usage import invoke_model, current_model_call
-from agent_runtime.provider_usage import provider_call, usage_scope, token_counts
+from agent_runtime.provider_usage import provider_call, usage_scope, token_counts, input_reservation
 from .core import MAX_PAYLOAD_BYTES, MAX_QUESTIONS, boolean, validate_answers
 from .settings import canonical, digest
 
@@ -136,7 +136,8 @@ class Broker:
                              effective_reasoning=level, reasoning_escalation=level != original_level and not plain,
                              reasoning_fallback=plain):
                 def paid_request(request_payload):
-                    with provider_call(self.config.model, context_chars=len(canonical(request_payload))) as usage:
+                    with provider_call(self.config.model, context_chars=len(canonical(request_payload)),
+                                       input_token_reservation=input_reservation(request_payload)) as usage:
                         if self.http is None:
                             self.http = httpx.Client(timeout=self.config.timeout, transport=self.transport,
                                 follow_redirects=False, headers={'Authorization': 'Bearer ' + self.config.key})
@@ -171,7 +172,8 @@ class Broker:
         finally:
             rec['seconds'] = round(time.monotonic() - started, 4)
         if not retry and not plain:
-            if rec.get('reasoning_rejected'):
+            from job_agent.reasoning import rejection_retry_enabled
+            if rejection_retry_enabled() and rec.get('reasoning_rejected'):
                 return self._request(state, questions, purpose, context, plain=True)
             if rec['status'] == 'invalid_response' and escalation_enabled():
                 return self._request(state, questions, purpose, context, retry=True)

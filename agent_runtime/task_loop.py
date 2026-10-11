@@ -17,7 +17,7 @@ from agent_runtime.model_runtime import model_timeout
 from agent_runtime.model_runtime import MODEL_PAYMENT_MESSAGE, model_failure
 from agent_runtime.telemetry import timing_update, model_metrics
 from agent_runtime.task_control import requests_resume, requests_pause, resume_command_only
-from agent_runtime.provider_usage import track_run, usage_scope
+from agent_runtime.provider_usage import track_run, usage_scope, TaskProviderBudgetExceeded
 
 
 logger = logging.getLogger(__name__)
@@ -249,6 +249,14 @@ class TaskLoop:
                 state = self.repository.get(task_id)
                 if result['reason'] in {'yielded', 'steered'} and self._active(state):
                     self.repository.change(task_id, status='queued')
+        except TaskProviderBudgetExceeded as exc:
+            with self.lock:
+                latest = self.repository.get(task_id)
+                if self._active(latest):
+                    message = 'I stopped at the provider budget limit. Saved work is preserved; the requested work is not complete.'
+                    self.repository.append(task_id, role='assistant', text=message, kind='error')
+                    self.repository.change(task_id, status='needs_input', model_activity=None, tool_activity=None,
+                        error={'code': 'provider_budget', 'reason': exc.reason, 'message': message, 'retryable': False})
         except Exception as exc:
             with self.lock:
                 latest = self.repository.get(task_id)

@@ -41,6 +41,7 @@ class ConversationWindow:
     def __init__(self, groups=(), *, max_chars=24000, max_groups=8):
         self.max_chars, self.max_groups = max_chars, max_groups
         self.groups = []
+        self.dropped_since_request = 0
         for group in groups:
             try:
                 calls = group['assistant']['tool_calls']
@@ -57,9 +58,11 @@ class ConversationWindow:
         while len(self.groups) > self.max_groups or (
                 len(self.groups) > 1 and len(json.dumps(self.groups, ensure_ascii=False)) > self.max_chars):
             self.groups.pop(0)
+            self.dropped_since_request += 1
         # An oversized exchange is represented by domain history in the live
         # snapshot instead. Never cut an argument JSON string or half a tool group.
         if self.groups and len(json.dumps(self.groups, ensure_ascii=False)) > self.max_chars:
+            self.dropped_since_request += len(self.groups)
             self.groups.clear()
 
     def append(self, snapshot, text, calls, results, revision):

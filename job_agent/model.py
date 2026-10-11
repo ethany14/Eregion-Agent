@@ -12,12 +12,19 @@ from typing import Any, TypeVar
 from dotenv import dotenv_values
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, PrivateAttr, ValidationError
-from job_agent.reasoning import resolve, configured_overrides, SCHEMA_PURPOSES, escalated, escalation_enabled
+from job_agent.reasoning import resolve, configured_overrides, SCHEMA_PURPOSES, escalated, escalation_enabled, rejection_retry_enabled
 
 Result = TypeVar("Result", bound=BaseModel)
 DEFAULT_ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
 GEMINI_OPENAI_COMPATIBILITY_HOST = "generativelanguage.googleapis.com"
 GEMINI_MISSING_THOUGHT_SIGNATURE = "skip_thought_signature_validator"
+
+
+class _AsyncBudgetStop(Exception):
+    """LangChain's async gather assumes every error also subclasses Exception."""
+    def __init__(self, stop):
+        self.stop = stop
+        super().__init__(str(stop))
 
 
 class ProviderCompatibleChatOpenAI(ChatOpenAI):
@@ -34,6 +41,7 @@ class ProviderCompatibleChatOpenAI(ChatOpenAI):
     _reasoning_purpose: str | None = PrivateAttr(default=None)
     _legacy_reasoning: str | None = PrivateAttr(default=None)
     _has_reasoning_configuration: bool = PrivateAttr(default=False)
+    _interview_rejection_retry: bool = PrivateAttr(default=False)
 
     def _attempt_options(self, kwargs):
         from agent_runtime.provider_usage import current_scope
@@ -47,46 +55,122 @@ class ProviderCompatibleChatOpenAI(ChatOpenAI):
             options['reasoning_effort'] = higher
         return options, {'effective_reasoning': higher, 'reasoning_escalation': higher != level}
 
+    def _budget_sizes(self, messages, stop, options):
+        if not os.getenv('JOB_AGENT_TASK_MAX_INPUT_TOKENS', '').strip():
+            return {}
+        from agent_runtime.provider_usage import input_reservation
+        return {'input_token_reservation': input_reservation(self._get_request_payload(messages, stop=stop, **options))}
+
+    def _without_sdk_retries(self):
+        updates = {'max_retries': 0}
+        if self.root_client is not None:
+            client = self.root_client.with_options(max_retries=0)
+            updates.update(root_client=client, client=client.chat.completions)
+        if self.root_async_client is not None:
+            client = self.root_async_client.with_options(max_retries=0)
+            updates.update(root_async_client=client, async_client=client.chat.completions)
+        return self.model_copy(update=updates)
+
+    def _transport_retry_delay(self, exc, retry):
+        from openai import APIConnectionError, APIStatusError
+        if retry >= self._sdk_retries():
+            return None
+        root = self.root_client or self.root_async_client
+        if isinstance(exc, APIStatusError):
+            if not root._should_retry(exc.response):
+                return None
+            headers = exc.response.headers
+        elif isinstance(exc, APIConnectionError):
+            headers = None
+        else:
+            return None
+        from openai._models import FinalRequestOptions
+        options = FinalRequestOptions.construct(method='post', url='/chat/completions', max_retries=self._sdk_retries())
+        return root._calculate_retry_timeout(self._sdk_retries() - retry, options, headers)
+
+    def _sdk_retries(self):
+        return self.max_retries if self.max_retries is not None else (self.root_client or self.root_async_client).max_retries
+
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+        import time
         from agent_runtime.provider_usage import provider_call, record_chat_usage
         from agent_runtime.telemetry import model_metrics
         sizes = model_metrics(messages, kwargs.get('tools', []))
         from agent_runtime.provider_usage import usage_scope, current_scope
         options, metadata = self._attempt_options(kwargs)
+        model = self._without_sdk_retries() if self._sdk_retries() else self
+        number = 0
         for plain in (False, True):
-            with usage_scope(**metadata, attempt=current_scope().get('attempt', 1) + int(plain),
-                             **({'queue_wait_seconds': 0.0} if plain else {})):
-                try:
-                    with provider_call(self.model_name, **sizes) as usage:
-                        result = super()._generate(messages, stop=stop, run_manager=run_manager, **options)
-                        record_chat_usage(usage, result)
-                        return result
-                except Exception as exc:
-                    if plain or not options.get('reasoning_effort') or 'reasoning' not in str(exc).lower():
-                        raise
-                    options['reasoning_effort'] = None
-                    options['_omit_reasoning'] = True
-                    metadata = {'effective_reasoning': None, 'reasoning_escalation': False, 'reasoning_fallback': True}
+            for retry in range(self._sdk_retries() + 1):
+                wire = self._retry_options(options, retry)
+                with usage_scope(**metadata, attempt=current_scope().get('attempt', 1) + number,
+                                 **({'queue_wait_seconds': 0.0} if number else {})):
+                    number += 1
+                    try:
+                        with provider_call(self.model_name, **sizes, **self._budget_sizes(messages, stop, wire)) as usage:
+                            result = ChatOpenAI._generate(model, messages, stop=stop, run_manager=run_manager, **wire)
+                            record_chat_usage(usage, result)
+                            return result
+                    except Exception as exc:
+                        delay = self._transport_retry_delay(exc, retry)
+                        if delay is not None:
+                            time.sleep(delay)
+                            continue
+                        if not self._can_retry_plain(exc, plain, options): raise
+                        options.update(reasoning_effort=None, _omit_reasoning=True)
+                        metadata = {'effective_reasoning': None, 'reasoning_escalation': False, 'reasoning_fallback': True}
+                        break
+
+    def _retry_options(self, options, retry):
+        if not self._sdk_retries(): return options
+        return {**options, 'extra_headers': {**options.get('extra_headers', {}), 'x-stainless-retry-count': str(retry)}}
+
+    def _can_retry_plain(self, exc, plain, options):
+        return (not plain and (self._interview_rejection_retry or rejection_retry_enabled())
+                and options.get('reasoning_effort') and 'reasoning' in str(exc).lower())
+
+    async def agenerate(self, *args, **kwargs):
+        try:
+            return await super().agenerate(*args, **kwargs)
+        except _AsyncBudgetStop as exc:
+            raise exc.stop from None
 
     async def _agenerate(self, messages, stop=None, run_manager=None, **kwargs):
+        from agent_runtime.provider_usage import TaskProviderBudgetExceeded
+        try:
+            return await self._agenerate_attempt(messages, stop, run_manager, **kwargs)
+        except TaskProviderBudgetExceeded as exc:
+            raise _AsyncBudgetStop(exc) from None
+
+    async def _agenerate_attempt(self, messages, stop=None, run_manager=None, **kwargs):
+        import asyncio
         from agent_runtime.provider_usage import provider_call, record_chat_usage
         from agent_runtime.telemetry import model_metrics
         from agent_runtime.provider_usage import usage_scope, current_scope
         options, metadata = self._attempt_options(kwargs)
+        model = self._without_sdk_retries() if self._sdk_retries() else self
+        number = 0
         for plain in (False, True):
-            with usage_scope(**metadata, attempt=current_scope().get('attempt', 1) + int(plain),
-                             **({'queue_wait_seconds': 0.0} if plain else {})):
-                try:
-                    with provider_call(self.model_name, **model_metrics(messages, kwargs.get('tools', []))) as usage:
-                        result = await super()._agenerate(messages, stop=stop, run_manager=run_manager, **options)
-                        record_chat_usage(usage, result)
-                        return result
-                except Exception as exc:
-                    if plain or not options.get('reasoning_effort') or 'reasoning' not in str(exc).lower():
-                        raise
-                    options['reasoning_effort'] = None
-                    options['_omit_reasoning'] = True
-                    metadata = {'effective_reasoning': None, 'reasoning_escalation': False, 'reasoning_fallback': True}
+            for retry in range(self._sdk_retries() + 1):
+                wire = self._retry_options(options, retry)
+                with usage_scope(**metadata, attempt=current_scope().get('attempt', 1) + number,
+                                 **({'queue_wait_seconds': 0.0} if number else {})):
+                    number += 1
+                    try:
+                        with provider_call(self.model_name, **model_metrics(messages, kwargs.get('tools', [])),
+                                           **self._budget_sizes(messages, stop, wire)) as usage:
+                            result = await ChatOpenAI._agenerate(model, messages, stop=stop, run_manager=run_manager, **wire)
+                            record_chat_usage(usage, result)
+                            return result
+                    except Exception as exc:
+                        delay = self._transport_retry_delay(exc, retry)
+                        if delay is not None:
+                            await asyncio.sleep(delay)
+                            continue
+                        if not self._can_retry_plain(exc, plain, options): raise
+                        options.update(reasoning_effort=None, _omit_reasoning=True)
+                        metadata = {'effective_reasoning': None, 'reasoning_escalation': False, 'reasoning_fallback': True}
+                        break
 
     def _get_request_payload(
         self,
@@ -189,6 +273,8 @@ def model_settings_fingerprint(*, env_path: Path = DEFAULT_ENV_PATH, environ=Non
     keys = ('LLM_FAST_MODEL_ID', 'LLM_EXTRACTION_MODEL_ID', 'LLM_AGENT_REASONING', 'LLM_EXTRACTION_REASONING', 'LLM_MODEL_ID','LLM_BASE_URL','LLM_API_KEY','LLM_TIMEOUT','LLM_MAX_RETRIES',
         'OPENAI_API_KEY','OPENAI_API_BASE','OPENAI_BASE_URL','OPENAI_ORG_ID')
     keys = (*keys, *configured_overrides(settings), 'LLM_INTERVIEW_REASONING', 'JOB_AGENT_REASONING_ESCALATION')
+    if settings.get('JOB_AGENT_REASONING_REJECTION_RETRY') == '1':
+        keys = (*keys, 'JOB_AGENT_REASONING_REJECTION_RETRY')
     return hashlib.sha256(json.dumps({key:optional_setting(settings,key) for key in keys},
         sort_keys=True).encode()).hexdigest()
 

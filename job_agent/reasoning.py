@@ -43,6 +43,10 @@ def escalation_enabled():
     return os.getenv('JOB_AGENT_REASONING_ESCALATION') == '1'
 
 
+def rejection_retry_enabled():
+    return os.getenv('JOB_AGENT_REASONING_REJECTION_RETRY') == '1'
+
+
 def configured_overrides(settings=None):
     return {k: v for k, v in (os.environ if settings is None else settings).items()
             if k.startswith('LLM_REASONING_') and str(v or '').strip()}

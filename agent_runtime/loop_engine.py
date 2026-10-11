@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from agent_runtime.loop_context import ConversationWindow, trace_value
 from agent_runtime.model_output import output_problem, reply_text, REPAIR_INSTRUCTION
 from agent_runtime.request_context import ContextArchive, READ_CONTEXT, prepare_request
-from agent_runtime.provider_usage import usage_scope, record_tool_action
+from agent_runtime.provider_usage import usage_scope, record_tool_action, TaskProviderBudgetExceeded
 
 
 class LoopStop(Exception):
@@ -97,6 +97,7 @@ class AgentLoop:
         self.host, self.slice_steps = host, slice_steps
         self.runtime = {'version': 1, 'sequence': 0, 'events': [], **(runtime or {})}
         self.context = ConversationWindow(self.runtime.get('transcript', []), max_chars=context_chars)
+        self.context.dropped_since_request += self.runtime.get('persistent_groups_pending', 0)
         self.notice = self.runtime.get('recovery')
         self.archive = ContextArchive(self.runtime.get('context_archive'), self.runtime.get('context_read_progress'), self.runtime.get('context_resources'))
         if hasattr(self.host, 'context_archive'):
@@ -110,6 +111,7 @@ class AgentLoop:
 
     def save(self):
         self.runtime['transcript'] = self.context.groups
+        self.runtime['persistent_groups_pending'] = self.context.dropped_since_request
         self.runtime['context_archive'] = self.archive.values
         self.runtime['context_read_progress'] = self.archive.reads
         self.runtime['context_resources'] = self.archive.resources
@@ -248,6 +250,10 @@ class AgentLoop:
                     result = stopped
                     break
             return result
+        except TaskProviderBudgetExceeded:
+            result = {'reason': 'provider_budget'}
+            self.event('provider_budget_stopped')
+            raise
         except LoopStop as stop:
             result = stop.result
             return result

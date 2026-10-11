@@ -22,7 +22,7 @@ def percentiles(values):
     return {'count': len(values), 'p50': quantile(.5), 'p95': quantile(.95), 'max': values[-1]}
 
 
-def metrics(rows):
+def metrics(rows, *, include_groups=True):
     parts = [r['context_metrics']['request_parts_chars'] for r in rows
              if r.get('context_metrics', {}).get('request_parts_chars') is not None]
     result = {'composition_samples': len(parts), 'composition_averages': {
@@ -39,6 +39,44 @@ def metrics(rows):
         'frequency': sum(m['history_evicted'] for m in eviction) / len(eviction) if eviction else None}
     totals = [r['context_metrics']['request_text_chars'] for r in rows if 'request_text_chars' in r.get('context_metrics', {})]
     result['total_chars_average'] = statistics.mean(totals) if totals else None
+    transitions = {'pairs': 0, 'history': 0, 'persistent': 0, 'request': 0,
+                   'both': 0, 'other': 0, 'tools': 0, 'system': 0}
+    previous = {}
+    for row in rows:
+        m = row.get('context_metrics', {})
+        key = (row.get('task_id'), row.get('run_id'))
+        if 'history_prefix_hash' not in m:
+            continue
+        # Nested attempts and retries can share one assembled request.
+        request = row.get('request_id')
+        prior = previous.get(key)
+        if prior and request and request == prior[1]:
+            continue
+        if prior:
+            old = prior[0]
+            transitions['pairs'] += 1
+            changed = m['history_prefix_hash'] != old['history_prefix_hash']
+            persistent = changed and bool(m.get('persistent_groups_evicted')) and m.get('persistent_prefix_hash') != old.get('persistent_prefix_hash')
+            request_trim = changed and bool(m.get('replay_groups_evicted') or old.get('replay_groups_evicted')) and (
+                m.get('history_prefix_hash') != m.get('persistent_prefix_hash') or old.get('history_prefix_hash') != old.get('persistent_prefix_hash'))
+            transitions['history'] += int(changed)
+            transitions['persistent'] += int(persistent)
+            transitions['request'] += int(request_trim)
+            transitions['both'] += int(persistent and request_trim)
+            transitions['other'] += int(changed and not persistent and not request_trim)
+            for name in ('tools', 'system'):
+                transitions[name] += int(m.get(name + '_hash') != old.get(name + '_hash'))
+        previous[key] = (m, request)
+    result['prefix_changes'] = {**transitions, 'shares': {
+        k: v / transitions['pairs'] if transitions['pairs'] else None
+        for k, v in transitions.items() if k != 'pairs'}}
+    result['persistent_evicted_groups'] = sum(r.get('context_metrics', {}).get('persistent_groups_evicted', 0) for r in rows)
+    if include_groups:
+        group_rows = [{**r, 'context_metrics': {**r['context_metrics'],
+            'history_prefix_hash': r['context_metrics']['history_group_hash'],
+            'persistent_prefix_hash': r['context_metrics'].get('persistent_group_hash')}}
+            for r in rows if 'history_group_hash' in r.get('context_metrics', {})]
+        result['group_prefix_changes'] = metrics(group_rows, include_groups=False)['prefix_changes']
     return result
 
 
@@ -52,10 +90,14 @@ def report(path, *, task_id=None, run_id=None):
             for key, value in (('task_id', task_id), ('run_id', run_id)):
                 if value:
                     where.append(key + '=?'); args.append(value)
-            query = 'SELECT details_json, adopted FROM provider_usage'
+            columns = {r[1] for r in db.execute('PRAGMA table_info(provider_usage)')}
+            identifiers = [k for k in ('task_id', 'run_id', 'request_id') if k in columns]
+            query = 'SELECT details_json, adopted' + ''.join(', ' + k for k in identifiers) + ' FROM provider_usage'
             if where:
                 query += ' WHERE ' + ' AND '.join(where)
-            rows = [{**json.loads(details), 'adopted': bool(adopted)} for details, adopted in db.execute(query, args)]
+            query += ' ORDER BY ' + ('created_at, rowid' if 'created_at' in columns else 'rowid')
+            rows = [{**json.loads(row[0]), 'adopted': bool(row[1]), **dict(zip(identifiers, row[2:]))}
+                    for row in db.execute(query, args)]
         actions = [r for r in rows if r.get('source') == 'tool_action']
         rows = [r for r in rows if r.get('source') != 'tool_action']
         result = summarize(rows)

@@ -526,7 +526,7 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
         return live, history, static_chars + sum(len(encoded(m.model_dump())) for m in history) + len(encoded(live))
 
     live, history, size = build()
-    evicted = 0
+    evicted = replay.dropped_since_request
     while size > max_chars and len(replay.groups) > 1:
         replay.groups.pop(0)  # Complete tool exchanges only, never orphan ToolMessages.
         evicted += 1
@@ -604,7 +604,16 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
     messages.append(HumanMessage(content=encoded(live)))
     actual = sum(len(m.content) if isinstance(m.content, str) else len(encoded(m.content)) for m in messages)
     actual += len(encoded(tools))
+    persistent_dropped = window.dropped_since_request
+    window.dropped_since_request = 0
+    digest = lambda value: hashlib.sha256(encoded(value).encode()).hexdigest()
     return messages, {'request_text_chars': actual, 'limit_chars': max_chars,
+                      'persistent_groups_evicted': persistent_dropped,
+                      'history_prefix_hash': digest(history[0].model_dump()) if history else None,
+                      'persistent_prefix_hash': digest(window.messages()[0].model_dump()) if window.groups else None,
+                      'history_group_hash': digest(replay.groups[0]) if replay.groups else None,
+                      'persistent_group_hash': digest(window.groups[0]) if window.groups else None,
+                      'tools_hash': digest(tools), 'system_hash': digest(prompt),
                       'history_evicted': bool(evicted), 'replay_groups_evicted': evicted,
                       'protected_overflow': actual > max_chars, 'archived_values': len(archive.used),
                       # Sizes only, never source text. These sum to the actual
