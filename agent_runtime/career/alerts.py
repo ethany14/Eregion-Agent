@@ -24,6 +24,8 @@ class AlertConfig(BaseModel):
     preferences: str=Field(min_length=3,max_length=3000)
     sites: list[str]=Field(default_factory=list,max_length=10)
     local_time: str=Field(default='09:00',pattern=r'^(?:[01]\d|2[0-3]):[0-5]\d$')
+    weekdays: list[int]=Field(default_factory=lambda:list(range(7)),min_length=1,max_length=7,
+        description='Local weekdays: Monday=0 through Sunday=6. Defaults to every day.')
     timezone: str=Field(min_length=1,max_length=100)
     max_results: int=Field(default=5,ge=1,le=10)
     min_score: int=Field(default=70,ge=0,le=100)
@@ -41,6 +43,13 @@ class AlertConfig(BaseModel):
     @classmethod
     def sources(cls,values):return list(dict.fromkeys(public_https_url(v) for v in values))
 
+    @field_validator('weekdays',mode='before')
+    @classmethod
+    def days(cls,values):
+        if not isinstance(values,list) or not values or any(type(v) is not int or not 0<=v<=6 for v in values):
+            raise ValueError('Choose local weekdays from Monday=0 through Sunday=6.')
+        return sorted(set(values))
+
 
 def occurrence(day,config):
     """One firing per local date; spring gaps shift forward, folds fire once."""
@@ -55,14 +64,22 @@ def occurrence(day,config):
 
 def next_due(config,after):
     day=after.astimezone(ZoneInfo(config['timezone'])).date()
-    value=occurrence(day,config)
-    return value if value>after else occurrence(day+timedelta(days=1),config)
+    for offset in range(8):
+        candidate=day+timedelta(days=offset)
+        if candidate.weekday() not in config.get('weekdays',range(7)):continue
+        value=occurrence(candidate,config)
+        if value>after:return value
+    raise ValueError('The schedule has no enabled weekday.')
 
 
 def latest_due(config,at):
     day=at.astimezone(ZoneInfo(config['timezone'])).date()
-    value=occurrence(day,config)
-    return value if value<=at else occurrence(day-timedelta(days=1),config)
+    for offset in range(8):
+        candidate=day-timedelta(days=offset)
+        if candidate.weekday() not in config.get('weekdays',range(7)):continue
+        value=occurrence(candidate,config)
+        if value<=at:return value
+    raise ValueError('The schedule has no enabled weekday.')
 
 
 def job_key(url):
@@ -215,7 +232,13 @@ class AlertRepository:
             if old:return {'added':False,'reason':'Already recommended','recommendation':json.loads(old.payload_json)}
             count=len(list(db.scalars(select(RecommendationRow.recommendation_id).where(RecommendationRow.run_id==run_id))))
             if count>=config['max_results']:raise ValueError('This digest already has its requested number of jobs.')
-            if payload['match_score']<config['min_score']:raise ValueError('This job is below the configured match threshold.')
+            threshold_score=payload.get('match_score')
+            if threshold_score is None:
+                interval=payload.get('score_range')
+                if not (isinstance(interval,list) and len(interval)==2 and all(type(v) in (int,float) and 0<=v<=100 for v in interval)
+                        and interval[0]<=interval[1]):raise ValueError('This job needs a verified score or score interval.')
+                threshold_score=interval[0]
+            if threshold_score<config['min_score']:raise ValueError('This job is below the configured match threshold (using the interval lower bound when uncertain).')
             payload={**payload,'recommendation_id':str(uuid4()),'checked_at':stamp(self.clock())}
             db.add(RecommendationRow(recommendation_id=payload['recommendation_id'],run_id=run_id,job_key=key,
                 payload_json=json.dumps(payload),created_at=stamp(self.clock())))

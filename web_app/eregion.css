@@ -212,6 +212,7 @@ dialog input[type="text"], dialog input[type="email"], dialog input[type="passwo
   .conversation.is-chronicle .welcome { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
+  .page-top .page-sub { white-space: normal; flex-basis: 100%; }
   .history { width: 272px; }
   .conversation.is-chronicle .column { padding: 0 16px; }
   .conversation.is-chronicle .chat-header { display: flex; }

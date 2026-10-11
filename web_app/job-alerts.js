@@ -3,9 +3,10 @@ import {api,toast} from './conversations.js';
 import {renderMarkdown} from './chat-markdown.js';
 
 const endpoint='/api/career/alerts';
-const configKeys=['name','preferences','sites','local_time','timezone','max_results','min_score','enabled','visual_fallback'];
+const configKeys=['name','preferences','sites','local_time','weekdays','timezone','max_results','min_score','enabled','visual_fallback'];
+const dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const localDate=value=>new Date(value).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-const configOf=s=>Object.fromEntries(configKeys.map(k=>[k,s[k]]));
+const configOf=s=>Object.fromEntries(configKeys.map(k=>[k,k==='weekdays'?(s[k]??[0,1,2,3,4,5,6]):s[k]]));
 let updatePage=()=>{};
 const stored=key=>{try{return localStorage.getItem(key);}catch{return null;}};
 
@@ -70,7 +71,9 @@ export async function jobAlertsPage(ctx,container,header){
     body.append(el('p','Scheduled searches run while this computer and the backend are running. Searches start at your chosen time; the digest arrives when research finishes. Browser popups need this page open and notification permission.','alerts-note'));
     for(const schedule of data.schedules){
       const card=el('article','','card alert-schedule');
-      card.append(el('h3',schedule.name),el('p',`${schedule.enabled?'Every day':'Paused'} · ${schedule.local_time} · ${schedule.timezone}`,'sub'),
+      const days=schedule.weekdays??[0,1,2,3,4,5,6];
+      const cadence=days.length===7?'Every day':days.map(i=>dayNames[i]).join(', ');
+      card.append(el('h3',schedule.name),el('p',`${schedule.enabled?cadence:'Paused'} · ${schedule.local_time} · ${schedule.timezone}`,'sub'),
         el('p',schedule.preferences,'alert-preferences'));
       if(schedule.enabled)card.append(el('p',`Next search: ${localDate(schedule.next_run_at)}`,'stage'));
       const controls=el('div','','actions');
@@ -93,7 +96,8 @@ export async function jobAlertsPage(ctx,container,header){
       if(digest.summary)block.append(renderMarkdown(digest.summary));
       for(const job of digest.recommendations){
         const row=el('div','','digest-job');
-        row.append(el('strong',`${Math.round(job.match_score)}/100`,'digest-score'),el('h4',job.title),
+        const score=job.match_score==null?(job.score_range?.length===2?`${job.score_range.map(Math.round).join('–')}/100`:'Unresolved'):`${Math.round(job.match_score)}/100`;
+        row.append(el('strong',score,'digest-score'),el('h4',job.title),
           el('p',[job.company,job.location].filter(Boolean).join(' · '),'sub'),el('p',job.reason));
         if(job.caveats)row.append(el('p',job.caveats,'sub'));
         const link=el('a','Job posting ↗','quiet-button');link.href=job.url;link.target='_blank';link.rel='noopener noreferrer';row.append(link);block.append(row);
@@ -111,9 +115,9 @@ export async function jobAlertsPage(ctx,container,header){
   }
   function edit(schedule){
     const dialog=el('dialog','','alert-settings'),form=el('form');
-    const title=el('div','','dialog-heading');title.append(el('h2',schedule?'Edit daily search':'New daily search'));
+    const title=el('div','','dialog-heading');title.append(el('h2',schedule?'Edit scheduled search':'New scheduled search'));
     title.append(button('×',()=>dialog.close(),'icon-button'));form.append(title);
-    const defaults={name:'Daily matches',preferences:'',sites:[],local_time:'09:00',timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC',
+    const defaults={name:'Daily matches',preferences:'',sites:[],weekdays:[0,1,2,3,4,5,6],local_time:'09:00',timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC',
       max_results:5,min_score:70,enabled:true,visual_fallback:false,...(schedule?configOf(schedule):{})};
     const inputs={};
     function field(key,label,type='text'){
@@ -125,9 +129,14 @@ export async function jobAlertsPage(ctx,container,header){
     field('preferences','Roles, location and what matters to you','textarea').maxLength=3000;
     const sites=field('sites','Preferred websites (optional, one HTTPS URL per line)','textarea');sites.placeholder='https://careers.example.com/';
     field('local_time','Start searching at','time');field('timezone','Timezone');
+    const weekdays=el('fieldset'),legend=el('legend','Search on');weekdays.append(legend);
+    const dayInputs=dayNames.map((day,index)=>{
+      const row=el('label','','check-row'),input=el('input');input.type='checkbox';input.name='weekdays';input.value=String(index);
+      input.checked=defaults.weekdays.includes(index);row.append(input,document.createTextNode(day));weekdays.append(row);return input;
+    });form.append(weekdays);
     const count=field('max_results','Maximum recommendations','number');count.min=1;count.max=10;
     const score=field('min_score','Minimum match score','number');score.min=0;score.max=100;
-    for(const [key,label] of [['enabled','Run this search daily'],['visual_fallback','Allow non-login page screenshots to the model for visual browser backup']]){
+    for(const [key,label] of [['enabled','Enable scheduled search'],['visual_fallback','Allow non-login page screenshots to the model for visual browser backup']]){
       const row=el('label','','check-row'),input=el('input');input.type='checkbox';input.checked=defaults[key];inputs[key]=input;row.append(input,document.createTextNode(label));form.append(row);
     }
     const failure=el('p','','danger');failure.setAttribute('role','alert');form.append(failure);
@@ -138,6 +147,8 @@ export async function jobAlertsPage(ctx,container,header){
       const config={...defaults};
       for(const [key,input] of Object.entries(inputs))config[key]=input.type==='checkbox'?input.checked:input.type==='number'?Number(input.value):input.value.trim();
       config.sites=config.sites.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+      config.weekdays=dayInputs.filter(input=>input.checked).map(input=>Number(input.value));
+      if(!config.weekdays.length){failure.textContent='Choose at least one day.';save.disabled=false;return;}
       try{await api(schedule?`${endpoint}/${schedule.alert_id}`:endpoint,{method:schedule?'PUT':'POST',body:{config,
         ...(schedule?{expected_version:schedule.version}:{idempotency_key:idempotencyKey})}});dialog.close();await load();}
       catch(e){failure.textContent=e.message;}finally{save.disabled=false;}

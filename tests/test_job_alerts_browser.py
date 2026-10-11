@@ -64,3 +64,45 @@ def test_chat_discovery_and_daily_alerts_share_ui_without_forcing_schedule(caree
         assert service.alerts.feed()[0]['read_at']
         assert errors==[]
         browser.close()
+
+
+def test_repaired_forge_and_weekday_editor_in_day_night_desktop_mobile(career,tmp_path):
+    c=career;service=start_service(c)
+    app=create_app(run_service=object(),session_runtime=c.runtime)
+    app.state.auto_apply=c.applications;app.state.career_agent=service
+    with TestClient(app,base_url='http://localhost') as client,sync_playwright() as p:
+        browser=p.chromium.launch(channel='chrome',headless=True)
+        page=browser.new_page(reduced_motion='reduce');errors=[]
+        page.on('pageerror',lambda e:errors.append(str(e)))
+        page.on('console',lambda m:errors.append(m.text) if m.type=='error' and '<path>' in m.text else None)
+        def route(r):
+            req=r.request
+            if urlsplit(req.url).hostname!='localhost':r.abort();return
+            response=client.request(req.method,req.url,content=req.post_data,headers={k:v for k,v in req.headers.items() if k in {'content-type','origin'}},follow_redirects=False)
+            r.fulfill(status=response.status_code,body=response.content,headers={'content-type':response.headers.get('content-type','')})
+        page.route('**/*',route);page.goto('http://localhost/apply?view=materials')
+        expect(page.locator('.page-top h1')).to_have_text('The Forge')
+        for width in (1440,375):
+            page.set_viewport_size({'width':width,'height':1000 if width==1440 else 844})
+            for theme in ('light','night'):
+                page.evaluate("t=>{localStorage.setItem('eregion.theme',t);document.documentElement.dataset.theme=t;}",theme)
+                assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+                assert page.locator('.page-top').evaluate('e=>e.scrollWidth<=e.clientWidth')
+                page.screenshot(path=str(tmp_path/f'forge-{width}-{theme}.png'),full_page=True)
+        page.set_viewport_size({'width':1440,'height':1000});page.goto('http://localhost/apply?view=alerts')
+        page.get_by_role('button',name='New schedule',exact=True).click()
+        dialog=page.locator('.alert-settings')
+        dialog.locator('[name=preferences]').fill('Backend roles, weekdays only')
+        dialog.locator('[name=weekdays][value="5"]').uncheck()
+        dialog.locator('[name=weekdays][value="6"]').uncheck()
+        for width in (1440,375):
+            page.set_viewport_size({'width':width,'height':1000 if width==1440 else 844})
+            for theme in ('light','night'):
+                page.evaluate("t=>{localStorage.setItem('eregion.theme',t);document.documentElement.dataset.theme=t;}",theme)
+                assert dialog.evaluate('e=>e.scrollWidth<=e.clientWidth')
+                page.screenshot(path=str(tmp_path/f'weekdays-{width}-{theme}.png'),full_page=True)
+        dialog.get_by_role('button',name='Save schedule').click()
+        expect(dialog).to_have_count(0)
+        assert service.alerts.list()[0]['weekdays']==[0,1,2,3,4]
+        assert errors==[]
+        browser.close()

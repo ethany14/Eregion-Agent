@@ -273,7 +273,7 @@ export async function materialsPage(ctx,container,header){
     for(const m of visible){
       const g=`${m.company||'Unknown company'} · ${m.title||''}`;if(g!==group){group=g;list.append(el('p',g,'mg'));}
       const row=button('',()=>choose(m),selected?.pack_item_id===m.pack_item_id?'mi on':'mi'),text=el('span','','t');
-      text.append(el('b',m.artifact_type==='application_answer'&&m.source_question?m.source_question:m.label),el('small',`Version ${m.version} · ${relative(m.updated_at)}`));
+      text.append(el('b',m.artifact_type==='application_answer'&&m.source_question?m.source_question:m.label),el('small',`${m.document_version==null?'Draft':`Version ${m.document_version}`} · ${relative(m.updated_at)}`));
       row.append(thumb(),text,forgeTrail(m,false),el('span',statusText[status(m)],`st ${status(m)}`));list.append(row);
     }
     if(!visible.length&&!(candidate&&['all','base'].includes(typeFilter)))list.append(el('p',items.length?'No materials match.':'No materials yet. Ask for a tailored resume in a conversation.','page-empty'));

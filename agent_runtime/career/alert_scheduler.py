@@ -71,9 +71,13 @@ class AlertScheduler:
                 if state['status'] in {'completed','needs_input','cancelled'} or state['chat_revision']>0:
                     count=len(self.alerts.items(run['run_id']))
                     status='completed' if state['status']=='completed' else 'partial' if count else 'needs_attention'
-                    message=next((m['text'] for m in reversed(state['messages']) if m['role']=='assistant'),'')
-                    if timed_out:message='The search reached its time limit. Any verified matches are saved; open the conversation to continue.'
-                    elif not message:message='This search needs your attention. Open its conversation for details.'
+                    message=f'{count} verified new match'+('es' if count!=1 else '')+' saved.'
+                    if status!='completed':
+                        reason='The search reached its time limit.' if timed_out else (
+                            'The search stopped after repeated steps produced no new evidence.' if (state.get('error') or {}).get('code')=='no_progress'
+                            else 'The search could not finish automatically.')
+                        message+=' '+reason+' Open the conversation for saved results and details.'
+                    elif not count:message='The search finished with no verified new matches meeting your preferences and threshold.'
                     self.alerts.finish(run['run_id'],status,message)
                     manager=getattr(self.service.harness,'_browsing',None)
                     if manager and state['chat_revision']==0:manager.close_task(state['task_id'])
