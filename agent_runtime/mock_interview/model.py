@@ -56,7 +56,8 @@ def _invoke_interview(purpose, schema, policy, content):
             # The concrete provider boundary already owns its one plain retry.
             raise
         # Compatibility: a provider without reasoning_effort support gets one plain retry.
-        if 'reasoning' not in str(exc).lower():
+        from job_agent.reasoning import reasoning_parameter_rejected
+        if not reasoning_parameter_rejected(exc):
             raise
         return invoke_structured(create_model(purpose=purpose), schema, policy, content)
 

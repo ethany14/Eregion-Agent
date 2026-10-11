@@ -12,7 +12,7 @@ from typing import Any, TypeVar
 from dotenv import dotenv_values
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, PrivateAttr, ValidationError
-from job_agent.reasoning import resolve, configured_overrides, SCHEMA_PURPOSES, escalated, escalation_enabled, rejection_retry_enabled
+from job_agent.reasoning import resolve, configured_overrides, SCHEMA_PURPOSES, escalated, escalation_enabled, rejection_retry_enabled, reasoning_parameter_rejected
 
 Result = TypeVar("Result", bound=BaseModel)
 DEFAULT_ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
@@ -100,8 +100,11 @@ class ProviderCompatibleChatOpenAI(ChatOpenAI):
         options, metadata = self._attempt_options(kwargs)
         model = self._without_sdk_retries() if self._sdk_retries() else self
         number = 0
+        # One retry budget for the whole call: a plain (no-reasoning) retry continues the
+        # transport-retry count instead of restarting it, with at least one plain attempt.
+        used = 0
         for plain in (False, True):
-            for retry in range(self._sdk_retries() + 1):
+            for retry in range(used, max(used + 1, self._sdk_retries() + 1)):
                 wire = self._retry_options(options, retry)
                 with usage_scope(**metadata, attempt=current_scope().get('attempt', 1) + number,
                                  **({'queue_wait_seconds': 0.0} if number else {})):
@@ -118,6 +121,7 @@ class ProviderCompatibleChatOpenAI(ChatOpenAI):
                             continue
                         if not self._can_retry_plain(exc, plain, options): raise
                         options.update(reasoning_effort=None, _omit_reasoning=True)
+                        used = retry + 1
                         metadata = {'effective_reasoning': None, 'reasoning_escalation': False, 'reasoning_fallback': True}
                         break
 
@@ -126,8 +130,10 @@ class ProviderCompatibleChatOpenAI(ChatOpenAI):
         return {**options, 'extra_headers': {**options.get('extra_headers', {}), 'x-stainless-retry-count': str(retry)}}
 
     def _can_retry_plain(self, exc, plain, options):
+        # Only an explicit "parameter not supported" response; a connection error or
+        # timeout whose text happens to mention reasoning is not a rejection.
         return (not plain and (self._interview_rejection_retry or rejection_retry_enabled())
-                and options.get('reasoning_effort') and 'reasoning' in str(exc).lower())
+                and options.get('reasoning_effort') and reasoning_parameter_rejected(exc))
 
     async def agenerate(self, *args, **kwargs):
         try:
@@ -150,8 +156,11 @@ class ProviderCompatibleChatOpenAI(ChatOpenAI):
         options, metadata = self._attempt_options(kwargs)
         model = self._without_sdk_retries() if self._sdk_retries() else self
         number = 0
+        # One retry budget for the whole call: a plain (no-reasoning) retry continues the
+        # transport-retry count instead of restarting it, with at least one plain attempt.
+        used = 0
         for plain in (False, True):
-            for retry in range(self._sdk_retries() + 1):
+            for retry in range(used, max(used + 1, self._sdk_retries() + 1)):
                 wire = self._retry_options(options, retry)
                 with usage_scope(**metadata, attempt=current_scope().get('attempt', 1) + number,
                                  **({'queue_wait_seconds': 0.0} if number else {})):
@@ -169,6 +178,7 @@ class ProviderCompatibleChatOpenAI(ChatOpenAI):
                             continue
                         if not self._can_retry_plain(exc, plain, options): raise
                         options.update(reasoning_effort=None, _omit_reasoning=True)
+                        used = retry + 1
                         metadata = {'effective_reasoning': None, 'reasoning_escalation': False, 'reasoning_fallback': True}
                         break
 

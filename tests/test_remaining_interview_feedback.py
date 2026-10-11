@@ -174,7 +174,12 @@ def test_interview_reasoning_falls_back_when_provider_rejects_it(monkeypatch):
     seen=[]
     def invoke(model,schema,policy,context):
         seen.append(model)
-        if 'environ' in model:raise ValueError("Unsupported parameter: 'reasoning_effort'")
+        if 'environ' in model:
+            # A real provider rejection is an HTTP 400 naming the parameter.
+            import httpx
+            from openai import APIStatusError
+            raise APIStatusError("Unsupported parameter: 'reasoning_effort'", body=None,
+                response=httpx.Response(400, request=httpx.Request('POST', 'https://provider.test')))
         return 'plain-result'
     monkeypatch.setattr(module,'invoke_structured',invoke)
     assert SharedMockInterviewModel(evaluation_purpose='agent').evaluate({'answer_untrusted':'x'})=='plain-result'

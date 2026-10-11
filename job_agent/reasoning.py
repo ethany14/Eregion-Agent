@@ -43,6 +43,24 @@ def escalation_enabled():
     return os.getenv('JOB_AGENT_REASONING_ESCALATION') == '1'
 
 
+REJECTION_WORDING = re.compile(r'unsupported|not supported|does not support|unknown|unrecognized|unrecognised|'
+    r'invalid|not allowed|not permitted|extra (?:inputs?|fields?)', re.I)
+
+
+def reasoning_rejection_text(status, text):
+    """A 400/422 response that names the reasoning parameter as unsupported."""
+    text = str(text or '')
+    return (status in (400, 422) and re.search(r'reasoning', text, re.I) is not None
+            and REJECTION_WORDING.search(text) is not None)
+
+
+def reasoning_parameter_rejected(exc):
+    status = getattr(exc, 'status_code', None)
+    if status is None:
+        status = getattr(getattr(exc, 'response', None), 'status_code', None)
+    return reasoning_rejection_text(status, exc)
+
+
 def rejection_retry_enabled():
     return os.getenv('JOB_AGENT_REASONING_REJECTION_RETRY') == '1'
 

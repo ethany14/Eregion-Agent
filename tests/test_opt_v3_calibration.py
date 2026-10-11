@@ -338,3 +338,67 @@ def test_interview_retains_legacy_retry_without_flag(monkeypatch):
         monkeypatch.setattr(interview, 'interview_model', lambda purpose: model)
         assert interview._invoke_interview(None, Tiny, 'system', 'test').answer == 3
     assert [body.get('reasoning_effort') for body in bodies] == ['low',None]
+
+
+def _status_error(status, message):
+    import httpx
+    from openai import APIStatusError
+    request = httpx.Request('POST', 'https://provider.test/v1/chat/completions')
+    return APIStatusError(message, response=httpx.Response(status, request=request), body=None)
+
+
+@pytest.mark.parametrize('exc,expected', [
+    (lambda: _status_error(400, "Unsupported parameter: 'reasoning_effort'"), True),
+    (lambda: _status_error(422, 'reasoning_effort is not supported by this model'), True),
+    # Review repro: a connection failure that mentions reasoning is not a rejection.
+    (lambda: __import__('openai').APIConnectionError(message='reasoning backend connection lost',
+        request=__import__('httpx').Request('POST', 'https://provider.test')), False),
+    (lambda: _status_error(503, 'reasoning service unavailable'), False),
+    (lambda: _status_error(400, 'Invalid messages: content too long'), False),
+    (lambda: TimeoutError('reasoning timed out'), False),
+])
+def test_only_explicit_parameter_rejection_counts_as_reasoning_rejection(exc, expected):
+    from job_agent.reasoning import reasoning_parameter_rejected
+    assert reasoning_parameter_rejected(exc()) is expected
+
+
+def test_connection_error_mentioning_reasoning_does_not_trigger_plain_retry(monkeypatch):
+    # Review repro: "reasoning backend connection lost" made the adapter call with low,
+    # then again without reasoning, on top of the transport retries.
+    import httpx
+    from openai import APIConnectionError
+    from job_agent.model import ProviderCompatibleChatOpenAI
+    from langchain_core.messages import HumanMessage
+    monkeypatch.setenv('JOB_AGENT_REASONING_REJECTION_RETRY', '1')
+    model = ProviderCompatibleChatOpenAI(model='m', api_key='k', base_url='https://provider.test/v1',
+                                         reasoning_effort='low', max_retries=1)
+    sent = []
+    def fail(self, messages, stop=None, run_manager=None, **kwargs):
+        sent.append(kwargs.get('reasoning_effort'))
+        raise APIConnectionError(message='reasoning backend connection lost', request=httpx.Request('POST', 'https://provider.test'))
+    monkeypatch.setattr('langchain_openai.ChatOpenAI._generate', fail)
+    monkeypatch.setattr('time.sleep', lambda *_: None)
+    with pytest.raises(APIConnectionError):
+        model._generate([HumanMessage(content='x')])
+    assert sent == ['low', 'low']  # transport retries only, never a plain retry
+
+
+def test_plain_retry_shares_one_retry_budget(monkeypatch):
+    import httpx
+    from openai import APIConnectionError
+    from job_agent.model import ProviderCompatibleChatOpenAI
+    from langchain_core.messages import HumanMessage
+    monkeypatch.setenv('JOB_AGENT_REASONING_REJECTION_RETRY', '1')
+    model = ProviderCompatibleChatOpenAI(model='m', api_key='k', base_url='https://provider.test/v1',
+                                         reasoning_effort='low', max_retries=2)
+    sent = []
+    def respond(self, messages, stop=None, run_manager=None, **kwargs):
+        sent.append(kwargs.get('reasoning_effort'))
+        if len(sent) == 1:
+            raise _status_error(400, "Unsupported parameter: 'reasoning_effort'")
+        raise APIConnectionError(message='connection lost', request=httpx.Request('POST', 'https://provider.test'))
+    monkeypatch.setattr('langchain_openai.ChatOpenAI._generate', respond)
+    monkeypatch.setattr('time.sleep', lambda *_: None)
+    with pytest.raises(APIConnectionError):
+        model._generate([HumanMessage(content='x')])
+    assert sent == ['low', None, None]  # 3 attempts total = max_retries + 1, not 3 + 3

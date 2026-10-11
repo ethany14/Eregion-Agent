@@ -69,7 +69,7 @@ class FastDecisions:
             self._cache.clear()
 
     def _request(self, payload):
-        from job_agent.reasoning import rejection_retry_enabled
+        from job_agent.reasoning import rejection_retry_enabled, reasoning_rejection_text
         from agent_runtime.provider_usage import provider_call, token_counts, usage_scope, current_scope, input_reservation
         for plain in (False, True):
             with usage_scope(effective_reasoning=payload.get('reasoning_effort'),
@@ -86,7 +86,7 @@ class FastDecisions:
                         usage.update(token_counts(response.json().get('usage')))
                     except (ValueError, AttributeError):
                         pass
-            if rejection_retry_enabled() and not plain and payload.get('reasoning_effort') and response.status_code in {400, 422} and 'reasoning' in response.text.lower():
+            if rejection_retry_enabled() and not plain and payload.get('reasoning_effort') and reasoning_rejection_text(response.status_code, response.text):
                 payload = {k:v for k,v in payload.items() if k != 'reasoning_effort'}
                 continue
             response.extensions['reasoning_attempts'] = 2 if plain else 1
