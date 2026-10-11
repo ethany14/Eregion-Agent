@@ -105,7 +105,11 @@ def resume_analysis_from_snapshot(
     for item in snapshot.items:
         category = (item.category or "").casefold()
         section = normalize_text(item.source_section or "")
-        if category == "education" or "education" in section:
+        if section in {"summary", "profile", "professional summary"}:
+            entry_type = "summary"
+        elif section in {"resume", "other"} and not any((item.employer_or_project, item.role, item.start_date, item.end_date)):
+            entry_type = "other"
+        elif category == "education" or "education" in section:
             entry_type = "education"
         elif category == "project" or "project" in section:
             entry_type = "project"

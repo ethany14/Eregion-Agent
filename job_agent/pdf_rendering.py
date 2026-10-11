@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from html import escape
 from io import BytesIO
 
@@ -145,9 +146,21 @@ def render_tailored_resume_pdf(value: TailoredResume | dict, *, _compact_spacing
             ))
         if entry.location:
             rows.append(Paragraph(_safe(entry.location), meta_style))
-        if entry.bullets and section_type != "education":
+        bullets = entry.bullets
+        if section_type == "education":
+            # The source line often repeats the rendered header verbatim. Drop only a
+            # bullet with nothing beyond header fields; qualifiers such as
+            # "In progress" or "expected" stay visible.
+            def header_only(text: str) -> bool:
+                rest = text
+                for value in (entry.heading, entry.subheading, entry.location, entry.start_date, entry.end_date):
+                    if value:
+                        rest = re.sub(r"\s+".join(map(re.escape, value.split())), " ", rest, flags=re.I)
+                return not re.search(r"[A-Za-z0-9]", rest)
+            bullets = [claim for claim in bullets if not header_only(claim.text)]
+        if bullets:
             rows.append(ListFlowable(
-                [ListItem(Paragraph(_safe(claim.text), bullet_style), leftIndent=9) for claim in entry.bullets],
+                [ListItem(Paragraph(_safe(claim.text), bullet_style), leftIndent=9) for claim in bullets],
                 bulletType="bullet", bulletFontName="Helvetica", bulletFontSize=5,
                 start="square", leftIndent=11, bulletOffsetY=1.5, spaceAfter=1 if _compact_spacing else 2,
             ))

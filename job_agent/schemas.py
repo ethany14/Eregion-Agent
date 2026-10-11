@@ -324,7 +324,7 @@ class ResumeQualityIssue(AnalysisModel):
         "empty_section", "unformatted_skill_block", "claim_without_evidence",
         "unknown_evidence_id", "legacy_source_entry", "entry_source_mismatch",
         "source_metadata_mismatch", "unsupported_header_metadata",
-        "cross_source_similarity",
+        "cross_source_similarity", "unresolved_source_structure",
     ]
     message: NonEmptyString
     claim_ids: list[str] = Field(default_factory=list)

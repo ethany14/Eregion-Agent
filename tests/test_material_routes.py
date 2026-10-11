@@ -21,8 +21,13 @@ def test_library_lists_latest_documents_with_status_and_renders_versions(career)
         assert resume['pdf'].endswith('/resume.pdf') and client.get(resume['pdf']).status_code == 200
         detail = client.get(f"/api/materials/{resume['pack_id']}/{resume['pack_item_id']}").json()
         assert detail['current_version'] == resume['version'] and detail['versions']
+        assert resume['document_version'] == detail['versions'][-1]['version']
         assert 'Python' in detail['versions'][-1]['text']
         assert client.get(f"/api/materials/{resume['pack_id']}/missing-item").status_code == 404
 
         approve(c, pack)
-        assert {m['status'] for m in client.get('/api/materials').json()['materials']} == {'approved'}
+        approved = client.get('/api/materials').json()['materials']
+        assert {m['status'] for m in approved} == {'approved'}
+        approved_resume = next(m for m in approved if m['artifact_type'] == 'tailored_resume')
+        assert approved_resume['document_version'] == resume['document_version']
+        assert approved_resume['version'] > resume['version']

@@ -714,7 +714,7 @@ def test_custom_resume_analysis_preserves_verbatim_evidence_text():
     assert outcome.updates["resume_analysis"].evidence[0].exact_text == verbatim
 
 
-def test_custom_loop_retries_then_discards_non_verbatim_model_evidence(custom_runtime):
+def test_custom_loop_repairs_education_with_contiguous_source_evidence(custom_runtime):
     analysis = ResumeAnalysis(
         summary="Developer",
         skills=["Python"],
@@ -757,12 +757,13 @@ def test_custom_loop_retries_then_discards_non_verbatim_model_evidence(custom_ru
     outcome = loop._execute_step(state)
     grounded = ResumeAnalysis.model_validate(outcome.updates["resume_analysis"])
 
-    assert [item.exact_text for item in grounded.evidence] == [
-        "Built Python APIs."
-    ]
-    assert len(grounded.source_entries) == 1
+    assert "Built Python APIs." in [item.exact_text for item in grounded.evidence]
+    from job_agent.domain import normalize_text
+    assert all(normalize_text(item.exact_text) in normalize_text(state.resume_text) for item in grounded.evidence)
+    assert "Example University\nExpected May 2027" not in [item.exact_text for item in grounded.evidence]
+    assert any(item.entry_type=='education' for item in grounded.source_entries)
     assert grounded.source_entries[0].entry_type == "experience"
-    assert [call[0] for call in analyzer.calls].count(ResumeAnalysis) == 2
+    assert [call[0] for call in analyzer.calls].count(ResumeAnalysis) == 1
 
 
 def test_verifier_rejects_claim_without_evidence_ids():

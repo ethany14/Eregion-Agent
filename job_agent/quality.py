@@ -244,7 +244,7 @@ def affirmative_skill_clauses(text):
     for clause in positive:
         # Keep source wording and qualifiers while representing a source list
         # as individual claims, as required by the shared resume validator.
-        for part in re.split(r'\s*(?:[,|•]|\band\b)\s*', clause):
+        for part in skill_items(clause):
             part = part.strip().strip('.')
             if not part:
                 continue
@@ -253,6 +253,17 @@ def affirmative_skill_clauses(text):
             else:
                 items.append(part)
     return items
+
+
+def skill_items(text):
+    """Split list separators outside qualifiers such as AWS (EKS, RDS)."""
+    parts=[];start=0;depth=0
+    for match in re.finditer(r'[()]|[,|•;]|\band\b',text):
+        token=match.group()
+        if token=='(':depth+=1
+        elif token==')':depth=max(0,depth-1)
+        elif depth==0:parts.append(text[start:match.start()]);start=match.end()
+    return [*parts,text[start:]]
 
 
 def education_header_only(text, source):
@@ -391,6 +402,14 @@ def validate_resume_structure(
                 code="unsupported_header_metadata",
                 message="Resume header contains text not present in the source resume.",
             ))
+        from job_agent.resume_layout import DATE_RANGE
+        if DATE_RANGE.search(source_resume_text):
+            for source in source_entries:
+                if source.entry_type in {'experience','education'} and not source.organization and not source.start_date and not source.end_date:
+                    if not source.heading or normalize_claim_text(source.heading) in {'experience','education','work experience'}:
+                        issues.append(ResumeQualityIssue(code='unresolved_source_structure',
+                            message='A dated source section has no resolved entry ownership or dates. Re-extract its structure before generating a resume.',
+                            section_type=source.entry_type))
 
     for section in resume.sections:
         claims = [claim for entry in section.entries for claim in entry.bullets]
@@ -487,7 +506,7 @@ def validate_resume_structure(
                         message=f"{source.entry_type} source cannot appear in {section.section_type}.",
                         claim_ids=[claim.claim_id], section_type=section.section_type,
                     ))
-                if section.section_type == "skills" and re.search(r"[,;|•]|\band\b", claim.text, re.I):
+                if section.section_type == "skills" and len(skill_items(claim.text))>1:
                     issues.append(ResumeQualityIssue(
                         code="unformatted_skill_block",
                         message="Skills must be separate normalized items.",

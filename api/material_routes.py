@@ -58,6 +58,7 @@ def list_materials(runtime: SessionRuntime = Depends(get_session_runtime)):
         job = workspace.application_job(application.application_id)
         for pack, item in selected:
             verification = item.verification
+            versions = packs.versions(pack.pack_id,item.pack_item_id)
             materials.append({
                 "pack_id": pack.pack_id, "pack_item_id": item.pack_item_id,
                 "application_id": application.application_id, "application_status": application.status.value,
@@ -66,6 +67,7 @@ def list_materials(runtime: SessionRuntime = Depends(get_session_runtime)):
                 "source_question": item.source_question,
                 "status": item.status.value, "stale": pack.status.value == "stale",
                 "version": item.version, "updated_at": item.updated_at.isoformat(),
+                "document_version": versions[-1]['version'] if versions else None,
                 "is_latest_attempt": item.pack_item_id in latest_ids,
                 "requires_explicit_selection": item.pack_item_id not in latest_ids,
                 "verified": None if verification is None else verification.passed,
