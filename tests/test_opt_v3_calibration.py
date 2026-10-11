@@ -229,6 +229,18 @@ def test_window_pending_counter_survives_slice_restart():
     assert resumed.context.dropped_since_request == 2
 
 
+def test_report_does_not_blame_eviction_of_already_omitted_group():
+    from evals.opt_report import metrics
+    rows = [{'context_metrics': {'history_prefix_hash': 'c', 'history_group_id':'c',
+        'persistent_prefix_hash':'a', 'persistent_group_ids':['a','b','c'], 'replay_groups_evicted':2}},
+        {'context_metrics': {'history_prefix_hash':'d', 'history_group_id':'d',
+        'persistent_prefix_hash':'b', 'persistent_group_ids':['b','c','d'],
+        'persistent_groups_evicted':1, 'replay_groups_evicted':2}}]
+    result = metrics(rows)['prefix_changes']
+    assert result['history'] == result['request'] == 1
+    assert result['persistent'] == result['both'] == 0
+
+
 @pytest.mark.parametrize('lane', ['fast','fit'])
 def test_typesafe_default_rejection_one_attempt(lane, monkeypatch):
     from agent_runtime.fast_decisions import FastDecisions
@@ -309,3 +321,20 @@ def test_transport_retry_does_not_reenable_reasoning_after_fallback(monkeypatch,
     assert [body.get('reasoning_effort') for body in bodies] == ['low',None,None]
     assert [r['attempt'] for r in rows] == [1,2,3]
     assert [r.get('reasoning_fallback',False) for r in rows] == [False,True,True]
+
+
+def test_interview_retains_legacy_retry_without_flag(monkeypatch):
+    from agent_runtime.mock_interview import model as interview
+    monkeypatch.delenv('JOB_AGENT_REASONING_REJECTION_RETRY', raising=False)
+    bodies = []
+    def transport(request):
+        bodies.append(json.loads(request.content))
+        if len(bodies) == 1:
+            return httpx.Response(400, json={'error':{'message':'unsupported reasoning_effort'}})
+        return response('{"answer":3}')
+    with httpx.Client(transport=httpx.MockTransport(transport)) as client:
+        model = ProviderCompatibleChatOpenAI(model='test', api_key='fake', max_retries=0,
+            reasoning_effort='low', http_client=client)
+        monkeypatch.setattr(interview, 'interview_model', lambda purpose: model)
+        assert interview._invoke_interview(None, Tiny, 'system', 'test').answer == 3
+    assert [body.get('reasoning_effort') for body in bodies] == ['low',None]

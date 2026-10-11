@@ -607,12 +607,15 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
     persistent_dropped = window.dropped_since_request
     window.dropped_since_request = 0
     digest = lambda value: hashlib.sha256(encoded(value).encode()).hexdigest()
+    group_id = lambda group: digest({'revision': group.get('revision'), 'assistant': group['assistant']})
     return messages, {'request_text_chars': actual, 'limit_chars': max_chars,
                       'persistent_groups_evicted': persistent_dropped,
                       'history_prefix_hash': digest(history[0].model_dump()) if history else None,
                       'persistent_prefix_hash': digest(window.messages()[0].model_dump()) if window.groups else None,
                       'history_group_hash': digest(replay.groups[0]) if replay.groups else None,
                       'persistent_group_hash': digest(window.groups[0]) if window.groups else None,
+                      'history_group_id': group_id(replay.groups[0]) if replay.groups else None,
+                      'persistent_group_ids': [group_id(group) for group in window.groups],
                       'tools_hash': digest(tools), 'system_hash': digest(prompt),
                       'history_evicted': bool(evicted), 'replay_groups_evicted': evicted,
                       'protected_overflow': actual > max_chars, 'archived_values': len(archive.used),

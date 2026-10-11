@@ -59,6 +59,17 @@ def metrics(rows, *, include_groups=True):
             persistent = changed and bool(m.get('persistent_groups_evicted')) and m.get('persistent_prefix_hash') != old.get('persistent_prefix_hash')
             request_trim = changed and bool(m.get('replay_groups_evicted') or old.get('replay_groups_evicted')) and (
                 m.get('history_prefix_hash') != m.get('persistent_prefix_hash') or old.get('history_prefix_hash') != old.get('persistent_prefix_hash'))
+            if 'persistent_group_ids' in m:
+                # A persistent eviction of an already-unreplayed old group is
+                # not the cause of a changed request prefix. Track identity,
+                # independently of archive compaction changing group contents.
+                prior_id = old.get('history_group_id')
+                next_id = m.get('history_group_id')
+                retained = m['persistent_group_ids']
+                persistent = changed and bool(m.get('persistent_groups_evicted')) and prior_id is not None and prior_id not in retained
+                request_trim = changed and prior_id != next_id and bool(
+                    m.get('replay_groups_evicted') or old.get('replay_groups_evicted')) and (
+                    not persistent or bool(retained and next_id != retained[0]))
             transitions['history'] += int(changed)
             transitions['persistent'] += int(persistent)
             transitions['request'] += int(request_trim)
