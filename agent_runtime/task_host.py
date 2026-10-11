@@ -94,12 +94,35 @@ class TaskHost:
             # completed task just because no capability has run yet. Ordinary
             # answers use finish_task directly, without unrelated tool work.
             self.loop._progress(self.task_id, text[:4000])
+            if self.no_progress(turn, True):
+                return {'reason': 'no_progress'}
             return {'next': 'Your text was delivered as progress, not task completion. '
                 'Reconcile current_request with observed outcomes. Take the next useful action, '
                 'wait for an active capability, or explicitly call finish_task with your answer '
                 'or completed result and evidenced limitations. A promise is not a completed action. '
                 'For ordinary conversation or questions requiring no tools, finish_task can directly deliver the answer.',
                 'message_delivered': True, 'completion_required': True}
+
+    def no_progress(self, turn, stalled):
+        """A durable per-request circuit breaker, independent of loop slices."""
+        with self.loop.lock:
+            return self._no_progress_locked(turn,stalled)
+
+    def _no_progress_locked(self,turn,stalled):
+        state = self.state()
+        if state['chat_revision'] != turn.revision or not self.active():return False
+        prior = state.get('progress_guard', {})
+        count = prior.get('count', 0) if prior.get('revision') == turn.revision else 0
+        count = count + 1 if stalled else 0
+        self.loop.repository.change(self.task_id, progress_guard={'revision':turn.revision,'count':count})
+        if count < 3:return False
+        self.loop.repository.append(self.task_id, role='assistant', text=(
+            'I stopped because repeated steps produced no new evidence. Saved results are preserved; '
+            'the requested work is not yet complete. Open the saved results or retry with a different source or approach.'))
+        self.loop.repository.change(self.task_id, status='needs_input', model_activity=None,
+            error={'stage':'decision','code':'no_progress','retryable':True,
+                   'message':'Repeated steps produced no new evidence. Saved work is preserved; the request is incomplete.'})
+        return True
 
     def execute(self, call, turn):
         from agent_runtime.task_loop import now
@@ -161,12 +184,14 @@ class TaskHost:
         if repeated >= 1 and not control:
             outcome['progress_feedback'] = ('No new evidence from this action. Change query, route, source or capability. '
                 'If alternatives are exhausted, finish with verified results and the limitation.')
+        stalled = bool(repeated and not control)
         wait_after_read = getattr(self.loop.harness, 'wait_after_repeated_read', None)
         if repeated and not outcome.get('error') and wait_after_read:
             with self.loop.lock:
                 if self.active() and self.revision() == turn.revision:
                     wait = wait_after_read(self.state(), name)
                     if wait:
+                        stalled = False
                         outcome['background_wait'] = self.loop._control(
                             self.task_id, 'wait_for_result', wait, self.observed_state)
                         outcome['progress_feedback'] = (
@@ -186,6 +211,7 @@ class TaskHost:
             return None
         if latest['status'] in {'needs_input', 'waiting', 'completed'} or not self.active():
             return {'reason': latest['status']}
+        if self.no_progress(turn, stalled):return {'reason':'no_progress'}
         return None
 
     def image_message(self, image):

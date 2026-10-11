@@ -134,6 +134,19 @@ class TaskLoop:
                 error=None,model_activity=None,
                 visual_fallback=state['visual_fallback'] if visual_fallback is None else visual_fallback)
             self.harness.control(state,'pause' if pause else 'resume' if resume else 'feedback')
+            route=getattr(self.harness,'route_user_control',None)
+            if not hold and route:
+                try:routed=route(state,message)
+                except Exception as exc:
+                    failure=task_failure(exc,'decision')
+                    logger.warning('Task control failure: task=%s type=%s',task_id,type(exc).__name__)
+                    self.repository.append(task_id,role='assistant',text=failure['message'])
+                    return self.repository.change(task_id,status='needs_input',error=failure,model_activity=None)
+                if routed:
+                    self.repository.append(task_id,role='assistant',text=routed['text'])
+                    return self.repository.change(task_id,lambda s:{'history':[*s['history'],
+                        {'tool':routed['tool'],'arguments':{'message_id':message_id},'result':routed['result'],
+                         'chat_revision':s['chat_revision'],'at':now()}][-24:]},status='completed',plan=[])
             if not hold:self.schedule(task_id)
             return state
 

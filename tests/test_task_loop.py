@@ -116,7 +116,7 @@ def test_unchanged_tool_results_yield_feedback_then_one_question(database):
     repo=TaskRepository(database.session_factory);harness=Harness()
     class AdaptiveModel(ToolModel):
         def invoke(self, messages, tools):
-            if self.calls % 6 == 5:
+            if self.calls % 3 == 2:
                 assert any('progress_feedback' in str(m.content) for m in messages)
                 self.calls += 1
                 return AIMessage(content='',tool_calls=[{'id':str(self.calls),'name':'ask_user',
@@ -127,12 +127,12 @@ def test_unchanged_tool_results_yield_feedback_then_one_question(database):
     try:
         task=loop.start('Inspect this task.','repeat-test')
         state=settled(repo,task['task_id'])
-        assert state['status']=='needs_input' and model.calls==6
+        assert state['status']=='needs_input' and model.calls==3
         assert len([m for m in state['messages'] if m['role']=='assistant'])==1
         calls=model.calls;time.sleep(.1);assert model.calls==calls
         loop.chat(task['task_id'],'Try again after my correction.','new-reply')
         settled(repo,task['task_id'])
-        assert model.calls==12  # New user input starts a fresh progress window.
+        assert model.calls==6  # New user input starts a fresh progress window.
     finally:loop.close()
 
 

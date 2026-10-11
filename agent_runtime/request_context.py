@@ -107,6 +107,7 @@ class ContextArchive:
                   'chars': len(text), 'content': text[offset:end],
                   'next_offset': end if end < len(text) else None,
                   'read_progress': progress}
+        if exhausted:result['no_new_evidence']=True
         # A flag cannot turn an already-visible immutable range into new evidence.
         # Re-fetch it only when compaction actually removed it from the request.
         visible = self.visible_ranges.get(key, [])
@@ -150,7 +151,9 @@ class ContextArchive:
     @staticmethod
     def resource_identity(value):
         if not isinstance(value, dict) or not value.get('status'): return None
-        for key in ('run_id','pack_id','application_id'):
+        # Interviews also carry their parent application_id. That relationship
+        # must never make a live interview look like an obsolete job snapshot.
+        for key in ('run_id','pack_id','mock_interview_id','application_id'):
             if value.get(key): return key + ':' + str(value[key])
         return None
 
@@ -162,7 +165,7 @@ class ContextArchive:
     def record_resource(self, result):
         identity = self.resource_identity(result)
         if not identity: return
-        summary = {k:result[k] for k in ('run_id','pack_id','application_id','status','version','message',
+        summary = {k:result[k] for k in ('run_id','pack_id','application_id','mock_interview_id','current_question','status','version','message',
             'pending_fields','material_overview','match_score','result_at','observed_answers','documents','input_request','detail_hint') if k in result}
         prior = self.resources.get(identity, {}).get('summary', {})
         if isinstance(prior.get('version'), int) and isinstance(result.get('version'), int) and result['version'] < prior['version']: return
@@ -200,7 +203,10 @@ class ContextArchive:
         before, after = ContextArchive.item_versions(value), ContextArchive.item_versions(current)
         if before and after:
             return before != after or value.get('status') != current.get('status')
-        return latest.get('digest') != hashlib.sha256(encoded(value).encode()).hexdigest()
+        # A compact projection is not a new/old version merely because it lacks
+        # heavy fields. Compare only shared authoritative state, not JSON shape.
+        return any(key in value and key in current and value[key]!=current[key] for key in
+            ('status','pending_fields','input_request','observed_answers','current_question'))
 
     def evidence_window(self, max_chars=9000):
         """Keep exact recently accessed ranges once, independently of tool replay.
@@ -297,12 +303,16 @@ class ContextArchive:
         self.record_resource(result)
         if len(encoded(result)) <= 5500:
             return result
-        summary = {**self.reference(result), 'available_keys': list(result) if isinstance(result, dict) else []}
+        # Runtime feedback (for example the repeated-read notice) is not part of the
+        # source data. Hashing it into the archive ref would mint a new "unread" ref
+        # for identical content each time the notice appears or disappears.
+        stable = {k: v for k, v in result.items() if k != 'progress_feedback'} if isinstance(result, dict) else result
+        summary = {**self.reference(stable), 'available_keys': list(stable) if isinstance(stable, dict) else []}
         if not isinstance(result, dict):
             return summary
         for key in ('error', 'error_code', 'next', 'progress_feedback', 'retryable', 'saved', 'failed', 'action_performed', 'recovery',
                     'url', 'title', 'heading', 'observation_id', 'blocked', 'control_count', 'control_offset',
-                    'text_offset', 'text_length', 'region_ref', 'application_id', 'pack_id', 'run_id',
+                    'text_offset', 'text_length', 'region_ref', 'application_id', 'pack_id', 'run_id', 'mock_interview_id', 'current_question',
                     'status', 'version', 'match_score', 'requirement_counts', 'gaps', 'result_at',
                     'waiting_for_user', 'outcome', 'needs_review', 'verification', 'match_overview',
                     'message', 'input_request', 'delivered_user_message_ids', 'pending_fields', 'observed_answers', 'material_refs', 'material_overview', 'material_choices', 'detail_hint'):
@@ -384,7 +394,7 @@ def compact_snapshot(snapshot, archive):
                     if part == 'result' and isinstance(data, dict):
                         # Keep actionable outcomes; never replace failure with success.
                         for name in ('error', 'error_code', 'next', 'saved', 'filled', 'failed', 'waiting_for_user', 'progress_feedback', 'action_performed', 'recovery',
-                                     'application_id', 'pack_id', 'run_id', 'status', 'version', 'match_score',
+                                     'application_id', 'pack_id', 'run_id', 'mock_interview_id', 'current_question', 'status', 'version', 'match_score',
                                      'requirement_counts', 'gaps', 'result_at', 'message', 'pending_fields',
                                      'material_overview', 'material_choices', 'material_refs', 'observed_answers',
                                      'input_request', 'delivered_user_message_ids', 'documents', 'detail_hint'):
@@ -400,6 +410,31 @@ def compact_snapshot(snapshot, archive):
     return value
 
 
+def compact_resources(key,rows,archive):
+    """Keep a list of live objects, with heavy contents available per object.
+
+    Replacing the entire list with a reference hides the currently answerable
+    question and encourages repeated retrieval of old resources.
+    """
+    keys={'interviews':('mock_interview_id','status','version','interview','question','current_question',
+                         'latest_feedback','report_available','failure'),
+          'materials':('pack_id','application_id','status','version','material_overview','items'),
+          'jobs':('application_id','title','company','url','status','match_score','score_range',
+                  'analysis_status','score_algorithm','score_valid_until','requirement_counts','gaps')}
+    result=[]
+    for row in rows:
+        if not isinstance(row,dict):continue
+        summary={**archive.reference(row)}
+        for field in keys[key]:
+            if field not in row:continue
+            value=row[field]
+            if key=='materials' and field=='items' and isinstance(value,list):
+                value=[{k:item[k] for k in ('pack_item_id','artifact_type','status','version','verification') if k in item} for item in value]
+            summary[field]=value if len(encoded(value))<=4000 else archive.reference(value)
+        result.append(summary)
+    return result
+
+
 def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000, repair=None):
     """Account for system + tool schema + transcript + observation together."""
     archive.used.clear()
@@ -410,12 +445,19 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
             'Answer the current request using live outcomes, including completed background capabilities. '
             'Do not claim that an action was not performed when its observed result is present.\n')
     # Only live domain observations update freshness, never history/replay envelopes.
-    for key in ('applications', 'materials', 'jobs'):
+    for key in ('applications', 'materials', 'jobs', 'interviews'):
         for resource in snapshot.get(key, []) if isinstance(snapshot.get(key), list) else []:
             archive.record_resource(resource)
     # Reserve exact accessed evidence before evicting transient tool messages.
     # Old conversation prose is cheaper to retrieve than the text just requested.
     snapshot = json.loads(encoded(snapshot))
+    # Keep actionable identities inline even when complete domain objects move
+    # behind references. A control action must not require searching old text.
+    resources = {key:[{k:row[k] for k in
+        ('mock_interview_id','application_id','pack_id','run_id','status','version','current_question','input_request')
+        if k in row} for row in snapshot.get(key, []) if isinstance(row,dict)][-10:]
+        for key in ('interviews','materials','jobs') if isinstance(snapshot.get(key),list)}
+    if resources:snapshot['live_resources']=resources
     rows = snapshot.get('messages', [])
     last_user = next((i for i in range(len(rows)-1, -1, -1) if rows[i].get('role') == 'user'), -1)
     for i, message in enumerate(rows):
@@ -467,7 +509,7 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
         for key in ('previous_recommendations', 'recommended_jobs', 'interviews', 'materials', 'jobs', 'job_alerts'):
             if key not in live or len(encoded(live[key])) <= 600: continue
             before = len(encoded(live[key]))
-            live[key] = archive.reference(live[key], preview=200)
+            live[key] = compact_resources(key,live[key],archive) if key in {'interviews','materials','jobs'} and isinstance(live[key],list) else archive.reference(live[key],preview=200)
             size += len(encoded(live[key])) - before
             if size <= max_chars: break
     if size > max_chars:

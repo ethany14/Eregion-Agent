@@ -320,7 +320,8 @@ def test_batch_rejects_new_conditional_fields_before_any_action(monkeypatch):
     host = ApplicationHost(session,object(),active=lambda:True,reserve=lambda _:True,report=lambda *args:None)
     turn = host.observe()
     with pytest.raises(ToolArgumentsError, match='newly revealed'):
-        host.validate_batch([{'args':{'field_key':'first'}},{'args':{'field_key':'revealed-after-first'}}],turn)
+        host.validate_batch([{'name':'type_from_source','args':{'field_key':'first'}},
+            {'name':'type_from_source','args':{'field_key':'revealed-after-first'}}],turn)
     assert not browser.fields[0]['value']
 
 def test_document_replacement_invalidates_memory_revision_and_close_unsubscribes(tmp_path):

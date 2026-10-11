@@ -20,6 +20,10 @@ def call(name, args=None, identifier='call'):
     return {'name': name, 'args': args or {}, 'id': identifier}
 
 
+def finish(text):
+    return AIMessage(content='',tool_calls=[call('finish_task',{'text':text},'finish')])
+
+
 def settled(repo, task_id, timeout=6):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
@@ -79,7 +83,7 @@ class LoopChecks(unittest.TestCase):
         return loop, state['task_id']
 
     def test_plain_reply_completes_without_fabricated_question(self):
-        model = Model([AIMessage(content='Hello!')])
+        model = Model([finish('Hello!')])
         _, task = self.start(model)
         state = settled(self.repo, task)
         self.assertEqual(state['status'], 'completed')
@@ -88,19 +92,19 @@ class LoopChecks(unittest.TestCase):
         self.assertTrue(state['loop_runtime']['events'])
 
     def test_read_batch_and_complete_transcript(self):
-        def finish(messages):
+        def verify_batch(messages):
             outputs = [m for m in messages if isinstance(m, ToolMessage)]
             self.assertEqual([m.tool_call_id for m in outputs], ['a', 'b'])
-            return AIMessage(content='Both records were read.')
+            return finish('Both records were read.')
         model = Model([AIMessage(content='Reading both records.', tool_calls=[
-            call('read_item', {'id': 1}, 'a'), call('read_item', {'id': 2}, 'b')]), finish])
+            call('read_item', {'id': 1}, 'a'), call('read_item', {'id': 2}, 'b')]), verify_batch])
         _, task = self.start(model)
         self.assertEqual(settled(self.repo, task)['status'], 'completed')
         self.assertEqual(self.harness.reads, [1, 2])
 
     def test_mutations_wait_for_fresh_observation(self):
         model = Model([AIMessage(content='', tool_calls=[call('write_item', {'value': 'first'}, 'a'),
-            call('write_item', {'value': 'second'}, 'b')]), AIMessage(content='One write completed.')])
+            call('write_item', {'value': 'second'}, 'b')]), finish('One write completed.')])
         _, task = self.start(model)
         state = settled(self.repo, task)
         self.assertEqual(self.harness.writes, ['first'])
@@ -110,7 +114,7 @@ class LoopChecks(unittest.TestCase):
     def test_invalid_tool_args_recover_without_effect(self):
         model = Model([AIMessage(content='', tool_calls=[call('read_item', {'id': 'wrong'})]),
                        AIMessage(content='', tool_calls=[call('read_item', {'id': 2}, 'correct')]),
-                       AIMessage(content='Read successfully.')])
+                       finish('Read successfully.')])
         _, task = self.start(model)
         state = settled(self.repo, task)
         self.assertEqual(self.harness.reads, [2])
@@ -118,7 +122,7 @@ class LoopChecks(unittest.TestCase):
 
     def test_tool_context_survives_worker_slice(self):
         responses = [AIMessage(content='', tool_calls=[call('read_item', {'id': i}, f'r{i}')]) for i in range(13)]
-        responses.append(AIMessage(content='Finished all reads.'))
+        responses.append(finish('Finished all reads.'))
         model = Model(responses)
         _, task = self.start(model)
         state = settled(self.repo, task)
@@ -134,7 +138,7 @@ class LoopChecks(unittest.TestCase):
         loop.close(); self.loops.remove(loop)
         def resumed(messages):
             self.assertTrue(any(isinstance(m, ToolMessage) and 'saved' in m.content for m in messages))
-            return AIMessage(content='The saved write is still here.')
+            return finish('The saved write is still here.')
         next_model = Model([resumed])
         second = TaskLoop(self.repo, self.harness, model_factory=lambda: next_model)
         self.loops.append(second)
@@ -147,7 +151,7 @@ class LoopChecks(unittest.TestCase):
         def slow(messages):
             entered.set(); release.wait(8)
             return AIMessage(content='', tool_calls=[call('write_item', {'value': 'obsolete'})])
-        model = Model([slow, AIMessage(content='Following the correction.')])
+        model = Model([slow, finish('Following the correction.')])
         loop, task = self.start(model)
         try:
             self.assertTrue(entered.wait(3))
@@ -163,7 +167,7 @@ class LoopChecks(unittest.TestCase):
         def unavailable(messages):
             raise ProviderError('synthetic-private-provider-body')
         model = Model([AIMessage(content='', tool_calls=[call('write_item', {'value': 'once'})]),
-                       unavailable, AIMessage(content='The write already completed.')])
+                       unavailable, finish('The write already completed.')])
         _, task = self.start(model, retry_delays=(0,))
         state = settled(self.repo, task)
         self.assertEqual(state['status'], 'completed')
@@ -173,7 +177,7 @@ class LoopChecks(unittest.TestCase):
 
     def test_truncated_response_cannot_execute_or_appear_in_chat(self):
         model = Model([AIMessage(content='Unfinished private text', response_metadata={'finish_reason': 'length'},
-            tool_calls=[call('write_item', {'value': 'bad'})]), AIMessage(content='A complete reply.')])
+            tool_calls=[call('write_item', {'value': 'bad'})]), finish('A complete reply.')])
         _, task = self.start(model)
         state = settled(self.repo, task)
         self.assertEqual(self.harness.writes, [])
@@ -194,7 +198,7 @@ class LoopChecks(unittest.TestCase):
             return AIMessage(content='', tool_calls=[call('read_item', {'id': 2}, 'second')])
         def revoked(messages):
             self.assertFalse(any(isinstance(m.content, list) for m in messages))
-            return AIMessage(content='Done.')
+            return finish('Done.')
         model = Model([AIMessage(content='', tool_calls=[call('read_item', {'id': 1})]), seen, revoked])
         loop = TaskLoop(self.repo, self.harness, model_factory=lambda: model)
         self.loops.append(loop)
@@ -210,7 +214,7 @@ class LoopChecks(unittest.TestCase):
         def inspect(messages):
             snapshot = json.loads(next(m.content for m in reversed(messages) if isinstance(m, HumanMessage)))
             self.assertEqual(snapshot['runtime_feedback']['interrupted_action']['tool'], 'write_item')
-            return AIMessage(content='The interrupted action needs observation; it was not replayed.')
+            return finish('The interrupted action needs observation; it was not replayed.')
         model = Model([inspect])
         loop = TaskLoop(self.repo, self.harness, model_factory=lambda: model)
         self.loops.append(loop)
@@ -225,7 +229,7 @@ class LoopChecks(unittest.TestCase):
         state, _ = self.repo.create('Resume work.', 'recover-failure')
         task = state['task_id']
         self.repo.change(task, loop_runtime={'inflight': {'tool': 'write_item', 'call_id': 'unknown', 'revision': 0}})
-        model = Model([fail, AIMessage(content='The interrupted action was not replayed.')])
+        model = Model([fail, finish('The interrupted action was not replayed.')])
         loop = TaskLoop(self.repo, self.harness, model_factory=lambda: model)
         self.loops.append(loop)
         self.assertEqual(settled(self.repo, task)['status'], 'needs_input')
@@ -248,7 +252,7 @@ class LoopChecks(unittest.TestCase):
 
     def test_wait_wakes_on_capability_change(self):
         model = Model([AIMessage(content='', tool_calls=[call('wait_for_result', {'kind': 'work', 'id': 'child'})]),
-                       AIMessage(content='The result arrived.')])
+                       finish('The result arrived.')])
         _, task = self.start(model)
         self.assertEqual(settled(self.repo, task)['status'], 'waiting')
         self.harness.version = 2

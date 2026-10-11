@@ -146,7 +146,8 @@ def test_protected_overflow_never_erases_user_instruction_or_authorization():
     value = {'messages': [{'role': 'user', 'text': 'latest instruction ' * 1000}],
              'candidate': {'work_authorization': False}, 'pending_question': {'text': 'Needs explicit approval'}}
     messages, metrics = prepare_request('s', [], ConversationWindow(), value, ContextArchive(), max_chars=1000)
-    assert json.loads(messages[-1].content) == value
+    view=json.loads(messages[-1].content)
+    assert all(view[key]==data for key,data in value.items())
     assert metrics['protected_overflow']
 
 
@@ -199,8 +200,10 @@ def test_kernel_reads_archived_result_without_dispatching_a_domain_action(tmp_pa
     def finish(messages):
         output = next(m for m in reversed(messages) if isinstance(m, ToolMessage))
         result = json.loads(output.content)
-        assert 'Confirmed detail' in result['content'] and result['next_offset'] == 3000
-        return AIMessage(content='The source is available.')
+        snapshot=json.loads(messages[-1].content)
+        exact=result.get('content','')+' '.join(v['content'] for v in snapshot.get('context_evidence',[]))
+        assert 'Confirmed detail' in exact and result['next_offset'] == 3000
+        return AIMessage(content='',tool_calls=[call('finish_task',{'text':'The source is available.'},'finish')])
     loop = TaskLoop(repo, harness, model_factory=lambda: Model([read, finish]))
     try:
         done = settled(repo, state['task_id'])
@@ -220,5 +223,8 @@ def test_context_read_pages_are_not_recursively_archived():
         snapshot = compact_snapshot({'history': [{'tool': 'read_context',
             'arguments': {'ref': reference}, 'result': page}]}, archive)
         assert snapshot['history'] == []  # Access pages live only in the current ToolMessage.
-        assert archive.read(reference) == page
+        next_page=archive.read(reference)
+        assert next_page['ref']==reference and next_page['offset']>=page['offset']
+        assert 'context_ref' not in next_page
+        page=next_page
     assert set(archive.values) == original_refs
