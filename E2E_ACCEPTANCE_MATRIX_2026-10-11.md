@@ -318,3 +318,11 @@ F2 r2原独立check exit0/199哈希200含自身作为历史保留。本轮F3、�
 | E5 求职信 | 失败（writer lane通过，revision lane前置条件不成立） | `tmp/e5-cover-style-20261011-claude/`：1failed/57.49s，3calls/2601in/8260out完整账本。writer lane 10项自动检查全部通过（grounding、具体角色/公司/需求、第一人称、无僵硬开头、原不支持句删除），成稿见`cover-letter-writer.md`，**人工风格审阅待用户**。revision lane：原被拒稿经实时verifier本次判通过（awaiting_review≠needs_revision），reviser未执行——与上一轮相同的verifier对边界句判定不稳定。建议revision lane改用已有`frozen_verification=True`种子（保留真实reviser与修订后实时复验），需用户确认后再付费 |
 
 **其他离线修复**：`source_health.user_turn`容忍无id消息（`test_remaining_reply_language.py`原10处KeyError，8579945已复现）；面试结束测试改为等待排队结果；`capability_finished`修复丢失唤醒（30/30）；`pytest.ini`限定`testpaths=tests`（本地tmp/含有意失败复现）。
+
+### 续：用户批准的推荐顺序执行结果（2026-10-11）
+
+| 项 | 结果 | 证据与说明 |
+|---|---|---|
+| C16 排序子检查 | 测量缺陷已修（未付费复测） | 前述"反馈先于下一题"判断有误。三答案同时排队，Q2/Q3出现即被消费，轮询"当前题"永远看不到它们（记为inf）。原证据按系统持久化question.created_at换算：Q2 5.77s<F1 10.79s，Q3 12.73s<F2 15.72s，下一题确实先出现。检查改为取轮询与持久化时间的较早者（非模型时间戳），证据新增started_wall/question_persisted_seconds。离线重放原run通过；原失败xml保留 |
+| E5 r2 | 失败1项（根因已修，未再付费） | revision lane改用已有frozen_verification种子（真实reviser+修订后实时复验不变）。`tmp/e5-cover-style-20261011-claude-r2/`：4calls/4991in/9036out完整；两lane均awaiting_review、grounding通过，revision_count=1。唯一失败`original-revision:specific_role_company_need`：修订开头只剩角色+公司。**根因**：生产`style.cover_revision_notes`开头提示写"Employer needs can appear separately"，与writer提示（首段第二句写已验证需求）矛盾，reviser照做移走API reliability。已改为保留在开头段第二句，加回归；cover/pack相关150通过6跳过。人工风格审阅仍待用户 |
+| B6 r2 | 失败（外部来源阻断，非资历修复路径） | `tmp/remaining-live-analyst-20261011-claude-r2/`：1failed/148.54s，24主calls，283232in/8601out完整账本，needs_input/no_progress，0保存0评分0推荐。本次Indeed返回Cloudflare校验（r1可读）、LinkedIn登录、hiringcafe Cloudflare；剩余聚合列表页无单一职位正文，jooble/ziprecruiter HTTP错误，gainam被正确拒为人才库。同一search_jobs参数执行6次（重复守卫需连续2次无进展才启用，中间读取重置计数），未尝试公司招聘板。资历修复未被触发。B6结果依赖实时站点可达性，单次结果波动大（r1 2推荐/r2 0） |
