@@ -882,10 +882,17 @@ class CareerHarness:
         if args['kind']!='application':raise ValueError('Only browser applications currently run in the background; other tools return their result directly.')
         self.require_link(state,'application_runs',args['id'])
 
+    def capability_finished(self,args):
+        """Final application states never change again; waiting on them would never wake."""
+        if args.get('kind')!='application':return False
+        return self.applications.repository.get(args['id'])['status'] in {'submitted','submission_unknown','failed','cancelled'}
+
     def wake(self,state):
         wait = state.get('wait') or {}
         if wait.get('kind')=='application':
             child = self.applications.repository.get(wait['id'])
+            if child['status'] in {'submitted','submission_unknown','failed','cancelled'}:
+                return True  # Final: its token will never change, so release the wait now.
             return child['status'] not in {'queued','running','submitting'} and self.wait_token(wait)!=wait.get('token')
         return False
 

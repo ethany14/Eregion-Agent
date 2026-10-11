@@ -264,3 +264,18 @@ def test_quote_verification_tolerates_only_presentation_differences():
     assert locate("Led the team's data-quality work.", source)
     assert locate('Built 15 dashboards.', source) is None          # changed facts never verify
     assert locate('Wrote SQL pipelines to cut time', source) is None  # paraphrase never verifies
+
+
+# ---- 0.2: a wait on an already-finished application must never sleep forever -----------------
+def test_finished_application_is_never_waited_on():
+    from types import SimpleNamespace
+    from agent_runtime.career.harness import CareerHarness
+    harness = CareerHarness.__new__(CareerHarness)
+    child = {'run_id': 'r1', 'status': 'submitted', 'chat_revision': 0, 'messages': []}
+    harness.applications = SimpleNamespace(repository=SimpleNamespace(get=lambda run_id: child))
+    assert harness.capability_finished({'kind': 'application', 'id': 'r1'})
+    # A conversation already parked with an identical token is released by the monitor.
+    token = harness.wait_token({'id': 'r1'})
+    assert harness.wake({'wait': {'kind': 'application', 'id': 'r1', 'token': token}})
+    child['status'] = 'running'
+    assert not harness.capability_finished({'kind': 'application', 'id': 'r1'})
