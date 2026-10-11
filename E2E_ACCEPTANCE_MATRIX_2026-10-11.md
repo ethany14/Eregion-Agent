@@ -336,3 +336,29 @@ F2 r2原独立check exit0/199哈希200含自身作为历史保留。本轮F3、�
 | B6 r3 | 失败（外部阻断为主） | `tmp/remaining-live-analyst-20261011-claude-r3/`：1failed/268.25s，37主calls，553369in/24171out完整账本（主528120<1M），needs_input/no_progress；1评分（LinkedIn来源Associate Data Analyst 48.13，无资历证据，未推荐——资历修复使其未被误称junior）、0推荐。Indeed链接HTTP错误、ZipRecruiter/Jooble Cloudflare、gainam正确拒绝。**新行为**：agent首次调用公司boards（datadog/braze greenhouse、ramp ashby、plaid lever），但board结果只要求任一查询词，返回"Accounts Payable Analyst""AI Research Scientist - Data"等噪声。已改为与公开搜索相同的角色词规则（≥min(2,角色词数)，排除级别/填充词），回归`test_board_search_needs_role_terms_not_one_shared_word`；全量1770通过131跳过。未再付费复测 |
 
 **B6结论**：三次单跑r1 2推荐(1合格)/r2 0/r3 0评分推荐，主要受实时站点Cloudflare/登录阻断影响；本轮修复（资历证据、搜索进展判定、board回退及匹配）均离线验证，真实两岗目标仍未达成。
+
+### 续：B6 冻结 web / 脚本模型离线回放（2026-10-11）
+
+正式测试 `tests/test_b6_offline_replay.py` / fixture `tests/fixtures/b6_offline_web.json`
+已落地。fixture 203896 bytes，来源为上述 Claude r1/r2/r3 四类原证据；因原 tmp
+owner-only ACL，只读取用户提供的 `.codex-runs/b6-evidence/r1|r2|r3/` 相同副本，
+provenance 保留原路径及副本 SHA。真实公开记录、API 形状/异常投影与唯一合成
+Junior Data Analyst（New York，1-3 years）明确区分；未编造原始 HTTP body/status。
+
+真实 CareerService / TaskHost / harness / SQLite / recommend_job / 完成校验及原 evaluator
+运行：r1 20calls/2推荐但 qualified=1，Associate caveats 前置 Level unverified；
+r2 11calls/no_progress，第二次已见搜索立即给 no_new_evidence 和 boards 指引；
+r3 2calls，原20条噪声全部剔除，唯一合成 board 正例保留；correct 11calls/2合格推荐，
+completed、原 evaluator passed，最终 URL/0.0 点分与生产保存一致。
+评分复用既有离线 all-missing double，0.0 用于流程绑定验收，不是 live 评分质量判断。
+全部 replay 的实际 provider calls=0、网络尝试=0、申请=0、日程=0，未知 web IO 必须失败。
+
+新文件最终连续三次均 **6passed/1skipped**（唯一新增跳过为未运行的付费模型 lane），
+11.66/11.20/11.18s。本轮无生产改动，验证既有 `fa214ad` / `6808c7e` / `616c01a` 修复；
+未收费、未改 evaluator/阈值/预算或 tmp 原件。全量 **1763passed/132skipped/9failed/4errors/
+4subtests passed，586.09s**；全部13失败/错误在用户认可的14项命名管道 WinError 5
+例外集合内，另一项 MCP app 原失败测试本次通过；其余通过。按本轮离线标准验收通过，
+reviewer 仍须沙箱外全量复跑。当前配置将主仓库 `.git` 设为只读，无法创建 index.lock；
+已在可写目录生成基于当前 HEAD/同名分支的提交包，主分支尚未更新。
+来源、复现边界和验证见 [B6离线回放报告](docs/diagnostics/remaining-2026-10-11/b6-offline-replay.md)。
+**B6真实两岗标准仍失败，离线 passed 不替代 live 验收。**
