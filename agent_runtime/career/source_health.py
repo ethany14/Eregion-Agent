@@ -20,7 +20,8 @@ def blocked_hosts(state):
 
 
 def user_turn(state):
-    return state.get('user_turn_id') or next((m['id'] for m in reversed(state.get('messages',[])) if m.get('role')=='user'),None)
+    return state.get('user_turn_id') or next((m.get('id') for m in reversed(state.get('messages',[]))
+        if m.get('role')=='user' and m.get('id')),None)
 
 
 def active_sources(state):
