@@ -31,9 +31,15 @@ class JobExtraction(AnalysisModel):
     responsibilities: list[str]
 
     def expand(self) -> JobAnalysis:
-        requirements = []
+        requirements, seen = [], set()
         for group_index, statement in enumerate(self.statements):
             for atom_index, atom in enumerate(statement.requirements):
+                # The same requirement repeated in several sentences (or batches) is
+                # scored once; repeats inflate the requirement count and the variance.
+                key = (' '.join(atom.atomic_text.casefold().split()), atom.level)
+                if key in seen:
+                    continue
+                seen.add(key)
                 requirements.append(JobRequirement(
                     **atom.model_dump(), source_text=statement.source_text,
                     original_text=atom.atomic_text, requirement_group_id=f'g{group_index}',
@@ -62,7 +68,7 @@ IDs, grouping IDs and the legacy original_text copy are assigned by the applicat
 
 
 def extraction_signature():
-    return hashlib.sha256(json.dumps(['bounded-output-v2', REFERENCE_JOB_PROMPT, ReferencedJobExtraction.model_json_schema()],
+    return hashlib.sha256(json.dumps(['bounded-output-v3-context-filter', REFERENCE_JOB_PROMPT, ReferencedJobExtraction.model_json_schema()],
                                     sort_keys=True).encode()).hexdigest()
 
 
@@ -89,6 +95,21 @@ def numbered_sentences(text):
     pieces = [part.strip() for part in re.split(r'\n+|(?<=[.!?])\s+(?=[A-Z])', text) if part.strip()]
     return {f's{i}': part for i, part in enumerate(pieces)}
 
+def context_sentence_ids(text, sentences):
+    """Sentences inside benefits/salary/company/EEO sections or with legal boilerplate."""
+    from job_agent.jev_fit.core import boilerplate, job_units
+    units, found, cursor = job_units(text), set(), 0
+    for key, sentence in sentences.items():
+        position = text.find(sentence, cursor)
+        if position < 0:
+            continue
+        cursor = position + len(sentence)
+        section = next((u.get('section') for u in reversed(units) if u['start'] <= position), None)
+        if boilerplate({'text': sentence, 'section': section}):
+            found.add(key)
+    return found
+
+
 REFERENCE_JOB_PROMPT = JOB_EXTRACTION_PROMPT.replace(
     'Return one statement per source statement, copying its complete source_text verbatim ONCE.',
     'The source is a numbered sentence map. Return each source sentence_id instead of copying its text. Return responsibility_sentence_ids for responsibilities. Use only the supplied IDs.')
@@ -105,7 +126,10 @@ def extract_job(model, text):
     from contextvars import copy_context
     from job_agent.model import invoke_structured
     sentences = numbered_sentences(text)
-    ids = list(sentences)
+    context = context_sentence_ids(text, sentences)
+    # Benefits, salary, company and EEO text stays visible as context but is not
+    # extracted as requirements (it inflated counts to 90 for one posting).
+    ids = [key for key in sentences if key not in context] or list(sentences)
     groups = [ids[i:i + 8] for i in range(0, len(ids), 8)] if len(ids) > 12 else [ids]
     def extract(targets):
         payload = {'source_sentences': sentences, 'extract_sentence_ids': targets}
@@ -115,11 +139,21 @@ def extract_job(model, text):
         if any(s.sentence_id not in targets for s in result.statements) or any(k not in targets for k in result.responsibility_sentence_ids):
             raise ValueError('Job extraction crossed its assigned source sentences.')
         return result
+    def extract_with_retry(targets):
+        try:
+            return extract(targets)
+        except Exception as exc:
+            # A provider timeout or dropped connection on one batch retries that
+            # batch once, not the whole analysis.
+            name = type(exc).__name__.casefold()
+            if 'timeout' not in name and 'connection' not in name:
+                raise
+            return extract(targets)
     if len(groups) == 1:
-        results = [extract(groups[0])]
+        results = [extract_with_retry(groups[0])]
     else:
         with ThreadPoolExecutor(max_workers=3, thread_name_prefix='job-extraction') as pool:
-            results = [future.result() for future in [pool.submit(copy_context().run, extract, group) for group in groups]]
+            results = [future.result() for future in [pool.submit(copy_context().run, extract_with_retry, group) for group in groups]]
     merged = ReferencedJobExtraction(
         title=next((r.title for r in results if r.title), None),
         summary=next((r.summary for r in results if r.summary), ''),
