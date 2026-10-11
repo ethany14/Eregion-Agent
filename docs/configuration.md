@@ -225,3 +225,38 @@ fields are reported as missing/null. A saved last-request snapshot is labelled
 separately and never extrapolated to earlier attempts. Ratios with only partial
 cached/reasoning counters use known counters; consult the accompanying missing
 counts before comparing runs. No paid run is started by this command.
+# Stage 0 calibration controls
+
+- `JOB_AGENT_REASONING_REJECTION_RETRY=1` opts into one retry without the reasoning
+  parameter when a configured reasoning value is rejected. Default: off. Applies
+  to shared OpenAI-compatible, FastDecisions and Jev fit clients. No configured
+  value means no compatibility retry. Mock interview retains its existing retry.
+  Fallback attempts are recorded separately and cannot populate the original
+  reasoning configuration's cache entry.
+- `JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS` optionally caps all provider attempts
+  attributed to a career task, including nested scoring/extraction, failed calls,
+  configured SDK transport retries and reasoning retries. Unset preserves the
+  existing router budget. A nonnegative integer is required; zero stops before
+  the first provider attempt.
+- `JOB_AGENT_TASK_MAX_INPUT_TOKENS` optionally caps input use for the same task.
+  Before dispatch, text requests reserve serialized UTF-8 bytes plus 1,024 units
+  for framing, conservatively rather than treating character counts as tokens.
+  Provider-reported input tokens replace the reservation after completion.
+  Failed/unknown and in-flight requests retain their reservations; historical
+  unknown usage without a reservation, or image/audio requests without a known
+  estimate, stop before dispatch. This is conservative admission accounting,
+  not an assertion that a remote provider's tokenizer can be predicted exactly.
+
+Both task limits default to unset, use durable ledger rows (including discarded
+attempts), survive restart and are not reset by sending `continue`. Raising or
+removing a limit allows more work. Reservations are serialized in the SQLite task
+store, including across processes. Under a configured limit, missing/unwritable
+accounting or unsupported stores stop closed. Saved work remains available and
+the task stops as `needs_input` with `provider_budget`; it never claims completion.
+`UsageLedger.summary` exposes `provider_attempts`, `input_tokens`, `retries` and
+`budget_input_tokens` (reported usage plus retained reservations).
+
+New context metrics contain hashes and counts only: persistent groups dropped
+since the preceding request, request-copy groups dropped, first replayed message
+and first complete group's hashes, tools-array hash, and system-prompt hash.
+Trimming limits and request content are unchanged.

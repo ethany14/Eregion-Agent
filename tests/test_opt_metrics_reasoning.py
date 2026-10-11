@@ -90,7 +90,8 @@ def test_one_validation_escalation_with_ledger(monkeypatch, level, expected):
     assert rows[-1]['attempt'] == 2
 
 
-def test_reject_reasoning_retries_plain_once():
+def test_reject_reasoning_retries_plain_once(monkeypatch):
+    monkeypatch.setenv('JOB_AGENT_REASONING_REJECTION_RETRY', '1')
     bodies = []
     def transport(request):
         bodies.append(json.loads(request.content))
@@ -354,7 +355,8 @@ def test_fit_result_signature_includes_reasoning(tmp_path, monkeypatch):
     assert service.cache_signature() != low
 
 
-def test_async_provider_plain_fallback_is_bounded():
+def test_async_provider_plain_fallback_is_bounded(monkeypatch):
+    monkeypatch.setenv('JOB_AGENT_REASONING_REJECTION_RETRY', '1')
     import asyncio
     bodies = []
     def transport(request):
@@ -374,7 +376,8 @@ def test_async_provider_plain_fallback_is_bounded():
 
 
 @pytest.mark.parametrize('lane',['fast','fit'])
-def test_typesafe_plain_fallback_is_bounded(lane):
+def test_typesafe_plain_fallback_is_bounded(lane, monkeypatch):
+    monkeypatch.setenv('JOB_AGENT_REASONING_REJECTION_RETRY', '1')
     from contextvars import copy_context
     from agent_runtime.fast_decisions import FastDecisions
     from job_agent.jev_fit.settings import Settings
@@ -405,6 +408,7 @@ def test_typesafe_plain_fallback_is_bounded(lane):
 
 
 def test_fast_escalation_then_plain_fallback_counts_actual_attempts(monkeypatch):
+    monkeypatch.setenv('JOB_AGENT_REASONING_REJECTION_RETRY', '1')
     from agent_runtime.fast_decisions import FastDecisions
     from test_jev_singleflight import QUESTIONS, response as decision_response
     monkeypatch.setenv('JOB_AGENT_REASONING_ESCALATION','1')
