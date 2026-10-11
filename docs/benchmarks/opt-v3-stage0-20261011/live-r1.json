@@ -1,0 +1,868 @@
+{
+  "calls": 38,
+  "completed": 38,
+  "failed": 0,
+  "pending": 0,
+  "discarded": 0,
+  "retries": 0,
+  "input_tokens": 305354,
+  "output_tokens": 20642,
+  "unknown_usage_calls": 0,
+  "groups": [
+    {
+      "purpose": "resume_warmup:ResumeExtraction",
+      "model": "muse-spark-1.3-contributor",
+      "calls": 2,
+      "input_tokens": 1287,
+      "output_tokens": 5875,
+      "unknown_usage_calls": 0,
+      "cached_input_tokens": 497,
+      "reasoning_tokens": 5445,
+      "cache_hit_ratio": 0.3861693861693862,
+      "reasoning_share": 0.9268085106382978,
+      "composition_samples": 0,
+      "composition_averages": {},
+      "timing_seconds": {
+        "duration_seconds": {
+          "count": 2,
+          "p50": 22.1025,
+          "p95": 32.24865,
+          "max": 33.376
+        },
+        "queue_wait_seconds": null,
+        "provider_duration_seconds": null,
+        "persistence_seconds": null
+      },
+      "missing": {
+        "context_metrics": 2,
+        "queue_wait_seconds": 2,
+        "provider_duration_seconds": 2,
+        "persistence_seconds": 2,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "eviction": {
+        "samples": 0,
+        "requests": 0,
+        "groups": 0,
+        "frequency": null
+      },
+      "total_chars_average": null,
+      "prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      },
+      "persistent_evicted_groups": 0,
+      "group_prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      }
+    },
+    {
+      "purpose": "agent",
+      "model": "muse-spark-1.3-contributor",
+      "calls": 20,
+      "input_tokens": 249475,
+      "output_tokens": 7422,
+      "unknown_usage_calls": 0,
+      "cached_input_tokens": 100594,
+      "reasoning_tokens": 4268,
+      "cache_hit_ratio": 0.40322276781240607,
+      "reasoning_share": 0.575047157100512,
+      "composition_samples": 0,
+      "composition_averages": {},
+      "timing_seconds": {
+        "duration_seconds": {
+          "count": 20,
+          "p50": 3.5795,
+          "p95": 8.372750000000018,
+          "max": 32.612
+        },
+        "queue_wait_seconds": null,
+        "provider_duration_seconds": null,
+        "persistence_seconds": null
+      },
+      "missing": {
+        "context_metrics": 20,
+        "queue_wait_seconds": 20,
+        "provider_duration_seconds": 20,
+        "persistence_seconds": 20,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "eviction": {
+        "samples": 0,
+        "requests": 0,
+        "groups": 0,
+        "frequency": null
+      },
+      "total_chars_average": null,
+      "prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      },
+      "persistent_evicted_groups": 0,
+      "group_prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      }
+    },
+    {
+      "purpose": "jev:fit:extract_requirements",
+      "model": "jev-1.13.0",
+      "calls": 2,
+      "input_tokens": 23874,
+      "output_tokens": 3486,
+      "unknown_usage_calls": 0,
+      "cache_hit_ratio": null,
+      "reasoning_share": null,
+      "composition_samples": 0,
+      "composition_averages": {},
+      "timing_seconds": {
+        "duration_seconds": {
+          "count": 2,
+          "p50": 0.8925,
+          "p95": 0.96405,
+          "max": 0.972
+        },
+        "queue_wait_seconds": null,
+        "provider_duration_seconds": null,
+        "persistence_seconds": null
+      },
+      "missing": {
+        "context_metrics": 2,
+        "queue_wait_seconds": 2,
+        "provider_duration_seconds": 2,
+        "persistence_seconds": 2,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 2,
+        "reasoning_tokens": 2
+      },
+      "eviction": {
+        "samples": 0,
+        "requests": 0,
+        "groups": 0,
+        "frequency": null
+      },
+      "total_chars_average": null,
+      "prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      },
+      "persistent_evicted_groups": 0,
+      "group_prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      }
+    },
+    {
+      "purpose": "jev:fit:refine_extraction_yes_no",
+      "model": "jev-1.13.0",
+      "calls": 2,
+      "input_tokens": 7480,
+      "output_tokens": 906,
+      "unknown_usage_calls": 0,
+      "cache_hit_ratio": null,
+      "reasoning_share": null,
+      "composition_samples": 0,
+      "composition_averages": {},
+      "timing_seconds": {
+        "duration_seconds": {
+          "count": 2,
+          "p50": 0.21350000000000002,
+          "p95": 0.25265,
+          "max": 0.257
+        },
+        "queue_wait_seconds": null,
+        "provider_duration_seconds": null,
+        "persistence_seconds": null
+      },
+      "missing": {
+        "context_metrics": 2,
+        "queue_wait_seconds": 2,
+        "provider_duration_seconds": 2,
+        "persistence_seconds": 2,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 2,
+        "reasoning_tokens": 2
+      },
+      "eviction": {
+        "samples": 0,
+        "requests": 0,
+        "groups": 0,
+        "frequency": null
+      },
+      "total_chars_average": null,
+      "prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      },
+      "persistent_evicted_groups": 0,
+      "group_prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      }
+    },
+    {
+      "purpose": "jev:fit:condition_category_yes_no",
+      "model": "jev-1.13.0",
+      "calls": 4,
+      "input_tokens": 5970,
+      "output_tokens": 853,
+      "unknown_usage_calls": 0,
+      "cache_hit_ratio": null,
+      "reasoning_share": null,
+      "composition_samples": 0,
+      "composition_averages": {},
+      "timing_seconds": {
+        "duration_seconds": {
+          "count": 4,
+          "p50": 0.2265,
+          "p95": 0.258,
+          "max": 0.258
+        },
+        "queue_wait_seconds": null,
+        "provider_duration_seconds": null,
+        "persistence_seconds": null
+      },
+      "missing": {
+        "context_metrics": 4,
+        "queue_wait_seconds": 4,
+        "provider_duration_seconds": 4,
+        "persistence_seconds": 4,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 4,
+        "reasoning_tokens": 4
+      },
+      "eviction": {
+        "samples": 0,
+        "requests": 0,
+        "groups": 0,
+        "frequency": null
+      },
+      "total_chars_average": null,
+      "prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      },
+      "persistent_evicted_groups": 0,
+      "group_prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      }
+    },
+    {
+      "purpose": "jev:fit:support_yes_no",
+      "model": "jev-1.13.0",
+      "calls": 2,
+      "input_tokens": 9089,
+      "output_tokens": 1464,
+      "unknown_usage_calls": 0,
+      "cache_hit_ratio": null,
+      "reasoning_share": null,
+      "composition_samples": 0,
+      "composition_averages": {},
+      "timing_seconds": {
+        "duration_seconds": {
+          "count": 2,
+          "p50": 0.23249999999999998,
+          "p95": 0.25815,
+          "max": 0.261
+        },
+        "queue_wait_seconds": null,
+        "provider_duration_seconds": null,
+        "persistence_seconds": null
+      },
+      "missing": {
+        "context_metrics": 2,
+        "queue_wait_seconds": 2,
+        "provider_duration_seconds": 2,
+        "persistence_seconds": 2,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 2,
+        "reasoning_tokens": 2
+      },
+      "eviction": {
+        "samples": 0,
+        "requests": 0,
+        "groups": 0,
+        "frequency": null
+      },
+      "total_chars_average": null,
+      "prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      },
+      "persistent_evicted_groups": 0,
+      "group_prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      }
+    },
+    {
+      "purpose": "jev:fit:focused_yes_no",
+      "model": "jev-1.13.0",
+      "calls": 2,
+      "input_tokens": 3274,
+      "output_tokens": 297,
+      "unknown_usage_calls": 0,
+      "cache_hit_ratio": null,
+      "reasoning_share": null,
+      "composition_samples": 0,
+      "composition_averages": {},
+      "timing_seconds": {
+        "duration_seconds": {
+          "count": 2,
+          "p50": 0.1955,
+          "p95": 0.24725,
+          "max": 0.253
+        },
+        "queue_wait_seconds": null,
+        "provider_duration_seconds": null,
+        "persistence_seconds": null
+      },
+      "missing": {
+        "context_metrics": 2,
+        "queue_wait_seconds": 2,
+        "provider_duration_seconds": 2,
+        "persistence_seconds": 2,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 2,
+        "reasoning_tokens": 2
+      },
+      "eviction": {
+        "samples": 0,
+        "requests": 0,
+        "groups": 0,
+        "frequency": null
+      },
+      "total_chars_average": null,
+      "prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      },
+      "persistent_evicted_groups": 0,
+      "group_prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      }
+    },
+    {
+      "purpose": "jev:fit:clarify_full_support_yes_no",
+      "model": "jev-1.13.0",
+      "calls": 2,
+      "input_tokens": 2988,
+      "output_tokens": 246,
+      "unknown_usage_calls": 0,
+      "cache_hit_ratio": null,
+      "reasoning_share": null,
+      "composition_samples": 0,
+      "composition_averages": {},
+      "timing_seconds": {
+        "duration_seconds": {
+          "count": 2,
+          "p50": 0.2185,
+          "p95": 0.24955,
+          "max": 0.253
+        },
+        "queue_wait_seconds": null,
+        "provider_duration_seconds": null,
+        "persistence_seconds": null
+      },
+      "missing": {
+        "context_metrics": 2,
+        "queue_wait_seconds": 2,
+        "provider_duration_seconds": 2,
+        "persistence_seconds": 2,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 2,
+        "reasoning_tokens": 2
+      },
+      "eviction": {
+        "samples": 0,
+        "requests": 0,
+        "groups": 0,
+        "frequency": null
+      },
+      "total_chars_average": null,
+      "prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      },
+      "persistent_evicted_groups": 0,
+      "group_prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      }
+    },
+    {
+      "purpose": "jev:fit:verify_citations_yes_no",
+      "model": "jev-1.13.0",
+      "calls": 2,
+      "input_tokens": 1917,
+      "output_tokens": 93,
+      "unknown_usage_calls": 0,
+      "cache_hit_ratio": null,
+      "reasoning_share": null,
+      "composition_samples": 0,
+      "composition_averages": {},
+      "timing_seconds": {
+        "duration_seconds": {
+          "count": 2,
+          "p50": 0.20850000000000002,
+          "p95": 0.25395,
+          "max": 0.259
+        },
+        "queue_wait_seconds": null,
+        "provider_duration_seconds": null,
+        "persistence_seconds": null
+      },
+      "missing": {
+        "context_metrics": 2,
+        "queue_wait_seconds": 2,
+        "provider_duration_seconds": 2,
+        "persistence_seconds": 2,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 2,
+        "reasoning_tokens": 2
+      },
+      "eviction": {
+        "samples": 0,
+        "requests": 0,
+        "groups": 0,
+        "frequency": null
+      },
+      "total_chars_average": null,
+      "prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      },
+      "persistent_evicted_groups": 0,
+      "group_prefix_changes": {
+        "pairs": 0,
+        "history": 0,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 0,
+        "tools": 0,
+        "system": 0,
+        "shares": {
+          "history": null,
+          "persistent": null,
+          "request": null,
+          "both": null,
+          "other": null,
+          "tools": null,
+          "system": null
+        }
+      }
+    }
+  ],
+  "budget_input_tokens": 305354,
+  "cached_input_tokens": 101091,
+  "reasoning_tokens": 9713,
+  "cache_hit_ratio": 0.33106165303221835,
+  "reasoning_share": 0.4705454897781223,
+  "usage_complete": true,
+  "provider_attempts": 38,
+  "composition_samples": 0,
+  "composition_averages": {},
+  "timing_seconds": {
+    "duration_seconds": {
+      "count": 38,
+      "p50": 2.1215,
+      "p95": 14.096449999999969,
+      "max": 33.376
+    },
+    "queue_wait_seconds": null,
+    "provider_duration_seconds": null,
+    "persistence_seconds": null
+  },
+  "missing": {
+    "context_metrics": 38,
+    "queue_wait_seconds": 38,
+    "provider_duration_seconds": 38,
+    "persistence_seconds": 38,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 16,
+    "reasoning_tokens": 16
+  },
+  "eviction": {
+    "samples": 0,
+    "requests": 0,
+    "groups": 0,
+    "frequency": null
+  },
+  "total_chars_average": null,
+  "prefix_changes": {
+    "pairs": 0,
+    "history": 0,
+    "persistent": 0,
+    "request": 0,
+    "both": 0,
+    "other": 0,
+    "tools": 0,
+    "system": 0,
+    "shares": {
+      "history": null,
+      "persistent": null,
+      "request": null,
+      "both": null,
+      "other": null,
+      "tools": null,
+      "system": null
+    }
+  },
+  "persistent_evicted_groups": 0,
+  "group_prefix_changes": {
+    "pairs": 0,
+    "history": 0,
+    "persistent": 0,
+    "request": 0,
+    "both": 0,
+    "other": 0,
+    "tools": 0,
+    "system": 0,
+    "shares": {
+      "history": null,
+      "persistent": null,
+      "request": null,
+      "both": null,
+      "other": null,
+      "tools": null,
+      "system": null
+    }
+  },
+  "source": ".codex-runs\\b6-evidence\\r1\\career.db",
+  "provider_usage_table_present": true,
+  "last_request_snapshots": [
+    {
+      "task_id": "3e1c7509-643b-4439-a240-0c4cea32a221",
+      "note": "Last request only; not attributed to every historical attempt.",
+      "context_metrics": {
+        "request_text_chars": 55370,
+        "limit_chars": 48000,
+        "protected_overflow": true,
+        "archived_values": 14,
+        "request_parts_chars": {
+          "system": 13924,
+          "tools": 11415,
+          "replay_messages": 1616,
+          "live_snapshot": 28415
+        },
+        "snapshot_field_chars": {
+          "goal": 428,
+          "initial_goal": 428,
+          "current_request": 560,
+          "messages": 913,
+          "plan": 2,
+          "history": 2007,
+          "pending_question": 4,
+          "visual_fallback": 5,
+          "budget_remaining": 2,
+          "candidate": 190,
+          "resume_text": 405,
+          "search_recovery": 3301,
+          "known_results": 1966,
+          "scheduled_search": 4,
+          "recommended_jobs": 318,
+          "previous_recommendations": 2,
+          "job_alerts": 2,
+          "browser": 2582,
+          "research_pages": 1860,
+          "search_source_health": 459,
+          "search_constraints": 540,
+          "search_coverage": 316,
+          "resume_issue": 4,
+          "has_original_pdf": 4,
+          "jobs": 2040,
+          "materials": 2,
+          "applications": 2,
+          "material_choices": 85,
+          "capability_versions": 18,
+          "interviews": 2,
+          "live_resources": 209,
+          "context_evidence": 8417,
+          "decision_history": 2,
+          "context_read_progress": 523,
+          "assistant_progress_history": 86,
+          "research_page_history": 85
+        }
+      }
+    }
+  ],
+  "tool_actions": {
+    "count": 0,
+    "execution_seconds": null,
+    "persistence_seconds": null
+  },
+  "tool_timing_note": "Persistence measures intent checkpoint; final commit cannot time itself. Absent samples are unknown."
+}

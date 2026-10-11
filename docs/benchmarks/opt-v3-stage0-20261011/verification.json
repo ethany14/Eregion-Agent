@@ -1,0 +1,857 @@
+{
+  "base_commit": "72e0da611d40c58a4583f7bf8760a50d68fcd03d",
+  "implementation_commit": "f56bf337693e7bde025248d8a37c3f44b87d45b1",
+  "reviewer_outside_sandbox": {
+    "commit": "ad4daba",
+    "passed": 1913,
+    "skipped": 132,
+    "failed": 0
+  },
+  "command": ".venv/Scripts/python.exe .codex-runs/opt-v3-stage0/run_offline.py -q -ra -p no:cacheprovider --basetemp=.codex-runs/opt-v3-stage0/full-verified --junitxml=.codex-runs/opt-v3-stage0/full-verified.xml",
+  "base": {
+    "counts": {
+      "skipped": 132,
+      "passed": 1900,
+      "error": 4,
+      "failure": 9
+    },
+    "test_set_sha256": "149645c2c52e33b57220214d84744340ddfa74141838db25a1c4e5f8e8e35c85"
+  },
+  "final": {
+    "counts": {
+      "skipped": 132,
+      "passed": 1927,
+      "error": 4,
+      "failure": 9
+    },
+    "test_set_sha256": "12d58fa6789ec1d8835e465d1797de25f66a3a49d3372bc03b8697c19d9650ae"
+  },
+  "new_failures": [],
+  "missing_base_tests": [],
+  "added_tests": [
+    "tests.test_opt_v3_calibration::test_atomic_parallel_reservations",
+    "tests.test_opt_v3_calibration::test_budget_stop_preserves_saved_work",
+    "tests.test_opt_v3_calibration::test_default_analysis_future_and_durable_cache",
+    "tests.test_opt_v3_calibration::test_default_structured_and_batch_retry",
+    "tests.test_opt_v3_calibration::test_fast_default_identity",
+    "tests.test_opt_v3_calibration::test_input_reservation_pending_failed_and_actual",
+    "tests.test_opt_v3_calibration::test_interview_retains_legacy_retry_without_flag",
+    "tests.test_opt_v3_calibration::test_nested_failed_retry_and_restart_accounting",
+    "tests.test_opt_v3_calibration::test_rejection_default_and_opt_in[False-low-1-False]",
+    "tests.test_opt_v3_calibration::test_rejection_default_and_opt_in[False-low-1-True]",
+    "tests.test_opt_v3_calibration::test_rejection_default_and_opt_in[True-None-1-False]",
+    "tests.test_opt_v3_calibration::test_rejection_default_and_opt_in[True-None-1-True]",
+    "tests.test_opt_v3_calibration::test_rejection_default_and_opt_in[True-low-2-False]",
+    "tests.test_opt_v3_calibration::test_rejection_default_and_opt_in[True-low-2-True]",
+    "tests.test_opt_v3_calibration::test_report_attributes_layers_and_separates_runs",
+    "tests.test_opt_v3_calibration::test_report_does_not_blame_eviction_of_already_omitted_group",
+    "tests.test_opt_v3_calibration::test_sdk_transport_retries_are_individual_attempts[False-False]",
+    "tests.test_opt_v3_calibration::test_sdk_transport_retries_are_individual_attempts[False-True]",
+    "tests.test_opt_v3_calibration::test_sdk_transport_retries_are_individual_attempts[True-False]",
+    "tests.test_opt_v3_calibration::test_sdk_transport_retries_are_individual_attempts[True-True]",
+    "tests.test_opt_v3_calibration::test_transport_retry_does_not_reenable_reasoning_after_fallback[False]",
+    "tests.test_opt_v3_calibration::test_transport_retry_does_not_reenable_reasoning_after_fallback[True]",
+    "tests.test_opt_v3_calibration::test_two_layers_count_without_changing_messages",
+    "tests.test_opt_v3_calibration::test_typesafe_default_rejection_one_attempt[fast]",
+    "tests.test_opt_v3_calibration::test_typesafe_default_rejection_one_attempt[fit]",
+    "tests.test_opt_v3_calibration::test_unset_budget_retains_unmetered_and_unknown_usage",
+    "tests.test_opt_v3_calibration::test_window_pending_counter_survives_slice_restart"
+  ],
+  "base_failures": [
+    {
+      "id": "tests.test_auto_apply_review_fixes.ChromeChecks::test_confirmation_negative_and_positive_pages",
+      "status": "error",
+      "reason": "failed on setup with \"PermissionError: [WinError 5] \u62d2\u7edd\u8bbf\u95ee\u3002\""
+    },
+    {
+      "id": "tests.test_auto_apply_review_fixes.ChromeChecks::test_one_submit_click_then_confirmation",
+      "status": "error",
+      "reason": "failed on setup with \"PermissionError: [WinError 5] \u62d2\u7edd\u8bbf\u95ee\u3002\""
+    },
+    {
+      "id": "tests.test_auto_apply_review_fixes.ChromeChecks::test_real_standard_answer_form_only_sends_edits",
+      "status": "error",
+      "reason": "failed on setup with \"PermissionError: [WinError 5] \u62d2\u7edd\u8bbf\u95ee\u3002\""
+    },
+    {
+      "id": "tests.test_auto_apply_review_fixes.ChromeChecks::test_success_url_without_a_receipt_is_not_confirmation",
+      "status": "error",
+      "reason": "failed on setup with \"PermissionError: [WinError 5] \u62d2\u7edd\u8bbf\u95ee\u3002\""
+    },
+    {
+      "id": "tests.test_browser_runtime_recovery::test_parallel_context_owner_and_last_task_close",
+      "status": "failure",
+      "reason": "PermissionError: [WinError 5] \u62d2\u7edd\u8bbf\u95ee\u3002"
+    },
+    {
+      "id": "tests.test_browser_runtime_recovery::test_changed_url_and_control_refresh_without_replaying_old_action",
+      "status": "failure",
+      "reason": "PermissionError: [WinError 5] \u62d2\u7edd\u8bbf\u95ee\u3002"
+    },
+    {
+      "id": "tests.test_browser_runtime_recovery::test_closed_chrome_during_creation_recovers_once_with_actual_observation",
+      "status": "failure",
+      "reason": "PermissionError: [WinError 5] \u62d2\u7edd\u8bbf\u95ee\u3002"
+    },
+    {
+      "id": "tests.test_browser_runtime_recovery::test_repeated_transport_failure_remains_error_not_site_block",
+      "status": "failure",
+      "reason": "AssertionError: assert 'PermissionError' == 'TargetClosedError'\n  \n  - TargetClosedError\n  + PermissionError"
+    },
+    {
+      "id": "tests.test_mcp_app::test_fastapi_lifecycle_health_effective_tools_and_snapshot",
+      "status": "failure",
+      "reason": "agent_runtime.mcp.errors.McpStartupError: Required MCP server 'local-test' failed to start."
+    },
+    {
+      "id": "tests.test_mcp_runtime::test_local_stdio_server_end_to_end_persists_both_tools",
+      "status": "failure",
+      "reason": "AssertionError: assert <ToolExecutio...IED: 'denied'> == <ToolExecutio...: 'completed'>\n  \n  - completed\n  + denied"
+    },
+    {
+      "id": "tests.test_mcp_runtime::test_timed_out_stdio_connection_is_not_reused",
+      "status": "failure",
+      "reason": "agent_runtime.mcp.errors.McpStartupError: The MCP server could not be started."
+    },
+    {
+      "id": "tests.test_mcp_runtime::test_stdio_call_uses_owned_thread_boundary_from_running_event_loop",
+      "status": "failure",
+      "reason": "agent_runtime.mcp.errors.McpStartupError: The MCP server could not be started."
+    },
+    {
+      "id": "tests.test_mcp_runtime::test_one_stdio_connection_supports_two_concurrent_session_calls",
+      "status": "failure",
+      "reason": "agent_runtime.mcp.errors.McpStartupError: The MCP server could not be started."
+    }
+  ],
+  "final_failures": [
+    {
+      "id": "tests.test_auto_apply_review_fixes.ChromeChecks::test_confirmation_negative_and_positive_pages",
+      "status": "error",
+      "reason": "failed on setup with \"PermissionError: [WinError 5] \u62d2\u7edd\u8bbf\u95ee\u3002\""
+    },
+    {
+      "id": "tests.test_auto_apply_review_fixes.ChromeChecks::test_one_submit_click_then_confirmation",
+      "status": "error",
+      "reason": "failed on setup with \"PermissionError: [WinError 5] \u62d2\u7edd\u8bbf\u95ee\u3002\""
+    },
+    {
+      "id": "tests.test_auto_apply_review_fixes.ChromeChecks::test_real_standard_answer_form_only_sends_edits",
+      "status": "error",
+      "reason": "failed on setup with \"PermissionError: [WinError 5] \u62d2\u7edd\u8bbf\u95ee\u3002\""
+    },
+    {
+      "id": "tests.test_auto_apply_review_fixes.ChromeChecks::test_success_url_without_a_receipt_is_not_confirmation",
+      "status": "error",
+      "reason": "failed on setup with \"PermissionError: [WinError 5] \u62d2\u7edd\u8bbf\u95ee\u3002\""
+    },
+    {
+      "id": "tests.test_browser_runtime_recovery::test_parallel_context_owner_and_last_task_close",
+      "status": "failure",
+      "reason": "PermissionError: [WinError 5] \u62d2\u7edd\u8bbf\u95ee\u3002"
+    },
+    {
+      "id": "tests.test_browser_runtime_recovery::test_changed_url_and_control_refresh_without_replaying_old_action",
+      "status": "failure",
+      "reason": "PermissionError: [WinError 5] \u62d2\u7edd\u8bbf\u95ee\u3002"
+    },
+    {
+      "id": "tests.test_browser_runtime_recovery::test_closed_chrome_during_creation_recovers_once_with_actual_observation",
+      "status": "failure",
+      "reason": "PermissionError: [WinError 5] \u62d2\u7edd\u8bbf\u95ee\u3002"
+    },
+    {
+      "id": "tests.test_browser_runtime_recovery::test_repeated_transport_failure_remains_error_not_site_block",
+      "status": "failure",
+      "reason": "AssertionError: assert 'PermissionError' == 'TargetClosedError'\n  \n  - TargetClosedError\n  + PermissionError"
+    },
+    {
+      "id": "tests.test_mcp_app::test_fastapi_lifecycle_health_effective_tools_and_snapshot",
+      "status": "failure",
+      "reason": "agent_runtime.mcp.errors.McpStartupError: Required MCP server 'local-test' failed to start."
+    },
+    {
+      "id": "tests.test_mcp_runtime::test_local_stdio_server_end_to_end_persists_both_tools",
+      "status": "failure",
+      "reason": "AssertionError: assert <ToolExecutio...IED: 'denied'> == <ToolExecutio...: 'completed'>\n  \n  - completed\n  + denied"
+    },
+    {
+      "id": "tests.test_mcp_runtime::test_timed_out_stdio_connection_is_not_reused",
+      "status": "failure",
+      "reason": "agent_runtime.mcp.errors.McpStartupError: The MCP server could not be started."
+    },
+    {
+      "id": "tests.test_mcp_runtime::test_stdio_call_uses_owned_thread_boundary_from_running_event_loop",
+      "status": "failure",
+      "reason": "agent_runtime.mcp.errors.McpStartupError: The MCP server could not be started."
+    },
+    {
+      "id": "tests.test_mcp_runtime::test_one_stdio_connection_supports_two_concurrent_session_calls",
+      "status": "failure",
+      "reason": "agent_runtime.mcp.errors.McpStartupError: The MCP server could not be started."
+    }
+  ],
+  "skips": [
+    {
+      "id": "tests.test_account_browser::test_generic_username_and_unfamiliar_submit_button",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_account_browser::test_single_password_registration_and_email_button_are_supported",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_account_browser::test_email_first_then_password_only_without_requesting_credentials_again",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_account_browser::test_model_can_resolve_structural_ambiguity_without_page_or_credentials",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_account_browser::test_new_consent_on_second_step_pauses_before_credential_submission",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_account_browser::test_wrong_credentials_are_not_retried_and_password_is_cleared",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_account_browser::test_verification_is_not_mistaken_for_another_password_request",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_account_browser::test_job_form_email_is_not_treated_as_login",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_account_browser::test_persistent_account_heading_after_login_does_not_block_application",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_account_browser::test_pausing_during_model_selection_prevents_credential_fill",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_account_browser::test_model_cannot_target_final_application_submission",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_account_browser::test_password_only_frame_on_existing_site_is_detected",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_generic_page_control_opens_details_but_cannot_send_form_or_toggle_consent",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_answering_during_background_work_keeps_focus_and_sends_one_batch",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_duplicate_city_suggestions_select_once_and_repeated_fill_does_not_reopen",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_compact_chat_reply_fills_real_controls_without_model",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_numbered_city_clarification_fills_real_controls_without_model[numbered-select]",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_numbered_city_clarification_fills_real_controls_without_model[numbered-combobox]",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_numbered_city_clarification_fills_real_controls_without_model[comma_region-select]",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_numbered_city_clarification_fills_real_controls_without_model[comma_region-combobox]",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_numbered_city_clarification_fills_real_controls_without_model[shrunk_numbered-select]",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_numbered_city_clarification_fills_real_controls_without_model[shrunk_numbered-combobox]",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_numbered_city_clarification_fills_real_controls_without_model[shrunk_comma-select]",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_numbered_city_clarification_fills_real_controls_without_model[shrunk_comma-combobox]",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_real_browser_form_resume_question_and_confirmation[https://job-boards.greenhouse.io/example/jobs/123]",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_real_browser_form_resume_question_and_confirmation[https://jobs.lever.co/example/abc123]",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_browser_rejects_different_posting_and_ignores_job_description_thanks",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_greenhouse_react_select_hidden_inputs_and_attach_label",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_lever_required_checkbox_group_does_not_require_every_option",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_lever_location_requires_a_selected_suggestion",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_web_application_flow_with_actual_api_and_offline_employer",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_readonly_portal_dropdown_and_replaced_dom_nodes",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_actual_browser_agent_repairs_keyboard_only_field_after_autofill",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_paused_browser_keeps_dispatching_background_requests",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_searching_an_open_dropdown_does_not_toggle_it_closed",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_checkbox_observation_includes_the_actual_privacy_question",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_browser::test_slow_tracking_resource_does_not_prevent_using_loaded_form",
+      "status": "skipped",
+      "reason": "Set JOB_AGENT_BROWSER_TESTS=1 to run offline Chrome integration tests."
+    },
+    {
+      "id": "tests.test_auto_apply_candidate::test_two_education_rows_include_optional_details_and_do_not_refill",
+      "status": "skipped",
+      "reason": "Opt-in real browser fixture"
+    },
+    {
+      "id": "tests.test_auto_apply_candidate::test_chat_ui_restores_resume_edits_education_and_batches_answers",
+      "status": "skipped",
+      "reason": "Opt-in real browser fixture"
+    },
+    {
+      "id": "tests.test_auto_apply_decisions::test_workday_style_degree_mapping_uses_confirmed_profile_then_survives_autofill",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_decisions::test_browser_exposes_relationships_errors_and_can_revalidate_after_correction",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_decisions::test_text_shaped_hierarchical_picker_category_then_leaf_without_reasking[False]",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_decisions::test_text_shaped_hierarchical_picker_category_then_leaf_without_reasking[True]",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_decisions::test_category_selection_can_reveal_a_separate_dependent_field",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_drafting::test_resume_draft_ui_edits_and_sends_through_real_api",
+      "status": "skipped",
+      "reason": "Opt-in offline Chrome UI test"
+    },
+    {
+      "id": "tests.test_auto_apply_optional::test_optional_demographic_controls_render_and_fill_real_dropdowns",
+      "status": "skipped",
+      "reason": "Opt-in offline Chrome integration test"
+    },
+    {
+      "id": "tests.test_auto_apply_reliability::test_closed_popup_returns_to_the_application_tab",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_reliability::test_generic_confirmation_is_only_accepted_after_submitting",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_reliability::test_offscreen_window_is_shown_without_reloading",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_resume::test_duplicate_new_chat_opens_cancelled_attempt_and_resume_works",
+      "status": "skipped",
+      "reason": "Opt-in offline Chrome UI test"
+    },
+    {
+      "id": "tests.test_auto_apply_visual::test_roleless_hierarchical_menu_completed_by_pixels_with_feedback",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_visual::test_failed_dom_action_automatically_gives_model_screenshot_and_tools",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_visual::test_visual_images_stop_after_returning_to_dom_and_capture_once",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_visual::test_old_coordinates_rejected_after_dom_change_scroll_and_dom_action",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_visual::test_clicks_cannot_submit_or_grant_unknown_consent",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_visual::test_typing_uses_source_and_enter_cannot_implicitly_submit",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_visual::test_secret_page_and_disabled_visual_mode_do_not_capture",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_visual::test_css_pixel_dimensions_and_coordinate_bounds",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_visual::test_screenshot_coordinates_reach_iframe_target",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_visual::test_visual_navigation_keeps_host_missing_answer_and_review_checks",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_visual::test_hover_scroll_drag_and_keyboard_use_the_same_screenshot_space",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_workday::test_job_to_login_to_multipage_review_and_single_submit",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_workday::test_registration_explicit_consent_and_password_exclusion",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_workday::test_login_state_reused_by_same_owner_only",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_workday::test_workday_visible_submit_surface_and_header_are_disambiguated",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_auto_apply_workday::test_secure_account_ui_keeps_password_out_of_chat_and_clears_input",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_b6_offline_replay::test_b6_frozen_web_with_configured_model",
+      "status": "skipped",
+      "reason": "Opt-in paid model against frozen B6 web; never run by offline validation"
+    },
+    {
+      "id": "tests.test_browser_job_search::test_browser_search_capture_score_and_recommend_uses_selected_job_only",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_browser_visibility::test_default_is_headless_and_only_explicit_handoff_requests_a_window[browse]",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_browser_visibility::test_default_is_headless_and_only_explicit_handoff_requests_a_window[application]",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_browser_visibility::test_failed_window_launch_keeps_original_browser_alive",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_browser_visibility::test_activity_panel_only_opens_window_on_explicit_button_click",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_career_browser::test_general_browsing_without_resume_has_preview_in_existing_chat",
+      "status": "skipped",
+      "reason": "Opt-in offline Chrome integration."
+    },
+    {
+      "id": "tests.test_career_browser::test_rendered_browser_evidence_flows_into_saved_job",
+      "status": "skipped",
+      "reason": "Opt-in offline Chrome integration."
+    },
+    {
+      "id": "tests.test_career_browser::test_default_chat_searches_scores_reviews_applies_and_interviews[home]",
+      "status": "skipped",
+      "reason": "Opt-in offline Chrome integration."
+    },
+    {
+      "id": "tests.test_career_browser::test_default_chat_searches_scores_reviews_applies_and_interviews[saved_job]",
+      "status": "skipped",
+      "reason": "Opt-in offline Chrome integration."
+    },
+    {
+      "id": "tests.test_career_browser::test_chat_surfaces_model_outage_and_recovers_a_greeting",
+      "status": "skipped",
+      "reason": "Opt-in offline Chrome integration."
+    },
+    {
+      "id": "tests.test_career_flow::test_configured_model_directs_real_career_tools_with_synthetic_sources",
+      "status": "skipped",
+      "reason": "Opt-in configured model; synthetic resume and local tool IO only."
+    },
+    {
+      "id": "tests.test_career_timeline_browser::test_result_cards_are_chronological_after_reply_poll_and_reload[1440-light]",
+      "status": "skipped",
+      "reason": "Opt-in offline Chrome"
+    },
+    {
+      "id": "tests.test_career_timeline_browser::test_result_cards_are_chronological_after_reply_poll_and_reload[1440-night]",
+      "status": "skipped",
+      "reason": "Opt-in offline Chrome"
+    },
+    {
+      "id": "tests.test_career_timeline_browser::test_result_cards_are_chronological_after_reply_poll_and_reload[390-light]",
+      "status": "skipped",
+      "reason": "Opt-in offline Chrome"
+    },
+    {
+      "id": "tests.test_career_timeline_browser::test_result_cards_are_chronological_after_reply_poll_and_reload[390-night]",
+      "status": "skipped",
+      "reason": "Opt-in offline Chrome"
+    },
+    {
+      "id": "tests.test_chat_typography::test_chat_markdown_readability_copy_and_untrusted_content[1440]",
+      "status": "skipped",
+      "reason": "Opt-in offline Chrome integration."
+    },
+    {
+      "id": "tests.test_chat_typography::test_chat_markdown_readability_copy_and_untrusted_content[390]",
+      "status": "skipped",
+      "reason": "Opt-in offline Chrome integration."
+    },
+    {
+      "id": "tests.test_general_browser::test_home_search_cross_site_back_and_tabs",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_general_browser::test_shadow_controls_delayed_content_and_recovery_from_stale_ref",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_general_browser::test_long_pages_expose_late_controls_and_text",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_general_browser::test_local_editor_dropdown_and_toggle_need_no_candidate_profile",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_general_browser::test_final_send_credentials_consent_and_private_url_stay_guarded",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_general_browser::test_searches_remain_available_inside_application_worker",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_general_browser::test_browser_can_inspect_embedded_content",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_general_browser::test_control_cannot_change_into_submit_after_observation",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_general_browser::test_hash_routes_are_not_stripped_from_browser_urls",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_general_browser::test_visual_click_operates_unlabelled_custom_dom_and_checks_freshness",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_general_browser::test_visual_capture_blocks_email_only_login_and_coordinate_submission",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_general_browser::test_job_panels_can_be_read_and_scrolled_independently",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_general_browser::test_job_control_search_matches_title_and_company_across_card_text",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_general_browser::test_login_overlay_can_be_dismissed_without_exposing_account_contents",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_job_alerts_browser::test_chat_discovery_and_daily_alerts_share_ui_without_forcing_schedule",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_job_alerts_browser::test_repaired_forge_and_weekday_editor_in_day_night_desktop_mobile",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_remaining_account_browser::test_shared_login_same_owner_host_only_and_stale_close_cannot_erase",
+      "status": "skipped",
+      "reason": "Opt-in offline Chrome"
+    },
+    {
+      "id": "tests.test_remaining_account_browser::test_control_enter_navigation_frame_and_end",
+      "status": "skipped",
+      "reason": "Opt-in offline Chrome"
+    },
+    {
+      "id": "tests.test_remaining_account_ui::test_account_banner_shared_login_and_takeover_navigation_full_chain",
+      "status": "skipped",
+      "reason": "Offline Chrome UI opt-in"
+    },
+    {
+      "id": "tests.test_remaining_cover_style::test_real_original_failure_revision_with_frozen_provenance",
+      "status": "skipped",
+      "reason": "Only the unexecuted original-failure revision lane; no writer repeat"
+    },
+    {
+      "id": "tests.test_remaining_cover_style::test_real_cover_letter_preserves_source_citations_and_specific_natural_opening",
+      "status": "skipped",
+      "reason": "Explicit paid real cover-letter generation and grounding review"
+    },
+    {
+      "id": "tests.test_remaining_interview_async_ui::test_current_question_and_late_feedback_binding_in_real_chrome",
+      "status": "skipped",
+      "reason": "Local Chrome UI opt-in"
+    },
+    {
+      "id": "tests.test_remaining_interview_feedback::test_real_main_chat_feedback_latency[agent-30]",
+      "status": "skipped",
+      "reason": "Explicit paid real feedback latency check"
+    },
+    {
+      "id": "tests.test_remaining_interview_feedback::test_real_main_chat_feedback_latency[fast-10]",
+      "status": "skipped",
+      "reason": "Explicit paid real feedback latency check"
+    },
+    {
+      "id": "tests.test_remaining_job_body::test_real_chrome_job_only_excludes_other_company_and_footer[False]",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_remaining_job_body::test_real_chrome_job_only_excludes_other_company_and_footer[True]",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_remaining_job_body::test_saved_real_indeed_body_and_detail_action_are_consumable",
+      "status": "skipped",
+      "reason": "Explicit saved real public-page replay"
+    },
+    {
+      "id": "tests.test_remaining_job_body::test_split_detail_nested_body_metadata_and_region_survive_filtered_reads",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_remaining_job_body::test_page_source_hash_ignores_region_and_navigation_views_but_tracks_real_changes",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_remaining_job_body::test_location_keeps_work_mode_only_from_the_target_header[Remote]",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_remaining_job_body::test_location_keeps_work_mode_only_from_the_target_header[]",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_remaining_job_body::test_existing_alert_filtered_views_do_not_reset_real_taskhost_progress",
+      "status": "skipped",
+      "reason": "Offline Chrome opt-in"
+    },
+    {
+      "id": "tests.test_remaining_live::test_long_real_search_conversations[analyst-junior data analyst in New York]",
+      "status": "skipped",
+      "reason": "Explicit paid real-model/public research check"
+    },
+    {
+      "id": "tests.test_remaining_live::test_long_real_search_conversations[backend-senior backend engineer, remote US]",
+      "status": "skipped",
+      "reason": "Explicit paid real-model/public research check"
+    },
+    {
+      "id": "tests.test_remaining_live::test_long_real_search_conversations[student-machine learning internship, California]",
+      "status": "skipped",
+      "reason": "Explicit paid real-model/public research check"
+    },
+    {
+      "id": "tests.test_remaining_live::test_long_real_search_conversations[designer-junior UX designer, Austin]",
+      "status": "skipped",
+      "reason": "Explicit paid real-model/public research check"
+    },
+    {
+      "id": "tests.test_remaining_live_batch::test_eight_job_production_cold_resolver_and_persistent_warm",
+      "status": "skipped",
+      "reason": "Explicit real-provider batch performance opt-in"
+    },
+    {
+      "id": "tests.test_remaining_live_body::test_original_python_posting_scoring_is_isolated_from_related_companies",
+      "status": "skipped",
+      "reason": "Explicit paid Jev check"
+    },
+    {
+      "id": "tests.test_remaining_mock_browser::test_review_remember_submit_second_job_and_restart[False]",
+      "status": "skipped",
+      "reason": "Opt-in offline real Chrome"
+    },
+    {
+      "id": "tests.test_remaining_mock_browser::test_review_remember_submit_second_job_and_restart[True]",
+      "status": "skipped",
+      "reason": "Opt-in offline real Chrome"
+    },
+    {
+      "id": "tests.test_remaining_phase4_chrome::test_user_control_refreshes_actual_blocked_cache_before_agent_read",
+      "status": "skipped",
+      "reason": "Local Chrome opt-in"
+    },
+    {
+      "id": "tests.test_remaining_phase4_chrome::test_actual_failure_challenge_wording_is_blocked_and_recovery_pending_restores_after_control",
+      "status": "skipped",
+      "reason": "Local Chrome opt-in"
+    },
+    {
+      "id": "tests.test_remaining_polish_ui::test_search_title_chronicle_and_cancel_state_in_real_ui",
+      "status": "skipped",
+      "reason": "Offline real Chrome opt-in"
+    },
+    {
+      "id": "tests.test_skill_runtime::test_symlinks_are_rejected",
+      "status": "skipped",
+      "reason": "Symlink creation is unavailable on this platform."
+    },
+    {
+      "id": "tests.test_speed_pipeline::test_known_three_page_application_needs_zero_model_calls[https://job-boards.greenhouse.io/example/jobs/123]",
+      "status": "skipped",
+      "reason": "Opt-in real Chrome"
+    },
+    {
+      "id": "tests.test_speed_pipeline::test_known_three_page_application_needs_zero_model_calls[https://jobs.lever.co/example/speed-test]",
+      "status": "skipped",
+      "reason": "Opt-in real Chrome"
+    },
+    {
+      "id": "tests.test_speed_pipeline::test_known_three_page_application_needs_zero_model_calls[https://example.wd5.myworkdayjobs.com/en-US/Careers/job/Speed-Test_R123]",
+      "status": "skipped",
+      "reason": "Opt-in real Chrome"
+    },
+    {
+      "id": "tests.test_speed_pipeline::test_worker_chrome_is_shared_but_contexts_are_isolated",
+      "status": "skipped",
+      "reason": "Opt-in real Chrome"
+    }
+  ],
+  "new_skips": []
+}

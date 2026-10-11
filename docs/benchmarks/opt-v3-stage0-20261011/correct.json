@@ -1,0 +1,187 @@
+{
+  "calls": 11,
+  "completed": 11,
+  "failed": 0,
+  "pending": 0,
+  "discarded": 0,
+  "retries": 0,
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "unknown_usage_calls": 0,
+  "groups": [
+    {
+      "purpose": "agent",
+      "model": "b6-scripted-offline",
+      "calls": 11,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "unknown_usage_calls": 0,
+      "cache_hit_ratio": null,
+      "reasoning_share": null,
+      "composition_samples": 11,
+      "composition_averages": {
+        "live_snapshot": 13141.363636363636,
+        "repair": 0,
+        "replay_messages": 2922.2727272727275,
+        "system": 13965,
+        "tools": 11017.454545454546
+      },
+      "timing_seconds": {
+        "duration_seconds": null,
+        "queue_wait_seconds": {
+          "count": 11,
+          "p50": 6.690000009257346e-05,
+          "p95": 0.0003191999985574512,
+          "max": 0.00033379999877070077
+        },
+        "provider_duration_seconds": null,
+        "persistence_seconds": null
+      },
+      "missing": {
+        "context_metrics": 0,
+        "queue_wait_seconds": 0,
+        "provider_duration_seconds": 11,
+        "persistence_seconds": 11,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 11,
+        "reasoning_tokens": 11
+      },
+      "eviction": {
+        "samples": 11,
+        "requests": 7,
+        "groups": 34,
+        "frequency": 0.6363636363636364
+      },
+      "total_chars_average": 41046.09090909091,
+      "prefix_changes": {
+        "pairs": 10,
+        "history": 1,
+        "persistent": 0,
+        "request": 0,
+        "both": 0,
+        "other": 1,
+        "tools": 1,
+        "system": 0,
+        "shares": {
+          "history": 0.1,
+          "persistent": 0.0,
+          "request": 0.0,
+          "both": 0.0,
+          "other": 0.1,
+          "tools": 0.1,
+          "system": 0.0
+        }
+      },
+      "persistent_evicted_groups": 3,
+      "group_prefix_changes": {
+        "pairs": 10,
+        "history": 8,
+        "persistent": 0,
+        "request": 6,
+        "both": 0,
+        "other": 2,
+        "tools": 1,
+        "system": 0,
+        "shares": {
+          "history": 0.8,
+          "persistent": 0.0,
+          "request": 0.6,
+          "both": 0.0,
+          "other": 0.2,
+          "tools": 0.1,
+          "system": 0.0
+        }
+      }
+    }
+  ],
+  "budget_input_tokens": 0,
+  "cache_hit_ratio": null,
+  "reasoning_share": null,
+  "usage_complete": true,
+  "provider_attempts": 11,
+  "composition_samples": 11,
+  "composition_averages": {
+    "live_snapshot": 13141.363636363636,
+    "repair": 0,
+    "replay_messages": 2922.2727272727275,
+    "system": 13965,
+    "tools": 11017.454545454546
+  },
+  "timing_seconds": {
+    "duration_seconds": null,
+    "queue_wait_seconds": {
+      "count": 11,
+      "p50": 6.690000009257346e-05,
+      "p95": 0.0003191999985574512,
+      "max": 0.00033379999877070077
+    },
+    "provider_duration_seconds": null,
+    "persistence_seconds": null
+  },
+  "missing": {
+    "context_metrics": 0,
+    "queue_wait_seconds": 0,
+    "provider_duration_seconds": 11,
+    "persistence_seconds": 11,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 11,
+    "reasoning_tokens": 11
+  },
+  "eviction": {
+    "samples": 11,
+    "requests": 7,
+    "groups": 34,
+    "frequency": 0.6363636363636364
+  },
+  "total_chars_average": 41046.09090909091,
+  "prefix_changes": {
+    "pairs": 10,
+    "history": 1,
+    "persistent": 0,
+    "request": 0,
+    "both": 0,
+    "other": 1,
+    "tools": 1,
+    "system": 0,
+    "shares": {
+      "history": 0.1,
+      "persistent": 0.0,
+      "request": 0.0,
+      "both": 0.0,
+      "other": 0.1,
+      "tools": 0.1,
+      "system": 0.0
+    }
+  },
+  "persistent_evicted_groups": 3,
+  "group_prefix_changes": {
+    "pairs": 10,
+    "history": 8,
+    "persistent": 0,
+    "request": 6,
+    "both": 0,
+    "other": 2,
+    "tools": 1,
+    "system": 0,
+    "shares": {
+      "history": 0.8,
+      "persistent": 0.0,
+      "request": 0.6,
+      "both": 0.0,
+      "other": 0.2,
+      "tools": 0.1,
+      "system": 0.0
+    }
+  },
+  "source": "B6 scripted correct",
+  "provider_usage_table_present": true,
+  "last_request_snapshots": [],
+  "tool_actions": {
+    "count": 0,
+    "execution_seconds": null,
+    "persistence_seconds": null
+  },
+  "tool_timing_note": "Persistence measures intent checkpoint; final commit cannot time itself. Absent samples are unknown."
+}
