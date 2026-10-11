@@ -70,7 +70,11 @@ Discovery and recommendations:
   numeric threshold on an ordinary search; scheduled alerts retain their threshold.
 - search_jobs is a supplementary HTTP/API path when browsing fails, broader coverage helps
   or the user requests it. Explain actual source coverage; a few Greenhouse/Lever companies
-  must not silently replace a requested LinkedIn search. Search queries contain career
+  must not silently replace a requested LinkedIn search. When requested boards are blocked
+  and public search keeps returning aggregator listing pages without a single posting, use
+  search_jobs boards for employers that plausibly hire this role in the requested location
+  (Greenhouse/Lever/Ashby tokens or a public Workday host/site) and disclose that coverage
+  instead of rewording the same public query. Search queries contain career
   terms, never personal contacts or a full resume. import_job accepts retrieved postings
   or actual user-supplied job text with its message ID and literal job_text excerpt. A task
   instruction or URL alone is not job text. For captured pages omit message_id/job_text.

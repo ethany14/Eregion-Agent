@@ -161,3 +161,23 @@ def test_search_tracking_label_and_order_churn_is_not_new_evidence_after_other_w
         {'jobs':[{'url':'https://careers.example.com/jobs/101','title':'Junior Data Analyst','source':'public_search'}],
             'errors':[],'sources_checked':['https://www.bing.com/search']},turn)
     assert career.repository.get(career.state['task_id'])['progress_guard']['count']==0
+
+
+def test_narrower_or_truncated_repeat_of_observed_search_links_is_not_progress(career):
+    # B6 live r2: the same public query ran six times; each time blocked-host
+    # exclusions or the limit changed the list slightly, so it counted as progress.
+    host=host_for(career);turn=host.observe()
+    def links(*names):
+        return {'jobs':[{'url':f'https://www.{n}.com/junior-data-analyst-new-york-ny','title':'Junior Data Analyst Jobs',
+            'source':'public_search'} for n in names],'errors':[],'sources_checked':['https://www.bing.com/search']}
+    host.after_action({'name':'search_jobs','args':{'query':'junior data analyst','limit':20},'id':str(uuid4())},
+        links('zippia','hiringcafe','jooble'),turn)
+    assert career.repository.get(career.state['task_id'])['progress_guard']['count']==0
+    outcome=links('zippia','jooble')
+    host.after_action({'name':'search_jobs','args':{'query':'junior data analyst','limit':10},'id':str(uuid4())},outcome,turn)
+    assert career.repository.get(career.state['task_id'])['progress_guard']['count']==1
+    assert outcome['no_new_evidence'] and 'boards' in outcome['progress_feedback']
+    # One genuinely new candidate is still discovery progress.
+    host.after_action({'name':'search_jobs','args':{'query':'junior data analyst'},'id':str(uuid4())},
+        links('zippia','jobtoday'),turn)
+    assert career.repository.get(career.state['task_id'])['progress_guard']['count']==0

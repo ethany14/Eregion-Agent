@@ -212,7 +212,7 @@ class TaskHost:
         self.started = None
         self.loop.repository.change(self.task_id, tool_activity=None)
         state = self.state()
-        progress_updates={}
+        progress_updates={};search_subset=False
         previous=state.get('observation_progress_evidence',{})
         seen_observations=previous.get('fingerprints',[]) if previous.get('revision')==turn.revision else []
         if outcome.get('error_code')=='candidate_rejected':
@@ -231,8 +231,14 @@ class TaskHost:
             fingerprint = outcome_fingerprint([name,search_evidence(outcome)])
             previous=state.get('search_progress_evidence',{})
             seen_searches=previous.get('fingerprints',[]) if previous.get('revision')==turn.revision else []
+            # A reordered, truncated or narrower list of already-observed links is
+            # not discovery progress; only a candidate not seen this turn is.
+            seen_identities=previous.get('identities',[]) if previous.get('revision')==turn.revision else []
+            identities=[row['identity'] for row in search_evidence(outcome)['jobs']]
+            search_subset=bool(identities) and set(identities)<=set(seen_identities)
             progress_updates['search_progress_evidence']={'revision':turn.revision,
-                'fingerprints':list(dict.fromkeys([*seen_searches,fingerprint]))[-128:]}
+                'fingerprints':list(dict.fromkeys([*seen_searches,fingerprint]))[-128:],
+                'identities':list(dict.fromkeys([*seen_identities,*identities]))[-256:]}
         else:
             fingerprint = outcome_fingerprint([name, args, outcome])
         repeated = sum(h.get('outcome_fingerprint') == fingerprint and h.get('chat_revision') == turn.revision for h in state['history'][-12:])
@@ -240,7 +246,7 @@ class TaskHost:
             if fingerprint in seen_observations:repeated=max(1,repeated)
             progress_updates['observation_progress_evidence']={'revision':turn.revision,
                 'fingerprints':list(dict.fromkeys([*seen_observations,fingerprint]))[-256:]}
-        if name=='search_jobs' and fingerprint in seen_searches:repeated=max(1,repeated)
+        if name=='search_jobs' and (fingerprint in seen_searches or search_subset):repeated=max(1,repeated)
         if outcome.get('no_new_evidence') or outcome.get('error_code') in {'repeated_action','source_blocked'}:
             repeated = max(1, repeated)
         control = name in {'say', 'update_plan', 'ask_user', 'wait_for_user', 'wait_for_result', 'finish_task', 'pause_task'}
@@ -248,6 +254,11 @@ class TaskHost:
             outcome['no_new_evidence']=True
             outcome['progress_feedback'] = ('No new evidence from this action. Change query, route, source or capability. '
                 'If alternatives are exhausted, finish with verified results and the limitation.')
+            if name=='search_jobs':
+                outcome['progress_feedback']=('Public search returned only links already observed in this request. '
+                    'Do not repeat it with reworded queries. Read an unread observed posting, or call search_jobs with '
+                    'boards (greenhouse/lever/ashby company tokens or a public Workday host/site) for employers that '
+                    'hire this role in the requested location. If alternatives are exhausted, finish with verified results and the limitation.')
         stalled = bool(repeated and not control)
         wait_after_read = getattr(self.loop.harness, 'wait_after_repeated_read', None)
         if repeated and not outcome.get('error') and wait_after_read:
