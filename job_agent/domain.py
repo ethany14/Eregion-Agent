@@ -348,8 +348,10 @@ def normalize_job_analysis(
         minimum_years = extract_minimum_years(item.atomic_text)
         if minimum_years is None:
             minimum_years = extract_minimum_years(item.source_text)
-        if item.minimum_years is not None and item.minimum_years != minimum_years:
-            raise ValueError('Extracted duration conflicts with the quoted requirement; do not silently weaken it.')
+        # The quoted source decides the duration. A model value that the quote does not
+        # state (e.g. inferred from "Senior") is dropped; a stated number always wins.
+        # This never weakens a requirement the posting actually states, and one bad
+        # atom no longer fails the whole analysis.
 
         normalized = JobRequirement.model_validate(
             {

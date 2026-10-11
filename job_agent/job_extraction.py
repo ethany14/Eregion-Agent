@@ -167,9 +167,12 @@ def extract_job(model, text):
         with adapter_attempt('structured:ReferencedJobExtraction'):
             result = invoke_structured(model, ReferencedJobExtraction, prompt,
                                       json.dumps(payload, ensure_ascii=False, separators=(',', ':')))
-        if any(s.sentence_id not in targets for s in result.statements) or any(k not in targets for k in result.responsibility_sentence_ids):
-            raise ValueError('Job extraction crossed its assigned source sentences.')
-        return result
+        # Every sentence is assigned to exactly one batch. A label on a sentence outside
+        # this batch is either another batch's job or context, so it is dropped rather
+        # than failing the whole analysis (it can never double-count a requirement).
+        return result.model_copy(update={
+            'statements': [s for s in result.statements if s.sentence_id in targets],
+            'responsibility_sentence_ids': [k for k in result.responsibility_sentence_ids if k in targets]})
     def extract_with_retry(targets):
         return retry_batch(lambda: extract(targets))
     if len(groups) == 1:

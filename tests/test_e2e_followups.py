@@ -345,3 +345,26 @@ def test_story_text_is_not_a_condition_and_conditions_only_postings_fall_back():
     assert CANDIDATE_CONDITION.search('Requires frequent travel to client sites')
     story = 'Product Designer\nOur founder loved traveling in Japan.\nLogistics\nHybrid in San Francisco or New York.\n'
     assert FitAnalysisService._default_catalogue(story) is None  # only a work condition -> free extraction
+
+
+def test_duty_only_posting_scores_its_stated_duties_deterministically():
+    from api.services.fit_analysis_service import FitAnalysisService
+    from job_agent.requirement_catalog import local_job_analysis
+    body = ("Senior Product Designer\nWhat you'll do\n- Own product architecture and interaction design\n"
+            "- Prototype new experiments\nLogistics\nHybrid in New York.\n")
+    job = local_job_analysis(body)
+    assert [r.category for r in job.requirements] == ['responsibility', 'responsibility', 'eligibility']
+    assert FitAnalysisService._default_catalogue(body) is not None
+    assert [r.requirement_id for r in local_job_analysis(body).requirements] == [r.requirement_id for r in job.requirements]
+
+
+def test_model_duration_not_stated_in_source_is_dropped_not_fatal():
+    from job_agent.domain import normalize_job_analysis
+    from job_agent.schemas import JobAnalysis, JobRequirement
+    jd = 'Senior Designer\nRequirements\n- Strong portfolio of shipped products\n'
+    item = JobRequirement(requirement_id='r1', requirement_group_id='r1', canonical_name='portfolio', display_name='Portfolio',
+        original_text='Strong portfolio of shipped products', source_text='Strong portfolio of shipped products',
+        atomic_text='Strong portfolio of shipped products', category='experience', verification_mode='years_experience',
+        level='required', minimum_years=5)
+    out = normalize_job_analysis(JobAnalysis(title=None, summary='', requirements=[item], responsibilities=[]), jd)
+    assert out.requirements[0].minimum_years is None

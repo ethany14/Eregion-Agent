@@ -13,7 +13,7 @@ import re
 from job_agent.schemas import JobAnalysis, JobRequirement
 
 CATALOG_VERSION = 'complete-job-payload-v1'
-LOCAL_PRODUCER = 'local-units-v2'
+LOCAL_PRODUCER = 'local-units-v3'
 
 REQUIREMENT_SECTION = re.compile(r'requirement|qualification|must have|nice to have|who you are|about you|you have|you bring|'
     r'what you.ll bring|what we.re looking for|skills|experience|^required$|^preferred$', re.I)
@@ -33,7 +33,7 @@ def local_job_analysis(body):
     from job_agent.jev_fit.core import CANDIDATE_CONDITION, boilerplate, job_units, qualification_text
     units = [u for u in job_units(body) if not boilerplate(u) and u['text'].rstrip(':').strip() != (u.get('section') or '')]
     has_requirement_section = any(REQUIREMENT_SECTION.search(u.get('section') or '') for u in units)
-    requirements, responsibilities = [], []
+    requirements, responsibilities, duties = [], [], []
     for u in units:
         section = u.get('section') or ''
         text = qualification_text(u['text'])
@@ -42,6 +42,7 @@ def local_job_analysis(body):
         leading = bool(LEADING_QUALIFICATION.match(text))
         if DUTY_SECTION.search(section) and not REQUIREMENT_SECTION.search(section) and not leading:
             responsibilities.append(text)
+            duties.append((u, text))
             continue
         inline_pref = re.match(r'\s*preferred\s*:', u['text'], re.I)
         is_requirement = (REQUIREMENT_SECTION.search(section) or re.match(r'\s*(?:required|preferred)\s*:', u['text'], re.I)
@@ -58,6 +59,14 @@ def local_job_analysis(body):
             category='eligibility' if condition else 'experience' if years else 'other',
             verification_mode='user_confirmation' if condition else 'years_experience' if years else 'resume_evidence',
             minimum_years=years, level=level))
+    if duties and not any(r.category != 'eligibility' for r in requirements):
+        # No stated qualifications (some postings only describe the work): score the
+        # stated duties as required capabilities, deterministically, instead of letting
+        # a free extraction invent a different 38-50 item list on every run.
+        requirements += [JobRequirement(requirement_id=u['id'], requirement_group_id=u['id'], canonical_name=text,
+            display_name=text, original_text=text, source_text=text, atomic_text=text, category='responsibility',
+            verification_mode='resume_evidence', level='required') for u, text in duties]
+        requirements.sort(key=lambda r: int(r.requirement_id[1:]))
     return JobAnalysis(title=None, summary='', requirements=requirements, responsibilities=responsibilities)
 
 
