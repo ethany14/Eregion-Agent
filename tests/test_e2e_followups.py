@@ -399,3 +399,63 @@ def test_board_search_needs_role_terms_not_one_shared_word():
     discovery.read=lambda url,**_:(_json.dumps({'jobs':jobs}),url)
     result=discovery.search('junior data analyst','New York, NY',boards=[{'platform':'greenhouse','company':'acme'}])
     assert [j['title'] for j in result['jobs']]==['Data Analyst','Junior Data Analyst, Growth']
+
+
+@pytest.mark.parametrize('body,expected', [
+    ('Requirements:\nPython\nSQL', [('Python', 'required'), ('SQL', 'required')]),
+    ('Qualifications\nMachine Learning\nData Visualization', [('Machine Learning', 'required'), ('Data Visualization', 'required')]),
+    ('Python experience preferred.', [('Python experience preferred.', 'preferred')]),
+    ('Requirements:\nPython experience preferred.\nSQL required.', [('Python experience preferred.', 'preferred'), ('SQL required.', 'required')]),
+    ('Nice to have:\n- Go\n- Kubernetes experience required', [('Go', 'preferred'), ('Kubernetes experience required', 'required')]),
+    ('Requirements:\n- Docker is a plus', [('Docker is a plus', 'preferred')]),
+    ('Requirements:\n- Desired outcomes include faster builds', [('Desired outcomes include faster builds', 'required')]),
+    ('Requirements:\n- R\n- C#', [('R', 'required'), ('C#', 'required')]),
+])
+def test_local_catalogue_bare_lists_and_inline_levels(body, expected):
+    # Review findings: bare one-per-line lists were read as headings (0 requirements) and
+    # an item's own "preferred" was overridden by its section.
+    from job_agent.requirement_catalog import local_job_analysis
+    assert [(r.atomic_text, r.level) for r in local_job_analysis(body).requirements] == expected
+
+
+def test_bare_list_lines_are_items_but_prose_headings_still_split():
+    from job_agent.jev_fit.core import job_units
+    units = lambda body: [(u['text'], u.get('section')) for u in job_units(body)]
+    assert units('Requirements:\nPython\nSQL') == [('Requirements:', 'Requirements'), ('Python', 'Requirements'), ('SQL', 'Requirements')]
+    assert units('We build tools.\nWhat You Will Be Doing\n- Ship APIs')[1] == ('What You Will Be Doing', 'What You Will Be Doing')
+    assert units('- Ship APIs\nAbout The Team\nWe are small.')[1] == ('About The Team', 'About The Team')
+    # A line ending in a connector is wrapped prose, not a heading or a list item.
+    assert units('Experience with Python and\nSQL databases.') == [('Experience with Python and\nSQL databases.', None)]
+
+
+def test_fit_cache_signature_changes_with_main_catalogue_mode(monkeypatch):
+    from api.services.fit_analysis_service import FitAnalysisService
+    service = FitAnalysisService(handler=type('H', (), {'analysis_cache_namespace': lambda self: 'ns'})(), jev_enabled=False)
+    monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG', 'local')
+    local = service.cache_signature()
+    monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG', 'extract')
+    assert service.cache_signature() != local
+    monkeypatch.delenv('JOB_AGENT_MAIN_CATALOG')
+    assert service.cache_signature() == local  # unset means the local default
+
+
+def test_resume_analysis_is_reused_across_locally_catalogued_jobs(monkeypatch):
+    from api.services.fit_analysis_service import FitAnalysisService
+    from custom_agent.handlers import JobAgentStepHandler
+    from job_agent.schemas import ResumeAnalysis, ResumeEvidence, SkillAssessment, SkillEvidence, JobAnalysis
+    monkeypatch.setenv('TYPESAFE_ENABLED', 'false')
+    monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG', 'local')
+    calls = []
+    def analyze(schema, system, human, *args):
+        calls.append(schema)
+        if schema is ResumeAnalysis:
+            return ResumeAnalysis(summary='Dev', skills=['Python'], education=[],
+                evidence=[ResumeEvidence(evidence_id='e', source_section='Skills', exact_text='Python')])
+        job = JobAnalysis.model_validate_json(human.split('\n\nJob analysis:\n')[1])
+        return SkillAssessment(matches=[SkillEvidence(requirement_id=r.requirement_id, job_skill=r.canonical_name,
+            requirement_level=r.level, match_status='matched', resume_evidence=['Python'], confidence=1)
+            for r in job.requirements], explanation='Grounded', recommendations=[])
+    service = FitAnalysisService(JobAgentStepHandler(analyzer=analyze))
+    for body in ('Requirements:\nPython\nSQL', 'Python experience preferred.'):
+        service._analyze_sync(resume_text='Skills\nPython', job_description=body)
+    assert calls.count(ResumeAnalysis) == 1 and calls.count(JobAnalysis) == 0

@@ -145,8 +145,25 @@ class FitAnalysisService:
             FIT_ANALYSIS_VERSION, PROMPT_VERSION, SCHEMA_VERSION,
             RESUME_PROMPT, JOB_PROMPT, MATCH_PROMPT, self._namespace(),
             *[schema.model_json_schema() for schema in (ResumeAnalysis, JobAnalysis, SkillAssessment)],
+            # Switching local/extract, or changing the local catalogue builder, must recompute.
+            self.catalogue_identity(),
         ]
         return hashlib.sha256(json.dumps(content, sort_keys=True).encode()).hexdigest()
+
+    @staticmethod
+    def catalogue_mode():
+        return 'extract' if os.getenv('JOB_AGENT_MAIN_CATALOG', 'local').strip().lower() == 'extract' else 'local'
+
+    @classmethod
+    def catalogue_identity(cls):
+        mode = cls.catalogue_mode()
+        if mode == 'extract':
+            return [mode]
+        from pathlib import Path
+        from job_agent import requirement_catalog
+        from job_agent.jev_fit import core
+        sources = [hashlib.sha256(Path(m.__file__).read_bytes()).hexdigest() for m in (requirement_catalog, core)]
+        return [mode, requirement_catalog.LOCAL_PRODUCER, *sources]
 
     def uses_jev(self):
         from job_agent.jev_fit.settings import enabled
@@ -172,7 +189,7 @@ class FitAnalysisService:
 
         Returns None (free extraction) when the text has no recognisable requirement.
         """
-        if os.getenv('JOB_AGENT_MAIN_CATALOG', 'local').strip().lower() == 'extract':
+        if FitAnalysisService.catalogue_mode() == 'extract':
             return None
         from job_agent.requirement_catalog import FrozenRequirementCatalog
         catalogue = FrozenRequirementCatalog.from_local_units(body)
@@ -318,8 +335,11 @@ class FitAnalysisService:
         def extract(kind, key, compute):
             started = perf_counter()
             from agent_runtime.analysis_cache import cache_events
+            # Resume analysis never depends on the job's catalogue; keying it by the
+            # catalogue re-analysed the same resume for every locally catalogued job.
+            scope = namespace.split(':catalogue:', 1)[0] if kind == 'resume' else namespace
             with cache_events() as events:
-                value, reused = self._cache.get((kind, namespace, key), compute)
+                value, reused = self._cache.get((kind, scope, key), compute)
             reused = reused or any(e['kind'] == kind and e['hit'] for e in events)
             return value, reused, round(perf_counter() - started, 3)
 

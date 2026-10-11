@@ -13,11 +13,17 @@ import re
 from job_agent.schemas import JobAnalysis, JobRequirement
 
 CATALOG_VERSION = 'complete-job-payload-v1'
-LOCAL_PRODUCER = 'local-units-v3'
+LOCAL_PRODUCER = 'local-units-v4'
 
 REQUIREMENT_SECTION = re.compile(r'requirement|qualification|must have|nice to have|who you are|about you|you have|you bring|'
     r'what you.ll bring|what we.re looking for|skills|experience|^required$|^preferred$', re.I)
 PREFERRED_SECTION = re.compile(r'preferred|nice to have|bonus|plus', re.I)
+# A level stated inside the item itself ("Python experience preferred.", "Go is a plus").
+INLINE_PREFERRED = re.compile(r'\b(?:preferred|nice to have|bonus)\b|'
+    r'\b(?:is|are|a|would be a)\s+(?:big\s+|huge\s+|strong\s+)?plus\b|'
+    r'\b(?:desired|desirable)\s*[.!]?\s*$|\b(?:is|are)\s+(?:desired|desirable)\b', re.I)
+INLINE_LEVEL_STATEMENT = re.compile(r'\b(?:required|preferred|desired|nice to have)\s*[.!]?\s*$|'
+    r'\b(?:is|are)\s+(?:required|preferred|desired|a\s+plus)\b', re.I)
 DUTY_SECTION = re.compile(r'responsibilit|what you.ll do|what you will do|the role|day to day|your impact|in this role', re.I)
 QUALIFICATION_SIGNAL = re.compile(r'\b(?:\d+\+?\s*(?:years?|yrs)|experience (?:with|in)|proficien\w*|familiar\w*|knowledge of|'
     r'degree|bachelor\w*|master\w*|ph\.?d|certif\w*|ability to|skills? in|expertise|fluen\w*|must (?:have|be))\b', re.I)
@@ -37,7 +43,8 @@ def local_job_analysis(body):
     for u in units:
         section = u.get('section') or ''
         text = qualification_text(u['text'])
-        if not text or len(text) < 3:
+        # Short skill names (Go, R, C#) are real items in a requirement list.
+        if not text or not re.search(r'\w', text) or (len(text) < 3 and not REQUIREMENT_SECTION.search(section)):
             continue
         leading = bool(LEADING_QUALIFICATION.match(text))
         if DUTY_SECTION.search(section) and not REQUIREMENT_SECTION.search(section) and not leading:
@@ -46,11 +53,16 @@ def local_job_analysis(body):
             continue
         inline_pref = re.match(r'\s*preferred\s*:', u['text'], re.I)
         is_requirement = (REQUIREMENT_SECTION.search(section) or re.match(r'\s*(?:required|preferred)\s*:', u['text'], re.I)
-            or leading or (not has_requirement_section and QUALIFICATION_SIGNAL.search(text)) or CANDIDATE_CONDITION.search(text))
+            or leading or INLINE_LEVEL_STATEMENT.search(text)
+            or (not has_requirement_section and QUALIFICATION_SIGNAL.search(text)) or CANDIDATE_CONDITION.search(text))
         if not is_requirement:
             continue
         condition = bool(CANDIDATE_CONDITION.search(text)) and not QUALIFICATION_SIGNAL.search(text)
-        level = 'preferred' if inline_pref or PREFERRED_SECTION.search(section) else 'required'
+        # The item's own wording outranks its section: "Python experience preferred."
+        # under "Requirements" is preferred; an explicit "required" item stays required.
+        required_inline = bool(re.search(r'\b(?:required|must)\b', text, re.I)) and not INLINE_PREFERRED.search(text)
+        level = ('preferred' if inline_pref or INLINE_PREFERRED.search(text)
+                 or (PREFERRED_SECTION.search(section) and not required_inline) else 'required')
         # An explicit duration ("8+ years") enables the pipeline's deterministic years
         # guard: 'matched' requires evidence that states at least that many years.
         years = None if condition else extract_minimum_years(text)

@@ -103,8 +103,10 @@ def career(tmp_path, monkeypatch):
 def execute(c,name,**args):return c.harness.execute(c.state['task_id'],name,args,call_id=str(uuid4()))
 
 
-def test_scoring_reuses_extractions_across_jobs_and_conversations(career):
+def test_scoring_reuses_extractions_across_jobs_and_conversations(career,monkeypatch):
     from job_agent.schemas import ResumeAnalysis, JobAnalysis, SkillAssessment
+    # Counts model job extraction per posting; the local catalogue default is covered elsewhere.
+    monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG','extract')
 
     c=career
     calls=[]

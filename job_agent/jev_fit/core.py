@@ -190,8 +190,16 @@ def job_units(text):
         words = label.split()
         if not 1 <= len(words) <= 7 or any(a <= m.start(1) < b for a, b, _ in headings):
             continue
+        # A line ending in a connector is wrapped prose, never a heading.
+        if re.search(r'(?:[,/&(-]|\b(?:and|or|of|with|in|to|for|the|a|an))$', label, re.I):
+            continue
         titled = sum(w[:1].isupper() or not w[:1].isalpha() for w in words) / len(words)
-        if titled >= .6 or HEADING_KEYWORD.search(label):
+        # Title case alone is not a heading inside a bare list ("Requirements:\nPython\nSQL"):
+        # it starts a new section only after finished prose, a long line or a bullet item.
+        previous = text[:m.start()].rstrip().rsplit('\n', 1)[-1].strip()
+        after_content = (not previous or previous.endswith(('.', '!', '?')) or len(previous) > 60
+                         or bool(re.match(r'(?:[-*•]|\d+[.)])\s', previous)))
+        if HEADING_KEYWORD.search(label) or (titled >= .6 and after_content):
             headings.append((m.start(1), m.start(1) + len(label), label))
     headings.sort()
     starts = {0, len(text)}
@@ -209,6 +217,13 @@ def job_units(text):
         elif re.match(r'\s+$', m.group()) and m.group().count('\n') < 2 and not _sentence_end(text, m.start()):
             continue
         else:
+            starts.add(m.end())
+    # A bare one-item-per-line list ("Python\nSQL"): adjacent short lines are separate
+    # items when the next starts like an item. Wrapped prose continues in lower case or
+    # after a connector, so it stays one unit.
+    for m in re.finditer(r'(?m)^([^\n]{1,60})\n(?=[ \t]*[A-Z0-9][^\n]{0,59}$)', text):
+        line = m.group(1).strip()
+        if line and not re.search(r'(?:[,/&(-]|\b(?:and|or|of|with|in|to|for|the|a|an))$', line, re.I):
             starts.add(m.end())
     # Explicit Required:/Preferred: lines are already headed. Keep their label
     # with the requirement for traceability and compatibility with exact quotes.
