@@ -56,7 +56,11 @@ class AnalysisCache:
             if owner:
                 future = self.pending[key] = Future()
         if not owner:
-            return self._result(kind, future.result(), True)
+            value, eligible = future.result()
+            if not eligible:
+                from job_agent.reasoning import mark_uncacheable
+                mark_uncacheable()
+            return self._result(kind, value, True)
         try:
             now = datetime.now(UTC).isoformat()
             with self.sessions.begin() as session:
@@ -66,7 +70,12 @@ class AnalysisCache:
                     row.last_used_at = now
             hit = value is not None
             if not hit:
-                value = compute()  # caller completes all validation BEFORE storage
+                from job_agent.reasoning import cache_observation
+                with cache_observation() as eligible:
+                    value = compute()  # caller completes all validation BEFORE storage
+                if not eligible():
+                    future.set_result((deepcopy(value), False))
+                    return self._result(kind, value, False)
                 encoded = json.dumps(value, ensure_ascii=False, separators=(',', ':'))
                 try:
                     with self.sessions.begin() as session:
@@ -83,7 +92,7 @@ class AnalysisCache:
                 self.values[key] = deepcopy(value)
                 while len(self.values) > self.memory_limit:
                     self.values.popitem(last=False)
-            future.set_result(deepcopy(value))
+            future.set_result((deepcopy(value), True))
             return self._result(kind, value, hit)
         except BaseException as exc:
             future.set_exception(exc)

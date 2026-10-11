@@ -55,15 +55,24 @@ class _AnalysisCache:
                 future = Future()
                 self.pending[key] = future
         if not owner:
-            return deepcopy(future.result()), True
+            value, eligible = future.result()
+            if not eligible:
+                from job_agent.reasoning import mark_uncacheable
+                mark_uncacheable()
+            return deepcopy(value), True
         try:
-            value = compute()
+            from job_agent.reasoning import cache_observation
+            with cache_observation() as eligible:
+                value = compute()
+            if not eligible():
+                future.set_result((deepcopy(value), False))
+                return value, False
             stored = deepcopy(value)
             with self.lock:
                 self.values[key] = stored
                 while len(self.values) > self.limit:
                     self.values.popitem(last=False)
-            future.set_result(stored)
+            future.set_result((stored, True))
             return value, False
         except BaseException as exc:
             future.set_exception(exc)

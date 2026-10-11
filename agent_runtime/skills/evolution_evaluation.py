@@ -59,7 +59,7 @@ class ConfiguredEvaluationModel:
     """Calls the configured model without tools, file access, or external writes."""
     def __init__(self):
         from job_agent.model import create_model
-        self._model = create_model()
+        self._model = create_model(purpose='skill_evaluation')
         self.model_id = str(self._model.model_name)
         self.temperature = float(self._model.temperature or 0)
 

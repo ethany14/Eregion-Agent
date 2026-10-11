@@ -169,3 +169,59 @@ The default server address is `127.0.0.1:8000`; the extension uses
 `http://localhost:8000`. Changing the server port requires corresponding extension
 configuration changes. The health endpoint reports service/MCP state, not proof
 that a model request or employer application will succeed.
+## Per-purpose reasoning and optimization telemetry
+
+`LLM_REASONING_<PURPOSE>` optionally overrides reasoning for an individual purpose.
+The suffix is upper snake case. Common values are `AGENT` (career/application
+router), `FAST`, `EXTRACTION`, `SCORING`, `PACK_WRITER`, `CLAIM_VERIFIER`,
+`INTERVIEW_QUESTION`, `INTERVIEW_FEEDBACK`, `JOB_SCREENING`, `SKILL_EVIDENCE`,
+`SKILL_EVIDENCE_VERIFY`, `QUESTION_CATEGORY`, `MEMORY_RELEVANCE`, `FORM_OPTIONS`,
+`RESUME_PROFILE`, `SKILL_EVALUATION`, `API`, and `NONE` (unspecified construction).
+`JEV_FIT_RESOLVER` independently controls the main-model unknown-fit resolver.
+Structured schemas without an alias use their class name converted to upper snake
+case, e.g. `InterviewAnswerAssessment` → `INTERVIEW_ANSWER_ASSESSMENT`.
+Jev fit additionally supports `EXTRACT_REQUIREMENTS`, `REFINE_EXTRACTION_YES_NO`,
+`CONDITION_CATEGORY_YES_NO`, `SUPPORT_YES_NO`, `FOCUSED_YES_NO`,
+`CLARIFY_FULL_SUPPORT_YES_NO`, and `VERIFY_CITATIONS_YES_NO`.
+
+Allowed values: `none`, `minimal`, `low`, `medium`, `high`. Blank means unset;
+`none` sends the literal value. Precedence is purpose override, then the existing
+path's `LLM_AGENT_REASONING` / `LLM_EXTRACTION_REASONING` /
+`LLM_INTERVIEW_REASONING`, then provider default. Mock interview retains its default
+`low`. Career `TaskModel` historically sends no agent reasoning by default, while
+application router does read `LLM_AGENT_REASONING`; this distinction is preserved.
+The complete construction/schema matrix is in
+[`opt-reasoning-audit-20261011.md`](diagnostics/opt-reasoning-audit-20261011.md).
+Overrides do not leak between semantic purposes on a shared client: for example,
+`LLM_REASONING_EXTRACTION` does not change scoring or the Jev resolver; without their
+own overrides those retain the legacy extraction reasoning setting.
+
+`JOB_AGENT_REASONING_ESCALATION=1` opts into a bounded validation retry/upgrade:
+low → medium and medium → high. Absent reasoning stays absent. Default is off.
+Existing grounding, batch and controller retries retain their budgets; only the
+failed step is upgraded. Providers rejecting reasoning get one retry without the
+parameter. TypeSafe compatibility is unverified until a separately approved live
+comparison; leave its overrides unset to keep today's requests.
+
+Reasoning configuration and escalation policy partition result caches. Results
+produced after a level upgrade or parameter-free fallback do not populate the
+original level's cache key (fit, durable analysis, fast decisions, Jev and resolver).
+No new
+variable is needed for per-attempt composition/timing telemetry. The usage ledger
+stores counts, request-part character sizes, request-budget replay eviction and
+monotonic timings, never prompt text. `source=tool_action` rows contain action
+timings and are excluded from provider counts. Provider persistence timing covers
+start/finish writes, excluding the final timing update; tool persistence timing
+covers its pre-effect intent checkpoint. Queue time is measured at executor dispatch.
+
+Read-only report:
+
+```powershell
+.venv/Scripts/python.exe evals/opt_report.py path/to/career.db --json report.json
+```
+
+Optional `--task-id` / `--run-id` filters select attribution. Missing historical
+fields are reported as missing/null. A saved last-request snapshot is labelled
+separately and never extrapolated to earlier attempts. Ratios with only partial
+cached/reasoning counters use known counters; consult the accompanying missing
+counts before comparing runs. No paid run is started by this command.

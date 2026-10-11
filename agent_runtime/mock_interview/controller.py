@@ -340,7 +340,9 @@ class MockInterviewController:
             for attempt in range(2):
                 draft = None
                 try:
-                    draft = MockAnswerEvaluation.model_validate(self.model.evaluate(context))
+                    from agent_runtime.provider_usage import usage_scope
+                    with usage_scope(reasoning_retry=bool(attempt), reasoning_retry_owner=True, attempt=attempt + 1):
+                        draft = MockAnswerEvaluation.model_validate(self.model.evaluate(context))
                     evaluation = MockAnswerEvaluation.model_validate({
                         **draft.model_dump(mode="python"),
                         "evaluation_id": str(uuid4()), "answer_id": answer.answer_id})

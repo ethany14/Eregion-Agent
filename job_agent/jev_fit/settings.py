@@ -37,6 +37,7 @@ class Settings:
     ttl: float = 86400
     unknown_ttl: float = 300
     resolve_unknowns: bool = False  # Settings.load() enables it from the environment.
+    reasoning: dict = field(default_factory=dict)
 
     @classmethod
     def load(cls, *, cache_path=None, environ=None):
@@ -60,17 +61,20 @@ class Settings:
         unknown_ttl = float(values.get('TYPESAFE_FIT_UNKNOWN_TTL') or 86400)
         if not 60 <= unknown_ttl <= 7 * 86400:
             raise ValueError('TYPESAFE_FIT_UNKNOWN_TTL must be between 60 seconds and 7 days.')
+        from job_agent.reasoning import configured_overrides
         return cls(key=str(values.get('TYPESAFE_API_KEY') or '').strip(), model=model,
+                   reasoning=configured_overrides(values),
                    base_url=base, timeout=timeout, resolve_unknowns=resolve, unknown_ttl=unknown_ttl,
                    cache_path=Path(path) if path else ROOT / '.cache' / 'jev-fit.sqlite3')
 
     def signature(self):
+        from job_agent.reasoning import escalation_enabled
         files = ('settings.py', 'core.py', 'cache.py', 'transport.py', 'service.py', 'projection.py')
         code = {name: hashlib.sha256((Path(__file__).parent / name).read_bytes()).hexdigest() for name in files}
         for name in ('schemas.py', 'domain.py', 'partial_support.py', 'resume_sources.py', 'resume_headers.py', 'resume_layout.py'):
             code[name] = hashlib.sha256((ROOT / 'job_agent' / name).read_bytes()).hexdigest()
         return digest([VERSION, self.model, self.base_url, self.timeout, self.ttl,
-                       self.unknown_ttl, digest(self.key), code])
+                       self.unknown_ttl, digest(self.key), code, self.reasoning, escalation_enabled()])
 
 
 def database_cache_path(analysis_cache):

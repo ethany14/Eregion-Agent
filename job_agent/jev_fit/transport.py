@@ -38,6 +38,7 @@ class Pending:
     task_id: str
     context: object
     future: Future
+    cacheable: bool = True
 
 
 class Broker:
@@ -62,9 +63,14 @@ class Broker:
 
     def submit(self, *, state, questions, purpose, scope, task_id):
         future = Future()
-        self.queue.put(Pending(semantic_value(state), semantic_value(questions), purpose,
-                               copy.deepcopy(scope), task_id, copy_context(), future))
-        return future.result()
+        pending = Pending(semantic_value(state), semantic_value(questions), purpose,
+                          copy.deepcopy(scope), task_id, copy_context(), future)
+        self.queue.put(pending)
+        result = future.result()
+        if not pending.cacheable:
+            from job_agent.reasoning import mark_uncacheable
+            mark_uncacheable()
+        return result
 
     def _run(self):
         stop = False
@@ -99,22 +105,36 @@ class Broker:
                             p.future.set_exception(exc)
 
     def _key(self, p, q):
-        return digest([self.signature, p.scope, p.purpose, p.state, q])
+        from job_agent.reasoning import resolve, escalation_enabled
+        return digest([self.signature, p.scope, p.purpose, p.state, q,
+                       resolve(self.config.reasoning, p.purpose), escalation_enabled()])
 
-    def _request(self, state, questions, purpose, context):
+    def _request(self, state, questions, purpose, context, *, retry=False, plain=False):
         if len(self.records) >= self.max_requests:
             return {}, 'request_budget', None
         payload = {'model': self.config.model, 'state': state, 'questions': questions}
+        from job_agent.reasoning import resolve, escalated, escalation_enabled
+        level = resolve(self.config.reasoning, purpose)
+        original_level = level
+        if retry and escalation_enabled():
+            level = escalated(level)
+        if plain:
+            level = None
+        if level is not None:
+            payload['reasoning_effort'] = level
         if len(json.dumps(payload, ensure_ascii=False).encode()) > MAX_PAYLOAD_BYTES:
             return {}, 'payload_limit', None
         rec = {'call_id': str(uuid.uuid4()), 'model': self.config.model, 'purpose': purpose,
+               'reasoning_escalation': level != original_level and not plain, 'reasoning_fallback': plain,
                'status': 'started', 'input_tokens': None, 'output_tokens': None,
                'question_count': len(questions)}
         self.records.append(rec)
         started = time.monotonic()
 
         def call():
-            with usage_scope(purpose='jev:fit:' + purpose):
+            with usage_scope(purpose='jev:fit:' + purpose, attempt=2 if retry or plain else 1,
+                             effective_reasoning=level, reasoning_escalation=level != original_level and not plain,
+                             reasoning_fallback=plain):
                 def paid_request(request_payload):
                     with provider_call(self.config.model, context_chars=len(canonical(request_payload))) as usage:
                         if self.http is None:
@@ -124,6 +144,8 @@ class Broker:
                         if response.status_code != 200:
                             usage.update(status='failed', http_status=response.status_code)
                             rec['status'] = 'http_' + str(response.status_code)
+                            rec['reasoning_rejected'] = bool(level and response.status_code in {400,422}
+                                and 'reasoning' in response.text.lower())
                             return {}
                         data = response.json()
                         counts = token_counts(data.get('usage'))
@@ -148,6 +170,11 @@ class Broker:
             answers, rec['status'] = {}, 'invalid_response'
         finally:
             rec['seconds'] = round(time.monotonic() - started, 4)
+        if not retry and not plain:
+            if rec.get('reasoning_rejected'):
+                return self._request(state, questions, purpose, context, plain=True)
+            if rec['status'] == 'invalid_response' and escalation_enabled():
+                return self._request(state, questions, purpose, context, retry=True)
         return answers, rec['status'], rec
 
     def _dispatch(self, pending):
@@ -188,9 +215,12 @@ class Broker:
             batches.append(current)
         for batch in batches:
             result,status,record = self._request(state,batch,purpose,pending[0].context)
+            from job_agent.reasoning import cacheable_attempts
+            eligible = cacheable_attempts([record]) if record else True
             writes=[]
             for wire in batch:
                 for p,k,key,event in targets[wire]:
+                    p.cacheable = p.cacheable and eligible
                     event['status']=status
                     if status=='ok':
                         answer=result[wire]
@@ -199,7 +229,7 @@ class Broker:
                         event.update(expires_at=expires,provenance=provenance)
                         answers[id(p)][k]=answer
                         writes.append((key,answer,provenance))
-            if self.cache and writes:
+            if self.cache and writes and eligible:
                 self.cache.put_many(writes,self.config.model)
             if status!='ok':
                 for p in pending:

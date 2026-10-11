@@ -192,7 +192,7 @@ def provider_call(model, **sizes):
                'attempt': scope.get('attempt', 1),
                'status': 'pending', **{k: v for k, v in sizes.items() if k in
                 {'context_chars', 'tool_schema_chars', 'image_count'}}}
-    for key in ('context_metrics', 'queue_wait_seconds', 'reasoning_escalation', 'effective_reasoning'):
+    for key in ('context_metrics', 'queue_wait_seconds', 'reasoning_escalation', 'reasoning_fallback', 'effective_reasoning'):
         if key in scope:
             details[key] = scope[key]
     persistence = 0.0

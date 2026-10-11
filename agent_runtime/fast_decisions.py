@@ -31,6 +31,7 @@ class DecisionBatch:
     input_tokens: int = 0
     cached: bool = False
     requests: int = 0
+    cacheable: bool = True
 
     def metadata(self):
         return {key: getattr(self, key) for key in
@@ -46,17 +47,19 @@ def accepted(answer, *, confidence=.90, probability=.95):
 
 class FastDecisions:
     def __init__(self, *, api_key='', base_url='https://api.typesafe.ai',
-                 model='jev-latest', enabled=False, timeout=2.5, transport=None):
+                 model='jev-latest', enabled=False, timeout=2.5, transport=None, reasoning=None):
         self._key = api_key
         self.base_url, self.model = base_url.rstrip('/'), model
         self.enabled = bool(enabled and api_key)
         self.timeout, self.transport = timeout, transport
         self._cache, self._lock, self._retry_at = OrderedDict(), RLock(), 0
         self._inflight = {}
+        self.reasoning = dict(reasoning or {})
 
     def cache_namespace(self):
+        from job_agent.reasoning import escalation_enabled
         return hashlib.sha256(json.dumps([self.enabled, self.base_url, self.model,
-            self._key, self.timeout]).encode()).hexdigest()
+            self._key, self.timeout, self.reasoning, escalation_enabled()]).encode()).hexdigest()
 
     def clear_cache(self):
         """Explicit cold benchmark; never resets outage cooldown."""
@@ -64,15 +67,26 @@ class FastDecisions:
             self._cache.clear()
 
     def _request(self, payload):
-        from agent_runtime.provider_usage import provider_call, token_counts
-        with provider_call(self.model, context_chars=len(json.dumps(payload, ensure_ascii=False))) as usage:
-            response = self._request_unmetered(payload)
-            if response.status_code >= 400:
-                usage.update(status='failed', http_status=response.status_code)
-            try:
-                usage.update(token_counts(response.json().get('usage')))
-            except (ValueError, AttributeError):
-                pass
+        from agent_runtime.provider_usage import provider_call, token_counts, usage_scope, current_scope
+        for plain in (False, True):
+            with usage_scope(effective_reasoning=payload.get('reasoning_effort'),
+                             reasoning_fallback=plain,
+                             reasoning_escalation=current_scope().get('reasoning_escalation', False) and not plain,
+                             attempt=current_scope().get('attempt', 1) + int(plain),
+                             **({'queue_wait_seconds': 0.0} if plain else {})):
+                with provider_call(self.model, context_chars=len(json.dumps(payload, ensure_ascii=False))) as usage:
+                    response = self._request_unmetered(payload)
+                    if response.status_code >= 400:
+                        usage.update(status='failed', http_status=response.status_code)
+                    try:
+                        usage.update(token_counts(response.json().get('usage')))
+                    except (ValueError, AttributeError):
+                        pass
+            if not plain and payload.get('reasoning_effort') and response.status_code in {400, 422} and 'reasoning' in response.text.lower():
+                payload = {k:v for k,v in payload.items() if k != 'reasoning_effort'}
+                continue
+            response.extensions['reasoning_attempts'] = 2 if plain else 1
+            response.extensions['reasoning_fallback'] = plain
             return response
 
     def _request_unmetered(self, payload):
@@ -98,6 +112,10 @@ class FastDecisions:
         if not self.enabled:
             return result
         payload = {'model': self.model, 'state': state, 'questions': questions}
+        from job_agent.reasoning import resolve
+        level = resolve(self.reasoning, purpose)
+        if level is not None:
+            payload['reasoning_effort'] = level
         encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True)
         if not questions or len(questions) > 40 or len(encoded) > 90000:
             result.status = 'input_limit'
@@ -110,7 +128,8 @@ class FastDecisions:
         # a caller mutating its input while another thread runs cannot change it.
         payload = json.loads(encoded)
         questions = payload['questions']
-        digest = hashlib.sha256((purpose + encoded).encode()).hexdigest()
+        from job_agent.reasoning import escalation_enabled
+        digest = hashlib.sha256((purpose + encoded + str(escalation_enabled())).encode()).hexdigest()
         with self._lock:
             cached = self._cache.get(digest)
             if cached and start - cached[0] < 300:
@@ -133,8 +152,12 @@ class FastDecisions:
             except FutureTimeout:
                 return DecisionBatch(status='inflight_timeout', model=self.model,
                                      seconds=round(time.monotonic() - start, 3))
+            if not value['cacheable']:
+                from job_agent.reasoning import mark_uncacheable
+                mark_uncacheable()
             return DecisionBatch(answers=json.loads(value['answers']), status=value['status'],
                 model=value['model'], cached=value['status'] == 'ok',
+                cacheable=value['cacheable'],
                 seconds=round(time.monotonic() - start, 3))
         try:
             return self._evaluate_payload(payload, questions, digest, start, result, purpose)
@@ -142,12 +165,30 @@ class FastDecisions:
             # Resolve waiters even if a caller's budget/cancellation exception
             # escapes. No exception text, prompt or response body is shared.
             value = {'answers':json.dumps(result.answers), 'model':result.model,
+                     'cacheable':result.cacheable,
                      'status':result.status if result.status != 'disabled' else 'inflight_failed'}
             with self._lock:
                 flight.set_result(value)
                 self._inflight.pop(digest, None)
 
     def _evaluate_payload(self, payload, questions, digest, start, result, purpose):
+        from job_agent.reasoning import escalation_enabled, escalated
+        from agent_runtime.provider_usage import usage_scope
+        result = self._evaluate_once(payload, questions, digest, start, result, purpose)
+        if result.status == 'invalid_response' and escalation_enabled():
+            previous_requests = result.requests
+            level = payload.get('reasoning_effort')
+            higher = escalated(level)
+            retry = {**payload, **({'reasoning_effort':higher} if higher is not None else {})}
+            with usage_scope(attempt=2, reasoning_escalation=higher != level, queue_wait_seconds=0.0):
+                result = self._evaluate_once(retry, questions, digest, start, result, purpose)
+            result.requests += previous_requests
+            if result.status == 'ok':
+                with self._lock:
+                    self._retry_at = 0
+        return result
+
+    def _evaluate_once(self, payload, questions, digest, start, result, purpose):
         try:
             # No redirects: never forward an API credential to another host.
             from agent_runtime.multi_agent.model_usage import invoke_model
@@ -155,6 +196,7 @@ class FastDecisions:
             result.requests = 1
             with usage_scope(purpose='jev:' + purpose, model_route='fast'):
                 response = invoke_model(self._request, payload)
+            result.requests = response.extensions.get('reasoning_attempts', 1)
             if response.status_code != 200:
                 result.status = 'http_' + str(response.status_code)
             else:
@@ -175,10 +217,13 @@ class FastDecisions:
                 result.answers, result.status = answers, 'ok'
                 result.model = str(data.get('model', self.model))[:100]
                 result.input_tokens = max(0, int(data.get('usage', {}).get('input_tokens', 0)))
-                with self._lock:
-                    self._cache[digest] = (time.monotonic(), json.dumps(answers), result.model)
-                    while len(self._cache) > 128:
-                        self._cache.popitem(last=False)
+                from agent_runtime.provider_usage import current_scope
+                result.cacheable = not current_scope().get('reasoning_escalation') and not response.extensions.get('reasoning_fallback')
+                if result.cacheable:
+                    with self._lock:
+                        self._cache[digest] = (time.monotonic(), json.dumps(answers), result.model)
+                        while len(self._cache) > 128:
+                            self._cache.popitem(last=False)
         except httpx.TimeoutException:
             result.status = 'timeout'
         except httpx.HTTPError:
@@ -216,13 +261,15 @@ def configured_decisions(*, env_path=None, environ=None, scope='general'):
             raise ValueError()
     except ValueError:
         return FastDecisions()
-    fingerprint = hashlib.sha256(json.dumps([key, base, model, enabled, timeout]).encode()).hexdigest()
+    from job_agent.reasoning import configured_overrides
+    reasoning = configured_overrides(settings)
+    fingerprint = hashlib.sha256(json.dumps([key, base, model, enabled, timeout, reasoning], sort_keys=True).encode()).hexdigest()
     with _instances_lock:
         if fingerprint not in _instances:
             if len(_instances) >= 8:
                 _instances.clear()
             _instances[fingerprint] = FastDecisions(api_key=key, base_url=base, model=model,
-                                                   enabled=enabled, timeout=timeout)
+                                                   enabled=enabled, timeout=timeout, reasoning=reasoning)
         return _instances[fingerprint]
 
 

@@ -143,13 +143,16 @@ def resolve_unknowns(raw, evidence, *, model, invoke=None, store=None):
         request = '\n'.join(['CANDIDATE EVIDENCE:', evidence, '', 'UNRESOLVED REQUIREMENTS:',
             *[f'- {key} [{m["level"]}]: {m["text"]}' for key, m in pending.items()]])
         try:
-            result = invoke(model, UnknownResolution, PROMPT, request)
+            from agent_runtime.provider_usage import capture_provider_attempts
+            from job_agent.reasoning import cacheable_attempts
+            with capture_provider_attempts() as attempts:
+                result = invoke(model, UnknownResolution, PROMPT, request)
         except Exception as exc:  # Keep Jev's honest interval; never fail the whole analysis.
             if not decisions:
                 return {**raw, 'resolver': {'status': 'failed', 'error': type(exc).__name__}, 'main_model_calls': 1}
             result = UnknownResolution(decisions=[])
         fresh = [d for d in result.decisions if d.requirement_id in pending]
-        if store:
+        if store and cacheable_attempts(attempts):
             store.put_many({keys[d.requirement_id]: d for d in fresh})
         decisions += fresh
     ledger = {item['id']: item for item in raw.get('extraction', [])}

@@ -11,7 +11,8 @@ from typing import Any, TypeVar
 
 from dotenv import dotenv_values
 from langchain_openai import ChatOpenAI
-from pydantic import BaseModel
+from pydantic import BaseModel, PrivateAttr, ValidationError
+from job_agent.reasoning import resolve, configured_overrides, SCHEMA_PURPOSES, escalated, escalation_enabled
 
 Result = TypeVar("Result", bound=BaseModel)
 DEFAULT_ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
@@ -29,22 +30,63 @@ class ProviderCompatibleChatOpenAI(ChatOpenAI):
     OpenAI-compatible endpoint and only when the signature is absent.
     """
 
+    _reasoning_settings: dict = PrivateAttr(default_factory=dict)
+    _reasoning_purpose: str | None = PrivateAttr(default=None)
+    _legacy_reasoning: str | None = PrivateAttr(default=None)
+    _has_reasoning_configuration: bool = PrivateAttr(default=False)
+
+    def _attempt_options(self, kwargs):
+        from agent_runtime.provider_usage import current_scope
+        scope = current_scope()
+        purpose = scope.get('reasoning_purpose', self._reasoning_purpose or scope.get('purpose'))
+        fallback = self._legacy_reasoning if self._has_reasoning_configuration else self.reasoning_effort
+        level = resolve(self._reasoning_settings, purpose, kwargs.get('reasoning_effort', fallback))
+        higher = escalated(level) if scope.get('reasoning_retry') and escalation_enabled() else level
+        options = dict(kwargs)
+        if higher is not None:
+            options['reasoning_effort'] = higher
+        return options, {'effective_reasoning': higher, 'reasoning_escalation': higher != level}
+
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
         from agent_runtime.provider_usage import provider_call, record_chat_usage
         from agent_runtime.telemetry import model_metrics
         sizes = model_metrics(messages, kwargs.get('tools', []))
-        with provider_call(self.model_name, **sizes) as usage:
-            result = super()._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
-            record_chat_usage(usage, result)
-            return result
+        from agent_runtime.provider_usage import usage_scope, current_scope
+        options, metadata = self._attempt_options(kwargs)
+        for plain in (False, True):
+            with usage_scope(**metadata, attempt=current_scope().get('attempt', 1) + int(plain),
+                             **({'queue_wait_seconds': 0.0} if plain else {})):
+                try:
+                    with provider_call(self.model_name, **sizes) as usage:
+                        result = super()._generate(messages, stop=stop, run_manager=run_manager, **options)
+                        record_chat_usage(usage, result)
+                        return result
+                except Exception as exc:
+                    if plain or not options.get('reasoning_effort') or 'reasoning' not in str(exc).lower():
+                        raise
+                    options['reasoning_effort'] = None
+                    options['_omit_reasoning'] = True
+                    metadata = {'effective_reasoning': None, 'reasoning_escalation': False, 'reasoning_fallback': True}
 
     async def _agenerate(self, messages, stop=None, run_manager=None, **kwargs):
         from agent_runtime.provider_usage import provider_call, record_chat_usage
         from agent_runtime.telemetry import model_metrics
-        with provider_call(self.model_name, **model_metrics(messages, kwargs.get('tools', []))) as usage:
-            result = await super()._agenerate(messages, stop=stop, run_manager=run_manager, **kwargs)
-            record_chat_usage(usage, result)
-            return result
+        from agent_runtime.provider_usage import usage_scope, current_scope
+        options, metadata = self._attempt_options(kwargs)
+        for plain in (False, True):
+            with usage_scope(**metadata, attempt=current_scope().get('attempt', 1) + int(plain),
+                             **({'queue_wait_seconds': 0.0} if plain else {})):
+                try:
+                    with provider_call(self.model_name, **model_metrics(messages, kwargs.get('tools', []))) as usage:
+                        result = await super()._agenerate(messages, stop=stop, run_manager=run_manager, **options)
+                        record_chat_usage(usage, result)
+                        return result
+                except Exception as exc:
+                    if plain or not options.get('reasoning_effort') or 'reasoning' not in str(exc).lower():
+                        raise
+                    options['reasoning_effort'] = None
+                    options['_omit_reasoning'] = True
+                    metadata = {'effective_reasoning': None, 'reasoning_escalation': False, 'reasoning_fallback': True}
 
     def _get_request_payload(
         self,
@@ -53,7 +95,10 @@ class ProviderCompatibleChatOpenAI(ChatOpenAI):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
+        omit_reasoning = kwargs.pop('_omit_reasoning', False)
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+        if omit_reasoning:
+            payload.pop('reasoning_effort', None)
         base_url = str(self.openai_api_base or "")
         if GEMINI_OPENAI_COMPATIBILITY_HOST not in base_url.casefold():
             return payload
@@ -123,11 +168,19 @@ def create_model(
         options["max_retries"] = retries
     reasoning_key = 'LLM_EXTRACTION_REASONING' if purpose == 'extraction' else 'LLM_AGENT_REASONING' if purpose in {'agent', 'fast'} else None
     reasoning = optional_setting(settings, reasoning_key) if reasoning_key else None
+    legacy_reasoning = reasoning
+    reasoning = resolve(settings, purpose, reasoning)
     if reasoning:
         if reasoning not in {'none', 'minimal', 'low', 'medium', 'high'}:
             raise ValueError(f'{reasoning_key} has an unsupported reasoning level.')
         options['reasoning_effort'] = reasoning
-    return model_factory(**options)
+    model = model_factory(**options)
+    if isinstance(model, ProviderCompatibleChatOpenAI):
+        model._reasoning_settings = configured_overrides(settings)
+        model._reasoning_purpose = purpose
+        model._legacy_reasoning = legacy_reasoning
+        model._has_reasoning_configuration = True
+    return model
 
 
 def model_settings_fingerprint(*, env_path: Path = DEFAULT_ENV_PATH, environ=None) -> str:
@@ -135,6 +188,7 @@ def model_settings_fingerprint(*, env_path: Path = DEFAULT_ENV_PATH, environ=Non
     settings = {**dotenv_values(env_path), **(os.environ if environ is None else environ)}
     keys = ('LLM_FAST_MODEL_ID', 'LLM_EXTRACTION_MODEL_ID', 'LLM_AGENT_REASONING', 'LLM_EXTRACTION_REASONING', 'LLM_MODEL_ID','LLM_BASE_URL','LLM_API_KEY','LLM_TIMEOUT','LLM_MAX_RETRIES',
         'OPENAI_API_KEY','OPENAI_API_BASE','OPENAI_BASE_URL','OPENAI_ORG_ID')
+    keys = (*keys, *configured_overrides(settings), 'LLM_INTERVIEW_REASONING', 'JOB_AGENT_REASONING_ESCALATION')
     return hashlib.sha256(json.dumps({key:optional_setting(settings,key) for key in keys},
         sort_keys=True).encode()).hexdigest()
 
@@ -150,8 +204,21 @@ def invoke_structured(
     from agent_runtime.multi_agent.model_usage import invoke_model
     from agent_runtime.provider_usage import current_scope, usage_scope, adapter_attempt
     purpose = current_scope().get('purpose', 'structured')
-    with usage_scope(purpose=purpose + ':' + schema.__name__), adapter_attempt(type(model).__name__):
-        return invoke_model(_invoke_structured, model, schema, system_message, human_message, config)
+    semantic_purpose = SCHEMA_PURPOSES.get(schema.__name__, schema.__name__)
+    retrying = current_scope().get('reasoning_retry', False)
+    for retry in (False, True):
+        with usage_scope(purpose=purpose + ':' + schema.__name__, reasoning_purpose=semantic_purpose,
+                         reasoning_retry=retrying or retry,
+                         attempt=current_scope().get('attempt', 1) + int(retry),
+                         **({'queue_wait_seconds': 0.0} if retry else {})), adapter_attempt(type(model).__name__):
+            try:
+                return invoke_model(_invoke_structured, model, schema, system_message, human_message, config)
+            except Exception as exc:
+                from langchain_core.exceptions import OutputParserException
+                invalid = isinstance(exc, (ValidationError, OutputParserException)) or (
+                    isinstance(exc, ValueError) and str(exc) == 'The model did not return valid structured output.')
+                if retry or retrying or current_scope().get('reasoning_retry_owner') or not escalation_enabled() or not invalid:
+                    raise
 
 
 def _invoke_structured(model, schema, system_message, human_message, config):

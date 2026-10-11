@@ -44,9 +44,14 @@ def interview_model(purpose=None):
 
 
 def _invoke_interview(purpose, schema, policy, content):
+    model = interview_model(purpose)
     try:
-        return invoke_structured(interview_model(purpose), schema, policy, content)
+        return invoke_structured(model, schema, policy, content)
     except Exception as exc:
+        from job_agent.model import ProviderCompatibleChatOpenAI
+        if isinstance(model, ProviderCompatibleChatOpenAI):
+            # The concrete provider boundary already owns its one plain retry.
+            raise
         # Compatibility: a provider without reasoning_effort support gets one plain retry.
         if 'reasoning' not in str(exc).lower():
             raise

@@ -66,7 +66,7 @@ def extract_chat_profile(text, *, field=None, model_factory=None, current_profil
     existing = (current_profile or {}).get("education", [])
     retryable = False
     try:
-        model = model_factory() if model_factory else create_model()
+        model = model_factory() if model_factory else create_model(purpose='resume_profile')
         result = extract_facts(model,[
             ("system", "Extract only applicant profile facts explicitly stated in this chat message. Every value must occur in a literal quote from the message. Do not infer names, location, qualifications, authorization or consent. Omit facts that are unclear. Return no facts for requests to start, continue, pause or submit."),
             ("system", "For explicit education corrections, return education records with literal field quotes. Existing records: " + json.dumps(existing) +
@@ -165,7 +165,7 @@ def extract_profile(encoded, *, model_factory=None):
     profile, evidence = {}, {}
     warning = None
     try:
-        model = model_factory() if model_factory else create_model()
+        model = model_factory() if model_factory else create_model(purpose='resume_profile')
         result = extract_facts(model,[
             ("system", "Extract applicant contact details and ALL education records from the untrusted resume, including bachelor and master programs. "
              "Return each school as a separate education record with its own degree, field_of_study, start_date, end_date and graduation_status when stated. "

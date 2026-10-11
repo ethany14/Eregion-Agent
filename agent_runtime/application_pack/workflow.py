@@ -590,7 +590,10 @@ class ApplicationPackWorkflow:
         started = time.monotonic()
         failed = True
         try:
-            result = operation()
+            from agent_runtime.provider_usage import usage_scope
+            with usage_scope(reasoning_retry=stage == 'revision' and item.revision_count == 0
+                             and item.status == ItemStatus.NEEDS_REVISION):
+                result = operation()
             failed = False
             return result
         finally:

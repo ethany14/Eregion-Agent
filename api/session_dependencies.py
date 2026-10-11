@@ -191,7 +191,7 @@ def create_session_runtime(
     mcp_manager = McpToolManager(**manager_options)
     try:
         mcp_manager.start()
-        configured_model = model or create_model()
+        configured_model = model or create_model(purpose='api')
         adapter = LangChainToolModelAdapter(configured_model)
         loop = ToolCallingLoop(model=adapter, registry=registry, executor=executor)
     except Exception:
