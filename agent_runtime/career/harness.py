@@ -485,7 +485,7 @@ class CareerHarness:
             if not retrieved:raise ValueError('Read the current posting before recommending it.')
             from .search_policy import constraints, recommendation_warning
             policy=constraints(state)
-            warning=recommendation_warning(policy,job['title'] or '')
+            warning=recommendation_warning(policy,job['title'] or '',job.get('description') or '')
             if not isinstance(args['reason'],str) or not 1<=len(args['reason'])<=2000 or not isinstance(args['caveats'],str) or len(args['caveats'])>2000:
                 raise ValueError('Keep the recommendation reason and caveats concise.')
             payload={k:job[k] for k in ('application_id','title','company','location','url','match_score')}|{'reason':args['reason'],'caveats':args['caveats']}

@@ -368,3 +368,21 @@ def test_model_duration_not_stated_in_source_is_dropped_not_fatal():
         level='required', minimum_years=5)
     out = normalize_job_analysis(JobAnalysis(title=None, summary='', requirements=[item], responsibilities=[]), jd)
     assert out.requirements[0].minimum_years is None
+
+
+def test_level_free_title_needs_opening_level_evidence_for_junior_request():
+    # B6 live: "Associate Data Analyst" with a preferred one-year minimum was
+    # recommended as a junior match because only the title was checked.
+    from agent_runtime.career.search_policy import recommendation_warning
+    policy={'levels':['junior'],'strict':False}
+    warning=recommendation_warning(policy,'Associate Data Analyst',
+        'A minimum of 1 year data management experience is preferred.')
+    assert warning['actual'] is None and 'Level unverified' in warning['message']
+    assert recommendation_warning(policy,'Data Analyst','0-2 years of marketing or analytics experience') is None
+    assert recommendation_warning(policy,'Data Analyst','This role is an entry-level position.') is None
+    assert recommendation_warning(policy,'Data Analyst','Minimum 5 years of experience.')['actual']=='senior'
+    assert recommendation_warning(policy,'Junior Data Analyst','') is None
+    with pytest.raises(ValueError,match='unverified level'):
+        recommendation_warning({'levels':['junior'],'strict':True},'Associate Data Analyst','Preferred 1 year.')
+    # Senior requests keep the title-only contract.
+    assert recommendation_warning({'levels':['senior'],'strict':False},'Backend Engineer','') is not None

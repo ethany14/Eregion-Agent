@@ -61,13 +61,41 @@ def constraints(state):
     return value
 
 
-def recommendation_warning(policy,title):
+ENTRY_LEVELS={'junior','new_grad','intern'}
+
+
+def opening_level(description):
+    """Level stated for this opening itself, never colleagues it mentors.
+
+    An explicit entry-level/junior statement or a bounded low range (max 3 years)
+    is junior evidence; any stated minimum of 4+ years overrides it. A preferred
+    "minimum 1 year" or an "Associate" title alone does not establish a level.
+    """
+    text=(description or '').casefold()
+    junior=bool(re.search(r'\b(?:entry[- ]level|junior)[ -]+(?:role|position|opportunity)\b|'
+        r'\bthis (?:role|position) is (?:an? )?(?:entry[- ]level|junior)\b',text))
+    junior=junior or any(0<=int(m[1])<=int(m[2])<=3 for m in re.finditer(
+        r'(?:^|\n)\s*(?:[-*•]\s*)?(?:(?:requires?|minimum(?: of)?|at least|must have|candidates? must have)\s+)?'
+        r'(\d+)\s*[-–]\s*(\d+)\s+years?(?:\s+of)?\s+[^\n.;:!?]{0,80}?experience\b',text))
+    minimum=re.finditer(r'\b(?:require[ds]?|minimum|at least|must have)\s+(?:(?:at least|of)\s+)?(\d+)'
+        r'(?:\s*[-–]\s*\d+)?\+?\s+years?\b|\b(\d+)(?:\s*[-–]\s*\d+)?\+?\s+years? (?:of )?experience\s+(?:is )?required\b',text)
+    if any(int(next(g for g in m.groups() if g is not None))>=4 for m in minimum):return 'senior'
+    return 'junior' if junior else None
+
+
+def recommendation_warning(policy,title,description=''):
     if not policy:return None
     actual=seniority(title)
-    if actual in policy['levels']:return None
+    if actual is None and set(policy['levels'])&ENTRY_LEVELS:
+        # A level-free title is not junior evidence; read the opening itself.
+        actual=opening_level(description)
+    if actual in policy['levels'] or (actual=='junior' and set(policy['levels'])&ENTRY_LEVELS-{'intern'}):return None
     requested=', '.join(policy['levels'])
     if policy.get('strict'):
         raise ValueError(f'Seniority constraint: {requested} only was requested; this posting is {actual or "unverified level"}. Do not recommend it unless the user changes that condition.')
     if actual:
         return {'requested':policy['levels'],'actual':actual,
             'message':f'Seniority mismatch: requested {requested}; this posting is {actual}.'}
+    return {'requested':policy['levels'],'actual':None,
+        'message':f'Level unverified: requested {requested}, but neither the title nor the description states '
+            f'the opening level. Do not describe it as a {requested} match; it does not count toward the requested level.'}

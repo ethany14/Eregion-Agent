@@ -305,3 +305,16 @@ E5 新离线反例是生产建议和评测筛查规则不一致，修复共享�
 独立E5五项5pass/4.946s及C16相关bundle只读核对SHA/原XML计数，存在重叠不累计unique；面试35/E5七份归档哈希一致为监督复核，不能代替真实延迟/新成稿。矩阵原A5证据producti0→product0已按实际文件校正，3堆栈截断和1示例命令不冒称缺失证据；不重跑A5。
 
 F2 r2原独立check exit0/199哈希200含自身作为历史保留。本轮F3、报告及链接校正后新r3独立生成/--check，旧revision不覆盖。原1–18/E1–E6/F1–F3和所有阈值不变；不收费/A5/backend/push/PR。
+
+## Claude 本轮付费单次验证与修复（2026-10-11，用户批准"每项一次"）
+
+均为单次运行，无自动重试；原失败文件保留，阈值未改。
+
+| 项 | 结果 | 证据与说明 |
+|---|---|---|
+| A1 主模型稳定性（缩减样本） | 样本通过，完整标准未测 | 默认主路线改用本地确定性需求目录（`local-units-v3`，`JOB_AGENT_MAIN_CATALOG=extract`可退回自由提取）。r1因运行中改代码签名变化无效，r2 CoStar 8/8失败（domain.py致命年限冲突守卫+自由提取38/50需求漂移）→去守卫、职责兜底后 r3 `docs/benchmarks/main-stability-LIVE-sample-20261011-r3`：64/64 trial、0超时、峰值并发6；8对spread 0.0/0.0/4.2/0.0/0.0/3.5/0.0/5.6（修复前重复均值6.6/最大13.3）；中位43.5s；238553 input/517877 output。仅8/72对，不替代完整72对标准 |
+| C16 面试反馈延迟 | 延迟通过，排序子检查失败 | `LLM_INTERVIEW_REASONING=low`（默认）+不支持时无reasoning重试一次。`tmp/c16-live-reasoning-low*`：3样本10.8/15.7/22.6s，p50 15.7s≤30s（原110.1s）；6calls/5228in/8139out。失败子项`next_questions_visible_before_old_feedback`：反馈现在与下一题同一转换内先到。未自行放宽，建议用户确认该检查是否应改为"同一转换内两者均可见" |
+| B6 analyst 长对话 | 失败（新根因已修，未复测） | `tmp/remaining-live-analyst-20261011-claude/test_long_real_search_conversa0/`：pytest 1failed/124.86s，20主calls、36provider calls完整账本，主249475/总304067 input、14767 output（均远低于1M，历史为95万–110万）。2保存2评分2推荐，LinkedIn/DDG阻断已披露。失败`fewer_than_two_verified_scored_qualifying_recommendations`：第二岗 Associate Data Analyst 仅"minimum 1 year preferred"，评测器按设计判资历不合格（与fixture历史同两岗）。**根因**：生产`recommendation_warning`只看标题，无级别词标题静默通过，模型自称"matching junior seniority"。**修复**：`search_policy.opening_level`读取岗位正文（明确entry-level/junior、≤3年有界区间为junior证据，任一≥4年最低要求为senior），无证据时写入"Level unverified"警告并前置到caveats；strict请求直接拒绝。回归`test_level_free_title_needs_opening_level_evidence_for_junior_request`；相关8套件199通过1跳过。未付费复测，B6仍记失败 |
+| E5 求职信 | 失败（writer lane通过，revision lane前置条件不成立） | `tmp/e5-cover-style-20261011-claude/`：1failed/57.49s，3calls/2601in/8260out完整账本。writer lane 10项自动检查全部通过（grounding、具体角色/公司/需求、第一人称、无僵硬开头、原不支持句删除），成稿见`cover-letter-writer.md`，**人工风格审阅待用户**。revision lane：原被拒稿经实时verifier本次判通过（awaiting_review≠needs_revision），reviser未执行——与上一轮相同的verifier对边界句判定不稳定。建议revision lane改用已有`frozen_verification=True`种子（保留真实reviser与修订后实时复验），需用户确认后再付费 |
+
+**其他离线修复**：`source_health.user_turn`容忍无id消息（`test_remaining_reply_language.py`原10处KeyError，8579945已复现）；面试结束测试改为等待排队结果；`capability_finished`修复丢失唤醒（30/30）；`pytest.ini`限定`testpaths=tests`（本地tmp/含有意失败复现）。
