@@ -1,53 +1,58 @@
 {
   "agent_task": {
+    "covered": 1,
+    "duplicate": [],
+    "evidence": "classification only; scheduler dispatch was not run",
+    "expected": 1,
     "expired_reclaim": [],
+    "listing_truncated": false,
+    "missing": [],
     "ready": [
-      "6f93167b-c468-4f1a-a2a1-158f16536d51"
-    ]
+      "0a5a2235-0b2c-47c7-b4e1-330ec3febd9d"
+    ],
+    "retained_by_status_or_live_lease": [],
+    "unexpected": []
   },
   "application_run": {
-    "resumed_on_browser_owner": [
-      "bd0d39c7-d0bd-41c9-80d0-18c848020d6e"
-    ],
-    "submission_unknown_manual": [
-      "cce35853-4585-4124-bc1f-30cb338e7534"
-    ],
+    "evidence": "owner recovery executed (ApplyRepository.recover via ExecutionService); no browser",
+    "manual_submission_unknown": {
+      "covered": 1,
+      "duplicate": [],
+      "expected": 1,
+      "missing": [],
+      "unexpected": []
+    },
+    "resume": {
+      "covered": 1,
+      "duplicate": [],
+      "expected": 1,
+      "missing": [],
+      "unexpected": []
+    },
     "transitions": {
-      "266d1c82-9781-478f-a2ec-55f9e1defdd1": [
-        "awaiting_review",
-        "needs_input"
-      ],
-      "bd0d39c7-d0bd-41c9-80d0-18c848020d6e": [
+      "76704295-b8b6-40f7-a606-7d1bbf334ba7": [
         "running",
         "queued"
       ],
-      "cce35853-4585-4124-bc1f-30cb338e7534": [
+      "816fb064-e6be-4a41-a0bf-124adda5e8bd": [
         "submitting",
         "submission_unknown"
+      ],
+      "91fec781-81ac-48b4-82f6-448661a81a40": [
+        "awaiting_review",
+        "needs_input"
       ]
     }
   },
   "career_task": {
-    "interview_inputs_pending": [],
-    "needs_input": [
-      "a1f591cc-4e1b-4040-9faf-7bf229d14b83"
-    ],
-    "resumed": [
-      "20bef361-5bcc-41fd-a885-8eb11d65403c",
-      "7f0ea8a8-f905-4649-af22-fc996737e4f4"
-    ],
-    "waiting": [
-      "07a9b832-3278-413a-a52a-058310416e29"
-    ]
+    "covered": 2,
+    "duplicate": [],
+    "evidence": "owner recovery executed (TaskLoop._recover); drives recorded, not run",
+    "expected": 2,
+    "missing": [],
+    "unexpected": []
   },
-  "execution_inventory": {
-    "application_run": {
-      "recovered": true
-    },
-    "career_task": {
-      "recovered": true
-    }
-  },
+  "coverage_complete": true,
   "history_counts": {
     "applications": 1,
     "career_tasks": 1,
@@ -55,23 +60,36 @@
     "sessions": 1
   },
   "history_unchanged": true,
+  "interview_feedback": {
+    "covered": 0,
+    "duplicate": [],
+    "evidence": "owner recovery executed (InterviewQueue.recover); jobs recorded",
+    "expected": 0,
+    "missing": [],
+    "unexpected": []
+  },
+  "interview_inputs": {
+    "covered": 0,
+    "duplicate": [],
+    "evidence": "owner recovery executed (InterviewQueue.recover); runs recorded",
+    "expected": 0,
+    "missing": [],
+    "unexpected": []
+  },
   "mapping": "identity (existing ids; no schema change)",
-  "multiple_owners": {},
   "schema_head": "0037_external_tool_operations",
   "session": {
-    "in_flight": [
-      "s-running"
-    ],
-    "legacy_drain_registered": [],
+    "covered": 1,
+    "duplicate": [],
+    "evidence": "classification only; no SessionHost turn was run",
+    "expected": 1,
+    "missing": [],
     "pending_calls": {
       "s-running": [
         "c1"
       ]
     },
-    "shared_kernel": [
-      "s-running"
-    ]
+    "unexpected": []
   },
-  "single_owner": true,
   "source_unchanged": true
 }
