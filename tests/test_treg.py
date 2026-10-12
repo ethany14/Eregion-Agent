@@ -244,3 +244,27 @@ def test_scrape_trims_other_jobs_and_counts_real_linkedin_links():
     assert verdict['complete'] and verdict['trimmed_other_jobs'] > 0 and 'Senior Engineer' not in verdict['description_text']
     flooded = treg_jobs.assess_scrape(target, {'ok': True, 'markdown': body + others})  # no heading to cut at
     assert not flooded['checks']['single_job'] and not flooded['complete']
+
+
+def test_career_harness_close_releases_treg_client_once_even_if_another_close_fails():
+    from types import SimpleNamespace
+    from agent_runtime.career.harness import CareerHarness
+    closed = []
+
+    def closer(name, error=None):
+        def close():
+            closed.append(name)
+            if error:
+                raise error
+        return close
+
+    harness = CareerHarness.__new__(CareerHarness)
+    harness.discovery = SimpleNamespace(close=closer('discovery', RuntimeError('boom')))
+    harness.interview_inputs = SimpleNamespace(close=closer('interviews'))
+    harness._treg_client = SimpleNamespace(close=closer('treg'))
+    harness._browsing = SimpleNamespace(close=closer('browser'))
+    harness.close()
+    assert closed == ['discovery', 'interviews', 'treg', 'browser']
+    assert harness._treg_client is None
+    harness.close()  # repeat: the Treg client is not closed twice
+    assert closed.count('treg') == 1

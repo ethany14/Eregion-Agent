@@ -2,6 +2,7 @@
 import asyncio
 import base64
 import hashlib
+import logging
 import json
 import re
 from uuid import uuid4
@@ -220,9 +221,15 @@ class CareerHarness:
         return self._browsing
 
     def close(self):
-        if hasattr(self.discovery, "close"): self.discovery.close()
-        self.interview_inputs.close()
-        if self._browsing:self._browsing.close()
+        # Idempotent; one failing resource must not leave the others open. The
+        # browser manager closes its pages on its own worker thread.
+        treg, self._treg_client = getattr(self, '_treg_client', None), None
+        browsing = self._browsing
+        for close in (getattr(self.discovery, 'close', None), self.interview_inputs.close,
+                      treg.close if treg else None, browsing.close if browsing else None):
+            if close is None:continue
+            try:close()
+            except Exception:logging.getLogger(__name__).warning('Career resource close failed.',exc_info=True)
 
     def candidate(self):
         saved = self.applications.repository.saved_candidate()
