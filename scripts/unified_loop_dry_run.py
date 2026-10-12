@@ -82,7 +82,7 @@ def dry_run(source: Path, work: Path) -> dict:
     from agent_runtime.career.repository import TaskRepository
     from agent_runtime.execution import ExecutionService
     from agent_runtime.multi_agent.repository import AgentTaskRepository
-    from agent_runtime.sessions.host import in_flight_session_ids, legacy_drain_ids
+    from agent_runtime.sessions.host import in_flight_session_ids
     from agent_runtime.sessions.repository import SessionRepository
     from agent_runtime.task_loop import TaskLoop
 
@@ -132,9 +132,7 @@ def dry_run(source: Path, work: Path) -> dict:
         # Sessions: every in-flight Session continues on the shared kernel unless registered.
         sessions = SessionRepository(database.session_factory)
         in_flight = in_flight_session_ids(sessions)
-        drain = legacy_drain_ids()
-        report["session"] = {"in_flight": sorted(in_flight), "legacy_drain_registered": sorted(drain & set(in_flight)),
-            "shared_kernel": sorted(set(in_flight) - drain),
+        report["session"] = {"in_flight": sorted(in_flight), "shared_kernel": sorted(in_flight),
             "pending_calls": {sid: list(sessions.require(sid).pending_tool_call_ids) for sid in sorted(in_flight)}}
 
         # Multi-agent tasks: SQL-claimed by the scheduler's dispatch (classification only).
@@ -147,7 +145,6 @@ def dry_run(source: Path, work: Path) -> dict:
             "career_task": report["career_task"]["resumed"],
             "application_run": report["application_run"]["resumed_on_browser_owner"],
             "session_shared_kernel": report["session"]["shared_kernel"],
-            "session_legacy_drain": report["session"]["legacy_drain_registered"],
             "agent_task": report["agent_task"]["ready"] + report["agent_task"]["expired_reclaim"],
         }
         seen: dict[str, list[str]] = {}

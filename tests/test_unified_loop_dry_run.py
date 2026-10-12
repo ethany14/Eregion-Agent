@@ -81,8 +81,8 @@ def test_restart_dry_run_resumes_each_in_flight_object_once_and_keeps_history(so
     app = first['application_run']
     assert len(app['resumed_on_browser_owner']) == 1           # hybrid running only
     assert len(app['submission_unknown_manual']) == 1          # never auto-resubmitted
-    assert first['session'] == {'in_flight': ['s-running'], 'legacy_drain_registered': [],
-                                'shared_kernel': ['s-running'], 'pending_calls': {'s-running': ['c1']}}
+    assert first['session'] == {'in_flight': ['s-running'], 'shared_kernel': ['s-running'],
+                                'pending_calls': {'s-running': ['c1']}}
     assert len(first['agent_task']['ready']) == 1
     assert first['execution_inventory'] == {'career_task': {'recovered': True},
                                             'application_run': {'recovered': True}}

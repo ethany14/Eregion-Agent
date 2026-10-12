@@ -1,4 +1,4 @@
-"""Session turns are decided by the shared AgentLoop; legacy only drains registered Sessions."""
+"""Session turns are decided by the shared AgentLoop; there is no legacy decision path (M7)."""
 import pytest
 
 from agent_runtime import host_protocol
@@ -14,11 +14,7 @@ def test_session_host_satisfies_the_contract():
     assert host_protocol.missing_methods(SessionHost) == []
 
 
-def _turn(runtime, monkeypatch, drain=None, session_id='s-1'):
-    if drain is None:
-        monkeypatch.delenv('JOB_AGENT_SESSION_LEGACY_DRAIN', raising=False)
-    else:
-        monkeypatch.setenv('JOB_AGENT_SESSION_LEGACY_DRAIN', drain)
+def _turn(runtime, monkeypatch, session_id='s-1'):
     runs = []
     original = AgentLoop.run
     monkeypatch.setattr(AgentLoop, 'run', lambda self: runs.append(type(self.host).__name__) or original(self))
@@ -31,21 +27,18 @@ def _turn(runtime, monkeypatch, drain=None, session_id='s-1'):
     return runs
 
 
-def test_default_is_the_shared_agent_loop(runtime, monkeypatch):
+def test_every_session_turn_uses_the_shared_agent_loop(runtime, monkeypatch):
     assert _turn(runtime, monkeypatch) == ['SessionHost']
 
 
-def test_only_explicitly_registered_sessions_drain_on_the_legacy_loop(runtime, monkeypatch):
-    assert _turn(runtime, monkeypatch, drain='other, s-1') == []
+def test_the_removed_legacy_drain_switch_has_no_effect(runtime, monkeypatch):
+    # M7 removed the legacy decision loop; the old drain variable selects nothing.
+    monkeypatch.setenv('JOB_AGENT_SESSION_LEGACY_DRAIN', 's-1')
+    assert _turn(runtime, monkeypatch) == ['SessionHost']
+    assert not hasattr(session_host, 'uses_legacy')
 
 
-@pytest.mark.parametrize('drain', ['*', 'all', 's-', ' , '])
-def test_drain_registry_has_no_wildcard(runtime, monkeypatch, drain):
-    assert _turn(runtime, monkeypatch, drain=drain) == ['SessionHost']
-
-
-def test_shared_loop_error_is_not_retried_on_the_legacy_loop(runtime, monkeypatch):
-    monkeypatch.delenv('JOB_AGENT_SESSION_LEGACY_DRAIN', raising=False)
+def test_shared_loop_error_propagates_with_no_fallback(runtime, monkeypatch):
     monkeypatch.setattr(AgentLoop, 'run', lambda self: (_ for _ in ()).throw(RuntimeError('kernel bug')))
     _, sessions, tool_calls = runtime
     model = ScriptedModel([response('assistant-1', 'unused')])
@@ -53,11 +46,10 @@ def test_shared_loop_error_is_not_retried_on_the_legacy_loop(runtime, monkeypatc
     state = service.create_session(allowed_tools=frozenset({'read'}))
     with pytest.raises(RuntimeError, match='kernel bug'):
         service.submit_user_message(state.session_id, user(), expected_version=state.version)
-    assert model.calls == []  # the legacy loop did not take over
+    assert model.calls == []
 
 
-def test_in_flight_sessions_are_listed_for_registration(runtime, monkeypatch):
-    monkeypatch.delenv('JOB_AGENT_SESSION_LEGACY_DRAIN', raising=False)
+def test_in_flight_sessions_are_listed(runtime, monkeypatch):
     _, sessions, tool_calls = runtime
     model = ScriptedModel([response('assistant-1', calls=[call('w1', tool='write')])])
     service = coordinator(sessions, tool_calls, model, ApprovalTool('write'))
@@ -71,7 +63,6 @@ def test_in_flight_sessions_are_listed_for_registration(runtime, monkeypatch):
 def test_two_concurrent_requests_on_one_session_decide_once(runtime, monkeypatch):
     import threading
     from agent_runtime.sessions.errors import SessionClaimConflictError
-    monkeypatch.delenv('JOB_AGENT_SESSION_LEGACY_DRAIN', raising=False)
     _, sessions, tool_calls = runtime
     entered, release = threading.Event(), threading.Event()
 
@@ -99,7 +90,6 @@ def test_two_concurrent_requests_on_one_session_decide_once(runtime, monkeypatch
 
 def test_user_message_during_an_in_flight_model_call_is_rejected(runtime, monkeypatch):
     from agent_runtime.sessions.errors import InvalidSessionTransitionError
-    monkeypatch.delenv('JOB_AGENT_SESSION_LEGACY_DRAIN', raising=False)
     _, sessions, tool_calls = runtime
     rejected = []
 

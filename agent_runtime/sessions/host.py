@@ -8,7 +8,6 @@ already-persisted calls; AgentLoop owns the decide/execute cycle.
 """
 from __future__ import annotations
 
-import os
 from uuid import uuid4
 
 from langchain_core.messages import AIMessage
@@ -27,20 +26,8 @@ from agent_runtime.sessions.state import SessionMessageDraft, SessionStatus
 from agent_runtime.tools.messages import AgentMessage
 
 
-def legacy_drain_ids() -> frozenset[str]:
-    """Sessions explicitly registered at cutover to finish on the legacy path."""
-    raw = os.getenv('JOB_AGENT_SESSION_LEGACY_DRAIN', '')
-    return frozenset(item.strip() for item in raw.split(',') if item.strip())
-
-
-def uses_legacy(session_id: str) -> bool:
-    """Only registered in-flight Sessions drain on ToolCallingLoop; there is no
-    wildcard and no fallback on error. Every other turn uses the shared AgentLoop."""
-    return session_id in legacy_drain_ids()
-
-
 def in_flight_session_ids(sessions) -> list[str]:
-    """Candidates to register before cutover: Sessions mid-turn or awaiting approval."""
+    """Sessions mid-turn or awaiting approval (they resume on the shared AgentLoop)."""
     from sqlalchemy import select
     from agent_runtime.sessions.models import AgentSessionRow
     with sessions.session_factory() as db:
