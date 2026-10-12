@@ -68,94 +68,19 @@ class ToolCallingLoop:
     def run(
         self, messages: list[AgentMessage], context: ToolContext
     ) -> ToolLoopOutcome:
-        conversation = self._with_tool_boundary(messages)
-        input_tokens = 0
-        output_tokens = 0
-        executed = 0
+        """Compatibility entry: an in-memory turn decided by the shared AgentLoop.
 
-        for iteration in range(1, self._max_iterations + 1):
-            try:
-                response = self.decide(conversation, context)
-            except Exception:
-                return self._outcome(
-                    ToolLoopStatus.FAILED,
-                    conversation,
-                    iterations=iteration - 1,
-                    executed=executed,
-                    input_tokens=input_tokens,
-                    output_tokens=output_tokens,
-                    error_code="model_invocation_failed",
-                )
-            input_tokens += response.usage.input_tokens
-            output_tokens += response.usage.output_tokens
-            assistant = response.message
-            if assistant.role != "assistant":
-                return self._outcome(
-                    ToolLoopStatus.FAILED,
-                    conversation,
-                    iterations=iteration,
-                    executed=executed,
-                    input_tokens=input_tokens,
-                    output_tokens=output_tokens,
-                    error_code="invalid_model_response",
-                )
-            conversation.append(assistant)
-            if not assistant.tool_calls:
-                return self._outcome(
-                    ToolLoopStatus.COMPLETED,
-                    conversation,
-                    final_text=assistant.content,
-                    iterations=iteration,
-                    executed=executed,
-                    input_tokens=input_tokens,
-                    output_tokens=output_tokens,
-                )
+        The decision cycle is loop_engine.AgentLoop (unified loop M7); this class
+        only supplies the two single-step operations (decide, process_tool_call)
+        and the original outcome contract.
+        """
+        from agent_runtime.loop_engine import AgentLoop
 
-            for call in assistant.tool_calls:
-                if executed >= self._max_tool_calls:
-                    return self._outcome(
-                        ToolLoopStatus.LIMIT_EXCEEDED,
-                        conversation,
-                        iterations=iteration,
-                        executed=executed,
-                        input_tokens=input_tokens,
-                        output_tokens=output_tokens,
-                        error_code="max_tool_calls_exceeded",
-                    )
-                try:
-                    step = self.process_tool_call(assistant, call, context)
-                    record = step.record
-                except Exception:
-                    return self._outcome(
-                        ToolLoopStatus.FAILED,
-                        conversation,
-                        iterations=iteration,
-                        executed=executed,
-                        input_tokens=input_tokens,
-                        output_tokens=output_tokens,
-                        error_code="tool_execution_failed",
-                    )
-                executed += 1
-                if record.status == ToolExecutionStatus.APPROVAL_REQUIRED:
-                    return self._outcome(
-                        ToolLoopStatus.AWAITING_APPROVAL,
-                        conversation,
-                        pending_ids=[record.call_id],
-                        pending_records=[record],
-                        iterations=iteration,
-                        executed=executed,
-                        input_tokens=input_tokens,
-                        output_tokens=output_tokens,
-                    )
-                conversation.append(step.tool_message)
-
-        return self._outcome(
+        host = _RunHost(self, self._with_tool_boundary(messages), context)
+        AgentLoop(host, slice_steps=self._max_iterations + 1).run()
+        return host.outcome or host.finish(
             ToolLoopStatus.LIMIT_EXCEEDED,
-            conversation,
             iterations=self._max_iterations,
-            executed=executed,
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
             error_code="max_iterations_exceeded",
         )
 
@@ -336,3 +261,109 @@ class ToolCallingLoop:
             output_tokens=output_tokens,
             error_code=error_code,
         )
+
+
+class _RunHost:
+    """Host for ToolCallingLoop.run(): conversation and limits live in memory."""
+
+    def __init__(self, loop: ToolCallingLoop, conversation: list[AgentMessage], context: ToolContext):
+        self.loop, self.conversation, self.context = loop, conversation, context
+        self.outcome: ToolLoopOutcome | None = None
+        self.iterations = self.executed = self.input_tokens = self.output_tokens = 0
+        self.assistant: AgentMessage | None = None
+        self.pending: list[NormalizedToolCall] = []
+
+    def finish(self, status, *, iterations=None, **values) -> ToolLoopOutcome:
+        self.outcome = self.loop._outcome(
+            status, self.conversation,
+            iterations=self.iterations if iterations is None else iterations,
+            executed=self.executed, input_tokens=self.input_tokens,
+            output_tokens=self.output_tokens, **values)
+        return self.outcome
+
+    def active(self):
+        return self.outcome is None
+
+    def revision(self):
+        return 0
+
+    def observe(self):
+        from agent_runtime.loop_engine import LoopStop, Turn
+
+        # Calls of the previous decision the engine deferred still run, in order,
+        # before the next model request (the original loop ran every call).
+        while self.pending and self.outcome is None:
+            self._process(self.pending[0])
+        if self.outcome is not None:
+            raise LoopStop("finished")
+        if self.iterations >= self.loop._max_iterations:
+            self.finish(ToolLoopStatus.LIMIT_EXCEEDED, error_code="max_iterations_exceeded")
+            raise LoopStop("finished")
+        tools = [{"type": "function", "function": {"name": item["name"], "description": item["description"],
+                  "parameters": item["input_schema"]}}
+                 for item in self.loop._registry.model_schemas(self.context)]
+        return Turn("", {}, tools, 0, batchable=frozenset(t["function"]["name"] for t in tools))
+
+    def invoke(self, messages, tools, turn):
+        from langchain_core.messages import AIMessage
+
+        try:
+            response = self.loop.decide(self.conversation, self.context)
+        except Exception:
+            self.finish(ToolLoopStatus.FAILED, error_code="model_invocation_failed")
+            return None
+        self.iterations += 1
+        self.input_tokens += response.usage.input_tokens
+        self.output_tokens += response.usage.output_tokens
+        assistant = response.message
+        if assistant.role != "assistant":
+            self.finish(ToolLoopStatus.FAILED, error_code="invalid_model_response")
+            return None
+        self.conversation.append(assistant)
+        self.assistant, self.pending = assistant, list(assistant.tool_calls)
+        return AIMessage(content=assistant.content, tool_calls=[
+            {"name": c.tool_name, "args": c.arguments, "id": c.tool_call_id} for c in assistant.tool_calls])
+
+    def output_problem(self, response):
+        return None  # invalid calls become failed tool results; no repair request
+
+    def validate(self, call, turn):
+        return None  # the ToolExecutor validates arguments
+
+    def progress(self, text, call, turn):
+        pass
+
+    def on_text(self, text, turn):
+        self.finish(ToolLoopStatus.COMPLETED, final_text=self.assistant.content)
+        return {"reason": "completed"}
+
+    def execute(self, call, turn):
+        normalized = next(c for c in self.pending if c.tool_call_id == call["id"])
+        self._process(normalized)
+        return {"processed": call["id"]}
+
+    def _process(self, call: NormalizedToolCall):
+        self.pending.remove(call)
+        if self.executed >= self.loop._max_tool_calls:
+            self.finish(ToolLoopStatus.LIMIT_EXCEEDED, error_code="max_tool_calls_exceeded")
+            return
+        try:
+            step = self.loop.process_tool_call(self.assistant, call, self.context)
+        except Exception:
+            self.finish(ToolLoopStatus.FAILED, error_code="tool_execution_failed")
+            return
+        self.executed += 1
+        if step.record.status == ToolExecutionStatus.APPROVAL_REQUIRED:
+            self.finish(ToolLoopStatus.AWAITING_APPROVAL, pending_ids=[step.record.call_id],
+                        pending_records=[step.record])
+            return
+        self.conversation.append(step.tool_message)
+
+    def action_error(self, exc):
+        raise exc
+
+    def after_action(self, call, outcome, turn):
+        return {"reason": "finished"} if self.outcome is not None else None
+
+    def persist(self, runtime):
+        pass
