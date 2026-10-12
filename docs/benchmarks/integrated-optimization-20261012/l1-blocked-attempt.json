@@ -1,0 +1,68 @@
+{
+  "status": "needs_input",
+  "decisions": 1,
+  "error": "model_error",
+  "acceptance": {
+    "status": "failed",
+    "failures": [
+      "loop_not_completed_cleanly",
+      "incomplete_usage",
+      "fewer_than_two_verified_scored_qualifying_recommendations"
+    ],
+    "qualified_count": 0,
+    "main_input_tokens": 0,
+    "total_input_tokens": 0,
+    "limits": {
+      "main_calls": 60,
+      "main_input_tokens": 1000000,
+      "total_input_tokens": 1000000
+    },
+    "jobs": []
+  },
+  "provider_usage": {
+    "calls": 1,
+    "completed": 0,
+    "failed": 1,
+    "pending": 0,
+    "discarded": 0,
+    "retries": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "unknown_usage_calls": 1,
+    "groups": [
+      {
+        "purpose": "agent",
+        "model": "configured-main-model",
+        "calls": 1,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "unknown_usage_calls": 1,
+        "cache_hit_ratio": null,
+        "reasoning_share": null
+      }
+    ],
+    "budget_input_tokens": 29997,
+    "cache_hit_ratio": null,
+    "reasoning_share": null,
+    "usage_complete": false,
+    "provider_attempts": 1
+  },
+  "wire": {
+    "requests": 1,
+    "unknown_previous": 1,
+    "prefix_share": null,
+    "first_change": {},
+    "provider_cached_share": null,
+    "provider_cache_unknown": 1,
+    "heuristic_note": "prefix_share is chars of identical leading request text; cached share is provider tokens"
+  },
+  "actions": [],
+  "flags": {
+    "JOB_AGENT_OPT_HISTORY_POLICY": "current",
+    "JOB_AGENT_OPT_VERIFY_AND_SCORE": "0"
+  },
+  "attempt_id": "codex-L1-B0-1",
+  "error_type": "ConnectError",
+  "disposition": "network unavailable; stop, no automatic retry",
+  "test_seconds": 8.8
+}

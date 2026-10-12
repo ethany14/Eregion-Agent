@@ -86,13 +86,19 @@ class FrozenDiscovery(JobDiscovery):
 Public search results and rendered-only jobs are recorded projections. Every
 HTTP response comes from MockTransport; unknown requests cannot fall through.
 """
-    def __init__(self, fixture):
+    def __init__(self, fixture, *, blocked_unknown=False):
         self.fixture = fixture
+        self.blocked_unknown = blocked_unknown
+        self.blocked_requests = []
         self.requests, self.searches, self.unexpected = [], [], []
         super().__init__(transport=httpx.MockTransport(self._serve),
             resolver=lambda *a, **k: [(None, None, None, None, ('8.8.8.8', 443))])
 
-    def fail(self, message):
+    def fail(self, message, *, missing=False):
+        if missing and self.blocked_unknown:
+            from agent_runtime.career.source_health import SourceBlocked
+            self.blocked_requests.append(message)
+            raise SourceBlocked('Frozen source unavailable: no recorded response')
         self.unexpected.append(message)
         raise AssertionError(message)
 
@@ -101,7 +107,7 @@ HTTP response comes from MockTransport; unknown requests cannot fall through.
         self.requests.append((request.method, key))
         record = self.fixture['responses'].get(key)
         if record is None:
-            self.fail(f'Unexpected frozen HTTP request: {request.method} {key}')
+            self.fail(f'Unexpected frozen HTTP request: {request.method} {key}', missing=True)
         if request.method != record.get('method', 'GET'):
             self.fail(f'Unexpected method for {key}')
         error = record.get('recorded_error')
@@ -127,7 +133,7 @@ HTTP response comes from MockTransport; unknown requests cannot fall through.
         key = json.dumps([query.casefold().strip(), location.casefold().strip()])
         record = self.fixture['searches'].get(key)
         if record is None:
-            self.fail(f'Unexpected frozen public search: {key}')
+            self.fail(f'Unexpected frozen public search: {key}', missing=True)
         result = copy.deepcopy(record['result'])
         result['jobs'] = [j for j in result.get('jobs', []) if not any(
             (urlsplit(j['url']).hostname or '') == host or
@@ -174,7 +180,7 @@ class FrozenBrowser:
             record = next((r for r in self.fixture['browser_pages'].values()
                            if r['page']['url'] == url and r['action'] == name), None)
         if record is None:
-            self.discovery.fail(f'Unexpected frozen browser URL/action: {name} {url}')
+            self.discovery.fail(f'Unexpected frozen browser URL/action: {name} {url}', missing=True)
         page = copy.deepcopy(record['page'])
         page['observation_id'] = f'b6-observation-{len(self.calls)}'
         page['page_evidence_hash'] = hashlib.sha256(
@@ -182,7 +188,7 @@ class FrozenBrowser:
         if args.get('job_only'):
             job = self.fixture['jobs'].get(url)
             if not job:
-                self.discovery.fail(f'No bounded frozen posting for {url}')
+                self.discovery.fail(f'No bounded frozen posting for {url}', missing=True)
             job = job['job']
             prefix = '\n'.join(filter(None, [job['title'], job['company'], job['location']])) + '\n'
             body = job['description'].removeprefix(prefix)
@@ -201,6 +207,23 @@ class FrozenBrowser:
 
     def close(self):
         self.states.clear()
+
+
+def test_live_fixture_missing_source_is_blocked_without_network():
+    from agent_runtime.career.source_health import SourceBlocked
+    discovery = FrozenDiscovery({'responses': {}, 'searches': {}, 'jobs': {},
+                                 'browser_pages': {}}, blocked_unknown=True)
+    with pytest.raises(SourceBlocked):
+        discovery.search('unrecorded')
+    with pytest.raises(SourceBlocked):
+        FrozenBrowser(discovery.fixture, discovery).call('task', 'browser_open',
+            {'url': 'https://unrecorded.example.com/'})
+    with pytest.raises(SourceBlocked):
+        discovery.read('https://unrecorded.example.com/')
+    assert len(discovery.blocked_requests) == 3
+    assert discovery.unexpected == []
+    with pytest.raises(AssertionError):
+        discovery.fail('recorded action mismatch')
 
 
 class ScriptedModel:
@@ -267,7 +290,7 @@ class ScriptedModel:
 
 
 @pytest.fixture
-def replay(offline_guard, career, frozen_web, monkeypatch):
+def replay(offline_guard, career, frozen_web, monkeypatch, request):
     c = career
     monkeypatch.setenv('TYPESAFE_ENABLED', 'false')
     monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG', 'local')
@@ -278,7 +301,8 @@ def replay(offline_guard, career, frozen_web, monkeypatch):
     scoring_calls = []
     c.harness.analysis._fit_service = FitAnalysisService(main_handler(scoring_calls),
         jev_enabled=False, cache_size=0, cache_namespace=lambda: 'b6-offline-scoring-v1')
-    discovery = FrozenDiscovery(frozen_web)
+    discovery = FrozenDiscovery(frozen_web, blocked_unknown=(
+        request.node.name == 'test_b6_frozen_web_with_configured_model' and LIVE_MODEL))
     browser = FrozenBrowser(frozen_web, discovery)
     c.harness.discovery, c.harness._browsing = discovery, browser
 
@@ -461,10 +485,18 @@ def test_b6_recorded_blocked_and_aggregator_outcomes(offline_guard, frozen_web):
 
 
 @pytest.mark.skipif(not LIVE_MODEL, reason='Opt-in paid model against frozen B6 web; never run by offline validation')
-def test_b6_frozen_web_with_configured_model(replay):
+def test_b6_frozen_web_with_configured_model(replay, monkeypatch):
     from agent_runtime.task_loop import TaskModel
-    result = replay('correct', model_factory=TaskModel, timeout=600)
     output = os.getenv('OPT_LIVE_OUTPUT')
+    assert output, 'Paid attempts require an unused OPT_LIVE_OUTPUT directory'
+    target = Path(output)
+    assert not (target / 'result.json').exists(), 'Never overwrite a paid attempt'
+    monkeypatch.setenv('JOB_AGENT_TASK_MAX_INPUT_TOKENS', str(min(400000,
+        int(os.getenv('JOB_AGENT_TASK_MAX_INPUT_TOKENS', '400000')))))
+    monkeypatch.setenv('JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS', str(min(60,
+        int(os.getenv('JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS', '60')))))
+    started = time.monotonic()
+    result = replay('correct', model_factory=TaskModel, timeout=600)
     if output:
         from evals.opt_report import wire_summary
         target = Path(output)
@@ -473,6 +505,9 @@ def test_b6_frozen_web_with_configured_model(replay):
         (target / 'result.json').write_text(json.dumps({'status': result.state['status'], 'decisions': result.state['model_calls'],
             'error': result.summary['error'], 'acceptance': result.acceptance, 'provider_usage': result.summary['provider_usage'],
             'wire': wire_summary(result.summary['attempt_rows']), 'actions': actions,
+            'seconds': time.monotonic() - started,
+            'blocked_frozen_requests': len(result.discovery.blocked_requests),
+            'attempt_errors': [r.get('error_type') for r in result.summary['attempt_rows'] if r.get('error_type')],
             'flags': {k: v for k, v in os.environ.items() if k.startswith('JOB_AGENT_OPT_')}}, indent=1, default=str),
             encoding='utf-8')
     assert result.state['status'] == 'completed'
