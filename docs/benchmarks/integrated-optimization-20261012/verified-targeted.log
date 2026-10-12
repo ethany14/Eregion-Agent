@@ -1,0 +1,14 @@
+........................................................................ [ 27%]
+........................................................................ [ 54%]
+.s...................................................................... [ 82%]
+.....................ss.......................                           [100%]
+============================== warnings summary ===============================
+..\..\..\.venv\Lib\site-packages\starlette\testclient.py:53
+  <workspace>\.venv\Lib\site-packages\starlette\testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_b6_offline_replay.py:487: Opt-in paid model against frozen B6 web; never run by offline validation
+SKIPPED [2] tests\test_integrated_p8_material_live.py:14: L3 paid material comparison; explicit networked reviewer opt-in required
+259 passed, 3 skipped, 1 warning in 370.97s (0:06:10)

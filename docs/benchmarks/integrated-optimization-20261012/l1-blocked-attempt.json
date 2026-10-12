@@ -64,5 +64,19 @@
   "attempt_id": "codex-L1-B0-1",
   "error_type": "ConnectError",
   "disposition": "network unavailable; stop, no automatic retry",
-  "test_seconds": 8.8
+  "test_seconds": 8.8,
+  "attempt_details": [
+    {
+      "status": "failed",
+      "source": "provider",
+      "purpose": "agent",
+      "attempt": 1,
+      "error_type": "OpenAIConnectionError",
+      "reserved_input_tokens": 29997,
+      "duration_seconds": 2.073,
+      "provider_duration_seconds": 2.071328199999698,
+      "queue_wait_seconds": 0.00033509999775560573,
+      "persistence_seconds": 0.0031972999931895174
+    }
+  ]
 }

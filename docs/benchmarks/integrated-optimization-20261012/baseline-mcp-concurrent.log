@@ -1,0 +1,62 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_______ test_one_stdio_connection_supports_two_concurrent_session_calls _______
+agent_runtime\mcp\client.py:64: in connect
+    self._ready.result(timeout=self._config.startup_timeout_seconds)
+C:\Python313\Lib\concurrent\futures\_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\concurrent\futures\_base.py:401: in __get_result
+    raise self._exception
+agent_runtime\mcp\client.py:130: in _serve
+    async with Client(
+..\..\..\.venv\Lib\site-packages\mcp\client\client.py:454: in __aenter__
+    session = await self._build_session(exit_stack)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\mcp\client\client.py:427: in _build_session
+    dispatcher = await self._connect(exit_stack, self.mode, self.raise_exceptions)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\mcp\client\client.py:97: in connect
+    read_stream, write_stream = await exit_stack.enter_async_context(transport)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\contextlib.py:668: in enter_async_context
+    result = await _enter(cm)
+             ^^^^^^^^^^^^^^^^
+C:\Python313\Lib\contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\mcp\client\stdio.py:125: in stdio_client
+    process = await _create_platform_compatible_process(
+..\..\..\.venv\Lib\site-packages\mcp\client\stdio.py:340: in _create_platform_compatible_process
+    return await create_windows_process(command, args, env, errlog, cwd)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\mcp\os\win32\utilities.py:156: in create_windows_process
+    process = await anyio.open_process(
+..\..\..\.venv\Lib\site-packages\anyio\_core\_subprocesses.py:184: in open_process
+    return await get_async_backend().open_process(
+..\..\..\.venv\Lib\site-packages\anyio\_backends\_asyncio.py:2810: in open_process
+    transport, protocol = await loop.subprocess_exec(
+C:\Python313\Lib\asyncio\base_events.py:1802: in subprocess_exec
+    transport = await self._make_subprocess_transport(
+C:\Python313\Lib\asyncio\windows_events.py:401: in _make_subprocess_transport
+    transp = _WindowsSubprocessTransport(self, protocol, args, shell,
+C:\Python313\Lib\asyncio\base_subprocess.py:39: in __init__
+    self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
+C:\Python313\Lib\asyncio\windows_events.py:879: in _start
+    self._proc = windows_utils.Popen(
+C:\Python313\Lib\asyncio\windows_utils.py:136: in __init__
+    stdin_rh, stdin_wh = pipe(overlapped=(False, True), duplex=True)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\windows_utils.py:63: in pipe
+    h2 = _winapi.CreateFile(
+E   PermissionError: [WinError 5] 拒绝访问。
+
+The above exception was the direct cause of the following exception:
+tests\test_mcp_runtime.py:637: in test_one_stdio_connection_supports_two_concurrent_session_calls
+    client.connect()
+agent_runtime\mcp\client.py:70: in connect
+    raise McpStartupError("The MCP server could not be started.") from exc
+E   agent_runtime.mcp.errors.McpStartupError: The MCP server could not be started.
+=========================== short test summary info ===========================
+FAILED tests/test_mcp_runtime.py::test_one_stdio_connection_supports_two_concurrent_session_calls
+1 failed in 15.37s

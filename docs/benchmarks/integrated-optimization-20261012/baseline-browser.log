@@ -1,0 +1,545 @@
+EEEEFFFF                                                                 [100%]
+=================================== ERRORS ====================================
+_ ERROR at setup of ChromeChecks.test_confirmation_negative_and_positive_pages _
+tests\test_auto_apply_review_fixes.py:176: in setUpClass
+    cls.playwright = sync_playwright().start()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:83: in start
+    return self.__enter__()
+           ^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:70: in __enter__
+    dispatcher_fiber.switch()
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:55: in greenlet_main
+    self._loop.run_until_complete(self._connection.run_as_sync())
+C:\Python313\Lib\asyncio\base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_connection.py:336: in run_as_sync
+    await self.run()
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_connection.py:354: in run
+    await self._transport.connect()
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_transport.py:133: in connect
+    raise exc
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_transport.py:120: in connect
+    self._proc = await asyncio.create_subprocess_exec(
+C:\Python313\Lib\asyncio\subprocess.py:224: in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+C:\Python313\Lib\asyncio\base_events.py:1802: in subprocess_exec
+    transport = await self._make_subprocess_transport(
+C:\Python313\Lib\asyncio\windows_events.py:401: in _make_subprocess_transport
+    transp = _WindowsSubprocessTransport(self, protocol, args, shell,
+C:\Python313\Lib\asyncio\base_subprocess.py:39: in __init__
+    self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
+C:\Python313\Lib\asyncio\windows_events.py:879: in _start
+    self._proc = windows_utils.Popen(
+C:\Python313\Lib\asyncio\windows_utils.py:136: in __init__
+    stdin_rh, stdin_wh = pipe(overlapped=(False, True), duplex=True)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\windows_utils.py:63: in pipe
+    h2 = _winapi.CreateFile(
+E   PermissionError: [WinError 5] 拒绝访问。
+___ ERROR at setup of ChromeChecks.test_one_submit_click_then_confirmation ____
+tests\test_auto_apply_review_fixes.py:176: in setUpClass
+    cls.playwright = sync_playwright().start()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:83: in start
+    return self.__enter__()
+           ^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:70: in __enter__
+    dispatcher_fiber.switch()
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:55: in greenlet_main
+    self._loop.run_until_complete(self._connection.run_as_sync())
+C:\Python313\Lib\asyncio\base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_connection.py:336: in run_as_sync
+    await self.run()
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_connection.py:354: in run
+    await self._transport.connect()
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_transport.py:133: in connect
+    raise exc
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_transport.py:120: in connect
+    self._proc = await asyncio.create_subprocess_exec(
+C:\Python313\Lib\asyncio\subprocess.py:224: in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+C:\Python313\Lib\asyncio\base_events.py:1802: in subprocess_exec
+    transport = await self._make_subprocess_transport(
+C:\Python313\Lib\asyncio\windows_events.py:401: in _make_subprocess_transport
+    transp = _WindowsSubprocessTransport(self, protocol, args, shell,
+C:\Python313\Lib\asyncio\base_subprocess.py:39: in __init__
+    self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
+C:\Python313\Lib\asyncio\windows_events.py:879: in _start
+    self._proc = windows_utils.Popen(
+C:\Python313\Lib\asyncio\windows_utils.py:136: in __init__
+    stdin_rh, stdin_wh = pipe(overlapped=(False, True), duplex=True)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\windows_utils.py:63: in pipe
+    h2 = _winapi.CreateFile(
+E   PermissionError: [WinError 5] 拒绝访问。
+_ ERROR at setup of ChromeChecks.test_real_standard_answer_form_only_sends_edits _
+tests\test_auto_apply_review_fixes.py:176: in setUpClass
+    cls.playwright = sync_playwright().start()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:83: in start
+    return self.__enter__()
+           ^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:70: in __enter__
+    dispatcher_fiber.switch()
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:55: in greenlet_main
+    self._loop.run_until_complete(self._connection.run_as_sync())
+C:\Python313\Lib\asyncio\base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_connection.py:336: in run_as_sync
+    await self.run()
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_connection.py:354: in run
+    await self._transport.connect()
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_transport.py:133: in connect
+    raise exc
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_transport.py:120: in connect
+    self._proc = await asyncio.create_subprocess_exec(
+C:\Python313\Lib\asyncio\subprocess.py:224: in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+C:\Python313\Lib\asyncio\base_events.py:1802: in subprocess_exec
+    transport = await self._make_subprocess_transport(
+C:\Python313\Lib\asyncio\windows_events.py:401: in _make_subprocess_transport
+    transp = _WindowsSubprocessTransport(self, protocol, args, shell,
+C:\Python313\Lib\asyncio\base_subprocess.py:39: in __init__
+    self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
+C:\Python313\Lib\asyncio\windows_events.py:879: in _start
+    self._proc = windows_utils.Popen(
+C:\Python313\Lib\asyncio\windows_utils.py:136: in __init__
+    stdin_rh, stdin_wh = pipe(overlapped=(False, True), duplex=True)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\windows_utils.py:63: in pipe
+    h2 = _winapi.CreateFile(
+E   PermissionError: [WinError 5] 拒绝访问。
+_ ERROR at setup of ChromeChecks.test_success_url_without_a_receipt_is_not_confirmation _
+tests\test_auto_apply_review_fixes.py:176: in setUpClass
+    cls.playwright = sync_playwright().start()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:83: in start
+    return self.__enter__()
+           ^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:70: in __enter__
+    dispatcher_fiber.switch()
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:55: in greenlet_main
+    self._loop.run_until_complete(self._connection.run_as_sync())
+C:\Python313\Lib\asyncio\base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_connection.py:336: in run_as_sync
+    await self.run()
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_connection.py:354: in run
+    await self._transport.connect()
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_transport.py:133: in connect
+    raise exc
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_transport.py:120: in connect
+    self._proc = await asyncio.create_subprocess_exec(
+C:\Python313\Lib\asyncio\subprocess.py:224: in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+C:\Python313\Lib\asyncio\base_events.py:1802: in subprocess_exec
+    transport = await self._make_subprocess_transport(
+C:\Python313\Lib\asyncio\windows_events.py:401: in _make_subprocess_transport
+    transp = _WindowsSubprocessTransport(self, protocol, args, shell,
+C:\Python313\Lib\asyncio\base_subprocess.py:39: in __init__
+    self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
+C:\Python313\Lib\asyncio\windows_events.py:879: in _start
+    self._proc = windows_utils.Popen(
+C:\Python313\Lib\asyncio\windows_utils.py:136: in __init__
+    stdin_rh, stdin_wh = pipe(overlapped=(False, True), duplex=True)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\windows_utils.py:63: in pipe
+    h2 = _winapi.CreateFile(
+E   PermissionError: [WinError 5] 拒绝访问。
+================================== FAILURES ===================================
+_______________ test_parallel_context_owner_and_last_task_close _______________
+tests\test_browser_runtime_recovery.py:10: in test_parallel_context_owner_and_last_task_close
+    manager.call('a','browser_open',{'url':'https://first.example/'})
+agent_runtime\browser\manager.py:43: in call
+    return self.worker.submit(self._execute,task_id,name,args,active).result()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\concurrent\futures\_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\concurrent\futures\_base.py:401: in __get_result
+    raise self._exception
+agent_runtime\auto_apply\worker.py:43: in _dispatch
+    future.set_result(function(*args))
+                      ^^^^^^^^^^^^^^^
+agent_runtime\browser\manager.py:53: in _execute
+    session = BrowserSession(self.factory(args['url']))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_general_browser.py:21: in __init__
+    def __init__(self,url='https://first.example/',**kwargs):super().__init__(url,purpose='browse',headless=True,**kwargs)
+                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+agent_runtime\auto_apply\browser.py:283: in __init__
+    self.playwright = _acquire_playwright(lambda: sync_playwright().start())
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+agent_runtime\auto_apply\browser.py:247: in _acquire_playwright
+    _playwright_runtime.instance = start()
+                                   ^^^^^^^
+agent_runtime\auto_apply\browser.py:283: in <lambda>
+    self.playwright = _acquire_playwright(lambda: sync_playwright().start())
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:83: in start
+    return self.__enter__()
+           ^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:70: in __enter__
+    dispatcher_fiber.switch()
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:55: in greenlet_main
+    self._loop.run_until_complete(self._connection.run_as_sync())
+C:\Python313\Lib\asyncio\base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_connection.py:336: in run_as_sync
+    await self.run()
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_connection.py:354: in run
+    await self._transport.connect()
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_transport.py:133: in connect
+    raise exc
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_transport.py:120: in connect
+    self._proc = await asyncio.create_subprocess_exec(
+C:\Python313\Lib\asyncio\subprocess.py:224: in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+C:\Python313\Lib\asyncio\base_events.py:1802: in subprocess_exec
+    transport = await self._make_subprocess_transport(
+C:\Python313\Lib\asyncio\windows_events.py:401: in _make_subprocess_transport
+    transp = _WindowsSubprocessTransport(self, protocol, args, shell,
+C:\Python313\Lib\asyncio\base_subprocess.py:39: in __init__
+    self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
+C:\Python313\Lib\asyncio\windows_events.py:879: in _start
+    self._proc = windows_utils.Popen(
+C:\Python313\Lib\asyncio\windows_utils.py:136: in __init__
+    stdin_rh, stdin_wh = pipe(overlapped=(False, True), duplex=True)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\windows_utils.py:63: in pipe
+    h2 = _winapi.CreateFile(
+E   PermissionError: [WinError 5] 拒绝访问。
+______ test_changed_url_and_control_refresh_without_replaying_old_action ______
+tests\test_browser_runtime_recovery.py:29: in test_changed_url_and_control_refresh_without_replaying_old_action
+    manager.call('task','browser_open',{'url':'https://first.example/'})
+agent_runtime\browser\manager.py:43: in call
+    return self.worker.submit(self._execute,task_id,name,args,active).result()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\concurrent\futures\_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\concurrent\futures\_base.py:401: in __get_result
+    raise self._exception
+agent_runtime\auto_apply\worker.py:43: in _dispatch
+    future.set_result(function(*args))
+                      ^^^^^^^^^^^^^^^
+agent_runtime\browser\manager.py:53: in _execute
+    session = BrowserSession(self.factory(args['url']))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_general_browser.py:21: in __init__
+    def __init__(self,url='https://first.example/',**kwargs):super().__init__(url,purpose='browse',headless=True,**kwargs)
+                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+agent_runtime\auto_apply\browser.py:283: in __init__
+    self.playwright = _acquire_playwright(lambda: sync_playwright().start())
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+agent_runtime\auto_apply\browser.py:247: in _acquire_playwright
+    _playwright_runtime.instance = start()
+                                   ^^^^^^^
+agent_runtime\auto_apply\browser.py:283: in <lambda>
+    self.playwright = _acquire_playwright(lambda: sync_playwright().start())
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:83: in start
+    return self.__enter__()
+           ^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:70: in __enter__
+    dispatcher_fiber.switch()
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:55: in greenlet_main
+    self._loop.run_until_complete(self._connection.run_as_sync())
+C:\Python313\Lib\asyncio\base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_connection.py:336: in run_as_sync
+    await self.run()
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_connection.py:354: in run
+    await self._transport.connect()
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_transport.py:133: in connect
+    raise exc
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_transport.py:120: in connect
+    self._proc = await asyncio.create_subprocess_exec(
+C:\Python313\Lib\asyncio\subprocess.py:224: in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+C:\Python313\Lib\asyncio\base_events.py:1802: in subprocess_exec
+    transport = await self._make_subprocess_transport(
+C:\Python313\Lib\asyncio\windows_events.py:401: in _make_subprocess_transport
+    transp = _WindowsSubprocessTransport(self, protocol, args, shell,
+C:\Python313\Lib\asyncio\base_subprocess.py:39: in __init__
+    self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
+C:\Python313\Lib\asyncio\windows_events.py:879: in _start
+    self._proc = windows_utils.Popen(
+C:\Python313\Lib\asyncio\windows_utils.py:136: in __init__
+    stdin_rh, stdin_wh = pipe(overlapped=(False, True), duplex=True)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\windows_utils.py:63: in pipe
+    h2 = _winapi.CreateFile(
+E   PermissionError: [WinError 5] 拒绝访问。
+__ test_closed_chrome_during_creation_recovers_once_with_actual_observation ___
+tests\test_browser_runtime_recovery.py:60: in test_closed_chrome_during_creation_recovers_once_with_actual_observation
+    result=manager.call('task','browser_open',{'url':'https://first.example/'})
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+agent_runtime\browser\manager.py:43: in call
+    return self.worker.submit(self._execute,task_id,name,args,active).result()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\concurrent\futures\_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\concurrent\futures\_base.py:401: in __get_result
+    raise self._exception
+agent_runtime\auto_apply\worker.py:43: in _dispatch
+    future.set_result(function(*args))
+                      ^^^^^^^^^^^^^^^
+agent_runtime\browser\manager.py:53: in _execute
+    session = BrowserSession(self.factory(args['url']))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_general_browser.py:21: in __init__
+    def __init__(self,url='https://first.example/',**kwargs):super().__init__(url,purpose='browse',headless=True,**kwargs)
+                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+agent_runtime\auto_apply\browser.py:283: in __init__
+    self.playwright = _acquire_playwright(lambda: sync_playwright().start())
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+agent_runtime\auto_apply\browser.py:247: in _acquire_playwright
+    _playwright_runtime.instance = start()
+                                   ^^^^^^^
+agent_runtime\auto_apply\browser.py:283: in <lambda>
+    self.playwright = _acquire_playwright(lambda: sync_playwright().start())
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:83: in start
+    return self.__enter__()
+           ^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:70: in __enter__
+    dispatcher_fiber.switch()
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:55: in greenlet_main
+    self._loop.run_until_complete(self._connection.run_as_sync())
+C:\Python313\Lib\asyncio\base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_connection.py:336: in run_as_sync
+    await self.run()
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_connection.py:354: in run
+    await self._transport.connect()
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_transport.py:133: in connect
+    raise exc
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_transport.py:120: in connect
+    self._proc = await asyncio.create_subprocess_exec(
+C:\Python313\Lib\asyncio\subprocess.py:224: in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+C:\Python313\Lib\asyncio\base_events.py:1802: in subprocess_exec
+    transport = await self._make_subprocess_transport(
+C:\Python313\Lib\asyncio\windows_events.py:401: in _make_subprocess_transport
+    transp = _WindowsSubprocessTransport(self, protocol, args, shell,
+C:\Python313\Lib\asyncio\base_subprocess.py:39: in __init__
+    self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
+C:\Python313\Lib\asyncio\windows_events.py:879: in _start
+    self._proc = windows_utils.Popen(
+C:\Python313\Lib\asyncio\windows_utils.py:136: in __init__
+    stdin_rh, stdin_wh = pipe(overlapped=(False, True), duplex=True)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\windows_utils.py:63: in pipe
+    h2 = _winapi.CreateFile(
+E   PermissionError: [WinError 5] 拒绝访问。
+________ test_repeated_transport_failure_remains_error_not_site_block _________
+tests\test_browser_runtime_recovery.py:74: in test_repeated_transport_failure_remains_error_not_site_block
+    try:manager.call('task','browser_open',{'url':'https://first.example/'})
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+agent_runtime\browser\manager.py:43: in call
+    return self.worker.submit(self._execute,task_id,name,args,active).result()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\concurrent\futures\_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\concurrent\futures\_base.py:401: in __get_result
+    raise self._exception
+agent_runtime\auto_apply\worker.py:43: in _dispatch
+    future.set_result(function(*args))
+                      ^^^^^^^^^^^^^^^
+agent_runtime\browser\manager.py:53: in _execute
+    session = BrowserSession(self.factory(args['url']))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_general_browser.py:21: in __init__
+    def __init__(self,url='https://first.example/',**kwargs):super().__init__(url,purpose='browse',headless=True,**kwargs)
+                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+agent_runtime\auto_apply\browser.py:283: in __init__
+    self.playwright = _acquire_playwright(lambda: sync_playwright().start())
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+agent_runtime\auto_apply\browser.py:247: in _acquire_playwright
+    _playwright_runtime.instance = start()
+                                   ^^^^^^^
+agent_runtime\auto_apply\browser.py:283: in <lambda>
+    self.playwright = _acquire_playwright(lambda: sync_playwright().start())
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:83: in start
+    return self.__enter__()
+           ^^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:70: in __enter__
+    dispatcher_fiber.switch()
+..\..\..\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py:55: in greenlet_main
+    self._loop.run_until_complete(self._connection.run_as_sync())
+C:\Python313\Lib\asyncio\base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_connection.py:336: in run_as_sync
+    await self.run()
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_connection.py:354: in run
+    await self._transport.connect()
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_transport.py:133: in connect
+    raise exc
+..\..\..\.venv\Lib\site-packages\playwright\_impl\_transport.py:120: in connect
+    self._proc = await asyncio.create_subprocess_exec(
+C:\Python313\Lib\asyncio\subprocess.py:224: in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+C:\Python313\Lib\asyncio\base_events.py:1802: in subprocess_exec
+    transport = await self._make_subprocess_transport(
+C:\Python313\Lib\asyncio\windows_events.py:401: in _make_subprocess_transport
+    transp = _WindowsSubprocessTransport(self, protocol, args, shell,
+C:\Python313\Lib\asyncio\base_subprocess.py:39: in __init__
+    self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
+C:\Python313\Lib\asyncio\windows_events.py:879: in _start
+    self._proc = windows_utils.Popen(
+C:\Python313\Lib\asyncio\windows_utils.py:136: in __init__
+    stdin_rh, stdin_wh = pipe(overlapped=(False, True), duplex=True)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\windows_utils.py:63: in pipe
+    h2 = _winapi.CreateFile(
+E   PermissionError: [WinError 5] 拒绝访问。
+
+During handling of the above exception, another exception occurred:
+tests\test_browser_runtime_recovery.py:75: in test_repeated_transport_failure_remains_error_not_site_block
+    except Exception as exc:assert type(exc).__name__=='TargetClosedError'
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: assert 'PermissionError' == 'TargetClosedError'
+E
+E     - TargetClosedError
+E     + PermissionError
+=========================== short test summary info ===========================
+FAILED tests/test_browser_runtime_recovery.py::test_parallel_context_owner_and_last_task_close
+FAILED tests/test_browser_runtime_recovery.py::test_changed_url_and_control_refresh_without_replaying_old_action
+FAILED tests/test_browser_runtime_recovery.py::test_closed_chrome_during_creation_recovers_once_with_actual_observation
+FAILED tests/test_browser_runtime_recovery.py::test_repeated_transport_failure_remains_error_not_site_block
+ERROR tests/test_auto_apply_review_fixes.py::ChromeChecks::test_confirmation_negative_and_positive_pages
+ERROR tests/test_auto_apply_review_fixes.py::ChromeChecks::test_one_submit_click_then_confirmation
+ERROR tests/test_auto_apply_review_fixes.py::ChromeChecks::test_real_standard_answer_form_only_sends_edits
+ERROR tests/test_auto_apply_review_fixes.py::ChromeChecks::test_success_url_without_a_receipt_is_not_confirmation
+4 failed, 4 errors in 4.45s
+<workspace>/.venv/Scripts/python.exe : Future exception was never retrieved
+所在位置 行:2 字符: 1
++ <workspace>/.venv/Scripts/python.exe scri ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Future exception was never retrieved:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+future: <Future finished exception=PermissionError(13, '拒绝访问。', None, 5, None)>
+Traceback (most recent call last):
+  File "<baseline>\tests\test_browser_runtim
+e_recovery.py", line 74, in test_repeated_transport_failure_remains_error_not_site_block
+    try:manager.call('task','browser_open',{'url':'https://first.example/'})
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<baseline>\agent_runtime\browser\man
+ager.py", line 43, in call
+    return self.worker.submit(self._execute,task_id,name,args,active).result()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\concurrent\futures\_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "<baseline>\agent_runtime\auto_apply\
+worker.py", line 43, in _dispatch
+    future.set_result(function(*args))
+                      ^^^^^^^^^^^^^^^
+  File "<baseline>\agent_runtime\browser\man
+ager.py", line 53, in _execute
+    session = BrowserSession(self.factory(args['url']))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<baseline>\tests\test_general_browse
+r.py", line 21, in __init__
+    def __init__(self,url='https://first.example/',**kwargs):super().__init__(url,purpose='browse',headless=True,**kwar
+gs)
+                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^
+  File "<baseline>\agent_runtime\auto_apply\
+browser.py", line 283, in __init__
+    self.playwright = _acquire_playwright(lambda: sync_playwright().start())
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<baseline>\agent_runtime\auto_apply\
+browser.py", line 247, in _acquire_playwright
+    _playwright_runtime.instance = start()
+                                   ^^^^^^^
+  File "<baseline>\agent_runtime\auto_apply\
+browser.py", line 283, in <lambda>
+    self.playwright = _acquire_playwright(lambda: sync_playwright().start())
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<workspace>\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py", line
+83, in start
+    return self.__enter__()
+           ^^^^^^^^^^^^^^^^
+  File "<workspace>\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py", line
+70, in __enter__
+    dispatcher_fiber.switch()
+  File "<workspace>\.venv\Lib\site-packages\playwright\sync_api\_context_manager.py", line
+55, in greenlet_main
+    self._loop.run_until_complete(self._connection.run_as_sync())
+  File "C:\Python313\Lib\asyncio\base_events.py", line 725, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "<workspace>\.venv\Lib\site-packages\playwright\_impl\_connection.py", line 336, in
+run_as_sync
+    await self.run()
+  File "<workspace>\.venv\Lib\site-packages\playwright\_impl\_connection.py", line 354, in
+run
+    await self._transport.connect()
+  File "<workspace>\.venv\Lib\site-packages\playwright\_impl\_transport.py", line 133, in c
+onnect
+    raise exc
+  File "<workspace>\.venv\Lib\site-packages\playwright\_impl\_transport.py", line 120, in c
+onnect
+    self._proc = await asyncio.create_subprocess_exec(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "C:\Python313\Lib\asyncio\subprocess.py", line 224, in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        stderr=stderr, **kwds)
+        ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\base_events.py", line 1802, in subprocess_exec
+    transport = await self._make_subprocess_transport(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        protocol, popen_args, False, stdin, stdout, stderr,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        bufsize, **kwargs)
+        ^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\windows_events.py", line 401, in _make_subprocess_transport
+    transp = _WindowsSubprocessTransport(self, protocol, args, shell,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+                                         **kwargs)
+                                         ^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\base_subprocess.py", line 39, in __init__
+    self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
+                stderr=stderr, bufsize=bufsize, **kwargs)
+  File "C:\Python313\Lib\asyncio\windows_events.py", line 879, in _start
+    self._proc = windows_utils.Popen(
+                 ^^^^^^^^^^^^^^^^^^^^
+        args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        bufsize=bufsize, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\windows_utils.py", line 136, in __init__
+    stdin_rh, stdin_wh = pipe(overlapped=(False, True), duplex=True)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\windows_utils.py", line 63, in pipe
+    h2 = _winapi.CreateFile(
+         ^^^^^^^^^^^^^^^^^^^
+        address, access, 0, _winapi.NULL, _winapi.OPEN_EXISTING,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        flags_and_attribs, _winapi.NULL)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [WinError 5] 拒绝访问。

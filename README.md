@@ -297,3 +297,13 @@ and a [health endpoint](http://localhost:8000/health).
   <img src="site/assets/holly.svg" width="36" alt=""><br>
   <sub><i>A little less paperwork. A step closer.</i></sub>
 </p>
+
+## Integrated optimization experiments
+
+Release switches and rollback instructions are in [configuration](docs/configuration.md).
+See the [integrated validation report](docs/diagnostics/integrated-optimization-final.md),
+[context comparisons](docs/diagnostics/pi-context-experiments.md), and
+[material patch gates](docs/diagnostics/material-patch-validation.md).
+The local [master execution plan](docs/specs/integrated-optimization-execution-plan-20261012.md)
+is maintained separately and intentionally excluded from this change's commits.
+Experimental behavior remains disabled until the required live evidence is reviewed.

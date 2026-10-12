@@ -380,3 +380,27 @@ Spend records (`external_tool_operations`, migration `0037`) are kept separately
 - Responses served through Treg's overflow relay (`X-Treg-Served-Via: overflow:*`) are recorded and quarantined.
 
 Contract record: `docs/diagnostics/treg-ab-contract.md`.
+
+## Integrated optimization switches
+
+All switches below default to `0`; history defaults to `current`. Set explicit process
+variables for experiments. `.env.example` lists names without enabling behavior; never
+overwrite an existing `.env` when adding configuration.
+
+| Setting | Effect when enabled | Rollback |
+|---|---|---|
+| `JOB_AGENT_OPT_BOARD_RESPONSE_CACHE` | Reuse bounded Ashby board responses within the existing TTL | Set 0; subsequent reads use existing network path |
+| `JOB_AGENT_OPT_CANDIDATE_BATCHES` | Bound the actionable candidate batch | Set 0; durable candidates remain |
+| `JOB_AGENT_JOB_API_FIRST` | Existing company-board API priority; Treg separately controlled | Set 0; retain source evidence |
+| `JOB_AGENT_OPT_SCOPED_CONTEXT` | Search router receives versioned long-resume reference and preview | Set 0; rebuild full current observation |
+| `JOB_AGENT_OPT_STATE_DELTAS` | Complete checkpoint plus bounded verified request-side deltas | Set 0; discard only disposable projection, retain evidence/events |
+| `JOB_AGENT_OPT_HISTORY_POLICY` | `structured_checkpoint` aligns trim boundaries and marks authoritative state; `aligned`/`checkpoint` remain available | Set `current`; no raw-input cap increase |
+| `JOB_AGENT_OPT_MATERIAL_PATCHES` | Cover-letter revisions can replace validated individual paragraphs before normal verification | Set 0; full `revise_blocks` path |
+| `JOB_AGENT_OPT_SNAPSHOT_REFS`, `JOB_AGENT_OPT_STABLE_TOOLS`, `JOB_AGENT_OPT_PROMPT_TRIM`, `JOB_AGENT_OPT_VERIFY_AND_SCORE` | Existing Stage 2/4 experiments, independently selected | Set each 0 |
+
+There is no new prompt cache key or automatic model compaction. No patch submits an
+application or bypasses review. Treg remains separately disabled, requires the user's
+own token and explicit provider selection, and retains unknown spend reservations on
+failures. Missing credentials, account access or budget prevents a paid operation;
+existing free source paths remain available. See the [final report](diagnostics/integrated-optimization-final.md)
+for evidence and pending networked validation.
