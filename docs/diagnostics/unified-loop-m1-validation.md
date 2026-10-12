@@ -34,7 +34,7 @@ Full suite (no live opt-ins; `tests/conftest.py` offline isolation):
 
 ```
 2176 passed, 134 skipped, 16 subtests passed, 0 failed in 775 s (at 37d7455)
-(R1 baseline at 57c63ab: 2136 passed / 134 skipped; +40 = the new M1 tests)
+(R1 report at 57c63ab: 2136 passed / 134 skipped. The +40 includes this stage's new tests and tests added by 158e557; no test was removed or skipped to get here)
 ```
 
 Focused runs during the work:
