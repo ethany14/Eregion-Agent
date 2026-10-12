@@ -3,15 +3,15 @@
 Usage:
     python scripts/unified_loop_dry_run.py --source PATH/TO/COPY.db --work DIR [--report OUT.json]
 
-What it does, on a fresh copy in --work (the source file is never opened for writing):
-1. records schema head, row counts and a digest of terminal ("history") records;
-2. simulates one process restart with the unified owners: one ExecutionService,
-   TaskLoop recovery (scheduling recorded, nothing driven), application-run
-   recovery through the registered owner (no browser), Session and multi-agent
-   in-flight classification; no model or network call is possible;
-3. records the history digest again and reports, per kind, which objects the new
-   owner would resume, which need manual handling (e.g. unknown submissions), and
-   that every in-flight object has exactly one owner.
+What it does, on a consistent snapshot (SQLite backup API, read-only source) in --work:
+1. enumerates the expected in-flight objects per kind from stored rows, independently
+   of the owner code, plus schema head, row counts and a terminal-history digest;
+2. runs the real owner recoveries with recording stand-ins (TaskLoop recovery,
+   InterviewQueue recovery, application-run recovery through ExecutionService; no
+   model, browser or network call is possible) and CLASSIFIES Sessions and
+   multi-agent tasks (no owner is invoked for those);
+3. compares expectation and coverage per kind (missing / duplicate / unexpected),
+   fails on a truncated listing, and checks history and source are unchanged.
 
 The unified loop reuses the existing tables and ids (no schema change in M1-M5), so
 the legacy -> execution mapping is the identity; the dry-run proves ownership and
@@ -23,7 +23,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import shutil
 import sys
 from pathlib import Path
 
@@ -76,11 +75,83 @@ def _schema(database) -> str | None:
             return None
 
 
-def dry_run(source: Path, work: Path) -> dict:
+CAREER_RESUMABLE = {"running", "queued"}
+SESSION_IN_FLIGHT = {"running", "awaiting_tool_approval"}
+AGENT_TERMINAL = {"succeeded", "failed", "cancelled", "timed_out"}
+
+
+def _snapshot(source: Path, target: Path) -> None:
+    """Consistent copy through SQLite's backup API from a read-only connection.
+
+    A plain file copy would miss committed pages still in the -wal file.
+    """
+    import sqlite3
+    reader = sqlite3.connect(f"file:{source.as_posix()}?mode=ro", uri=True)
+    writer = sqlite3.connect(target)
+    try:
+        reader.backup(writer)
+    finally:
+        writer.close()
+        reader.close()
+
+
+def _coverage(expected, covered) -> dict:
+    """Compare an independently enumerated expectation with what owners picked up."""
+    counts: dict[str, int] = {}
+    for identifier in covered:
+        counts[identifier] = counts.get(identifier, 0) + 1
+    expected = set(expected)
+    return {"expected": len(expected), "covered": len(counts),
+            "missing": sorted(expected - set(counts)),
+            "duplicate": sorted(i for i, n in counts.items() if n > 1),
+            "unexpected": sorted(set(counts) - expected)}
+
+
+def _complete(section: dict) -> bool:
+    return not (section["missing"] or section["duplicate"] or section["unexpected"])
+
+
+def _expected(database) -> dict:
+    """In-flight objects enumerated from stored rows, independently of the owner code."""
+    from sqlalchemy import select
+    from agent_runtime.career.repository import TaskRepository
+    from agent_runtime.mock_interview.repository import MockInterviewRepository
+    from agent_runtime.multi_agent.models import AgentTaskRow
+    from agent_runtime.sessions.models import AgentSessionRow
+    tasks = TaskRepository(database.session_factory).list()
+    expected = {
+        "career_task": sorted(t["task_id"] for t in tasks
+                              if t["status"] in CAREER_RESUMABLE and not t.get("pause_requested")),
+        "interview_inputs": sorted(t["task_id"] for t in tasks if not t.get("pause_requested")
+            and t["status"] != "cancelled"
+            and any(e.get("status") in {"pending", "running"} for e in t.get("interview_queue", []))),
+    }
+    interviews = MockInterviewRepository(database.session_factory)
+    feedback = []
+    for task in tasks:
+        for interview_id in task.get("interviews", []):
+            if interviews.get(interview_id).status.value in {"completed", "cancelled"}:
+                continue
+            feedback += [f"{task['task_id']}:{interview_id}:{job['answer_id']}"
+                         for job in interviews.feedback_jobs(interview_id) if job["status"] == "pending"]
+    expected["interview_feedback"] = sorted(feedback)
+    with database.session_factory() as db:
+        expected["session"] = sorted(db.scalars(select(AgentSessionRow.session_id).where(
+            AgentSessionRow.status.in_(sorted(SESSION_IN_FLIGHT)))))
+        agent_rows = list(db.execute(select(AgentTaskRow.task_id, AgentTaskRow.status)))
+    expected["agent_status"] = {task_id: status for task_id, status in agent_rows}
+    expected["agent_task"] = sorted(t for t, status in agent_rows if status not in AGENT_TERMINAL)
+    return expected
+
+
+def dry_run(source: Path, work: Path, *, agent_listing_limit: int | None = None) -> dict:
+    from types import SimpleNamespace
     from api.db import create_database
     from agent_runtime.auto_apply.repository import ApplyRepository
+    from agent_runtime.career.interview_queue import InterviewQueue
     from agent_runtime.career.repository import TaskRepository
     from agent_runtime.execution import ExecutionService
+    from agent_runtime.mock_interview.repository import MockInterviewRepository
     from agent_runtime.multi_agent.repository import AgentTaskRepository
     from agent_runtime.sessions.host import in_flight_session_ids
     from agent_runtime.sessions.repository import SessionRepository
@@ -92,14 +163,15 @@ def dry_run(source: Path, work: Path) -> dict:
     if copy.exists():
         raise SystemExit(f"{copy} exists; use a fresh work directory.")
     source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
-    shutil.copyfile(source, copy)
+    _snapshot(source, copy)
     database = create_database(f"sqlite:///{copy.as_posix()}")
     try:
         schema, before = _schema(database), _history(database)
+        expected = _expected(database)
         execution = ExecutionService()
         report: dict = {"schema_head": schema, "mapping": "identity (existing ids; no schema change)"}
 
-        # Career tasks: TaskLoop's registered once-only recovery, scheduling recorded only.
+        # Career tasks: the real TaskLoop recovery; scheduling recorded, nothing driven.
         tasks = TaskRepository(database.session_factory)
         scheduled: list[str] = []
 
@@ -107,59 +179,86 @@ def dry_run(source: Path, work: Path) -> dict:
             def schedule(self, task_id):
                 scheduled.append(task_id)
 
-        loop = RecordingTaskLoop(tasks, harness=object(), execution=execution)
-        loop.close()
-        interview_inputs = sorted(s["task_id"] for s in tasks.list() if any(
-            e.get("status") in {"pending", "running"} for e in s.get("interview_queue", [])))
-        report["career_task"] = {"resumed": sorted(scheduled), "interview_inputs_pending": interview_inputs,
-            "waiting": sorted(s["task_id"] for s in tasks.list() if s["status"] == "waiting"),
-            "needs_input": sorted(s["task_id"] for s in tasks.list() if s["status"] == "needs_input")}
+        RecordingTaskLoop(tasks, harness=object(), execution=execution).close()
+        report["career_task"] = {"evidence": "owner recovery executed (TaskLoop._recover); drives recorded, not run",
+                                 **_coverage(expected["career_task"], scheduled)}
+
+        # Interview inputs and feedback: the real InterviewQueue.recover; submissions recorded.
+        inputs_started: list[str] = []
+        feedback_started: list[str] = []
+
+        class Recorder:
+            def submit(self, kind, key, function, *args):
+                feedback_started.append(":".join(args[0]))
+
+        class RecordingQueue(InterviewQueue):
+            def start(self, task_id):
+                inputs_started.append(task_id)
+
+            def _execution(self):
+                return Recorder()
+
+        harness = SimpleNamespace(repository=tasks, runtime=SimpleNamespace(
+            mock_interviewer=SimpleNamespace(interviews=MockInterviewRepository(database.session_factory))))
+        RecordingQueue(harness).recover()
+        report["interview_inputs"] = {"evidence": "owner recovery executed (InterviewQueue.recover); runs recorded",
+                                      **_coverage(expected["interview_inputs"], inputs_started)}
+        report["interview_feedback"] = {"evidence": "owner recovery executed (InterviewQueue.recover); jobs recorded",
+                                        **_coverage(expected["interview_feedback"], feedback_started)}
 
         # Application runs: the registered owner's recovery without opening a browser.
         applications = ApplyRepository(database.session_factory)
-        before_status = {s["run_id"]: s["status"] for s in applications.list()}
+        before_runs = {s["run_id"]: s for s in applications.list()}
+        expected_resume = sorted(r for r, s in before_runs.items() if s.get("automation_mode") == "hybrid"
+            and not s.get("pause_requested") and not s.get("cancel_requested") and not s.get("account_request")
+            and s["status"] in {"running", "queued"})
+        expected_manual = sorted(r for r, s in before_runs.items() if s["status"] == "submitting")
         resumed: list[str] = []
         execution.register_owner("application_run", role="dry-run: browser-affine owner (no browser)",
                                  recover=lambda: resumed.extend(applications.recover() or []))
         execution.recover("application_run")
-        after_status = {s["run_id"]: s["status"] for s in applications.list()}
+        after = {s["run_id"]: s["status"] for s in applications.list()}
+        manual = [r for r in expected_manual if after.get(r) == "submission_unknown"]
         report["application_run"] = {
-            "resumed_on_browser_owner": sorted(resumed),
-            "submission_unknown_manual": sorted(r for r, s in after_status.items() if s == "submission_unknown"),
-            "transitions": {r: [before_status[r], after_status[r]] for r in sorted(after_status)
-                            if before_status.get(r) != after_status[r]}}
+            "evidence": "owner recovery executed (ApplyRepository.recover via ExecutionService); no browser",
+            "resume": _coverage(expected_resume, resumed),
+            "manual_submission_unknown": _coverage(expected_manual, manual),
+            "transitions": {r: [before_runs[r]["status"], after[r]] for r in sorted(after)
+                            if before_runs[r]["status"] != after[r]}}
 
-        # Sessions: every in-flight Session continues on the shared kernel unless registered.
+        # Sessions and multi-agent tasks are CLASSIFIED only: no owner was invoked.
         sessions = SessionRepository(database.session_factory)
         in_flight = in_flight_session_ids(sessions)
-        report["session"] = {"in_flight": sorted(in_flight), "shared_kernel": sorted(in_flight),
-            "pending_calls": {sid: list(sessions.require(sid).pending_tool_call_ids) for sid in sorted(in_flight)}}
+        report["session"] = {"evidence": "classification only; no SessionHost turn was run",
+            "pending_calls": {sid: list(sessions.require(sid).pending_tool_call_ids) for sid in sorted(set(in_flight))},
+            **_coverage(expected["session"], in_flight)}
 
-        # Multi-agent tasks: SQL-claimed by the scheduler's dispatch (classification only).
         agent_tasks = AgentTaskRepository(database.session_factory)
-        report["agent_task"] = {"ready": sorted(t.task_id for t in agent_tasks.list_ready(limit=500)),
-                                "expired_reclaim": sorted(t.task_id for t in agent_tasks.list_expired(limit=500))}
+        status = expected["agent_status"]
+        # A limit above every stored row cannot truncate silently; an injected
+        # smaller limit (tests) must make the run fail instead of under-reporting.
+        limit = agent_listing_limit or len(status) + 1
+        ready = agent_tasks.list_ready(limit=limit)
+        expired = agent_tasks.list_expired(limit=limit)
+        truncated = len(ready) >= limit or len(expired) >= limit
+        expired_ids = {task.task_id for task in expired}
+        retained = [t for t in expected["agent_task"] if status[t] in {
+            "pending", "blocked", "awaiting_approval", "awaiting_input"}
+            or (status[t] in {"claimed", "running", "cancel_requested"} and t not in expired_ids)]
+        report["agent_task"] = {"evidence": "classification only; scheduler dispatch was not run",
+            "listing_truncated": truncated,
+            "ready": sorted(t.task_id for t in ready), "expired_reclaim": sorted(expired_ids),
+            "retained_by_status_or_live_lease": sorted(retained),
+            **_coverage(expected["agent_task"], [t.task_id for t in ready] + sorted(expired_ids) + retained)}
 
-        # Every object that will be resumed must land in exactly one owner bucket.
-        buckets = {
-            "career_task": report["career_task"]["resumed"],
-            "application_run": report["application_run"]["resumed_on_browser_owner"],
-            "session_shared_kernel": report["session"]["shared_kernel"],
-            "agent_task": report["agent_task"]["ready"] + report["agent_task"]["expired_reclaim"],
-        }
-        seen: dict[str, list[str]] = {}
-        for bucket, identifiers in buckets.items():
-            for identifier in identifiers:
-                seen.setdefault(identifier, []).append(bucket)
-        report["multiple_owners"] = {i: b for i, b in sorted(seen.items()) if len(b) > 1}
-        report["single_owner"] = not report["multiple_owners"]
-        report["execution_inventory"] = {k: {"recovered": v["recovered"]}
-                                         for k, v in execution.inventory()["kinds"].items()}
         execution.close(wait=True)
+        sections = [report[k] for k in ("career_task", "interview_inputs", "interview_feedback", "session", "agent_task")]
+        sections += [report["application_run"]["resume"], report["application_run"]["manual_submission_unknown"]]
+        report["coverage_complete"] = not truncated and all(_complete(section) for section in sections)
 
-        after = _history(database)
-        report["history_unchanged"] = before == after
-        report["history_counts"] = after["counts"]
+        after_history = _history(database)
+        report["history_unchanged"] = before == after_history
+        report["history_counts"] = after_history["counts"]
         report["source_unchanged"] = hashlib.sha256(source.read_bytes()).hexdigest() == source_hash
         return report
     finally:
@@ -181,7 +280,7 @@ def main() -> int:
     if args.report:
         args.report.write_text(text, encoding="utf-8")
     print(text)
-    return 0 if report["history_unchanged"] and report["single_owner"] and report["source_unchanged"] else 1
+    return 0 if report["history_unchanged"] and report["coverage_complete"] and report["source_unchanged"] else 1
 
 
 if __name__ == "__main__":

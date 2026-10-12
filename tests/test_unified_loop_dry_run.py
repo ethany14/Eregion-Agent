@@ -15,6 +15,7 @@ from agent_runtime.tools.messages import AgentMessage, NormalizedToolCall
 from api.db import create_database, upgrade_database
 from test_auto_apply import request
 from test_multi_agent import make_plan, validate
+from test_career_flow import career  # noqa: F401
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('unified_loop_dry_run', ROOT / 'scripts/unified_loop_dry_run.py')
@@ -70,32 +71,80 @@ def source(tmp_path):
     return build_source(tmp_path / 'source.db')
 
 
-def test_restart_dry_run_resumes_each_in_flight_object_once_and_keeps_history(source, tmp_path):
+def _clean(section):
+    return not (section['missing'] or section['duplicate'] or section['unexpected'])
+
+
+def test_restart_dry_run_covers_every_in_flight_object_and_keeps_history(source, tmp_path):
     first = dry.dry_run(source, tmp_path / 'run-1')
     second = dry.dry_run(source, tmp_path / 'run-2')
     assert first == second  # repeatable on fresh copies
-    assert first['source_unchanged'] and first['history_unchanged'] and first['single_owner']
+    assert first['source_unchanged'] and first['history_unchanged'] and first['coverage_complete']
     assert first['schema_head'] and first['schema_head'].startswith('0037')
-    assert len(first['career_task']['resumed']) == 2          # queued + running; paused is not resumed
-    assert len(first['career_task']['waiting']) == 1 and len(first['career_task']['needs_input']) == 1
+    assert first['career_task']['expected'] == 2               # queued + running; paused is not resumed
     app = first['application_run']
-    assert len(app['resumed_on_browser_owner']) == 1           # hybrid running only
-    assert len(app['submission_unknown_manual']) == 1          # never auto-resubmitted
-    assert first['session'] == {'in_flight': ['s-running'], 'shared_kernel': ['s-running'],
-                                'pending_calls': {'s-running': ['c1']}}
-    assert len(first['agent_task']['ready']) == 1
-    assert first['execution_inventory'] == {'career_task': {'recovered': True},
-                                            'application_run': {'recovered': True}}
+    assert app['resume']['expected'] == 1 and _clean(app['resume'])             # hybrid running only
+    assert app['manual_submission_unknown']['expected'] == 1                      # never auto-resubmitted
+    assert first['session']['evidence'].startswith('classification only')
+    assert first['session']['expected'] == 1 and first['session']['pending_calls'] == {'s-running': ['c1']}
+    assert first['agent_task']['evidence'].startswith('classification only')
+    assert first['agent_task']['expected'] == 1 and not first['agent_task']['listing_truncated']
     if os.getenv('UNIFIED_LOOP_DRY_RUN_REPORT'):
         Path(os.environ['UNIFIED_LOOP_DRY_RUN_REPORT']).write_text(json.dumps(first, indent=2, sort_keys=True))
+
+
+def test_an_owner_that_misses_an_object_fails_the_coverage_check(source, tmp_path, monkeypatch):
+    # The application owner "forgets" its resumable run: coverage must report it.
+    monkeypatch.setattr(ApplyRepository, 'recover', lambda self: [])
+    report = dry.dry_run(source, tmp_path / 'missing')
+    assert report['application_run']['resume']['missing'] and not report['coverage_complete']
+
+
+def test_more_than_500_ready_agent_tasks_are_all_covered_and_truncation_fails(tmp_path):
+    from agent_runtime.multi_agent.repository import AgentTaskRepository
+    path = tmp_path / 'many.db'
+    upgrade_database(f"sqlite:///{path.as_posix()}")
+    db = create_database(f"sqlite:///{path.as_posix()}")
+    try:
+        _session(SessionRepository(db.session_factory), 'parent', SessionStatus.ACTIVE)
+        tasks = AgentTaskRepository(db.session_factory)
+        for n in range(505):
+            plan = make_plan(key=f'plan-{n}')
+            tasks.create_plan(plan, validate(plan))
+    finally:
+        db.close()
+    full = dry.dry_run(path, tmp_path / 'full')
+    assert full['agent_task']['expected'] == 505 and _clean(full['agent_task']) and full['coverage_complete']
+    truncated = dry.dry_run(path, tmp_path / 'truncated', agent_listing_limit=500)
+    assert truncated['agent_task']['listing_truncated'] and not truncated['coverage_complete']
+
+
+def test_pending_interview_input_and_feedback_are_covered(career, tmp_path):
+    from test_remaining_interview_fifo import prepared
+    c = career
+    controller, identifier = prepared(c)
+    mid = 'interview-msg-1'
+    c.repository.append(c.state['task_id'], role='user', text='A1: Durable Python answer.', id=mid,
+                        context={'interview_id': identifier})
+    state = c.repository.get(c.state['task_id'])
+    c.harness.interview_inputs.route(state, next(m for m in state['messages'] if m['id'] == mid))
+    question = controller.interviews.get(identifier).current_question_id
+    controller.answer_deferred(identifier, 'A0: earlier answer.', question_id=question,
+                               idempotency_key='dry-run-a0', dispatch=lambda: None)
+    source = tmp_path / 'career.db'
+    report = dry.dry_run(source, tmp_path / 'interview')
+    assert report['interview_inputs']['expected'] == 1 and _clean(report['interview_inputs'])
+    assert report['interview_feedback']['expected'] == 1 and _clean(report['interview_feedback'])
+    assert report['coverage_complete'] and report['source_unchanged']
 
 
 def test_second_restart_on_the_same_copy_keeps_unknown_submissions_unknown(source, tmp_path):
     first = dry.dry_run(source, tmp_path / 'once')
     copy = tmp_path / 'once' / 'dry-run-copy.db'
     again = dry.dry_run(copy, tmp_path / 'twice')
-    assert again['history_unchanged'] and again['single_owner']
-    assert again['application_run']['submission_unknown_manual'] == first['application_run']['submission_unknown_manual']
+    assert first['application_run']['manual_submission_unknown']['expected'] == 1
+    assert again['history_unchanged'] and again['coverage_complete']
+    assert again['application_run']['manual_submission_unknown']['expected'] == 0  # already unknown
     assert again['application_run']['transitions'] == {}       # no further state change on re-run
 
 
