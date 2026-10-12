@@ -64,7 +64,7 @@ RETRYABLE = {"validation_error", "model_error", "model_timeout", "model_rate_lim
 
 
 class ApplicationLoop:
-    def __init__(self, repository, *, browser_factory=ApplicationBrowser, agent_factory=HybridApplicationAgent, retry_delays=None, max_model_calls=120, max_tool_calls=360, workers=None):
+    def __init__(self, repository, *, browser_factory=ApplicationBrowser, agent_factory=HybridApplicationAgent, retry_delays=None, max_model_calls=120, max_tool_calls=360, workers=None, execution=None):
         self.repository = repository
         self.browser_factory = browser_factory
         self.agent_factory = agent_factory
@@ -85,9 +85,17 @@ class ApplicationLoop:
         # on one worker (Playwright objects are thread-bound), and runs on the
         # same employer site share a worker so one site never sees parallel bursts.
         self.assigned, self.sites = {}, {}
-        restored = self.repository.recover()
         self.executor = WorkerPool(workers or configured_workers(), self._pump_browsers)
-        for run_id in restored or []:
+        # Runs stay on their browser thread; the process ExecutionService owns the
+        # once-only startup recovery and records these threads as their owner.
+        from agent_runtime.execution import ExecutionService
+        self.execution = execution or ExecutionService()
+        self.execution.register_owner('application_run', recover=self._recover_runs,
+            role='Browser-affine application workers; each run stays on its thread.')
+        self.execution.recover('application_run')
+
+    def _recover_runs(self):
+        for run_id in self.repository.recover() or []:
             self._submit(run_id, self._drive, run_id, None)
 
     def _worker(self, run_id):

@@ -6,7 +6,6 @@ The domain harness owns evidence, external effects and approval boundaries.
 import logging
 import time
 from datetime import UTC, datetime
-from concurrent.futures import ThreadPoolExecutor
 from threading import Event, RLock, Thread
 from uuid import uuid4
 
@@ -89,25 +88,37 @@ class TaskModel:
 
 
 class TaskLoop:
-    def __init__(self, repository, harness, *, model_factory=TaskModel, budget=100, retry_delays=(1.0, 3.0)):
+    def __init__(self, repository, harness, *, model_factory=TaskModel, budget=100, retry_delays=(1.0, 3.0),
+                 execution=None):
         self.repository, self.harness = repository,harness
         self.model_factory, self.budget = model_factory,budget
         self.retry_delays = tuple(retry_delays)
         self.lock, self.stop = RLock(),Event()
-        self.executor = ThreadPoolExecutor(max_workers=2,thread_name_prefix='task-agent')
+        # The process ExecutionService owns the worker pool and startup recovery;
+        # a private one is created only when none is supplied (tests, CLI).
+        from agent_runtime.execution import ExecutionService
+        self._owns_execution = execution is None
+        self.execution = execution or ExecutionService()
+        self.execution.register_kind('career_task', max_workers=2, recover=self._recover)
         self.running = set()
-        for state in repository.list():
-            if state['status'] in {'running','queued'} and not state.get('pause_requested'):
-                repository.change(state['task_id'],status='queued')
-                self.schedule(state['task_id'])
+        self.execution.recover('career_task')
         self.monitor = Thread(target=self._monitor,daemon=True,name='task-events')
+        self.execution.register_resource('task-events', 'Wakes waiting career tasks; enqueue only.')
         self.monitor.start()
+
+    def _recover(self):
+        """Startup recovery: re-queue unfinished tasks once per process."""
+        for state in self.repository.list():
+            if state['status'] in {'running','queued'} and not state.get('pause_requested'):
+                self.repository.change(state['task_id'],status='queued')
+                self.schedule(state['task_id'])
 
     def schedule(self, task_id):
         with self.lock:
             if self.stop.is_set() or task_id in self.running:return
             self.running.add(task_id)
-            self.executor.submit(self._drive,task_id)
+            # TaskLoop coordinates its own re-runs (see _drive's tail), so no key.
+            self.execution.submit('career_task',None,self._drive,task_id)
 
     def start(self, text, key, *, visual_fallback=False, context=None):
         state, created = self.repository.create(text,key,visual_fallback=visual_fallback,context=context)
@@ -342,4 +353,5 @@ class TaskLoop:
     def close(self):
         self.stop.set()
         self.monitor.join(timeout=2)
-        self.executor.shutdown(wait=True,cancel_futures=True)
+        if self._owns_execution:
+            self.execution.close(wait=True)

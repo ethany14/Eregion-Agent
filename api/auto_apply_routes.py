@@ -14,6 +14,12 @@ router = APIRouter(prefix="/api/auto-apply", tags=["automatic applications"])
 _lock = Lock()
 
 
+def _execution(runtime):
+    """Share the runtime's ExecutionService when it has one (unified loop M5)."""
+    execution = getattr(runtime, "execution", None)
+    return {"execution": execution} if execution is not None else {}
+
+
 def restore_applications(application):
     """Resume durable work on server startup, without waiting for an open UI."""
     runtime = application.state.session_runtime
@@ -21,7 +27,7 @@ def restore_applications(application):
         return
     with _lock:
         if getattr(application.state, "auto_apply", None) is None:
-            application.state.auto_apply = ApplicationLoop(ApplyRepository(runtime.database.session_factory))
+            application.state.auto_apply = ApplicationLoop(ApplyRepository(runtime.database.session_factory), **_execution(runtime))
 
 
 def service(request: Request):
@@ -34,7 +40,7 @@ def service(request: Request):
             runtime = request.app.state.session_runtime
             if runtime is None:
                 raise HTTPException(503, "The local workspace is not ready.")
-            existing = ApplicationLoop(ApplyRepository(runtime.database.session_factory))
+            existing = ApplicationLoop(ApplyRepository(runtime.database.session_factory), **_execution(runtime))
             request.app.state.auto_apply = existing
         return existing
 

@@ -1,6 +1,6 @@
 """Durable arrival-order interview input; provider work never holds the chat lock."""
 import re
-from threading import Event, Lock, Semaphore, Thread
+from threading import Event, Lock
 
 from agent_runtime.provider_usage import UsageLedger, usage_scope
 from .repository import now
@@ -39,10 +39,25 @@ def pending_answers(harness,state,identifier,*,before_message_id=None):
 
 
 class InterviewQueue:
-    def __init__(self,harness):
+    def __init__(self,harness,execution=None):
         self.harness=harness
         self.lock=Lock();self.running={}
-        self.feedback_running={};self.feedback_slots=Semaphore(3)
+        self.feedback_running={}
+        self.execution=None
+        if execution is not None:self.bind(execution)
+
+    def bind(self,execution):
+        """Run inputs and feedback on the process ExecutionService (bounded pools).
+        Per-task arrival order is kept by self.running: one runner per task."""
+        execution.register_kind('interview_inputs',max_workers=4)
+        execution.register_kind('interview_feedback',max_workers=3,recover=None)
+        self.execution=execution
+
+    def _execution(self):
+        if self.execution is None:
+            from agent_runtime.execution import ExecutionService
+            self.bind(ExecutionService())
+        return self.execution
 
     def start_feedback(self,task_id,identifier,*,retry_failed=False):
         controller=self.harness.runtime.mock_interviewer
@@ -53,8 +68,8 @@ class InterviewQueue:
             with self.lock:
                 if key in self.feedback_running:continue
                 if job['status']=='failed':controller.interviews.retry_feedback(identifier,job['answer_id'])
-                worker=Thread(target=self._feedback,args=(key,job),daemon=True,name='interview-feedback')
-                self.feedback_running[key]=worker;worker.start()
+                self.feedback_running[key]=None
+                self._execution().submit('interview_feedback',None,self._feedback,key,job)
 
     def retry(self,task_id,identifier):
         self.harness.repository.change(task_id,lambda s:{'interview_queue':[
@@ -66,7 +81,7 @@ class InterviewQueue:
     def _feedback(self,key,job):
         task_id,identifier,_=key;h=self.harness
         try:
-            with self.feedback_slots,usage_scope(ledger=UsageLedger(h.repository.sessions),task_id=task_id,purpose='interview_feedback'):
+            with usage_scope(ledger=UsageLedger(h.repository.sessions),task_id=task_id,purpose='interview_feedback'):
                 h.runtime.mock_interviewer.evaluate_deferred(identifier,job)
         finally:
             with self.lock:self.feedback_running.pop(key,None)
@@ -102,8 +117,8 @@ class InterviewQueue:
     def start(self,task_id):
         with self.lock:
             if task_id in self.running:return
-            worker=Thread(target=self._run,args=(task_id,),daemon=True,name='interview-inputs')
-            self.running[task_id]=worker;worker.start()
+            self.running[task_id]=None
+            self._execution().submit('interview_inputs',None,self._run,task_id)
 
     def recover(self):
         for state in self.harness.repository.list():
@@ -179,7 +194,11 @@ class InterviewQueue:
                 self.start(task_id)
 
     def close(self):
-        with self.lock:workers=list(self.running.values())
-        for worker in workers:worker.join(timeout=30)
-        with self.lock:workers=list(self.feedback_running.values())
-        for worker in workers:worker.join(timeout=30)
+        # Wait (bounded) for in-flight inputs and feedback; the pools belong to the
+        # ExecutionService, which its owner closes.
+        deadline=Event()
+        for registry in (self.running,self.feedback_running):
+            for _ in range(600):
+                with self.lock:
+                    if not registry:break
+                deadline.wait(.05)

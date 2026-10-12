@@ -13,7 +13,7 @@ TRASH_SWEEP_SECONDS = 24*60*60
 
 
 class CareerService:
-    def __init__(self,runtime,applications,*,model_factory=None,harness=None,start_alert_scheduler=True):
+    def __init__(self,runtime,applications,*,model_factory=None,harness=None,start_alert_scheduler=True,execution=None):
         self.runtime,self.applications = runtime,applications
         self.repository = TaskRepository(runtime.database.session_factory)
         self.harness = harness or CareerHarness(runtime,applications,self.repository)
@@ -21,14 +21,27 @@ class CareerService:
         from .alert_scheduler import AlertScheduler
         self.alerts=AlertRepository(runtime.database.session_factory)
         self.harness.alerts=self.alerts
-        self.loop = TaskLoop(self.repository,self.harness,**({'model_factory':model_factory} if model_factory else {}))
+        # One process-wide owner for background work (unified loop M5); the
+        # composition root supplies it, otherwise this service keeps a private one.
+        from agent_runtime.execution import ExecutionService
+        execution = execution or getattr(runtime,'execution',None)
+        self._owns_execution = execution is None
+        self.execution = execution or ExecutionService()
+        self.loop = TaskLoop(self.repository,self.harness,execution=self.execution,
+            **({'model_factory':model_factory} if model_factory else {}))
         inputs=getattr(self.harness,'interview_inputs',None)
-        if inputs:inputs.recover()
+        if inputs:
+            inputs.bind(self.execution)
+            self.execution.register_kind('interview_inputs',max_workers=4,recover=inputs.recover)
+            self.execution.recover('interview_inputs')
         self.alert_scheduler=AlertScheduler(self,start=start_alert_scheduler)
+        if start_alert_scheduler:
+            self.execution.register_resource('career-job-alerts','Timer that enqueues due scheduled searches as career tasks.')
         # Trash empties itself after 30 days: once at startup, then daily, without an external scheduler.
         self._sweeping = Event()
         self.repository.purge_expired_trash()
         Thread(target=self._sweep_trash,daemon=True,name='career-trash').start()
+        self.execution.register_resource('career-trash','Daily purge of expired trash; no task ownership.')
 
     def _sweep_trash(self):
         while not self._sweeping.wait(TRASH_SWEEP_SECONDS):
@@ -308,3 +321,4 @@ class CareerService:
         if sweeping:=getattr(self,'_sweeping',None):sweeping.set()
         self.loop.close()
         if hasattr(self.harness,'close'):self.harness.close()
+        if self._owns_execution:self.execution.close(wait=True)
