@@ -232,6 +232,11 @@ class SessionCoordinator:
     def _continue_claimed(
         self, state: SessionState, attempt: SessionExecutionAttempt
     ) -> SessionOutcome:
+        from agent_runtime.sessions import host as session_host
+
+        if not session_host.uses_legacy(state.session_id):
+            return self._continue_with_agent_loop(state, attempt)
+        # Legacy decision loop: registered in-flight Sessions only (removed in M7).
         while True:
             state = self._sessions.require(state.session_id)
             control = self._control_outcome(state)
@@ -422,6 +427,29 @@ class SessionCoordinator:
             self._context_snapshots.mark_used(prepared.snapshot.snapshot_id)
             if not pending:
                 return self._response_outcome(state)
+
+    def _continue_with_agent_loop(
+        self, state: SessionState, attempt: SessionExecutionAttempt
+    ) -> SessionOutcome:
+        """Unified loop M2: the shared AgentLoop decides; this class coordinates."""
+        from agent_runtime.loop_engine import AgentLoop
+        from agent_runtime.sessions.host import SessionHost
+
+        while True:
+            host = SessionHost(self, state.session_id, attempt)
+            AgentLoop(host, slice_steps=state.max_loop_iterations + 2).run()
+            if host.outcome is not None:
+                return host.outcome
+            # The engine stopped before the host recorded an outcome (cancel or
+            # deadline seen by active()): apply the same control transition here.
+            attempt = host.attempt
+            current = self._sessions.require(state.session_id)
+            outcome = self._control_outcome(current) or host._settled_outcome(current)
+            if outcome is not None:
+                return outcome
+            if current.version == state.version:
+                raise InvalidSessionTransitionError("The session made no progress.")
+            state = current
 
     def approve_tool_call(
         self,
