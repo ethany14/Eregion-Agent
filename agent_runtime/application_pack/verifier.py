@@ -75,32 +75,63 @@ _NEGATION = frozenset("not no never without neither nor none isn't aren't doesn'
                       "cannot can't n't".split())
 _SOFT_QUALIFIERS = frozenset("preferred prefer preferably nice plus bonus optional desirable desired "
                              "ideally advantage advantageous helpful".split())
+# Positive evidence that the job text states a requirement (not merely mentions a skill).
+_HARD_CUES = frozenset("require requires required requirement requirements must need needs needed "
+                       "minimum mandatory essential".split())
 _LEADING_ARTICLES = frozenset({"a", "an", "the"})
+_APOSTROPHES = str.maketrans({"’": "'", "‘": "'", "ʼ": "'", "＇": "'"})
 
 
 def _tokens(text: str) -> list[str]:
     # Keeps digits, "+" and word order: "3+ years" and "5 years" stay different.
-    return re.findall(r"[a-z0-9+#]+(?:'[a-z]+)?", text.lower())
+    return re.findall(r"[a-z0-9+#]+(?:'[a-z]+)?", text.translate(_APOSTROPHES).lower())
+
+
+def _negated(tokens) -> bool:
+    return any(token in _NEGATION or token.endswith("n't") for token in tokens)
+
+
+def _job_statements(employer_context: str):
+    """(sentence tokens, heading tokens) pairs; a heading's qualifier applies to the
+    lines below it until the next heading ('Preferred qualifications:' + bullets)."""
+    heading: list[str] = []
+    for raw in employer_context.translate(_APOSTROPHES).splitlines():
+        line = raw.strip().lstrip("-*• ").strip()
+        if not line:
+            continue
+        if ":" in line:
+            head, line = line.split(":", 1)
+            heading = _tokens(head)
+            if not line.strip():
+                continue
+        elif len(_tokens(line)) <= 4 and not re.search(r"[.!?;]$", line) and (
+                set(_tokens(line)) & (_SOFT_QUALIFIERS | _HARD_CUES | _NEGATION | {"qualifications"})):
+            heading = _tokens(line)  # a bare heading line such as "Nice to have"
+            continue
+        for sentence in re.split(r"[.!?;]+", line):
+            yield _tokens(sentence), heading
 
 
 def _job_states_requirement(requirement: str, verb: str, employer_context: str) -> bool:
-    """True only if one job-text sentence contains the requirement as a contiguous span,
-    with no negation and, for a hard verb, no preferred/optional qualifier."""
+    """True only with positive evidence: one job sentence contains the requirement as a
+    contiguous span; neither it nor its heading negates it; a hard verb also needs a
+    requirement cue and no preferred/optional qualifier there. Anything else: False."""
     wanted = _tokens(requirement)
     while wanted and wanted[0] in _LEADING_ARTICLES:
         wanted = wanted[1:]
-    if not wanted or any(token in _NEGATION for token in wanted):
+    if not wanted or _negated(wanted):
         return False
     hard = not re.match(r"(?:seeks?|looks\s+for|is\s+looking\s+for|emphasi[sz]es|focuses\s+on|centers\s+on)$",
                         verb.strip(), re.I)
-    for sentence in re.split(r"[.!?;\n]+", employer_context):
-        tokens = _tokens(sentence)
-        spans = range(len(tokens) - len(wanted) + 1)
-        if not any(tokens[i:i + len(wanted)] == wanted for i in spans):
+    for tokens, heading in _job_statements(employer_context):
+        if not any(tokens[i:i + len(wanted)] == wanted for i in range(len(tokens) - len(wanted) + 1)):
             continue
-        if any(token in _NEGATION or token.endswith("n't") for token in tokens):
+        scope = set(tokens) | set(heading)
+        if _negated(tokens) or _negated(heading):
             continue
-        if hard and any(token in _SOFT_QUALIFIERS for token in tokens):
+        if hard and (scope & _SOFT_QUALIFIERS or not scope & _HARD_CUES):
+            continue
+        if not hard and not scope & (_HARD_CUES | _SOFT_QUALIFIERS):
             continue
         return True
     return False

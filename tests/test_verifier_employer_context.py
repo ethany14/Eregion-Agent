@@ -125,3 +125,30 @@ def test_unverified_or_altered_requirements_are_not_exempt(context, opening):
 ])
 def test_exactly_stated_requirements_remain_exempt(context, opening):
     assert opening_issues(opening, context=context) == []
+
+
+# M3-GROUNDING-001 follow-up: section headings carry their qualifier to the lines below,
+# Unicode apostrophes still negate, and a hard requirement needs a positive cue.
+@pytest.mark.parametrize('context,opening', [
+    ('Preferred qualifications:\nPython API experience.', 'The role requires Python API experience.'),
+    ('Nice to have\n- Python API experience', 'The role requires Python API experience.'),
+    ('Optional:\n\n* Python API experience', 'The role needs Python API experience.'),
+    ('Not required:\nPython API experience', 'The role requires Python API experience.'),
+    ('Requirements:\nSQL.\nNice to have:\nPython API experience.', 'The role requires Python API experience.'),
+    ('Python experience isn\u2019t required.', 'The role requires Python experience.'),
+    ('Python experience isn\u2018t required.', 'The role requires Python experience.'),
+    ('Python experience doesn\u2019t matter here.', 'The role requires Python experience.'),
+    # A mention without any requirement cue is not evidence of a requirement.
+    ('Our team writes about Python API experience on the blog.', 'The role requires Python API experience.'),
+])
+def test_inherited_qualifiers_unicode_negation_and_missing_cues_stay_rejected(context, opening):
+    assert 'Factual claim must cite a confirmed evidence version.' in opening_issues(opening, context=context)
+
+
+@pytest.mark.parametrize('context,opening', [
+    ('Requirements:\n- Python API experience', 'The role requires Python API experience.'),
+    ('Nice to have:\nPython API experience.\nRequirements:\nSQL reporting.', 'The team is looking for Python API experience.'),
+    ('Minimum qualifications: Python API experience.', 'The role requires Python API experience.'),
+])
+def test_requirements_under_an_explicit_heading_remain_exempt(context, opening):
+    assert opening_issues(opening, context=context) == []
