@@ -30,7 +30,15 @@ I first added a context-variable guard that folded any `provider_call` opened in
 
 ## Offline verification
 
-Full suite (no live opt-ins; `tests/conftest.py` offline isolation):
+Full suite (no live opt-ins; `tests/conftest.py` offline isolation).
+
+- **Code version:** commit `37d7455`. The working tree at launch also contained the uncommitted docs listed in M0 and the then-unreferenced `agent_runtime/sessions/host.py`; no code path imported it.
+- **Mid-run edits:** during the run I added M2 parity imports to 8 Session test modules. That was after collection, so the run used the committed test code. Those edits are not part of this result.
+- **Command** (Git Bash, repo root; live variables unset):
+  `.venv/Scripts/python.exe -m pytest -q -p no:cacheprovider tests --basetemp=<scratchpad>/m1-full > <scratchpad>/m1-full.log 2>&1`
+- **Raw output (saved unmodified):** [`../benchmarks/unified-loop-m1-20261012/full-suite-37d7455.log`](../benchmarks/unified-loop-m1-20261012/full-suite-37d7455.log), 3,243 bytes, 40 lines, sha256 `37e9790f51d79d4e16020bdaaa259dbc5fb37a5b7e69c652eae1cbd6fe0c05a3`. It is `-q` progress plus the summary line. **No JUnit XML or per-test log was produced**; I have not re-run the suite just to create one.
+
+Summary line:
 
 ```
 2176 passed, 134 skipped, 16 subtests passed, 0 failed in 775 s (at 37d7455)
@@ -45,4 +53,4 @@ Focused runs during the work:
 
 ## Next
 
-R3 / M2: a SessionHost on `loop_engine.AgentLoop` behind a compatibility switch. The Session coordinator keeps its claim, version and approval semantics; `ToolCallingLoop` stays only as a fallback until M7.
+R3 / M2: a SessionHost on `loop_engine.AgentLoop`. The Session coordinator keeps its claim, version and approval semantics. The switch `JOB_AGENT_SESSION_AGENT_LOOP` defaults to `0` **only while migration is being validated**. That is not a completion state. **M2 exit condition:** every new Session turn uses the shared kernel. The old `ToolCallingLoop` decision path only drains explicitly registered in-flight Sessions, and there is **no automatic fallback on error**. M7 then deletes the old decision implementation.
