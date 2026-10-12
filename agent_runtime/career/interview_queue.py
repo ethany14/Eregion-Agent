@@ -55,7 +55,11 @@ class InterviewQueue:
         Per-task arrival order is kept by self.running: one runner per task."""
         execution.register_kind('interview_inputs',max_workers=4)
         execution.register_kind('interview_feedback',max_workers=3,recover=None)
-        self.execution=execution
+        with self.lock:
+            # A new owner (e.g. a rebuilt CareerService around the same harness)
+            # reopens a queue that a previous owner closed.
+            self.execution=execution
+            self.closed=False
 
     def _execution(self):
         if self.execution is None:

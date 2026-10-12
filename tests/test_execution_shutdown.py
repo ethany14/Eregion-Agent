@@ -158,3 +158,18 @@ def test_interview_drain_timeout_keeps_resources_open_until_work_exits(database)
     assert harness.events == ['interview_exit', 'resource_close']
     assert service.close_incomplete is False
     execution.close(wait=True)
+
+
+def test_a_new_owner_reopens_a_closed_interview_queue():
+    queue = InterviewQueue(harness=None, execution=ExecutionService())
+    assert queue.close() is True and queue.closed
+    started = []
+    queue._run = lambda task_id: (started.append(task_id), queue.running.pop(task_id, None))
+    second = ExecutionService()
+    queue.bind(second)                      # e.g. CareerService rebuilt around the same harness
+    queue.start('t1')
+    deadline = time.monotonic() + 5
+    while not started and time.monotonic() < deadline:
+        time.sleep(0.01)
+    assert started == ['t1']
+    second.close(wait=True)
