@@ -10,6 +10,13 @@ from agent_runtime.application_pack.workflow import SharedPackModel
 from agent_runtime.application_pack.types import ItemStatus
 from agent_runtime.provider_usage import UsageLedger, usage_scope, capture_provider_attempts
 from evals.opt_report import wire_summary
+from agent_runtime.application_pack.verifier import ArtifactVerifier
+
+
+def use_revision_model(workflow, model):
+    """Keep the injected writer and semantic judge paired as in production init."""
+    workflow._model = model
+    workflow._verifier = ArtifactVerifier(getattr(model, 'verify_claims', None))
 
 @pytest.mark.skipif(os.getenv('JOB_AGENT_LIVE_MATERIAL_PATCHES') != '1',
                    reason='L3 paid material comparison; explicit networked reviewer opt-in required')
@@ -25,7 +32,7 @@ def test_live_material_revision(setup, monkeypatch, variant):
     monkeypatch.setenv('JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS', '6')
     workflow, packs, _, _, _, db = setup
     pack, item, original = pending(setup)
-    workflow._model = SharedPackModel()
+    use_revision_model(workflow, SharedPackModel())
     ledger = UsageLedger(db.session_factory)
     task_id = 'l3-' + pack.pack_id
     start = time.monotonic()

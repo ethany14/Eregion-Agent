@@ -264,6 +264,12 @@ What happens when something is missing:
 
 Checking the configuration does not call Treg. The live API smoke test is a separate opt-in (`JOB_AGENT_TREG_LIVE_API_TEST=1`), and normal tests never spend. To turn Treg off, set `JOB_AGENT_TREG_ENABLED=0`. To restore the original search route completely, also set `JOB_AGENT_JOB_API_FIRST=0`. Spend records are kept. Details: [configuration](docs/configuration.md#optional-treg-job-sources).
 
+R1 acceptance update (2026-10-12): optimization experiments remain disabled by default;
+history remains `current`. Offline regression passed, but real-search acceptance has
+not passed the two-recommendation requirement, so R2 migration is not released.
+See the [R1 gate report](docs/diagnostics/r1-closeout-and-r2-gate-20261012.md)
+and [adoption decisions](docs/diagnostics/r1-adoption-decisions-20261012.md).
+
 ## Documentation
 
 | Guide | Covers |

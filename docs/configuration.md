@@ -404,3 +404,10 @@ own token and explicit provider selection, and retains unknown spend reservation
 failures. Missing credentials, account access or budget prevents a paid operation;
 existing free source paths remain available. See the [final report](diagnostics/integrated-optimization-final.md)
 for evidence and pending networked validation.
+
+The [R1 adoption decisions](diagnostics/r1-adoption-decisions-20261012.md) retain
+these disabled defaults and `current` history. The real-search gate is still
+failed; none of these experiments has been enabled by the R1 closeout. A provider
+budget stop now includes saved results in its reply, while retaining `needs_input`
+and an explicit incomplete status. This does not relax search acceptance or
+increase any budget. See the [R2 gate](diagnostics/r1-closeout-and-r2-gate-20261012.md).
