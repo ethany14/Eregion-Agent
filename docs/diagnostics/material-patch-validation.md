@@ -18,6 +18,6 @@ The r1 L3 full sample (`L3-full-r1`, `needs_revision`) is kept unchanged. It was
 - **Paragraph 1** was a writer-instructed sentence stating the employer's requirement. The verifier misread it as a candidate claim.
 - **Verifier fix (`269427a`, `53a3c86`):** such a sentence is exempt only when the job text positively states the exact requirement span, with no negation and no preferred/optional qualifier in the sentence or its heading. Candidate claims are as strict as before.
 - **Offline result:** 103 passed / 4 paid skips at `53a3c86`; full suite green at `53a3c86`.
-- **Real re-check (one full node, 80K / 6 cap):** **not run**. It was blocked pending the user's explicit confirmation of the paid call.
+- **Real re-check (one full node, 80K / 6 cap, user-approved):** `awaiting_review`. It made 2 attempts, used 2,413 input / 6,855 output tokens, and had 0 unknown usage (`L3-full-r2`). Its opening did not restate the requirement, so the exemption was not exercised live. Human style review is pending.
 - **Still not run:** the patch variant and human style review.
 - **Defaults:** `JOB_AGENT_OPT_MATERIAL_PATCHES` stays `0`.

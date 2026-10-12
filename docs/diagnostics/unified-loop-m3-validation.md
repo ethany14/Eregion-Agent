@@ -44,13 +44,18 @@ The old `custom_agent.loop.AgentLoop` was already deterministic: fixed steps cho
 - **Grounding is not weakened:** candidate claims, mixed sentences, and requirements absent from the job text still require cited evidence (tested). The tailored-resume and application-answer checks are untouched.
 - **Offline replay:** the frozen L3 artifact (embedded in the test, checked byte-equal against the evidence file when present) now has no paragraph-1/2 issues with production pairing.
 
-**Real L3 re-check: NOT RUN (pending).** The planned batch is one node, `tests/test_integrated_p8_material_live.py::test_live_material_revision[full]`:
-- `JOB_AGENT_LIVE_MATERIAL_PATCHES=1`;
-- `OPT_LIVE_OUTPUT=docs/benchmarks/unified-loop-m3-20261012/L3-full-r2`, an unused directory;
-- 80K input / 6 attempts cap, enforced by the test;
-- run only after the full suite was green at `53a3c86`.
+**Real L3 re-check (one paid sample, user-approved): PASSED to `awaiting_review`.**
 
-The tool permission layer blocked the command as a real-world paid action. I did not work around it, and the user's explicit confirmation is needed. **Until it runs, the material full path is not live-accepted.** The offline replay is not a substitute, and the old failed sample `L3-full-r1` is kept unchanged.
+- **Run:** node `tests/test_integrated_p8_material_live.py::test_live_material_revision[full]` at `53a3c86`, after the full suite was green; `JOB_AGENT_LIVE_MATERIAL_PATCHES=1`; 80K / 6 cap. The original attempt was blocked by the permission layer until the user approved paid runs; it ran once and was not retried.
+- **Usage:** 2 provider attempts, both completed, 0 retries, 0 unknown. 2,413 input / 6,855 output tokens; output includes 6,601 reasoning tokens, not counted twice. Cached input: 0. 101 s. Breakdown: writer revision 1,952 / 4,610; semantic claim judge 461 / 2,245. Dollar cost unknown.
+- **Resulting letter:**
+  - opening: "I am applying for the Backend Engineer role at Example.";
+  - evidence: "In my previous work, I built Python APIs.", citing the confirmed evidence, accepted by the semantic judge;
+  - motivation: a future-tense sentence.
+- **Caveat (stated plainly):** this sample's opening did **not** restate the job requirement, so the new employer-context exemption was **not exercised live**. The run shows the production writer + verifier pairing can reach `awaiting_review` on this fixture. The exemption itself is covered only by the offline tests and the replay of the r1 artifact.
+- **Human style review:** still pending.
+- **Patch variant:** not run.
+- **Raw output:** [`L3-full-r2/full.json`](../benchmarks/unified-loop-m3-20261012/L3-full-r2/full.json), [`L3-full-r2.xml`](../benchmarks/unified-loop-m3-20261012/L3-full-r2.xml), [`L3-full-r2.log`](../benchmarks/unified-loop-m3-20261012/L3-full-r2.log). `L3-full-r1` is unchanged.
 
 **Human style review:** not done. It cannot be signed off by Claude and stays pending.
 
@@ -67,5 +72,5 @@ The tool permission layer blocked the command as a real-world paid action. I did
 
 ## Still open
 
-- Patch-variant comparison and human style review: not run.
+- Patch-variant comparison and human style review: not run. One live full sample passed; it is a single sample, not a statistical result.
 - Migration step M4/M5 (scheduling) is next.
