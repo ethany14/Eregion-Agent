@@ -1,0 +1,56 @@
+[
+  {
+    "case": "r1",
+    "granular_decisions": 20,
+    "composite_decisions": 13,
+    "granular_chars": 871413,
+    "composite_chars": 541012,
+    "maximum_request": 47530,
+    "scoring_inputs_identical": true
+  },
+  {
+    "case": "r2",
+    "granular_decisions": 11,
+    "composite_decisions": 11,
+    "granular_chars": 431193,
+    "composite_chars": 435710,
+    "maximum_request": 44775,
+    "scoring_inputs_identical": true
+  },
+  {
+    "case": "r3",
+    "granular_decisions": 2,
+    "composite_decisions": 2,
+    "granular_chars": 54387,
+    "composite_chars": 55703,
+    "maximum_request": 29494,
+    "scoring_inputs_identical": true
+  },
+  {
+    "case": "correct",
+    "granular_decisions": 11,
+    "composite_decisions": 7,
+    "granular_chars": 424146,
+    "composite_chars": 257526,
+    "maximum_request": 42769,
+    "scoring_inputs_identical": true
+  },
+  {
+    "case": "directory-positive",
+    "granular_decisions": 12,
+    "composite_decisions": 8,
+    "granular_chars": 461554,
+    "composite_chars": 296663,
+    "maximum_request": 43035,
+    "scoring_inputs_identical": true
+  },
+  {
+    "case": "directory-negative",
+    "granular_decisions": 3,
+    "composite_decisions": 3,
+    "granular_chars": 88960,
+    "composite_chars": 90934,
+    "maximum_request": 34457,
+    "scoring_inputs_identical": true
+  }
+]

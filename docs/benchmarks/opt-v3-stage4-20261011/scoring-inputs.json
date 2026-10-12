@@ -1,0 +1,275 @@
+{
+  "r1": {
+    "identical_scoring_inputs": [
+      {
+        "schema": "ResumeAnalysis",
+        "sha256": "9556abcf8b919ded8c37253420704ca23804b67569820dfc6ffb9a1eedb3fdf0"
+      },
+      {
+        "schema": "SkillAssessment",
+        "sha256": "c694cd86901208e86907106fa44537469eb4ccc6ac6938bfa6f6a45c6f83d180"
+      },
+      {
+        "schema": "ResumeAnalysis",
+        "sha256": "9556abcf8b919ded8c37253420704ca23804b67569820dfc6ffb9a1eedb3fdf0"
+      },
+      {
+        "schema": "SkillAssessment",
+        "sha256": "a223c63b7766c87f61dbe4c4b27447afa71826539512bf11a23db61b165f2c8d"
+      }
+    ],
+    "composite_acceptance": {
+      "status": "failed",
+      "failures": [
+        "fewer_than_two_verified_scored_qualifying_recommendations"
+      ],
+      "qualified_count": 1,
+      "main_input_tokens": 0,
+      "total_input_tokens": 0,
+      "limits": {
+        "main_calls": 60,
+        "main_input_tokens": 1000000,
+        "total_input_tokens": 1000000
+      },
+      "jobs": [
+        {
+          "application_id": "542996d4-f54e-44c8-ae66-b8176e4be5cd",
+          "url": "https://www.indeed.com/jobs?l=New+York%2C+NY&q=junior+data+analyst&vjk=2233e7ae15e45957",
+          "title": "Data Analyst",
+          "location": "New York, NY",
+          "score": 0.0,
+          "checks": {
+            "role": true,
+            "seniority": true,
+            "location": true,
+            "scored": true,
+            "retrieved": true,
+            "recommended": true,
+            "reply_url": true,
+            "reply_score": true,
+            "eligible": true,
+            "distinct": true
+          }
+        },
+        {
+          "application_id": "68908385-d9ee-461c-9cb3-70d1ad140f8c",
+          "url": "https://www.indeed.com/jobs?l=New+York%2C+NY&q=junior+data+analyst&vjk=33cd00bb496b557e",
+          "title": "Associate Data Analyst",
+          "location": "New York, NY 10007",
+          "score": 0.0,
+          "checks": {
+            "role": true,
+            "seniority": false,
+            "location": true,
+            "scored": true,
+            "retrieved": true,
+            "recommended": true,
+            "reply_url": true,
+            "reply_score": true,
+            "eligible": true,
+            "distinct": true
+          }
+        }
+      ]
+    }
+  },
+  "r2": {
+    "identical_scoring_inputs": [],
+    "composite_acceptance": {
+      "status": "failed",
+      "failures": [
+        "loop_not_completed_cleanly",
+        "fewer_than_two_verified_scored_qualifying_recommendations"
+      ],
+      "qualified_count": 0,
+      "main_input_tokens": 0,
+      "total_input_tokens": 0,
+      "limits": {
+        "main_calls": 60,
+        "main_input_tokens": 1000000,
+        "total_input_tokens": 1000000
+      },
+      "jobs": []
+    }
+  },
+  "r3": {
+    "identical_scoring_inputs": [],
+    "composite_acceptance": {
+      "status": "failed",
+      "failures": [
+        "fewer_than_two_verified_scored_qualifying_recommendations"
+      ],
+      "qualified_count": 0,
+      "main_input_tokens": 0,
+      "total_input_tokens": 0,
+      "limits": {
+        "main_calls": 60,
+        "main_input_tokens": 1000000,
+        "total_input_tokens": 1000000
+      },
+      "jobs": []
+    }
+  },
+  "correct": {
+    "identical_scoring_inputs": [
+      {
+        "schema": "ResumeAnalysis",
+        "sha256": "9556abcf8b919ded8c37253420704ca23804b67569820dfc6ffb9a1eedb3fdf0"
+      },
+      {
+        "schema": "SkillAssessment",
+        "sha256": "c694cd86901208e86907106fa44537469eb4ccc6ac6938bfa6f6a45c6f83d180"
+      },
+      {
+        "schema": "ResumeAnalysis",
+        "sha256": "9556abcf8b919ded8c37253420704ca23804b67569820dfc6ffb9a1eedb3fdf0"
+      },
+      {
+        "schema": "SkillAssessment",
+        "sha256": "4d2ac968f8a6f5d29ec31a1f4502cc6cfece24856d9b13deec3954a32e85e4d4"
+      }
+    ],
+    "composite_acceptance": {
+      "status": "passed",
+      "failures": [],
+      "qualified_count": 2,
+      "main_input_tokens": 0,
+      "total_input_tokens": 0,
+      "limits": {
+        "main_calls": 60,
+        "main_input_tokens": 1000000,
+        "total_input_tokens": 1000000
+      },
+      "jobs": [
+        {
+          "application_id": "f394711a-a632-4f75-941a-c706d75b6633",
+          "url": "https://www.indeed.com/jobs?l=New+York%2C+NY&q=junior+data+analyst&vjk=2233e7ae15e45957",
+          "title": "Data Analyst",
+          "location": "New York, NY",
+          "score": 0.0,
+          "checks": {
+            "role": true,
+            "seniority": true,
+            "location": true,
+            "scored": true,
+            "retrieved": true,
+            "recommended": true,
+            "reply_url": true,
+            "reply_score": true,
+            "eligible": true,
+            "distinct": true
+          }
+        },
+        {
+          "application_id": "0ef8035f-0a6a-4bbf-8745-819bdfc9d944",
+          "url": "https://job-boards.greenhouse.io/b6synthetic/jobs/1001",
+          "title": "Junior Data Analyst",
+          "location": "New York, NY",
+          "score": 0.0,
+          "checks": {
+            "role": true,
+            "seniority": true,
+            "location": true,
+            "scored": true,
+            "retrieved": true,
+            "recommended": true,
+            "reply_url": true,
+            "reply_score": true,
+            "eligible": true,
+            "distinct": true
+          }
+        }
+      ]
+    }
+  },
+  "directory-positive": {
+    "identical_scoring_inputs": [
+      {
+        "schema": "ResumeAnalysis",
+        "sha256": "9556abcf8b919ded8c37253420704ca23804b67569820dfc6ffb9a1eedb3fdf0"
+      },
+      {
+        "schema": "SkillAssessment",
+        "sha256": "c694cd86901208e86907106fa44537469eb4ccc6ac6938bfa6f6a45c6f83d180"
+      },
+      {
+        "schema": "ResumeAnalysis",
+        "sha256": "9556abcf8b919ded8c37253420704ca23804b67569820dfc6ffb9a1eedb3fdf0"
+      },
+      {
+        "schema": "SkillAssessment",
+        "sha256": "4d2ac968f8a6f5d29ec31a1f4502cc6cfece24856d9b13deec3954a32e85e4d4"
+      }
+    ],
+    "composite_acceptance": {
+      "status": "passed",
+      "failures": [],
+      "qualified_count": 2,
+      "main_input_tokens": 0,
+      "total_input_tokens": 0,
+      "limits": {
+        "main_calls": 60,
+        "main_input_tokens": 1000000,
+        "total_input_tokens": 1000000
+      },
+      "jobs": [
+        {
+          "application_id": "760ed392-37da-467e-9385-fd4aca05f18e",
+          "url": "https://www.indeed.com/jobs?l=New+York%2C+NY&q=junior+data+analyst&vjk=2233e7ae15e45957",
+          "title": "Data Analyst",
+          "location": "New York, NY",
+          "score": 0.0,
+          "checks": {
+            "role": true,
+            "seniority": true,
+            "location": true,
+            "scored": true,
+            "retrieved": true,
+            "recommended": true,
+            "reply_url": true,
+            "reply_score": true,
+            "eligible": true,
+            "distinct": true
+          }
+        },
+        {
+          "application_id": "6adb76f7-ed4f-44b5-8901-7fbde0a6f9eb",
+          "url": "https://job-boards.greenhouse.io/b6synthetic/jobs/1001",
+          "title": "Junior Data Analyst",
+          "location": "New York, NY",
+          "score": 0.0,
+          "checks": {
+            "role": true,
+            "seniority": true,
+            "location": true,
+            "scored": true,
+            "retrieved": true,
+            "recommended": true,
+            "reply_url": true,
+            "reply_score": true,
+            "eligible": true,
+            "distinct": true
+          }
+        }
+      ]
+    }
+  },
+  "directory-negative": {
+    "identical_scoring_inputs": [],
+    "composite_acceptance": {
+      "status": "failed",
+      "failures": [
+        "fewer_than_two_verified_scored_qualifying_recommendations"
+      ],
+      "qualified_count": 0,
+      "main_input_tokens": 0,
+      "total_input_tokens": 0,
+      "limits": {
+        "main_calls": 60,
+        "main_input_tokens": 1000000,
+        "total_input_tokens": 1000000
+      },
+      "jobs": []
+    }
+  }
+}
