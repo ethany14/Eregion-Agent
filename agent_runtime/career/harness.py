@@ -240,14 +240,13 @@ class CareerHarness:
     def candidate(self):
         saved = self.applications.repository.saved_candidate()
         if saved.get('resume_base64'):
-            from api.resume_routes import extract_pdf_text
+            from agent_runtime.resumes.pdf_text import extract_pdf_text
             digest = hashlib.sha256(saved['resume_base64'].encode()).hexdigest()
             if self._resume_cache[0] != digest:
-                from fastapi import HTTPException
                 try:
                     text,_ = extract_pdf_text(base64.b64decode(saved['resume_base64']))
                     self._resume_issue = None
-                except (HTTPException,ValueError):
+                except ValueError:
                     text = ''
                     self._resume_issue = 'The saved PDF could not be read. Ask for a selectable-text PDF before scoring or writing.'
                 self._resume_cache = (digest,text)

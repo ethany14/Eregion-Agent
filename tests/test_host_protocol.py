@@ -31,3 +31,13 @@ def test_the_engine_uses_only_contract_members():
     # Optional members are always guarded by hasattr in the engine.
     for name in host_protocol.OPTIONAL + host_protocol.ATTRIBUTES:
         assert f"hasattr(self.host, '{name}')" in ENGINE.read_text(encoding='utf-8'), name
+
+
+def test_runtime_does_not_import_api_route_modules():
+    # Business functions the runtime needs live in neutral modules; routes import them.
+    root = ENGINE.parent
+    offenders = [f'{path.relative_to(root.parent)}: {line.strip()}'
+                 for path in root.rglob('*.py')
+                 for line in path.read_text(encoding='utf-8').splitlines()
+                 if re.search(r'from api\.\w+_routes import|import api\.\w+_routes', line)]
+    assert offenders == []

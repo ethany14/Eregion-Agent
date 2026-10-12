@@ -11,7 +11,7 @@ from .matching import is_consent
 def resume_context(content):
     # Attempts already retain their original PDF. Reuse it for older attempts too,
     # without extracting it again for every model observation.
-    from api.resume_routes import extract_pdf_text
+    from agent_runtime.resumes.pdf_text import extract_pdf_text
     try:
         text, pages = extract_pdf_text(content)
         return {"text": text, "page_count": pages, "warning": None}

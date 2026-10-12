@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from hashlib import sha256
-from io import BytesIO
 from pathlib import Path
 from threading import Lock
 from urllib.parse import unquote
@@ -16,6 +15,7 @@ from agent_runtime.resumes.repository import (
     ResumeDocumentRepository,
     ResumeNotFoundError,
 )
+from agent_runtime.resumes.pdf_text import MAX_RESUME_TEXT, extract_pdf_text  # noqa: F401 (re-export)
 from api.resume_schemas import (
     PublicResume,
     AnalyzeSavedApplicationRequest,
@@ -30,7 +30,6 @@ from api.workspace_schemas import AnalyzeApplicationResponse, PublicApplication,
 
 router = APIRouter(prefix="/api", tags=["resumes"])
 MAX_PDF_BYTES = 10 * 1024 * 1024
-MAX_RESUME_TEXT = 50_000
 _fit_service_lock = Lock()
 
 
@@ -67,21 +66,6 @@ def _public(value: ResumeDocument) -> PublicResume:
         "created_at": value.created_at,
         "updated_at": value.updated_at,
     })
-
-
-def extract_pdf_text(content: bytes) -> tuple[str, int]:
-    try:
-        from pypdf import PdfReader
-
-        reader = PdfReader(BytesIO(content))
-        text = "\n\n".join((page.extract_text() or "").strip() for page in reader.pages).strip()
-    except Exception as exc:
-        raise ValueError("The PDF could not be read.") from exc
-    if not text:
-        raise ValueError("The PDF does not contain selectable text.")
-    if len(text) > MAX_RESUME_TEXT:
-        raise ValueError("The extracted resume is longer than 50,000 characters.")
-    return text, len(reader.pages)
 
 
 def _analysis_resume(runtime: SessionRuntime, resume_id: str | None) -> ResumeDocument:

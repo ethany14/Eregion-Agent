@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from agent_runtime.auto_apply.contracts import ReplyQuestion, ContinueApplication, StartApplication, VersionRequest, ChatRequest, ResumeProfileRequest, PreparationMessage, AccountCredentials, AccountMode, SavedCandidateRequest, MemoryUpdate, StandardAnswers
 from agent_runtime.auto_apply.loop import ApplicationLoop
+from agent_runtime.auto_apply.public import public
 from agent_runtime.auto_apply.repository import ApplyConflict, ApplyNotFound, ApplyRepository, DuplicateApplication
 
 router = APIRouter(prefix="/api/auto-apply", tags=["automatic applications"])
@@ -36,19 +37,6 @@ def service(request: Request):
             existing = ApplicationLoop(ApplyRepository(runtime.database.session_factory))
             request.app.state.auto_apply = existing
         return existing
-
-
-def public(state):
-    from agent_runtime.auto_apply.drafting import visible_drafts
-    result = {key: value for key, value in state.items()
-        if key not in {"profile", "answers", "review_digest", "resume_context"}}
-    if isinstance(result.get('loop_runtime'), dict):
-        result['loop_runtime'] = {k: v for k, v in result['loop_runtime'].items() if k != 'context_archive'}
-    if "fields" in state:
-        from agent_runtime.auto_apply.contracts import can_reopen
-        result["answer_drafts"] = visible_drafts(state, state["fields"])
-        result["can_reopen"] = can_reopen(state)
-    return result
 
 
 def invoke(action):

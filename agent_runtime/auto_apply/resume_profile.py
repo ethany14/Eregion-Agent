@@ -159,7 +159,7 @@ def evidenced_header_city(text,fact):
 
 
 def extract_profile(encoded, *, model_factory=None):
-    from api.resume_routes import extract_pdf_text
+    from agent_runtime.resumes.pdf_text import extract_pdf_text
     from job_agent.model import create_model
     text, pages = extract_pdf_text(base64.b64decode(encoded))
     profile, evidence = {}, {}

@@ -36,7 +36,7 @@ class CareerService:
             except Exception:continue  # A locked database is retried on the next sweep.
 
     def view(self,task_id):
-        from api.auto_apply_routes import public
+        from agent_runtime.auto_apply.public import public
         from agent_runtime.provider_usage import UsageLedger
         state = self.repository.get(task_id)
         self.harness.sync_submissions(state)
@@ -100,7 +100,7 @@ class CareerService:
         if view!='active':return result
         # Browser attempts started outside a conversation stay visible in the main list.
         linked = {r for s in self.repository.list() for r in s['application_runs']}
-        from api.auto_apply_routes import public
+        from agent_runtime.auto_apply.public import public
         result['attempts'] += [public(s) for s in self.applications.repository.list()
             if s['run_id'] not in linked and not self._created_by_conversation(s)]
         return result
