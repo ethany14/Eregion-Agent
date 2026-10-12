@@ -353,5 +353,8 @@ class TaskLoop:
     def close(self):
         self.stop.set()
         self.monitor.join(timeout=2)
+        # Stop and drain this loop's own work before any caller closes resources
+        # the drives use; a shared pool's other kinds keep running.
+        self.execution.stop_kind('career_task',timeout=None)
         if self._owns_execution:
             self.execution.close(wait=True)

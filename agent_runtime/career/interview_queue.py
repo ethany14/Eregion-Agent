@@ -2,6 +2,8 @@
 import re
 from threading import Event, Lock
 
+from agent_runtime.execution import ExecutionClosed
+
 from agent_runtime.provider_usage import UsageLedger, usage_scope
 from .repository import now
 
@@ -43,6 +45,7 @@ class InterviewQueue:
         self.harness=harness
         self.lock=Lock();self.running={}
         self.feedback_running={}
+        self.closed=False
         self.execution=None
         if execution is not None:self.bind(execution)
 
@@ -68,8 +71,10 @@ class InterviewQueue:
             with self.lock:
                 if key in self.feedback_running:continue
                 if job['status']=='failed':controller.interviews.retry_feedback(identifier,job['answer_id'])
+                if self.closed:return
                 self.feedback_running[key]=None
-                self._execution().submit('interview_feedback',None,self._feedback,key,job)
+                try:self._execution().submit('interview_feedback',None,self._feedback,key,job)
+                except ExecutionClosed:self.feedback_running.pop(key,None);return
 
     def retry(self,task_id,identifier):
         self.harness.repository.change(task_id,lambda s:{'interview_queue':[
@@ -116,9 +121,10 @@ class InterviewQueue:
 
     def start(self,task_id):
         with self.lock:
-            if task_id in self.running:return
+            if self.closed or task_id in self.running:return
             self.running[task_id]=None
-            self._execution().submit('interview_inputs',None,self._run,task_id)
+            try:self._execution().submit('interview_inputs',None,self._run,task_id)
+            except ExecutionClosed:self.running.pop(task_id,None)
 
     def recover(self):
         for state in self.harness.repository.list():
@@ -194,11 +200,10 @@ class InterviewQueue:
                 self.start(task_id)
 
     def close(self):
-        # Wait (bounded) for in-flight inputs and feedback; the pools belong to the
-        # ExecutionService, which its owner closes.
-        deadline=Event()
-        for registry in (self.running,self.feedback_running):
-            for _ in range(600):
-                with self.lock:
-                    if not registry:break
-                deadline.wait(.05)
+        """Stop accepting inputs/feedback and drain in-flight work (bounded, as before)
+        so the harness can close its resources afterwards. Idempotent."""
+        with self.lock:
+            self.closed=True
+        if self.execution is not None:
+            for kind in ('interview_inputs','interview_feedback'):
+                self.execution.stop_kind(kind,timeout=30)

@@ -317,8 +317,11 @@ class CareerService:
         return self.view(task_id)
 
     def close(self):
+        # Order matters: stop producers, drain career and interview work, and only
+        # then close the resources (discovery, Treg, browser) that work uses.
         if scheduler:=getattr(self,'alert_scheduler',None):scheduler.close()
         if sweeping:=getattr(self,'_sweeping',None):sweeping.set()
         self.loop.close()
+        if inputs:=getattr(self.harness,'interview_inputs',None):inputs.close()
         if hasattr(self.harness,'close'):self.harness.close()
         if self._owns_execution:self.execution.close(wait=True)

@@ -16,7 +16,7 @@ SQL tables (claims, leases, versions); this service owns the process side:
 from __future__ import annotations
 
 import logging
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 from threading import RLock
 from typing import Any, Callable
@@ -36,6 +36,7 @@ class JobKind:
     recover: Callable[[], Any] | None = None
     pool: ThreadPoolExecutor | None = field(default=None, repr=False)
     recovered: bool = False
+    stopped: bool = False
     active: dict[str, Future] = field(default_factory=dict, repr=False)
 
 
@@ -105,6 +106,8 @@ class ExecutionService:
         with self._lock:
             self._require_open()
             job = self._kinds[kind]
+            if job.stopped:
+                raise ExecutionClosed(f"Job kind '{kind}' is stopped.")
             if job.pool is None:
                 raise ValueError(f"Job kind '{kind}' runs on its own resource-affine threads.")
             if key is None:
@@ -143,6 +146,29 @@ class ExecutionService:
 
     # -- lifecycle ----------------------------------------------------------------
 
+    def stop_kind(self, kind: str, *, timeout: float | None = 30) -> bool:
+        """Stop one kind without touching the shared pools of other kinds.
+
+        New submissions of this kind are refused, queued jobs are cancelled and
+        running jobs are awaited. The owner calls this before closing resources
+        its jobs use. Returns True when no job of the kind is still running.
+        """
+        with self._lock:
+            job = self._kinds.get(kind)
+            if job is None:
+                return True
+            job.stopped = True
+            running = []
+            for key, future in list(job.active.items()):
+                if future.cancel():
+                    job.active.pop(key, None)  # never started, so _run will not release it
+                else:
+                    running.append(future)
+        done, pending = wait(running, timeout=timeout)
+        if pending:
+            log.warning("Job kind '%s' still has %d running job(s) after stop.", kind, len(pending))
+        return not pending
+
     def close(self, *, wait: bool = False) -> None:
         with self._lock:
             if self._closed:
@@ -162,6 +188,7 @@ class ExecutionService:
         with self._lock:
             return {
                 "kinds": {name: {"max_workers": job.max_workers, "recovered": job.recovered,
+                                 "stopped": job.stopped,
                                  "active": sorted(key for key in job.active if not key.startswith("~")),
                                  "active_count": len(job.active)}
                           for name, job in self._kinds.items()},
