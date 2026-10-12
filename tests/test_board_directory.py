@@ -157,12 +157,16 @@ def test_refresh_updates_metadata_from_get():
     requests=[]
     def serve(request):
         requests.append(request)
-        return httpx.Response(200,json={'jobs':[{'title':'Backend Engineer','location':{'name':'Austin, TX'}}]})
+        return httpx.Response(200,json={'jobs':[{'title':'Backend Engineer','location':{'name':'Austin, TX'}},
+            {'title':'Senior Backend Engineer','location':{'name':'Austin, TX'}},
+            {'title':'Data Center Technician','location':{'name':'Dallas, TX'}}]})
     d=discovery(serve)
     rows,report=refresh([entry()],d)
     assert requests[0].method=='GET'
-    assert rows[0]['job_count_at_verification']==1
-    assert rows[0]['domains']==['backend'] and rows[0]['locations']==['Austin, TX']
+    assert rows[0]['job_count_at_verification']==3
+    # One incidental title ("Data Center ...") is not data/analytics coverage.
+    assert rows[0]['domains']==['backend'] and rows[0]['family_locations']=={'backend':['Austin, TX']}
+    assert rows[0]['locations']==['Austin, TX','Dallas, TX']
     assert report[0]['status']=='verified'
     d.close()
 
@@ -255,3 +259,18 @@ def test_board_search_cancellation_check_is_throttled(career):
     c.harness.execute(c.state['task_id'], 'search_jobs',
         {'query': 'junior data analyst', 'location': 'New York, NY', 'use_directory': True}, call_id=str(uuid4()))
     assert len(reads) < 30  # was ~300 polls -> ~300 full state loads
+
+
+def test_family_location_coverage_and_ranking():
+    from agent_runtime.career.board_directory import select_boards
+    base={'platform':'greenhouse','display_name':'X','verified_at':'2026-10-10','verified_by':'public_api_get',
+          'job_count_at_verification':5,'notes':'test','source_url':'https://job-boards.greenhouse.io/x'}
+    paris={**base,'company':'paris','domains':['data/analytics','backend'],'locations':['Paris, France','New York, NY'],
+           'family_locations':{'data/analytics':['Paris, France'],'backend':['New York, NY']}}
+    one={**base,'company':'one','domains':['data/analytics'],'locations':['New York, NY'],
+         'family_locations':{'data/analytics':['New York, NY']}}
+    many={**base,'company':'many','domains':['data/analytics'],'locations':['New York, NY','New York, NY; Remote'],
+          'family_locations':{'data/analytics':['New York, NY','New York, NY; Remote']}}
+    selected,_=select_boards('data analyst','New York, NY',entries=[paris,one,many],today=__import__('datetime').date(2026,10,11))
+    # Data roles only in Paris do not make a board cover "data analyst, NYC"; most coverage first.
+    assert [b['company'] for b in selected]==['many','one']
