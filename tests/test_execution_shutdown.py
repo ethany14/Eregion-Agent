@@ -173,3 +173,20 @@ def test_a_new_owner_reopens_a_closed_interview_queue():
         time.sleep(0.01)
     assert started == ['t1']
     second.close(wait=True)
+
+
+def test_unbound_queue_binds_lazily_without_deadlocking_itself():
+    """Regression for the 9d2f159 self-deadlock: start() and start_feedback() hold the
+    queue lock while _execution() lazily binds a service, and bind() takes it too."""
+    queue = InterviewQueue(harness=None)          # never bound, as with a bare CareerHarness
+    started = []
+    queue._run = lambda task_id: (started.append(task_id), queue.running.pop(task_id, None))
+    worker = threading.Thread(target=queue.start, args=('t1',), daemon=True)
+    worker.start()
+    worker.join(5)
+    assert not worker.is_alive(), 'start() deadlocked while binding its execution service'
+    deadline = time.monotonic() + 5
+    while not started and time.monotonic() < deadline:
+        time.sleep(0.01)
+    assert started == ['t1']
+    queue.execution.close(wait=True)

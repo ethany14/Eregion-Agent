@@ -1,0 +1,70 @@
+Timeout (0:01:00)!
+Thread 0x000022c0 (most recent call first):
+  File "C:\Python313\Lib\threading.py", line 363 in wait
+  File "C:\Python313\Lib\queue.py", line 210 in get
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\agent_runtime\auto_apply\worker.py", line 31 in _dispatch
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\agent_runtime\auto_apply\worker.py", line 24 in _run
+  File "C:\Python313\Lib\threading.py", line 994 in run
+  File "C:\Python313\Lib\threading.py", line 1043 in _bootstrap_inner
+  File "C:\Python313\Lib\threading.py", line 1014 in _bootstrap
+
+Thread 0x00005550 (most recent call first):
+  File "C:\Python313\Lib\threading.py", line 363 in wait
+  File "C:\Python313\Lib\queue.py", line 210 in get
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\agent_runtime\auto_apply\worker.py", line 31 in _dispatch
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\agent_runtime\auto_apply\worker.py", line 24 in _run
+  File "C:\Python313\Lib\threading.py", line 994 in run
+  File "C:\Python313\Lib\threading.py", line 1043 in _bootstrap_inner
+  File "C:\Python313\Lib\threading.py", line 1014 in _bootstrap
+
+Thread 0x00005298 (most recent call first):
+  File "C:\Python313\Lib\threading.py", line 363 in wait
+  File "C:\Python313\Lib\queue.py", line 210 in get
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\agent_runtime\auto_apply\worker.py", line 31 in _dispatch
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\agent_runtime\auto_apply\worker.py", line 24 in _run
+  File "C:\Python313\Lib\threading.py", line 994 in run
+  File "C:\Python313\Lib\threading.py", line 1043 in _bootstrap_inner
+  File "C:\Python313\Lib\threading.py", line 1014 in _bootstrap
+
+Thread 0x00001b78 (most recent call first):
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\agent_runtime\career\interview_queue.py", line 58 in bind
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\agent_runtime\career\interview_queue.py", line 67 in _execution
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\agent_runtime\career\interview_queue.py", line 81 in start_feedback
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\agent_runtime\career\harness.py", line 1028 in <lambda>
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\agent_runtime\mock_interview\controller.py", line 500 in answer_deferred
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\agent_runtime\career\harness.py", line 1026 in _execute
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\agent_runtime\career\harness.py", line 555 in execute
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\tests\test_career_flow.py", line 103 in execute
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\tests\test_career_flow.py", line 288 in test_discovery_score_documents_application_and_interview_share_one_task
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\python.py", line 167 in pytest_pyfunc_call
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\python.py", line 1707 in runtest
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\runner.py", line 184 in pytest_runtest_call
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\runner.py", line 250 in <lambda>
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\runner.py", line 361 in from_call
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\runner.py", line 249 in call_and_report
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\runner.py", line 139 in runtestprotocol
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\runner.py", line 118 in pytest_runtest_protocol
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\main.py", line 408 in pytest_runtestloop
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\main.py", line 384 in _main
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\main.py", line 330 in wrap_session
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\main.py", line 377 in pytest_cmdline_main
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\config\__init__.py", line 229 in _main
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\config\__init__.py", line 253 in _console_main
+  File "C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\pytest\__main__.py", line 9 in <module>
+  File "<frozen runpy>", line 88 in _run_code
+  File "<frozen runpy>", line 198 in _run_module_as_main

@@ -1,6 +1,6 @@
 """Durable arrival-order interview input; provider work never holds the chat lock."""
 import re
-from threading import Event, Lock
+from threading import Event, RLock
 
 from agent_runtime.execution import ExecutionClosed
 
@@ -43,7 +43,9 @@ def pending_answers(harness,state,identifier,*,before_message_id=None):
 class InterviewQueue:
     def __init__(self,harness,execution=None):
         self.harness=harness
-        self.lock=Lock();self.running={}
+        # Re-entrant: start()/start_feedback() hold it while a lazily created
+        # ExecutionService is bound, and bind() takes it too.
+        self.lock=RLock();self.running={}
         self.feedback_running={}
         self.closed=False
         self.drain_timeout=30  # seconds per kind; injectable for tests
