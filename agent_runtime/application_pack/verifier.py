@@ -65,6 +65,68 @@ def _resume_quote_unchanged(claim: str, evidence: EvidenceSnapshotItem) -> bool:
                (evidence.claim_text, evidence.exact_quote or '') if source)
 
 
+_PERCEPTION_LEAD = re.compile(r"^\s*I\s+(?:understand|see|note|noticed|read)\s+(?:that\s+)?", re.I)
+_EMPLOYER_ATTRIBUTION = re.compile(
+    r"^\s*(?:the|this)\s+(?:[\w\s/&-]{0,60}?\s)?(?:role|position|team|job|posting|opening)\s+"
+    r"(?P<verb>requires?|seeks?|needs?|calls\s+for|asks\s+for|looks\s+for|is\s+looking\s+for|"
+    r"emphasi[sz]es|focuses\s+on|centers\s+on)\s+(?P<requirement>.+?)\s*[.!]?\s*$", re.I)
+_FIRST_PERSON = re.compile(r"\b(?:i|i'm|i've|i'd|me|my|mine|myself)\b", re.I)
+_NEGATION = frozenset("not no never without neither nor none isn't aren't doesn't don't won't "
+                      "cannot can't n't".split())
+_SOFT_QUALIFIERS = frozenset("preferred prefer preferably nice plus bonus optional desirable desired "
+                             "ideally advantage advantageous helpful".split())
+_LEADING_ARTICLES = frozenset({"a", "an", "the"})
+
+
+def _tokens(text: str) -> list[str]:
+    # Keeps digits, "+" and word order: "3+ years" and "5 years" stay different.
+    return re.findall(r"[a-z0-9+#]+(?:'[a-z]+)?", text.lower())
+
+
+def _job_states_requirement(requirement: str, verb: str, employer_context: str) -> bool:
+    """True only if one job-text sentence contains the requirement as a contiguous span,
+    with no negation and, for a hard verb, no preferred/optional qualifier."""
+    wanted = _tokens(requirement)
+    while wanted and wanted[0] in _LEADING_ARTICLES:
+        wanted = wanted[1:]
+    if not wanted or any(token in _NEGATION for token in wanted):
+        return False
+    hard = not re.match(r"(?:seeks?|looks\s+for|is\s+looking\s+for|emphasi[sz]es|focuses\s+on|centers\s+on)$",
+                        verb.strip(), re.I)
+    for sentence in re.split(r"[.!?;\n]+", employer_context):
+        tokens = _tokens(sentence)
+        spans = range(len(tokens) - len(wanted) + 1)
+        if not any(tokens[i:i + len(wanted)] == wanted for i in spans):
+            continue
+        if any(token in _NEGATION or token.endswith("n't") for token in tokens):
+            continue
+        if hard and any(token in _SOFT_QUALIFIERS for token in tokens):
+            continue
+        return True
+    return False
+
+
+def _without_employer_requirements(text: str, employer_context: str | None) -> str:
+    """Drop sentences that only restate a requirement the job text itself states.
+
+    "I understand the role requires Python API experience." is employer context, not a
+    candidate claim, when one job-text sentence contains that exact requirement span
+    without negation or a weaker qualifier. Anything uncertain (no job text, a changed
+    number, reordered or scattered words, negation, preferred vs required, any
+    first-person claim) stays subject to the candidate-evidence checks.
+    """
+    if not employer_context:
+        return text
+    kept = []
+    for sentence in re.split(r"(?<=[.!?])\s+", text.strip()):
+        body = _PERCEPTION_LEAD.sub("", sentence, count=1)
+        match = _EMPLOYER_ATTRIBUTION.match(body)
+        if (match and not _FIRST_PERSON.search(body)
+                and _job_states_requirement(match.group("requirement"), match.group("verb"), employer_context)):
+            continue
+        kept.append(sentence)
+    return " ".join(kept)
+
 class ArtifactVerifier:
     """Check immutable citations first, then meaning through an injectable judge."""
 
@@ -217,7 +279,9 @@ class ArtifactVerifier:
                 resolved = [by_id.get(value) or by_version.get(value) for value in block.evidence_ids]
                 valid_ids = {value.evidence_version_id for value in resolved} == set(block.evidence_version_ids)
             # A verified role title (e.g. Intern 2027) is employer context, not a candidate metric.
-            candidate_text = block.text.replace(expected_role, "") if expected_role else block.text
+            candidate_text = (_without_employer_requirements(block.text, employer_context)
+                              if artifact_type == "cover_letter" else block.text)
+            candidate_text = candidate_text.replace(expected_role, "") if expected_role else candidate_text
             factual = block.block_type.value == "factual" or bool(re.search(
                 r"\b(years?|built|led|managed|developed|used|deployed|have|has|bring|possess|"
                 r"increased|reduced|experienced?|skilled|expert|proficient|proven|"
