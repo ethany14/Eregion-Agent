@@ -20,6 +20,7 @@ MAX_PAGES = 2                 # T1: at most two pages per search group
 DEFAULT_DEADLINE = 120.0      # seconds per tool call (T1)
 DEFAULT_CALL_BUDGET = 26      # T1 batch: 3 searches + 15 details + 6 apply URLs + 2 company lookups
 MAX_RESPONSE_BYTES = 2_000_000
+MIN_POSTING_CHARS = 400     # a real 'About the job' section; shorter is not a complete JD
 
 _STOP = (('rate_limited', re.compile(r'rate.?limit|too many requests|\b429\b', re.I)),
          ('auth_required', re.compile(r'log ?in|sign ?in|authenticat|checkpoint|challenge|captcha|verify', re.I)))
@@ -89,20 +90,36 @@ class LinkedInMcpSource:
                 'unapplied_filters': unapplied}
 
     def details(self, job_id: str) -> dict:
-        payload = self._invoke('get_job_details', {'job_id': str(job_id)})
+        """Complete only when the job_posting section itself is present, long enough, bound to
+        this job id and has no section error; anything else keeps evidence but is incomplete."""
+        job_id = str(job_id)
+        payload = self._invoke('get_job_details', {'job_id': job_id})
         sections = payload.get('sections') or {}
         errors = payload.get('section_errors') or {}
         apply = payload.get('apply') or {}
-        text = '\n\n'.join(str(v) for v in sections.values() if v).strip()
-        missing = any((e or {}).get('type') == 'description_missing' for e in errors.values() if isinstance(e, dict))
+        posting = str(sections.get('job_posting') or '').strip()
+        evidence = '\n\n'.join(f'[{name}]\n{value}' for name, value in sections.items() if value).strip()
+        reasons = []
+        if 'job_posting' in errors:
+            error = errors['job_posting']
+            reasons.append('job_posting_' + (error.get('type') if isinstance(error, dict) and error.get('type')
+                                             else 'error'))
+        if not posting:
+            reasons.append('job_posting_missing')
+        elif len(posting) < MIN_POSTING_CHARS:
+            reasons.append('job_posting_too_short')
+        url = str(payload.get('url') or '')
+        if not re.search(rf'/jobs/view/{re.escape(job_id)}(?:/|\?|$)', url):
+            reasons.append('identity_unverified')  # the page must be this job, not a redirect or another posting
         if apply.get('type') == 'closed':
             status = 'closed'
-        elif missing or not text:
-            status = 'description_missing'   # text kept for evidence, never a complete JD
+        elif reasons:
+            status = 'incomplete'
         else:
             status = 'complete_jd'
-        return {'status': status, 'url': payload.get('url') or job_url(job_id), 'provider_job_id': str(job_id),
-                'description': text if status == 'complete_jd' else None, 'evidence_text': text,
+        return {'status': status, 'incomplete_reasons': reasons, 'url': url or job_url(job_id),
+                'provider_job_id': job_id, 'description': posting if status == 'complete_jd' else None,
+                'evidence_text': evidence, 'section_errors': sorted(errors),
                 'apply_status': apply.get('type') or 'unknown', 'source': 'linkedin_mcp'}
 
     def apply_url(self, job_id: str) -> dict:

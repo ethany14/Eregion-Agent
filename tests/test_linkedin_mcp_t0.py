@@ -109,9 +109,33 @@ def test_details_missing_description_and_closed_are_never_complete():
         result({**DETAIL, 'apply': {'type': 'closed'}})]})
     source = LinkedInMcpSource(fake.call_tool_for())
     complete, missing, closed = (source.details('4475055219') for _ in range(3))
-    assert complete['status'] == 'complete_jd' and complete['description']
-    assert missing['status'] == 'description_missing' and missing['description'] is None and missing['evidence_text']
+    assert complete['status'] == 'complete_jd' and complete['description'] and not complete['incomplete_reasons']
+    assert missing['status'] == 'incomplete' and missing['description'] is None and missing['evidence_text']
+    assert missing['incomplete_reasons'] == ['job_posting_description_missing']
     assert closed['status'] == 'closed' and closed['description'] is None
+
+
+# R7-CONTRACT-001: only the job_posting section of THIS job counts; other sections never do.
+@pytest.mark.parametrize('payload,reason', [
+    ({'url': job_url('4475055219'), 'sections': {'company': 'About the company ' * 60}}, 'job_posting_missing'),
+    ({**DETAIL, 'section_errors': {'job_posting': {'type': 'timeout'}}}, 'job_posting_timeout'),
+    ({**DETAIL, 'section_errors': {'job_posting': 'failed'}}, 'job_posting_error'),
+    ({'url': job_url('4475055219'), 'sections': {'job_posting': 'About the job. Short.'}}, 'job_posting_too_short'),
+    ({**DETAIL, 'url': job_url('9999999999')}, 'identity_unverified'),
+    ({**DETAIL, 'url': 'https://www.linkedin.com/jobs/search/?currentJobId=4475055219'}, 'identity_unverified'),
+])
+def test_other_sections_or_failures_never_make_a_complete_jd(payload, reason):
+    detail = LinkedInMcpSource(FakeLinkedIn({'get_job_details': result(payload)}).call_tool_for()).details('4475055219')
+    assert detail['status'] == 'incomplete' and detail['description'] is None
+    assert reason in detail['incomplete_reasons']
+
+
+def test_an_unrelated_section_error_does_not_block_a_complete_posting():
+    payload = {**DETAIL, 'sections': {**DETAIL['sections'], 'references': 'More jobs'},
+               'section_errors': {'references': {'type': 'timeout'}}}
+    detail = LinkedInMcpSource(FakeLinkedIn({'get_job_details': result(payload)}).call_tool_for()).details('4475055219')
+    assert detail['status'] == 'complete_jd' and detail['description'].startswith('About the job')
+    assert 'More jobs' not in detail['description'] and 'More jobs' in detail['evidence_text']
 
 
 def test_apply_url_only_for_external_postings():
@@ -139,11 +163,11 @@ def test_timeout_blocks_the_next_call_until_cancellation_is_confirmed():
     fake = FakeLinkedIn({'get_job_details': [McpCallTimeoutError('slow'), result(DETAIL)]})
     source = LinkedInMcpSource(fake.call_tool_for())
     with pytest.raises(McpCallTimeoutError):
-        source.details('1')
+        source.details('4475055219')
     with pytest.raises(LinkedInSourceStopped, match='timeout_cancel_unconfirmed'):
-        source.details('1')
+        source.details('4475055219')
     source.confirm_cancelled()
-    assert source.details('1')['status'] == 'complete_jd'
+    assert source.details('4475055219')['status'] == 'complete_jd'
     assert len(fake.calls) == 2
 
 
