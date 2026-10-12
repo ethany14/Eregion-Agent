@@ -362,3 +362,27 @@ reviewer 仍须沙箱外全量复跑。当前配置将主仓库 `.git` 设为只
 已在可写目录生成基于当前 HEAD/同名分支的提交包，主分支尚未更新。
 来源、复现边界和验证见 [B6离线回放报告](docs/diagnostics/remaining-2026-10-11/b6-offline-replay.md)。
 **B6真实两岗标准仍失败，离线 passed 不替代 live 验收。**
+
+### v3 付费验证（2026-10-11，用户批准；每项单次，无自动重试）
+
+代码固定于 `7d32b59` 起，修复后依次 `bc6aade`、`af0bf2a`。B6 每个配置只有 1 个样本，且受实时站点可达性影响，只作初步观察。
+
+| 运行 | 配置 | 结果 | 主调用 / input / output（reasoning） | 证据 |
+|---|---|---|---|---|
+| P1 | B6 默认 | 失败：0 合格，no_progress。目录只覆盖前 5 个招聘板，重复搜索同 5 个；诚实总结被完成校验误拒 | 36 / 460,535 / 28,229（21,217） | `tmp/paid-p1-b6-default/` |
+| — | 修复 `bc6aade` | 目录分页；否定式免责声明（"not proof no vacancies exist"）不再被拒 | — | 回归测试 |
+| P1b | B6 默认（修复后） | 失败：**1 合格**（Graduate Data Analyst 80.34），Associate 正确标注；**任务正常完成**，不再触发 no_progress | 59 / 938,941（cached 345,370）/ 53,841（37,696） | `tmp/paid-p1b-b6-default/` |
+| — | 修复 `af0bf2a` | Graduate（new_grad）误报 junior 不匹配；测试套件后台简历 warmup 会真实调用模型并串入后续测试 → `tests/conftest.py` 默认关闭 | — | 回归测试 |
+| P2 | B6 + 阶段2推荐组合 + 阶段4组合工具 | 失败：0 推荐（已评分合格的 Data Analyst 44.03 未被推荐），no_progress；`read_context` 15 次 | 34 / 431,044 / 20,708（12,903） | `tmp/paid-p2-b6-optimized/` |
+| P3 | B6 + router reasoning `low` | 失败：0 合格，no_progress | 49 / 701,102 / 16,777（9,048） | `tmp/paid-p3-b6-router-low/` |
+| P4 | E5 默认 | **通过**（writer 与 revision 两 lane 全部检查通过；writer 修复确认） | 4 / 5,012 / 10,285（9,740），80.5 s | `tmp/paid-p4-e5-default/` |
+| P5 | E5 + writer `medium` | **通过**；reasoning −22%，耗时 80→55 s | 4 / 5,018 / 8,142（7,563），55.4 s | `tmp/paid-p5-e5-writer-medium/` |
+| P6 | C16 | **通过**（含修订后的排序检查）；p50 19.6 s（10.2 / 19.6 / 30.0） | 6 / 5,260 / 7,786 | `tmp/paid-p6-c16/` |
+
+**结论（初步）**：
+- E5、C16 真实通过。writer `medium` 是候选默认值，需更多样本和人工风格审阅。
+- B6 仍失败，原因已从"来源被拦截"转为两类：
+  - 目录以大型科技公司为主，纽约初级分析师岗位很少；
+  - agent 决策效率低：反复 `read_context`、合格岗位未推荐、no_progress 停止。
+- 阶段 2 的 snapshot 引用使单次调用 input 下降约 20%，但读取次数增加。阶段 2/4 开关与 router `low` **暂不默认开启**。
+- 下一步：用这些真实运行的冻结网页做"类真实"离线回放，在不花钱的前提下迭代 agent 决策；之后再付费复测。
