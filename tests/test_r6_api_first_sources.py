@@ -130,3 +130,18 @@ def test_directory_dedupe_drops_an_invalid_board_url_instead_of_raising(monkeypa
     finally:
         discovery.close()
     assert [j['url'] for j in result['jobs']] == [GH['url']] and result['dropped_invalid_urls'] == 1
+
+
+def test_every_paid_scrape_records_its_verdict(career, monkeypatch):
+    # B6 run-2: two paid LinkedIn scrapes were rejected and nothing recorded why.
+    treg_env(monkeypatch, JOB_AGENT_TREG_CRAWL4AI_SCRAPE_ENABLED='1')
+    c = career; prepare(c)
+    link = CRAWL_ROWS['rows'][0]['url']
+    c.repository.change(c.state['task_id'], search_candidates={'k': {'url': 'https://www.linkedin.com/jobs/view/4468908584/',
+        'title': 'Junior Data Analyst', 'company': 'B Co', 'location': 'New York, NY'}})
+    install_treg(c, lambda r: ok({'ok': True, 'markdown': 'Sign in to view this job. ' * 10, 'content_hash': 'h'}))
+    c.harness.discovery = Discovery()
+    execute(c, 'read_job', url=link)  # falls back to the ordinary read path
+    verdicts = c.repository.get(c.state['task_id'])['treg_scrape_verdicts']
+    assert len(verdicts) == 1 and verdicts[0]['status'] in {'blocked', 'insufficient'}
+    assert 'length' in verdicts[0]['failed_checks'] and verdicts[0]['operation_id']

@@ -194,6 +194,10 @@ class CareerHarness:
         if call.outcome!='succeeded' or call.quarantined:
             return None
         verdict=assess_scrape(candidate,call.body)
+        # Keep why a paid scrape was or was not accepted (B6 run-2 could not be attributed).
+        record={'url':url,'status':verdict['status'],'failed_checks':sorted(k for k,v in verdict['checks'].items() if not v),
+                'text_len':verdict['text_len'],'raw_len':verdict['raw_len'],'operation_id':call.operation_id}
+        self.repository.change(task_id,lambda s:{'treg_scrape_verdicts':[*s.get('treg_scrape_verdicts',[]),record][-20:]})
         if verdict.get('closed_signal'):
             # The posting says it is closed: report that instead of re-reading it elsewhere.
             return {'closed':True,'url':url,'source':'treg:crawl4ai.web.scrape'}
