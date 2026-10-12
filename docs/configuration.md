@@ -335,3 +335,19 @@ Offline measurements, limitations, and proposed defaults are in
 [`benchmarks/opt-v3-stage2-20261011/README.md`](benchmarks/opt-v3-stage2-20261011/README.md).
 Defaults are deliberately unchanged pending review; no token-cost or cache-hit
 claim is inferred from character counts and scripted decisions.
+
+## Optional posting workflow
+
+`JOB_AGENT_OPT_VERIFY_AND_SCORE=1` exposes `verify_and_score` and adds one short
+prompt preference. Default: `0` (legacy tool arrays and requests unchanged).
+It accepts one posting URL, including an observed candidate or a saved retrieved
+body indexed by that URL, plus the existing read/import optional fields. It calls
+the existing `read_job`, `import_job` (including posting qualification) and
+`score_job` handlers. It never recommends or applies; the model separately decides
+`recommend_job` using the score, qualification evidence and `opening_level`.
+
+Task state records step intent, completed steps and failures. Restart reuses saved
+bodies, workspace source/snapshot identity and existing analysis caches. Failures
+preserve granular error codes and `next` guidance; internal/validation failures
+also include `fallback` guidance to use the granular tools. Source restrictions,
+execution masks, no-progress protection and provider budgets still apply.

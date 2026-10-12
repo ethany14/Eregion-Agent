@@ -256,7 +256,8 @@ class TaskLoop:
                     message = 'I stopped at the provider budget limit. Saved work is preserved; the requested work is not complete.'
                     self.repository.append(task_id, role='assistant', text=message, kind='error')
                     self.repository.change(task_id, status='needs_input', model_activity=None, tool_activity=None,
-                        error={'code': 'provider_budget', 'reason': exc.reason, 'message': message, 'retryable': False})
+                        error={'code': 'provider_budget', 'reason': exc.reason, 'message': message, 'retryable': False,
+                               **getattr(exc, 'workflow_detail', {})})
         except Exception as exc:
             with self.lock:
                 latest = self.repository.get(task_id)

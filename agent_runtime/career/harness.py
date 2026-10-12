@@ -84,6 +84,10 @@ class CareerHarness:
         from agent_runtime.fast_decisions import configured_decisions
         from .search_recovery import search_request
         tools=[t for t in self.tools if stable or state.get('visual_fallback') or t['function']['name'] not in VISUAL_NAMES]
+        from agent_runtime.request_options import enabled
+        if enabled('VERIFY_AND_SCORE'):
+            from .workflows import TOOL
+            tools = [*tools, TOOL]
         # Offer operations for resources that actually exist in this process.
         # browser_open remains available for independent research at any time.
         if not stable and (not self._browsing or not self._browsing.inspect(state['task_id'])):
@@ -95,12 +99,12 @@ class CareerHarness:
         if not stable and not configured_decisions().enabled:
             tools = [t for t in tools if t['function']['name'] != 'screen_jobs']
         if self.recommendation_run(state):
-            allowed=BROWSER_NAMES|{'search_jobs','screen_jobs','read_job','import_job','inspect_job','score_job','score_jobs','recommend_job'}
+            allowed=BROWSER_NAMES|{'search_jobs','screen_jobs','read_job','import_job','verify_and_score','inspect_job','score_job','score_jobs','recommend_job'}
             return [t for t in tools if t['function']['name'] in allowed]
         latest_text=latest['text'] if latest else state.get('goal','')
         positive=re.sub(r'\b(?:do not|don.t|never)\b[^.!?]*','',latest_text,flags=re.I)
         if search_request(state) and not re.search(r'\b(?:apply|submit|interview|tailor|letter|schedule|alert|write|draft|prepare|materials?|rewrite|update|create)\b',positive,re.I):
-            allowed=BROWSER_NAMES|{'search_jobs','screen_jobs','read_job','import_job','list_jobs','inspect_job','score_job','score_jobs','recommend_job'}
+            allowed=BROWSER_NAMES|{'search_jobs','screen_jobs','read_job','import_job','verify_and_score','list_jobs','inspect_job','score_job','score_jobs','recommend_job'}
             tools=[t for t in tools if t['function']['name'] in allowed]
         return tools
 
@@ -427,6 +431,12 @@ class CareerHarness:
         return {k:profile[k]for k in ('city','country')if profile.get(k)} or None
 
     def execute(self,task_id,name,args,*,call_id):
+        if name == 'verify_and_score':
+            from agent_runtime.request_options import enabled
+            if not enabled('VERIFY_AND_SCORE'):
+                raise ValueError('verify_and_score is disabled.')
+            from .workflows import run
+            return run(self, task_id, args, call_id)
         acquisition=name in BROWSER_NAMES or name in {'read_job','import_job'}
         if acquisition:
             from .source_health import browser_preflight, record_failure

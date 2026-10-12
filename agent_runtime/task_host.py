@@ -79,6 +79,9 @@ class TaskHost:
         if enabled('PROMPT_TRIM'):
             from agent_runtime.career.prompt import trim_prompt
             prompt = trim_prompt(prompt)
+        if enabled('VERIFY_AND_SCORE') and any(t['function']['name'] == 'verify_and_score' for t in tools):
+            from agent_runtime.career.workflows import RULE
+            prompt += RULE
         stable = enabled('STABLE_TOOLS') and hasattr(harness, 'stable_tools')
         return Turn(prompt, snapshot, CONTROL_TOOLS + harness.stable_tools(state) if stable else controls + tools,
                     state['chat_revision'], allowed_tools=controls + tools if stable else None,
@@ -195,6 +198,9 @@ class TaskHost:
         return result
 
     def action_error(self, exc):
+        return {**self._action_error(exc), **getattr(exc, 'workflow_detail', {})}
+
+    def _action_error(self, exc):
         from agent_runtime.career.source_health import SourceBlocked
         if isinstance(exc,SourceBlocked):return {'error':str(exc),'error_code':'source_blocked',
             'source':exc.source,'no_new_evidence':True,
