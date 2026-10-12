@@ -1,0 +1,77 @@
+{
+  "agent_task": {
+    "expired_reclaim": [],
+    "ready": [
+      "6f93167b-c468-4f1a-a2a1-158f16536d51"
+    ]
+  },
+  "application_run": {
+    "resumed_on_browser_owner": [
+      "bd0d39c7-d0bd-41c9-80d0-18c848020d6e"
+    ],
+    "submission_unknown_manual": [
+      "cce35853-4585-4124-bc1f-30cb338e7534"
+    ],
+    "transitions": {
+      "266d1c82-9781-478f-a2ec-55f9e1defdd1": [
+        "awaiting_review",
+        "needs_input"
+      ],
+      "bd0d39c7-d0bd-41c9-80d0-18c848020d6e": [
+        "running",
+        "queued"
+      ],
+      "cce35853-4585-4124-bc1f-30cb338e7534": [
+        "submitting",
+        "submission_unknown"
+      ]
+    }
+  },
+  "career_task": {
+    "interview_inputs_pending": [],
+    "needs_input": [
+      "a1f591cc-4e1b-4040-9faf-7bf229d14b83"
+    ],
+    "resumed": [
+      "20bef361-5bcc-41fd-a885-8eb11d65403c",
+      "7f0ea8a8-f905-4649-af22-fc996737e4f4"
+    ],
+    "waiting": [
+      "07a9b832-3278-413a-a52a-058310416e29"
+    ]
+  },
+  "execution_inventory": {
+    "application_run": {
+      "recovered": true
+    },
+    "career_task": {
+      "recovered": true
+    }
+  },
+  "history_counts": {
+    "applications": 1,
+    "career_tasks": 1,
+    "session_messages": 4,
+    "sessions": 1
+  },
+  "history_unchanged": true,
+  "mapping": "identity (existing ids; no schema change)",
+  "multiple_owners": {},
+  "schema_head": "0037_external_tool_operations",
+  "session": {
+    "in_flight": [
+      "s-running"
+    ],
+    "legacy_drain_registered": [],
+    "pending_calls": {
+      "s-running": [
+        "c1"
+      ]
+    },
+    "shared_kernel": [
+      "s-running"
+    ]
+  },
+  "single_owner": true,
+  "source_unchanged": true
+}
