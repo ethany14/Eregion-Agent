@@ -38,6 +38,7 @@ from agent_runtime.sessions import (
 )
 from agent_runtime.tools.loop import ToolCallingLoop
 from api.db import create_database
+from session_paths import session_decision_path  # noqa: F401 (both decision paths)
 
 
 class TextInput(BaseModel):

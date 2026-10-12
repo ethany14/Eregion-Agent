@@ -34,6 +34,7 @@ from agent_runtime.tools.messages import AgentMessage
 from agent_runtime.tools import SqlAlchemyRunReader, register_builtin_job_agent_tools
 from api.db import create_database
 from api.models import Run
+from session_paths import session_decision_path  # noqa: F401 (both decision paths)
 
 
 def database_url(path):

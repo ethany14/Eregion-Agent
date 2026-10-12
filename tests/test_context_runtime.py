@@ -34,6 +34,7 @@ from agent_runtime.skills.routing import SessionSkillProfile, SkillRouter
 from agent_runtime.tools.loop import ToolCallingLoop
 from agent_runtime.tools.messages import AgentMessage, NormalizedToolCall, TokenUsage, ToolModelResponse
 from api.db import create_database
+from session_paths import session_decision_path  # noqa: F401 (both decision paths)
 
 
 PROJECT_SKILL = Path("skills/project/job-run-analysis")

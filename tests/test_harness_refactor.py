@@ -17,6 +17,7 @@ from agent_runtime.memory.retrieval import MemoryRetriever
 from agent_runtime.memory import MemoryQuery, MemorySensitivity
 from test_memory_retrieval_context import memory, FakeReader
 from test_auto_apply import database, wait
+from session_paths import session_decision_path  # noqa: F401 (both decision paths)
 
 
 @pytest.mark.parametrize("reply,quote", [

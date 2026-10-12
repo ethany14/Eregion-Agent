@@ -29,6 +29,7 @@ from api.db import create_database, upgrade_database
 from api.main import create_app
 from api.repositories.run_repository import RunRepository
 from api.session_dependencies import JOB_ASSISTANT_READONLY_TOOLS, SessionRuntime
+from session_paths import session_decision_path  # noqa: F401 (both decision paths)
 
 
 class AnyInput(BaseModel):

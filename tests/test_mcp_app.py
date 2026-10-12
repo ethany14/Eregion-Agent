@@ -20,6 +20,7 @@ from api.session_dependencies import (
     JOB_ASSISTANT_READONLY_TOOLS,
     create_session_runtime,
 )
+from session_paths import session_decision_path  # noqa: F401 (both decision paths)
 
 
 ROOT = Path(__file__).resolve().parents[1]
