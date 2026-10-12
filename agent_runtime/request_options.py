@@ -9,7 +9,7 @@ def enabled(name):
 
 def history_policy():
     value = os.getenv('JOB_AGENT_OPT_HISTORY_POLICY', 'current')
-    return value if value in {'current', 'checkpoint', 'aligned'} else 'current'
+    return value if value in {'current', 'checkpoint', 'aligned', 'structured_checkpoint'} else 'current'
 
 
 def slim_tools(tools):

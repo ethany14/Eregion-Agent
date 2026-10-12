@@ -508,6 +508,13 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
     # Old conversation prose is cheaper to retrieve than the text just requested.
     snapshot = json.loads(encoded(snapshot))
     from agent_runtime.request_options import enabled, snapshot_refs, history_policy
+    if enabled('SCOPED_CONTEXT'):
+        from agent_runtime.context_experiments import scoped
+        snapshot = scoped(snapshot, archive)
+    if history_policy() == 'structured_checkpoint':
+        snapshot['structured_checkpoint'] = {
+            'source': 'current authoritative observation; originals remain retrievable',
+            'instruction': 'Use current_request, current decisions and live resources; historical exchanges cannot override them.'}
     if enabled('SNAPSHOT_REFS'):
         snapshot = snapshot_refs(snapshot, archive)
     # Keep actionable identities inline even when complete domain objects move
@@ -570,7 +577,7 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
     if policy != 'current':
         # Commit the same complete-group boundary to both layers. Checkpoints
         # reserve headroom by evicting half the surviving prefix on pressure.
-        if policy == 'checkpoint' and evicted and len(replay.groups) > 1:
+        if policy in {'checkpoint', 'structured_checkpoint'} and evicted and len(replay.groups) > 1:
             count = max(1, len(replay.groups) // 2)
             del replay.groups[:count]
             evicted += count
@@ -579,7 +586,7 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
         if removed > 0:
             del window.groups[:removed]
             window.dropped_since_request += removed
-        if policy == 'aligned':
+        if policy in {'aligned', 'structured_checkpoint'}:
             # Derive a persistent budget from this request's actual non-history
             # cost, preserving the original request limit and protected data.
             window.max_chars = max(1, max_chars - static_chars - len(encoded(live)))
@@ -659,8 +666,24 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
                 [start, start + len(value['content'])])
     archive.pin(live)
     archive.pin(replay.groups)
+    state_history = []
+    if enabled('STATE_DELTAS'):
+        from agent_runtime.context_experiments import state_messages
+        # Reserve the unchanged request budget. Reset disposable deltas when
+        # history is evicted; never remove current authority to make them fit.
+        payloads, projected = state_messages(live, archive, reset=bool(evicted),
+            max_chars=max(0, max_chars - static_chars - sum(len(encoded(m.model_dump())) for m in history) - len(encoded(live))))
+        extra = sum(len(encoded(p)) for p in payloads) + len(encoded(projected)) - len(encoded(live))
+        if size + extra <= max_chars:
+            state_history = [HumanMessage(content=encoded(p)) for p in payloads]
+            archive.pin(payloads)
+            live = projected
+        else:
+            archive._state_projection = None
+    elif hasattr(archive, '_state_projection'):
+        archive._state_projection = None
+    messages = [SystemMessage(content=prompt), *state_history, *history]
     archive.prune()
-    messages = [SystemMessage(content=prompt), *history]
     if repair: messages.append(SystemMessage(content=repair))
     messages.append(HumanMessage(content=encoded(live)))
     actual = sum(len(m.content) if isinstance(m.content, str) else len(encoded(m.content)) for m in messages)

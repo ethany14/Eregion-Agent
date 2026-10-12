@@ -98,7 +98,7 @@ class AgentLoop:
         self.host, self.slice_steps = host, slice_steps
         self.runtime = {'version': 1, 'sequence': 0, 'events': [], **(runtime or {})}
         from agent_runtime.request_options import history_policy
-        if history_policy() == 'aligned':
+        if history_policy() in {'aligned', 'structured_checkpoint'}:
             context_chars = self.runtime.get('history_budget', context_chars)
         self.context = ConversationWindow(self.runtime.get('transcript', []), max_chars=context_chars)
         self.context.dropped_since_request += self.runtime.get('persistent_groups_pending', 0)
@@ -115,7 +115,7 @@ class AgentLoop:
 
     def save(self):
         from agent_runtime.request_options import history_policy
-        if history_policy() == 'aligned':
+        if history_policy() in {'aligned', 'structured_checkpoint'}:
             self.runtime['history_budget'] = self.context.max_chars
         self.runtime['transcript'] = self.context.groups
         self.runtime['persistent_groups_pending'] = self.context.dropped_since_request
