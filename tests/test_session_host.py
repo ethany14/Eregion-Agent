@@ -95,3 +95,28 @@ def test_two_concurrent_requests_on_one_session_decide_once(runtime, monkeypatch
     first.join(5)
     assert results['first'].final_text == 'done'
     assert len(model.calls) == 1
+
+
+def test_user_message_during_an_in_flight_model_call_is_rejected(runtime, monkeypatch):
+    from agent_runtime.sessions.errors import InvalidSessionTransitionError
+    monkeypatch.delenv('JOB_AGENT_SESSION_LEGACY_DRAIN', raising=False)
+    _, sessions, tool_calls = runtime
+    rejected = []
+
+    class SteeredModel(ScriptedModel):
+        def invoke(self, messages, tools):
+            current = sessions.require('steer')
+            try:
+                service.submit_user_message('steer', user('user-2', 'change of plan'),
+                                            expected_version=current.version)
+            except InvalidSessionTransitionError:
+                rejected.append(current.status)
+            return super().invoke(messages, tools)
+
+    model = SteeredModel([response('assistant-1', 'done')])
+    service = coordinator(sessions, tool_calls, model, RecordingTool())
+    state = service.create_session(session_id='steer', allowed_tools=frozenset({'read'}))
+    outcome = service.submit_user_message('steer', user(), expected_version=state.version)
+    assert outcome.final_text == 'done' and rejected == [SessionStatus.RUNNING]
+    assert [m.message.message_id for m in sessions.messages('steer')
+            if m.message.role == 'user'] == ['user-1']
