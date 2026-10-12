@@ -35,6 +35,7 @@ class Turn:
     images: list = field(default_factory=list)
     batchable: frozenset = frozenset()
     compatibility_tools: list = field(default_factory=list)
+    allowed_tools: list | None = None
 
 
 def validate_call(call, tools):
@@ -96,6 +97,9 @@ class AgentLoop:
     def __init__(self, host, runtime=None, *, slice_steps=12, context_chars=24000, request_chars=64000):
         self.host, self.slice_steps = host, slice_steps
         self.runtime = {'version': 1, 'sequence': 0, 'events': [], **(runtime or {})}
+        from agent_runtime.request_options import history_policy
+        if history_policy() == 'aligned':
+            context_chars = self.runtime.get('history_budget', context_chars)
         self.context = ConversationWindow(self.runtime.get('transcript', []), max_chars=context_chars)
         self.context.dropped_since_request += self.runtime.get('persistent_groups_pending', 0)
         self.notice = self.runtime.get('recovery')
@@ -110,6 +114,9 @@ class AgentLoop:
             'kind': kind, 'at': datetime.now(UTC).isoformat(), **data}][-80:]
 
     def save(self):
+        from agent_runtime.request_options import history_policy
+        if history_policy() == 'aligned':
+            self.runtime['history_budget'] = self.context.max_chars
         self.runtime['transcript'] = self.context.groups
         self.runtime['persistent_groups_pending'] = self.context.dropped_since_request
         self.runtime['context_archive'] = self.archive.values
@@ -142,7 +149,14 @@ class AgentLoop:
                 turn.snapshot = snapshot
                 if not snapshot.get('visual_fallback'):
                     image_inputs = []
-                turn.tools = [t for t in turn.tools if t['function']['name'] != 'read_context'] + ([] if snapshot.get('must_decide') or snapshot.get('completion_required') else [READ_CONTEXT])
+                restricted = snapshot.get('must_decide') or snapshot.get('completion_required')
+                if turn.allowed_tools is not None:
+                    from agent_runtime.request_options import slim_tools
+                    turn.allowed_tools = turn.allowed_tools + ([] if restricted else [READ_CONTEXT])
+                    snapshot['allowed_tools'] = sorted(t['function']['name'] for t in turn.allowed_tools)
+                    turn.tools = slim_tools([t for t in turn.tools if t['function']['name'] != 'read_context'] + [READ_CONTEXT])
+                else:
+                    turn.tools = [t for t in turn.tools if t['function']['name'] != 'read_context'] + ([] if restricted else [READ_CONTEXT])
                 messages, context_metrics = prepare_request(turn.prompt, turn.tools, self.context, snapshot,
                     self.archive, max_chars=self.request_chars, repair=repair)
                 self.runtime['context_metrics'] = context_metrics
@@ -211,7 +225,7 @@ class AgentLoop:
                     try:
                         if batch_error:
                             raise batch_error
-                        validate_call(call, turn.tools + turn.compatibility_tools)
+                        validate_call(call, (turn.allowed_tools if turn.allowed_tools is not None else turn.tools) + turn.compatibility_tools)
                         if index == 0:
                             self.host.progress(text, call, turn)
                         self.runtime['inflight'] = {'tool': call['name'], 'call_id': call['id'],
@@ -229,6 +243,8 @@ class AgentLoop:
                         raise
                     except Exception as exc:
                         outcome = self.host.action_error(exc)
+                        if turn.allowed_tools is not None and call['name'] not in {t['function']['name'] for t in turn.allowed_tools}:
+                            outcome['no_new_evidence'] = True
                     tool_seconds = time.monotonic() - tool_started if tool_started is not None else 0
                     if not isinstance(outcome, dict):
                         outcome = {'value': outcome}

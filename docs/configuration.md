@@ -311,3 +311,27 @@ as `public_api_get`; the verifier flags it and never invents GET verification.
 `BoardEntry` is the executable Pydantic schema; `load_directory` validates all
 entries and rejects duplicate tenants. Synthetic test entries never enter the
 production JSON directory.
+
+
+## Opt-in request optimization (v3 stage 2)
+
+All flags default off; `JOB_AGENT_OPT_HISTORY_POLICY` defaults to `current`.
+They alter model request projection only, not scoring inputs, qualification,
+source health or catalogue policy. Existing request character limits remain unchanged.
+
+| Environment variable | Values | Behavior |
+|---|---|---|
+| `JOB_AGENT_OPT_SNAPSHOT_REFS` | `0` / `1` | Archive long body/preview fields and old tool payloads with inline summaries; elide duplicate request text and assistant progress. `read_context` retrieves originals. Current authority, resume summary, identity/health, qualification, scores and accessed original evidence remain visible. Whole replay groups, including the last group, can be omitted under pressure; sources remain archived. |
+| `JOB_AGENT_OPT_STABLE_TOOLS` | `0` / `1` | Deterministic career tool definitions per task kind, concise descriptions and presentation-only schema title removal. Snapshot `allowed_tools` is the live execution mask; validation rejects forbidden calls before effects. Browser, visual, screening, progress, completion, recommendation and search-only restrictions remain enforced. A new user request may change task kind. |
+| `JOB_AGENT_OPT_PROMPT_TRIM` | `0` / `1` | Use the concise career system prompt; other hosts' prompts are unchanged. |
+| `JOB_AGENT_OPT_HISTORY_POLICY` | `current` / `checkpoint` / `aligned` | `current` preserves legacy independent layers. `checkpoint` evicts groups in chunks and commits the request boundary to persistence. `aligned` derives a persistent history budget from the space remaining in the request and commits the same boundary; the budget survives restart. Invalid values fall back to `current`. |
+
+Enable boolean flags with the exact value `1`. Roll back with `0` and `current`.
+Disabling a flag restores legacy construction of subsequent requests; it cannot
+restore groups already evicted under an enabled history policy. Durable domain
+results and their original context references remain authoritative.
+
+Offline measurements, limitations, and proposed defaults are in
+[`benchmarks/opt-v3-stage2-20261011/README.md`](benchmarks/opt-v3-stage2-20261011/README.md).
+Defaults are deliberately unchanged pending review; no token-cost or cache-hit
+claim is inferred from character counts and scripted decisions.

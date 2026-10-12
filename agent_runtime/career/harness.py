@@ -76,19 +76,23 @@ class CareerHarness:
     # These reads do not alter browser observation tokens or external state.
     batchable_tools = frozenset({'list_jobs', 'inspect_job', 'inspect_materials', 'inspect_interview'})
 
-    def available_tools(self,state):
+    def stable_tools(self, state):
+        # A new user revision can change task kind; browser and progress cannot.
+        return self.available_tools(state, stable=True)
+
+    def available_tools(self,state, *, stable=False):
         from agent_runtime.fast_decisions import configured_decisions
         from .search_recovery import search_request
-        tools=[t for t in self.tools if state.get('visual_fallback') or t['function']['name'] not in VISUAL_NAMES]
+        tools=[t for t in self.tools if stable or state.get('visual_fallback') or t['function']['name'] not in VISUAL_NAMES]
         # Offer operations for resources that actually exist in this process.
         # browser_open remains available for independent research at any time.
-        if not self._browsing or not self._browsing.inspect(state['task_id']):
+        if not stable and (not self._browsing or not self._browsing.inspect(state['task_id'])):
             tools=[t for t in tools if t['function']['name'] not in BROWSER_NAMES or t['function']['name']=='browser_open']
         latest=next((m for m in reversed(state.get('messages',[])) if m.get('role')=='user'),None)
         children=[self.applications.repository.get(rid) for rid in state.get('application_runs',[])]
-        if latest and children and all(any(m.get('id')==latest['id'] for m in child.get('messages',[])) for child in children):
+        if not stable and latest and children and all(any(m.get('id')==latest['id'] for m in child.get('messages',[])) for child in children):
             tools=[t for t in tools if t['function']['name']!='reply_application']
-        if not configured_decisions().enabled:
+        if not stable and not configured_decisions().enabled:
             tools = [t for t in tools if t['function']['name'] != 'screen_jobs']
         if self.recommendation_run(state):
             allowed=BROWSER_NAMES|{'search_jobs','screen_jobs','read_job','import_job','inspect_job','score_job','score_jobs','recommend_job'}

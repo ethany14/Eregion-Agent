@@ -74,7 +74,14 @@ class TaskHost:
             snapshot['completion_reason']='Use the remaining decisions to report the observed results and explicit unfinished work. No additional research or rereading. Do not claim requested constraints were met when they were not. Ask only for genuinely essential missing user input.'
             tools=[]
             controls=[t for t in CONTROL_TOOLS if t['function']['name'] in {'finish_task','ask_user'}]
-        return Turn(harness.prompt, snapshot, controls + tools, state['chat_revision'],
+        from agent_runtime.request_options import enabled
+        prompt = harness.prompt
+        if enabled('PROMPT_TRIM'):
+            from agent_runtime.career.prompt import trim_prompt
+            prompt = trim_prompt(prompt)
+        stable = enabled('STABLE_TOOLS') and hasattr(harness, 'stable_tools')
+        return Turn(prompt, snapshot, CONTROL_TOOLS + harness.stable_tools(state) if stable else controls + tools,
+                    state['chat_revision'], allowed_tools=controls + tools if stable else None,
                     batchable=frozenset(getattr(harness, 'batchable_tools', ())))
 
     def invoke(self, messages, tools, turn):
