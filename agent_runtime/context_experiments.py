@@ -37,10 +37,12 @@ def state_messages(live, archive, *, reset=False, max_chars=48000):
     fields = {k: copy.deepcopy(live[k]) for k in DELTA_FIELDS if k in live}
     authority = digest({k: live.get(k) for k in ('current_request', 'revision', 'status', 'search_constraints')})
     previous = getattr(archive, '_state_projection', None)
-    valid = previous and previous['authority'] == authority
+    valid = isinstance(previous, dict) and previous.get('authority') == authority
     if valid:
         try:
             rebuilt = copy.deepcopy(previous['checkpoint']['fields'])
+            valid = (previous['checkpoint']['sequence'] == 0
+                     and previous['checkpoint']['version'] == digest(rebuilt))
             for seq, event in enumerate(previous['events'], 1):
                 if event['sequence'] != seq or event['before'] != digest(rebuilt):
                     valid = False

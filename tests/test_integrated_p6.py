@@ -58,7 +58,7 @@ def test_deltas_idempotent_and_restart_rebuild(change):
     assert reconstruct(restarted) == reconstruct(updated)
 
 
-@pytest.mark.parametrize('reset', ['gap', 'missing', 'hash', 'authority', 'eviction', 'phase'])
+@pytest.mark.parametrize('reset', ['gap', 'missing', 'hash', 'checkpoint', 'authority', 'eviction', 'phase'])
 def test_invalid_or_stale_projection_rebuilt(reset):
     archive = ContextArchive()
     live = snapshot()
@@ -68,6 +68,7 @@ def test_invalid_or_stale_projection_rebuilt(reset):
     if reset == 'gap': archive._state_projection['events'][0]['sequence'] = 8
     if reset == 'missing': archive._state_projection['events'][0].pop('sequence')
     if reset == 'hash': archive._state_projection['events'][0]['after'] = 'bad'
+    if reset == 'checkpoint': archive._state_projection['checkpoint']['version'] = 'bad'
     if reset == 'authority': live['current_request']['message']['id'] = 'u2'
     if reset == 'phase': live['status'] = 'cancelled'
     payloads, _ = state_messages(live, archive, reset=reset == 'eviction')

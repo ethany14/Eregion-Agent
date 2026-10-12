@@ -105,3 +105,29 @@ def test_injected_fact_rejected_by_verifier_and_bounded(setup, monkeypatch):
     assert not done.verification.passed
     workflow.continue_item(pack.pack_id, item.pack_item_id)
     assert model.patch_calls == 1
+
+
+def test_restart_after_patch_commit_does_not_repeat_writer(setup, monkeypatch):
+    monkeypatch.setenv('JOB_AGENT_OPT_MATERIAL_PATCHES', '1')
+    workflow, packs, _, _, _, db = setup
+    pack, item, _ = pending(setup)
+    model = workflow._model = PatchModel('ok')
+    persist = workflow._persist_item
+    class ProcessStopped(BaseException):
+        pass
+    def interrupted(method, *args, **kwargs):
+        result = persist(method, *args, **kwargs)
+        if method == 'save_artifact':
+            assert result.status == ItemStatus.VERIFYING
+            raise ProcessStopped()
+        return result
+    monkeypatch.setattr(workflow, '_persist_item', interrupted)
+    with pytest.raises(ProcessStopped):
+        workflow.continue_item(pack.pack_id, item.pack_item_id)
+    monkeypatch.setattr(workflow, '_persist_item', persist)
+    workflow._packs = PackRepository(db.session_factory)
+    done = workflow.continue_item(pack.pack_id, item.pack_item_id)
+    assert done.status == ItemStatus.AWAITING_REVIEW
+    assert done.revision_count == 1
+    assert model.patch_calls == 1 and model.full_calls == 0
+    assert len(packs.versions(pack.pack_id, item.pack_item_id)) == 2
