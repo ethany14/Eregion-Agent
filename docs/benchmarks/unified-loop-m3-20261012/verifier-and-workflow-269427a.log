@@ -1,0 +1,34 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Scripts\python.exe
+rootdir: C:\Users\zhiyu\Documents\JobHunterAgent
+configfile: pytest.ini
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 24 items
+
+tests/test_verifier_employer_context.py::test_the_l3_opening_is_employer_context_when_the_job_states_it PASSED [  4%]
+tests/test_verifier_employer_context.py::test_candidate_claims_and_unverified_requirements_still_need_evidence[I am applying for the Backend Engineer role at Example. The role requires Kubernetes experience.] PASSED [  8%]
+tests/test_verifier_employer_context.py::test_candidate_claims_and_unverified_requirements_still_need_evidence[I am applying for the Backend Engineer role. The role requires Python API experience, which I have.] PASSED [ 12%]
+tests/test_verifier_employer_context.py::test_candidate_claims_and_unverified_requirements_still_need_evidence[The role requires Python API experience and I have built Python APIs.] PASSED [ 16%]
+tests/test_verifier_employer_context.py::test_candidate_claims_and_unverified_requirements_still_need_evidence[I am applying for the Backend Engineer role at Example. I have built Python APIs.] PASSED [ 20%]
+tests/test_verifier_employer_context.py::test_without_job_context_nothing_is_exempt PASSED [ 25%]
+tests/test_verifier_employer_context.py::test_only_the_attribution_sentence_is_removed PASSED [ 29%]
+tests/test_verifier_employer_context.py::test_offline_replay_of_the_frozen_l3_full_artifact PASSED [ 33%]
+tests/test_verifier_employer_context.py::test_unverified_or_altered_requirements_are_not_exempt[The role requires 3 years of Python experience.-The role requires 5 years of Python experience.] PASSED [ 37%]
+tests/test_verifier_employer_context.py::test_unverified_or_altered_requirements_are_not_exempt[Requires 3+ years of Python.-The role requires 3 years of Python.] PASSED [ 41%]
+tests/test_verifier_employer_context.py::test_unverified_or_altered_requirements_are_not_exempt[Python experience is not required.-The role requires Python experience.] PASSED [ 45%]
+tests/test_verifier_employer_context.py::test_unverified_or_altered_requirements_are_not_exempt[No Python experience needed.-The role requires Python experience.] PASSED [ 50%]
+tests/test_verifier_employer_context.py::test_unverified_or_altered_requirements_are_not_exempt[Python experience isn't required.-The role requires Python experience.] PASSED [ 54%]
+tests/test_verifier_employer_context.py::test_unverified_or_altered_requirements_are_not_exempt[Python API experience preferred.-The role requires Python API experience.] PASSED [ 58%]
+tests/test_verifier_employer_context.py::test_unverified_or_altered_requirements_are_not_exempt[Nice to have: Python API experience.-The role needs Python API experience.] PASSED [ 62%]
+tests/test_verifier_employer_context.py::test_unverified_or_altered_requirements_are_not_exempt[Python and SQL. API experience with REST.-The role requires Python API experience.] PASSED [ 66%]
+tests/test_verifier_employer_context.py::test_unverified_or_altered_requirements_are_not_exempt[Requires API Python experience.-The role requires Python API experience.] PASSED [ 70%]
+tests/test_verifier_employer_context.py::test_unverified_or_altered_requirements_are_not_exempt[Requires Python API experience.-The role requires no Python API experience.] PASSED [ 75%]
+tests/test_verifier_employer_context.py::test_exactly_stated_requirements_remain_exempt[Requires Python API experience.-I am applying for the Backend Engineer role at Example. I understand the Backend Engineer role requires Python API experience.] PASSED [ 79%]
+tests/test_verifier_employer_context.py::test_exactly_stated_requirements_remain_exempt[The role requires 3 years of Python experience.-The role requires 3 years of Python experience.] PASSED [ 83%]
+tests/test_verifier_employer_context.py::test_exactly_stated_requirements_remain_exempt[Python API experience preferred.-The team is looking for Python API experience.] PASSED [ 87%]
+tests/test_analysis_workflow.py::test_old_import_paths_are_the_same_modules_not_copies PASSED [ 91%]
+tests/test_analysis_workflow.py::test_each_advance_is_one_persisted_step PASSED [ 95%]
+tests/test_analysis_workflow.py::test_production_code_does_not_import_the_legacy_package PASSED [100%]
+
+- generated xml file: C:\Users\zhiyu\Documents\JobHunterAgent\docs\benchmarks\unified-loop-m3-20261012\verifier-and-workflow-269427a.xml -
+============================= 24 passed in 2.88s ==============================
