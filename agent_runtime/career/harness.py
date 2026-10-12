@@ -163,8 +163,14 @@ class CareerHarness:
                 'no_new_evidence':True}
         cfg=client.config
         jobs,detail=normalize_search(provider,call.body,max_results=cfg.max_results)
-        return {'jobs':jobs,'treg':{**info,**detail},
-            'note':'LinkedIn search cards are candidates only: read each posting before qualifying, importing or scoring it.'}
+        if detail.get('source_blocked') and not jobs:
+            return {'jobs':[],'treg':{**info,**detail},'error':'The LinkedIn source reported it was blocked.',
+                'error_code':'treg_source_blocked','no_new_evidence':True,
+                'next':'Treat LinkedIn as a blocked source this turn; use other sources and disclose the limitation.'}
+        note='LinkedIn search cards are candidates only: read each posting before qualifying, importing or scoring it.'
+        if detail.get('partial') or detail.get('source_blocked'):
+            note+=' The provider reported partial or blocked coverage; disclose it and do not treat these results as complete.'
+        return {'jobs':jobs,'treg':{**info,**detail},'note':note}
 
     def _treg_scrape(self,task_id,state,url):
         """Complete JD text through Treg for a public non-ATS URL, or None to use the existing path."""
@@ -185,6 +191,9 @@ class CareerHarness:
         if call.outcome!='succeeded' or call.quarantined:
             return None
         verdict=assess_scrape(candidate,call.body)
+        if verdict.get('closed_signal'):
+            # The posting says it is closed: report that instead of re-reading it elsewhere.
+            return {'closed':True,'url':url,'source':'treg:crawl4ai.web.scrape'}
         if not verdict['complete']:
             return None  # not proven to be this complete JD: keep the existing read path
         return {'url':url,'title':candidate.get('title'),'company':candidate.get('company') or '',
@@ -823,6 +832,9 @@ class CareerHarness:
                     'description':description,'source':'rendered_browser','page_url':first['url']}
             else:
                 job=self._treg_scrape(task_id,state,url) if api_first else None
+                if job and job.get('closed'):
+                    raise ValueError('This posting reports it is closed or no longer accepting applications; '
+                                     'do not import or recommend it.')
                 if job is None:job = self.discovery.job(args['url'])
             from .candidate_health import validate_and_record
             validate_and_record(self.repository,task_id,job,observed)

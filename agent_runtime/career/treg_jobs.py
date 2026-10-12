@@ -73,8 +73,15 @@ def normalize_search(provider, payload, *, fetched_at=None, max_results=10):
             'source': f'treg:{provider}', 'source_endpoint': SEARCH_ENDPOINTS[provider],
             'fetched_at': fetched_at, 'completeness': 'card'})
     unique = list({c['provider_job_id']: c for c in candidates}.values())
+    meta = (payload or {}).get('meta') if provider == 'crawl4ai' else None
+    meta = meta if isinstance(meta, dict) else {}
+    warnings = meta.get('warnings') or []
     return unique[:max_results], {'raw_items': len(items), 'dropped_without_identity': dropped,
-                                  'unique': len(unique), 'next_cursor': bool(cursor)}
+                                  'unique': len(unique), 'next_cursor': bool(cursor),
+                                  # Provider coverage signals; unknown stays unknown, never "complete".
+                                  'source_blocked': bool(meta.get('blocked')),
+                                  'partial': bool(meta.get('partial')),
+                                  'warnings': len(warnings) if isinstance(warnings, list) else 1}
 
 
 BLOCK = re.compile(r'sign in to (?:view|see)|join (?:now )?to see|log ?in to|captcha|verify you are human|'
