@@ -558,6 +558,14 @@ class CareerHarness:
             sources=dict(health.get('sources',{})) if health.get('user_turn_id')==turn else {}
             exhausted=[source for source,item in sources.items() if item.get('blocked') or item.get('empty_count',0)>=2 or item.get('error_count',0)>=2 or item.get('http_status')==404]
             if exhausted:search_args['excluded_sources']=exhausted
+            # Directory search pages through matching boards: a repeat in the same user
+            # turn covers the next boards for this role/location instead of the same five.
+            from .board_directory import role_families
+            directory_key=json.dumps([sorted(role_families(str(args['query']))),
+                str(args.get('location','')).strip().casefold()])
+            progress=health.get('directory_searched',{}) if health.get('user_turn_id')==turn else {}
+            searched=list(progress.get(directory_key,[])) if use_directory else []
+            if use_directory: search_args['skip']=searched
             # A presentation-only limit change must not refetch the same
             # exhausted result list. A larger limit can expand a genuinely
             # truncated list; changed source health/new user input can retry.
@@ -565,7 +573,7 @@ class CareerHarness:
                 'query':str(args['query']).strip().casefold(),
                 'location':str(args.get('location','')).strip().casefold(),
                 'boards':args.get('boards'), 'use_directory':use_directory, 'excluded_hosts':blocked_hosts,
-                'excluded_sources':sorted(exhausted)},sort_keys=True).encode()).hexdigest()
+                'excluded_sources':sorted(exhausted),'directory_searched':searched},sort_keys=True).encode()).hexdigest()
             attempts=state.get('search_request_cache',{})
             attempts=dict(attempts.get('requests',{})) if attempts.get('user_turn_id')==turn else {}
             previous=attempts.get(request_key)
@@ -609,7 +617,10 @@ class CareerHarness:
             # old blocked tenants re-enter after other boards were attempted.
             from .source_health import record_board_outcomes
             sources, history = record_board_outcomes(sources, health.get('history', {}), result, turn)
-            health={'revision':state['chat_revision'],'user_turn_id':turn,'sources':sources,'history':history}
+            if use_directory:
+                progress={**progress,directory_key:list(dict.fromkeys([*searched,*result.get('directory_searched',[])]))}
+            health={'revision':state['chat_revision'],'user_turn_id':turn,'sources':sources,'history':history,
+                    'directory_searched':progress}
             attempts[request_key]={'limit':args.get('limit',10),'result':result}
             def remember_search(s):
                 # Preserve navigation URLs but key storage by posting identity;

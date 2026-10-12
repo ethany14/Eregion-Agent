@@ -187,13 +187,19 @@ class JobDiscovery:
             lock.release()
 
     def search_directory(self, query, location='', limit=10, *, cancelled=lambda: False,
-                         excluded_hosts=(), excluded_sources=()):
+                         excluded_hosts=(), excluded_sources=(), skip=()):
         if not isinstance(query,str) or not 0<len(query)<=400: raise ValueError('Use a short job-search query.')
         limit = min(20,max(1,int(limit)))
         from .board_directory import select_boards
         boards, stale = select_boards(query, location)
+        # Boards already covered for this role/location in this user turn are skipped,
+        # so a repeat reaches the next-ranked boards.
+        total = len(boards)
+        # Health exclusions are reported as skipped (as for explicit boards) before paging.
+        excluded = [board_source(b) for b in boards if board_source(b) in set(excluded_sources)]
+        boards = [b for b in boards if board_source(b) not in set(skip) | set(excluded)]
         token = _search_cancelled.set(cancelled)
-        results = {'jobs': [], 'errors': [], 'sources_checked': [], 'skipped_sources': [],
+        results = {'jobs': [], 'errors': [], 'sources_checked': [], 'skipped_sources': list(excluded),
                    'board_outcomes': [], 'stale_boards': stale, 'directory': True}
         try:
             # Sequential fan-out deliberately keeps same-host traffic serial. The
@@ -211,6 +217,13 @@ class JobDiscovery:
                     results[key].extend(item.get(key, []))
             from .alerts import job_key
             results['jobs'] = list({job_key(j['url']): j for j in results['jobs']}.values())[:limit]
+            results['directory_searched'] = [board_source(b) for b in boards[:5]]
+            results['directory_remaining'] = max(0, len(boards) - 5)
+            results['directory_matching'] = total
+            if not boards:
+                results['no_new_evidence'] = True
+                results['note_exhausted'] = ('Every verified directory board for this role/location was already '
+                    'searched this turn. Use a different source or finish with the observed results.')
             results['note'] = 'Directory links require read, qualification, import, score and recommendation. Stale boards are excluded; coverage is not exhaustive.'
             return results
         finally:

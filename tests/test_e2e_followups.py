@@ -459,3 +459,23 @@ def test_resume_analysis_is_reused_across_locally_catalogued_jobs(monkeypatch):
     for body in ('Requirements:\nPython\nSQL', 'Python experience preferred.'):
         service._analyze_sync(resume_text='Skills\nPython', job_description=body)
     assert calls.count(ResumeAnalysis) == 1 and calls.count(JobAnalysis) == 0
+
+
+@pytest.mark.parametrize('text,rejected', [
+    ('Many boards errored; this is a coverage gap, not proof no vacancies exist.', False),
+    ("Blocked sources don't mean no jobs exist.", False),
+    ('No jobs exist for this search in New York.', True),
+    ('I checked Indeed. No vacancies are available.', True),
+])
+def test_absence_claim_check_allows_the_disclaimer_that_denies_it(text, rejected):
+    # Paid P1: the honest summary "coverage gap, not proof no vacancies exist" was
+    # rejected as an absence claim, forcing the loop into the no-progress stop.
+    from agent_runtime.career.source_health import validate_coverage
+    state = {'messages': [{'role': 'user', 'id': 'u1', 'text': 'find jobs'}],
+             'search_source_health': {'user_turn_id': 'u1', 'sources': {'https://www.indeed.com': {'blocked': True}}}}
+    try:
+        validate_coverage(state, text + ' Indeed was blocked.')
+        raised = False
+    except ValueError as exc:
+        raised = 'absence of vacancies' in str(exc)
+    assert raised is rejected

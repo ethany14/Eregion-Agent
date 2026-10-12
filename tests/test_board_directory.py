@@ -274,3 +274,36 @@ def test_family_location_coverage_and_ranking():
     selected,_=select_boards('data analyst','New York, NY',entries=[paris,one,many],today=__import__('datetime').date(2026,10,11))
     # Data roles only in Paris do not make a board cover "data analyst, NYC"; most coverage first.
     assert [b['company'] for b in selected]==['many','one']
+
+
+def test_repeated_directory_search_pages_to_next_boards(career):
+    # Paid P1: 30 boards matched "data analyst, NYC" but every repeat searched the same
+    # top five, so the agent saw one posting six times and hit the no-progress stop.
+    from uuid import uuid4
+    from agent_runtime.career import board_directory
+    from agent_runtime.career.discovery import JobDiscovery, board_source
+    c = career
+    base = {'platform': 'greenhouse', 'display_name': 'X', 'verified_at': __import__('datetime').date.today().isoformat(),
+            'verified_by': 'public_api_get', 'job_count_at_verification': 3, 'notes': 't', 'domains': ['data/analytics'],
+            'locations': ['New York, NY'], 'family_locations': {'data/analytics': ['New York, NY']}}
+    rows = [{**base, 'company': f'b{i}', 'source_url': f'https://job-boards.greenhouse.io/b{i}'} for i in range(12)]
+    searched = []
+    class Discovery(JobDiscovery):
+        def search(self, query, location='', boards=None, limit=10, excluded_hosts=(), excluded_sources=()):
+            searched.append(board_source(boards[0]))
+            return {'jobs': [], 'errors': [], 'sources_checked': [], 'skipped_sources': [], 'board_outcomes': []}
+    import pytest
+    mp = pytest.MonkeyPatch()
+    mp.setattr(board_directory, 'load_directory', lambda path=None: rows)
+    try:
+        c.harness.discovery = Discovery()
+        args = {'query': 'junior data analyst', 'location': 'New York, NY', 'use_directory': True}
+        first = c.harness.execute(c.state['task_id'], 'search_jobs', args, call_id=str(uuid4()))
+        second = c.harness.execute(c.state['task_id'], 'search_jobs', args, call_id=str(uuid4()))
+        third = c.harness.execute(c.state['task_id'], 'search_jobs', args, call_id=str(uuid4()))
+        fourth = c.harness.execute(c.state['task_id'], 'search_jobs', args, call_id=str(uuid4()))
+    finally:
+        mp.undo()
+    assert searched == [f'ats:greenhouse:b{i}' for i in range(12)]
+    assert first['directory_remaining'] == 7 and second['directory_remaining'] == 2 and third['directory_remaining'] == 0
+    assert fourth['directory_searched'] == [] and 'note_exhausted' in fourth

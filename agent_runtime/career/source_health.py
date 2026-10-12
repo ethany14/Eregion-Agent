@@ -101,8 +101,14 @@ def validate_coverage(state,text):
     messages=state.get('messages',[])
     start=next((i+1 for i in range(len(messages)-1,-1,-1) if messages[i].get('role')=='user'),0)
     disclosures=[m.get('text','') for m in messages[start:] if m.get('role')=='assistant']+[text]
-    if re.search(r'\bno (?:current )?(?:jobs|vacancies|openings) (?:exist|are available)\b',text,re.I):
-        raise ValueError('Blocked source coverage cannot prove absence of vacancies; report only observed results and access limits.')
+    # Reject an absence claim, not the disclaimer that denies one
+    # ("a coverage gap, not proof no vacancies exist").
+    for claim in re.finditer(r'\bno (?:current )?(?:jobs|vacancies|openings) (?:exist|are available)\b',text,re.I):
+        before=text[max(0,claim.start()-60):claim.start()]
+        if not re.search(r'\b(?:not|never|no|isn.t|aren.t|do not|does not|don.t|doesn.t|cannot|can.t)\s+(?:\w+\s+){0,3}?'
+                         r'(?:proof|prove|proves|evidence|mean|means|show|shows|establish|establishes|imply|implies)'
+                         r'(?:\s+that)?\s*$',before,re.I):
+            raise ValueError('Blocked source coverage cannot prove absence of vacancies; report only observed results and access limits.')
     labels=[]
     for source in blocked:
         if source.startswith('ats:'):labels.append(source.split(':')[1]);continue
