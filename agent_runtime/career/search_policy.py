@@ -89,7 +89,9 @@ def recommendation_warning(policy,title,description=''):
     if actual is None and set(policy['levels'])&ENTRY_LEVELS:
         # A level-free title is not junior evidence; read the opening itself.
         actual=opening_level(description)
-    if actual in policy['levels'] or (actual=='junior' and set(policy['levels'])&ENTRY_LEVELS-{'intern'}):return None
+    # Junior and new-grad are both entry level: a "Graduate Data Analyst" satisfies a
+    # junior request (paid P1b raised a false mismatch). Internships stay separate.
+    if actual in policy['levels'] or (actual in {'junior','new_grad'} and set(policy['levels'])&{'junior','new_grad'}):return None
     requested=', '.join(policy['levels'])
     if policy.get('strict'):
         raise ValueError(f'Seniority constraint: {requested} only was requested; this posting is {actual or "unverified level"}. Do not recommend it unless the user changes that condition.')

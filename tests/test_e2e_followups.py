@@ -479,3 +479,13 @@ def test_absence_claim_check_allows_the_disclaimer_that_denies_it(text, rejected
     except ValueError as exc:
         raised = 'absence of vacancies' in str(exc)
     assert raised is rejected
+
+
+def test_new_grad_title_satisfies_junior_request_and_vice_versa():
+    # Paid P1b: "Graduate Data Analyst" (qualified by the evaluator) got
+    # "Seniority mismatch: requested junior; this posting is new_grad".
+    from agent_runtime.career.search_policy import recommendation_warning
+    assert recommendation_warning({'levels': ['junior'], 'strict': False}, 'Graduate Data Analyst', '') is None
+    assert recommendation_warning({'levels': ['new_grad'], 'strict': False}, 'Junior Data Analyst', '') is None
+    assert recommendation_warning({'levels': ['junior'], 'strict': False}, 'Data Analyst Intern', '')['actual'] == 'intern'
+    assert recommendation_warning({'levels': ['junior'], 'strict': False}, 'Senior Data Analyst', '')['actual'] == 'senior'
