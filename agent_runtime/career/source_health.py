@@ -64,7 +64,7 @@ def record_failure(repository,task_id,url,exc,observed=None):
         sources=active_sources(state)
         sources[source]={'blocked':True,'error':type(exc).__name__,
             'page_evidence_hash':observed.get('page_evidence_hash'),'observation_id':observed.get('observation_id')}
-        return {'search_source_health':{'revision':state.get('chat_revision'),'user_turn_id':user_turn(state),'sources':sources}}
+        return {'search_source_health':{'revision':state.get('chat_revision'),'user_turn_id':user_turn(state),'sources':sources,'history':(state.get('search_source_health') or {}).get('history',{})}}
     repository.change(task_id,mutation)
 
 
@@ -77,7 +77,7 @@ def record_browser(repository,task_id,result):
         if result.get('blocked') or source in sources:
             sources[source]={'blocked':bool(result.get('blocked')),'error':'browser_blocked' if result.get('blocked') else None,
                 'page_evidence_hash':result.get('page_evidence_hash'),'observation_id':result.get('observation_id')}
-        return {'search_source_health':{'revision':state.get('chat_revision'),'user_turn_id':user_turn(state),'sources':sources}}
+        return {'search_source_health':{'revision':state.get('chat_revision'),'user_turn_id':user_turn(state),'sources':sources,'history':(state.get('search_source_health') or {}).get('history',{})}}
     repository.change(task_id,mutation)
 
 
@@ -116,3 +116,28 @@ def validate_coverage(state,text):
     if not any(any(label.casefold() in reply.casefold() for label in labels)
         and re.search(r'block|login|log.in|sign.in|challenge|unavailable|access|could not|couldn.t|limited|403|受阻|阻止|登录|访问|验证码',reply,re.I) for reply in disclosures):
         raise ValueError('Disclose the observed blocked source/access limitation to the user; do not present restricted source coverage as a complete search or proof of no vacancies.')
+
+
+def record_board_outcomes(sources, history, result, turn):
+    """Persist tenant outcomes across turns; only current-turn failures exclude."""
+    from datetime import UTC, datetime
+    sources, history = dict(sources), dict(history)
+    stamp = datetime.now(UTC).isoformat()
+    outcomes = list(result.get('board_outcomes', [])) + [
+        {**e, 'status':'http_error' if e.get('http_status') else 'error'}
+        for e in result.get('errors', []) if str(e.get('source','')).startswith('ats:')]
+    for item in outcomes:
+        source = item['source']
+        old = sources.get(source, {})
+        past = history.get(source, {})
+        failed = item['status'] in {'http_error', 'error'}
+        errors = old.get('error_count', 0) + 1 if failed else 0
+        consecutive = past.get('consecutive_errors', 0) + 1 if failed else 0
+        sources[source] = {**old, 'status':item['status'], 'timestamp':stamp,
+            'blocked':bool(item.get('blocked')), 'http_status':item.get('http_status'),
+            'error_count':errors, 'empty_count':old.get('empty_count', 0)+1 if item['status']=='empty' else 0}
+        history[source] = {'status':item['status'], 'timestamp':stamp, 'user_turn_id':turn,
+            'consecutive_errors':consecutive, 'observations':past.get('observations', 0)+1,
+            'refresh_required':item.get('http_status')==404 or consecutive>=2,
+            'http_status':item.get('http_status')}
+    return sources, history

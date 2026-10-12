@@ -29,7 +29,7 @@ TOOLS = [
     function('recommend_job','Recommend an actually read and scored job in this conversation, with fit reasons and uncertainties. Also adds it to the digest when this task was started by a schedule. No schedule is needed for a normal search.',
         {**APP,'reason':TEXT,'caveats':TEXT}),
     function('search_jobs','HTTP/API discovery, especially after a browser source is blocked. Requested initial sources must still be attempted. Returns observed posting links; read, import, batch score and recommend them. Optional boards contain platform and company board token.',
-        {'query':TEXT,'location':TEXT,'boards':{'type':'array','maxItems':5,'items':{'type':'object',
+        {'query':TEXT,'location':TEXT,'use_directory':{'type':'boolean','description':'Select fresh verified boards by role and location; prefer after blocked requested sources.'},'boards':{'type':'array','maxItems':5,'items':{'type':'object',
             'properties':{'platform':{'type':'string','enum':['greenhouse','lever','ashby','workday']},'company':TEXT,'host':TEXT,'site':TEXT},
             'required':['platform','company'],'additionalProperties':False}},'limit':{'type':'integer','minimum':1,'maximum':20}},['query']),
     function('screen_jobs','Quickly rank a batch of actually observed job links against a short search query. Use after browser search to choose which descriptions to read and score. Advisory only; cannot replace score_job or establish eligibility. Unknowns remain available to you.',
@@ -132,6 +132,7 @@ class CareerHarness:
         return self._browsing
 
     def close(self):
+        if hasattr(self.discovery, "close"): self.discovery.close()
         self.interview_inputs.close()
         if self._browsing:self._browsing.close()
 
@@ -534,11 +535,14 @@ class CareerHarness:
             from .source_health import blocked_hosts as persistent_blocked_hosts
             blocked_hosts=persistent_blocked_hosts(state)
             search_args={**args,**({'excluded_hosts':blocked_hosts} if blocked_hosts else {})}
+            use_directory = search_args.pop('use_directory', False)
+            if use_directory and args.get('boards'): raise ValueError('Choose directory selection or explicit boards.')
+            if use_directory: search_args.pop('boards', None)
             health=state.get('search_source_health') or {}
             from .source_health import user_turn
             turn=user_turn(state)
             sources=dict(health.get('sources',{})) if health.get('user_turn_id')==turn else {}
-            exhausted=[source for source,item in sources.items() if item.get('blocked') or item.get('empty_count',0)>=2]
+            exhausted=[source for source,item in sources.items() if item.get('blocked') or item.get('empty_count',0)>=2 or item.get('error_count',0)>=2 or item.get('http_status')==404]
             if exhausted:search_args['excluded_sources']=exhausted
             # A presentation-only limit change must not refetch the same
             # exhausted result list. A larger limit can expand a genuinely
@@ -546,7 +550,7 @@ class CareerHarness:
             request_key=hashlib.sha256(json.dumps({
                 'query':str(args['query']).strip().casefold(),
                 'location':str(args.get('location','')).strip().casefold(),
-                'boards':args.get('boards'), 'excluded_hosts':blocked_hosts,
+                'boards':args.get('boards'), 'use_directory':use_directory, 'excluded_hosts':blocked_hosts,
                 'excluded_sources':sorted(exhausted)},sort_keys=True).encode()).hexdigest()
             attempts=state.get('search_request_cache',{})
             attempts=dict(attempts.get('requests',{})) if attempts.get('user_turn_id')==turn else {}
@@ -554,21 +558,35 @@ class CareerHarness:
             if previous and (args.get('limit',10)<=previous['limit'] or len(previous['result'].get('jobs',[]))<previous['limit']):
                 return {**previous['result'],'no_new_evidence':True,
                     'progress_feedback':'This search/source configuration already returned this list in the current user turn. No HTTP repeated. Verify a healthy observed posting, or discover a genuinely different query/source. Cached snippets are not verified vacancies.'}
-            result = self.discovery.search(**search_args)
+            revision = state['chat_revision']
+            def cancelled():
+                current = self.repository.get(task_id)
+                return current['chat_revision'] != revision or current.get('pause_requested') or current['status'] in {'cancelled','completed'}
+            from contextlib import nullcontext
+            scope = self.discovery.cancellation(cancelled) if isinstance(self.discovery, JobDiscovery) else nullcontext()
+            with scope:
+                if use_directory:
+                    result = self.discovery.search_directory(**search_args, cancelled=cancelled)
+                else:
+                    result = self.discovery.search(**search_args)
+                    if args.get('boards'): result['board_verification'] = 'unverified explicit tokens; directory verification not established'
+
             if blocked_hosts:result['excluded_blocked_hosts']=blocked_hosts
             jobs = result.get('jobs', [])
             for error in result.get('errors',[]):
                 source=error.get('source')
                 if not source:continue
                 old=sources.get(source,{})
-                sources[source]={'blocked':bool(error.get('blocked')),
+                sources[source]={**old,'blocked':bool(error.get('blocked')),
                     'empty_count':old.get('empty_count',0)+int(error.get('error')=='no_extracted_results'),
                     'error':error.get('error'),'last_query':args['query']}
             for job in jobs:
                 if job.get('source_engine'):sources.pop(job['source_engine'],None)
             # Keep the entire turn's exclusion table. Truncating to eight lets
             # old blocked tenants re-enter after other boards were attempted.
-            health={'revision':state['chat_revision'],'user_turn_id':turn,'sources':sources}
+            from .source_health import record_board_outcomes
+            sources, history = record_board_outcomes(sources, health.get('history', {}), result, turn)
+            health={'revision':state['chat_revision'],'user_turn_id':turn,'sources':sources,'history':history}
             attempts[request_key]={'limit':args.get('limit',10),'result':result}
             def remember_search(s):
                 # Preserve navigation URLs but key storage by posting identity;

@@ -68,12 +68,17 @@ Discovery and recommendations:
   and describe it as a limited fit, never a strong match. Continue looking for better
   qualifying options within the remaining budget. Do not silently impose an alert's
   numeric threshold on an ordinary search; scheduled alerts retain their threshold.
+- After requested sources are blocked, prefer search_jobs with use_directory=true,
+  query and location to discover verified fresh company boards. Explicit guessed
+  board tokens are unverified. Stale/empty directory coverage is a gap, not proof
+  of no vacancies. Every link still needs read, posting qualification and opening
+  level evidence, import, score and an explicit recommend decision.
 - search_jobs is a supplementary HTTP/API path when browsing fails, broader coverage helps
   or the user requests it. Explain actual source coverage; a few Greenhouse/Lever companies
   must not silently replace a requested LinkedIn search. When requested boards are blocked
   and public search keeps returning aggregator listing pages without a single posting, use
-  search_jobs boards for employers that plausibly hire this role in the requested location
-  (Greenhouse/Lever/Ashby tokens or a public Workday host/site) and disclose that coverage
+  search_jobs use_directory=true first. If directory coverage is insufficient, explicit
+  Greenhouse/Lever/Ashby tokens or a public Workday host/site remain unverified alternatives; disclose that coverage
   instead of rewording the same public query. Search queries contain career
   terms, never personal contacts or a full resume. import_job accepts retrieved postings
   or actual user-supplied job text with its message ID and literal job_text excerpt. A task

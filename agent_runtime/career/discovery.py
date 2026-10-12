@@ -5,6 +5,11 @@ import ipaddress
 import json
 import re
 import socket
+import os
+import time
+from threading import RLock, BoundedSemaphore
+from contextvars import ContextVar
+from contextlib import contextmanager
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, quote, urlencode, urljoin, urlsplit
 
@@ -108,42 +113,137 @@ def board_source(board):
     return f'ats:{platform}:{company}'
 
 
+_search_cancelled = ContextVar('board_search_cancelled', default=lambda: False)
+
+
+class DiscoveryCancelled(ValueError):
+    pass
+
+
 class JobDiscovery:
     def __init__(self, *, transport=None, resolver=socket.getaddrinfo):
         self.transport,self.resolver = transport,resolver
+        self._client = None
+        self._lock = RLock()
+        self._hosts = {}
+        self._api_slots = BoundedSemaphore(3)
+        self.min_interval = max(0, float(os.getenv('JOB_AGENT_BOARD_MIN_INTERVAL_SECONDS', '0.25')))
+
+    @contextmanager
+    def cancellation(self, cancelled):
+        token = _search_cancelled.set(cancelled)
+        try:
+            yield
+        finally:
+            _search_cancelled.reset(token)
+
+    def close(self):
+        with self._lock:
+            if self._client is not None:
+                self._client.close()
+                self._client = None
+
+    def _get_client(self):
+        with self._lock:
+            if self._client is None:
+                self._client = httpx.Client(transport=self.transport, timeout=20,
+                    follow_redirects=False, trust_env=False,
+                    headers={'User-Agent':'eregion/1.0 (public job research)'},
+                    event_hooks={'request':[lambda request: request.headers.pop('cookie', None)]})
+            return self._client
+
+    @contextmanager
+    def _api_limit(self, url):
+        host = urlsplit(url).hostname or ''
+        api = host in {'boards-api.greenhouse.io', 'api.lever.co', 'api.ashbyhq.com'} or (
+            host.endswith('.myworkdayjobs.com') and '/wday/cxs/' in urlsplit(url).path)
+        if not api:
+            yield
+            return
+        cancelled = _search_cancelled.get()
+        with self._lock:
+            lock, last = self._hosts.setdefault(host, (RLock(), [0.0]))
+        while not lock.acquire(timeout=.05):
+            if cancelled(): raise DiscoveryCancelled('Board search cancelled.')
+        try:
+            while time.monotonic() - last[0] < self.min_interval:
+                if cancelled(): raise DiscoveryCancelled('Board search cancelled.')
+                time.sleep(max(0, min(.05, self.min_interval - (time.monotonic() - last[0]))))
+            while not self._api_slots.acquire(timeout=.05):
+                if cancelled(): raise DiscoveryCancelled('Board search cancelled.')
+            try:
+                if cancelled(): raise DiscoveryCancelled('Board search cancelled.')
+                last[0] = time.monotonic()
+                yield
+            finally:
+                self._api_slots.release()
+        finally:
+            lock.release()
+
+    def search_directory(self, query, location='', limit=10, *, cancelled=lambda: False,
+                         excluded_hosts=(), excluded_sources=()):
+        if not isinstance(query,str) or not 0<len(query)<=400: raise ValueError('Use a short job-search query.')
+        limit = min(20,max(1,int(limit)))
+        from .board_directory import select_boards
+        boards, stale = select_boards(query, location)
+        token = _search_cancelled.set(cancelled)
+        results = {'jobs': [], 'errors': [], 'sources_checked': [], 'skipped_sources': [],
+                   'board_outcomes': [], 'stale_boards': stale, 'directory': True}
+        try:
+            # Sequential fan-out deliberately keeps same-host traffic serial. The
+            # instance limiter also bounds concurrent tasks sharing this client.
+            for board in boards[:5]:
+                if cancelled():
+                    results['cancelled'] = True
+                    break
+                try:
+                    item = self.search(query, location, [board], limit, excluded_hosts, excluded_sources)
+                except DiscoveryCancelled:
+                    results['cancelled'] = True
+                    break
+                for key in ('jobs', 'errors', 'sources_checked', 'skipped_sources', 'board_outcomes'):
+                    results[key].extend(item.get(key, []))
+            from .alerts import job_key
+            results['jobs'] = list({job_key(j['url']): j for j in results['jobs']}.values())[:limit]
+            results['note'] = 'Directory links require read, qualification, import, score and recommendation. Stale boards are excluded; coverage is not exhaustive.'
+            return results
+        finally:
+            _search_cancelled.reset(token)
 
     def read(self,url,*,method='GET',json_body=None):
         # Validate each redirect before following it; refuse private DNS targets.
-        with httpx.Client(transport=self.transport,timeout=20,follow_redirects=False,trust_env=False,
-                headers={'User-Agent':'eregion/1.0 (public job research)'}) as client:
-            for _ in range(5):
-                url = public_https_url(url)
-                addresses = self.resolver(urlsplit(url).hostname,443,type=socket.SOCK_STREAM)
-                if not addresses or any(not ipaddress.ip_address(a[4][0]).is_global for a in addresses):
-                    raise ValueError('Job research can only read public internet pages.')
-                with client.stream(method,url,json=json_body) as response:
-                    if response.is_redirect:
-                        if method!='GET':raise ValueError('Public board API redirected; switch source.')
-                        url = urljoin(url,response.headers.get('location',''))
-                        continue
-                    response.raise_for_status()
-                    chunks,total = [],0
-                    for chunk in response.iter_bytes():
-                        total += len(chunk)
-                        if total>2_000_000:raise ValueError('This page is too large. Read a specific job page instead.')
-                        chunks.append(chunk)
-                    body=b''.join(chunks).decode(response.encoding or 'utf-8',errors='replace')
-                    if re.search(r'<title[^>]*>\s*(?:just a moment|access denied|sign in|log in)|/cdn-cgi/challenge-platform/|'
-                            r'<form[^>]+id=[\"\'](?:challenge-form|anomaly-form)[\"\']',body,re.I):
-                        raise ValueError('Source blocked by a bot challenge or login wall. Switch to a public board; headless browsers may be blocked.')
-                    return body,url
+        client = self._get_client()
+        for _ in range(5):
+            url = public_https_url(url)
+            addresses = self.resolver(urlsplit(url).hostname,443,type=socket.SOCK_STREAM)
+            if not addresses or any(not ipaddress.ip_address(a[4][0]).is_global for a in addresses):
+                raise ValueError('Job research can only read public internet pages.')
+            with self._api_limit(url), client.stream(method,url,json=json_body) as response:
+                if response.is_redirect:
+                    if method!='GET':raise ValueError('Public board API redirected; switch source.')
+                    url = urljoin(url,response.headers.get('location',''))
+                    continue
+                response.raise_for_status()
+                chunks,total = [],0
+                for chunk in response.iter_bytes():
+                    if _search_cancelled.get()(): raise DiscoveryCancelled("Board search cancelled.")
+                    total += len(chunk)
+                    if total>2_000_000:raise ValueError('This page is too large. Read a specific job page instead.')
+                    chunks.append(chunk)
+                body=b''.join(chunks).decode(response.encoding or 'utf-8',errors='replace')
+                if re.search(r'<title[^>]*>\s*(?:just a moment|access denied|sign in|log in)|/cdn-cgi/challenge-platform/|'
+                        r'<form[^>]+id=[\"\'](?:challenge-form|anomaly-form)[\"\']',body,re.I):
+                    raise ValueError('Source blocked by a bot challenge or login wall. Switch to a public board; headless browsers may be blocked.')
+                return body,url
         raise ValueError('The job page redirected too many times.')
 
     def search(self,query,location='',boards=None,limit=10,excluded_hosts=(),excluded_sources=()):
         if not isinstance(query,str) or not 0<len(query)<=400:raise ValueError('Use a short job-search query.')
         limit = min(20,max(1,int(limit)))
         results, failures, sources_checked, skipped_sources = [],[],[],[]
+        board_outcomes = []
         for board in (boards or [])[:5]:
+            if _search_cancelled.get()(): raise DiscoveryCancelled('Board search cancelled.')
             source=board_source(board)
             # Ashby/Greenhouse/Lever share API hosts across independent tenants.
             # A blocked company must never exclude other companies on that host.
@@ -182,10 +282,14 @@ class JobDiscovery:
                 # "analyst" or "data" does not make "Accounts Payable Analyst" a
                 # data-analyst candidate. Level and filler words never count.
                 roles=set(re.findall(r'[a-z]+',query.casefold()))-ROLE_STOPWORDS
-                results += [item for item in items
+                matched = [item for item in items
                     if len(roles & set(re.findall(r'[a-z]+',item['title'].casefold())))>=min(2,len(roles))
                     and (not location or location_matches(location,item['location']))]
+                results += matched
+                board_outcomes.append({'source':source,'status':'success' if matched else 'empty','count':len(matched)})
+            except DiscoveryCancelled: raise
             except Exception as exc:failures.append({'board':board,'source':source,'error':type(exc).__name__,
+                'http_status':exc.response.status_code if isinstance(exc,httpx.HTTPStatusError) else None,
                 'blocked':isinstance(exc,httpx.HTTPStatusError) and exc.response.status_code in {401,403,429} or 'blocked' in str(exc).casefold(),
                 'next':'Switch to another public source. Headless browsing can trigger bot protection.'})
         if not boards:
@@ -236,6 +340,7 @@ class JobDiscovery:
             if warning:item['seniority_warning']=warning
         return {'jobs':list(unique.values())[:limit], 'errors':failures,
             'sources_checked':sources_checked,'skipped_sources':skipped_sources,
+            'board_outcomes':board_outcomes,
             'note':'Read each result to verify a current job posting before saving or scoring it.' if unique else
                 'These search engines are blocked or repeatedly returned no extracted links in this user turn. '
                 'Changing only query wording cannot recover them. Use browser on another public source or specify '
