@@ -233,7 +233,7 @@ class AgentLoop:
                         self.event('tool_started', tool=call['name'], call_id=call['id'], revision=turn.revision)
                         action_persistence = self.save()  # Journal intent before effects.
                         tool_started = time.monotonic()
-                        outcome = (self.archive.read(call['args']['ref'], call['args'].get('offset', 0), call['args'].get('path'), reread=call['args'].get('reread', False), historical=call['args'].get('historical', False))
+                        outcome = (self.archive.read(call['args']['ref'], call['args'].get('offset'), call['args'].get('path'), reread=call['args'].get('reread', False), historical=call['args'].get('historical', False))
                                    if call['name'] == 'read_context' else self.host.execute(call, turn))
                     except LoopStop:
                         record_tool_action({'tool': call['name'], 'tool_call_id': call['id'],

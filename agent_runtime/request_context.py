@@ -35,6 +35,7 @@ class ContextArchive:
         self.resources = dict(resources or {})
         self.used = set()
         self.visible_ranges = {}
+        self.visibility_known = False
 
     def reference(self, value, *, preview=0):
         text = encoded(value)
@@ -46,6 +47,10 @@ class ContextArchive:
         return result
 
     def read(self, ref, offset=0, path=None, *, reread=False, historical=False):
+        # Models often send offset 0 as a default; only a nonzero offset is an
+        # explicit request for that exact range.
+        explicit_offset = bool(offset)
+        offset = offset or 0
         if ref not in self.values:
             return {'error': 'Context reference expired; use the current reference or the domain inspection tool.'}
         stored = json.loads(self.values[ref])
@@ -98,7 +103,27 @@ class ContextArchive:
         repeated = any(start <= offset and stop >= end for start, stop in intervals)
         requested_offset = offset
         exhausted = False
-        if repeated and not reread:
+        restored = in_context = False
+        visible = self.visible_ranges.get(key, [])
+        covered = lambda start, stop: any(a <= start and b >= stop for a, b in visible)
+        fully_read = bool(intervals) and intervals[0][0] == 0 and intervals[0][1] >= len(text)
+        # Visibility is only known once a request has been assembled; before that
+        # (tests, restart) keep the durable-cursor behaviour.
+        if repeated and not reread and self.visibility_known:
+            if covered(offset, end) and (explicit_offset or fully_read):
+                in_context = True  # Already in this request: point to it, add nothing.
+            elif explicit_offset:
+                restored = True    # Read before but evicted: return the exact range again.
+            elif fully_read:
+                # Read before and evicted. Restore the first read range that is not
+                # visible; an identical repeat still trips the host's no-new-evidence
+                # fingerprint, so this cannot loop.
+                gap = next((p for p in range(0, len(text), 3000) if not covered(p, min(p + 3000, len(text)))), None)
+                if gap is None:
+                    in_context = True
+                else:
+                    offset, end, restored = gap, min(len(text), gap + 3000), True
+        if repeated and not reread and not restored and not in_context:
             # A durable cursor prevents stale/default offsets from cycling over
             # the same prefix after compaction. Exact revisits remain explicit.
             offset = intervals[0][1] if intervals and intervals[0][0] == 0 else 0
@@ -125,8 +150,7 @@ class ContextArchive:
         if ancestor_read:result.update(no_new_evidence=True,already_read_parent=True)
         # A flag cannot turn an already-visible immutable range into new evidence.
         # Re-fetch it only when compaction actually removed it from the request.
-        visible = self.visible_ranges.get(key, [])
-        if reread and repeated and any(a <= offset and b >= end for a, b in visible):
+        if in_context or (reread and repeated and covered(offset, end)):
             result.update(content='', content_in='context_evidence', available_in_context=True,
                 no_new_evidence=True, requested_offset=requested_offset, already_read=True,
                 progress_feedback='The exact requested original text is already present in context_evidence at this ref/path/range. Use that text for the current decision. Read a different range only for an unresolved detail; repeated access does not add evidence.')
@@ -136,7 +160,11 @@ class ContextArchive:
                 'type': type(child).__name__, **({'identity': {k: child[k] for k in
                     ('id','pack_item_id','artifact_type','title','status','version') if k in child}}
                     if isinstance(child, dict) else {})} for key, child in children][:30]
-        if repeated and not result.get('available_in_context'):
+        if restored:
+            result.update(requested_offset=requested_offset, already_read=True, restored_after_eviction=True,
+                progress_feedback='This range was read earlier but is no longer in context; it is returned again. '
+                    'Use it for the current decision instead of re-reading other ranges.')
+        elif repeated and not result.get('available_in_context'):
             result['requested_offset'] = requested_offset
             result['already_read'] = True
             result['complete'] = exhausted
@@ -231,6 +259,7 @@ class ContextArchive:
         """
         items, used = [], 0
         self.visible_ranges = {}
+        self.visibility_known = True
         for key, progress in reversed(list(self.reads.items())):
             ref, path = json.loads(key)
             stored = json.loads(self.values.get(ref, 'null'))
@@ -337,7 +366,10 @@ class ContextArchive:
                     'text_offset', 'text_length', 'region_ref', 'application_id', 'pack_id', 'run_id', 'mock_interview_id', 'current_question',
                     'status', 'version', 'match_score', 'requirement_counts', 'gaps', 'result_at',
                     'waiting_for_user', 'outcome', 'needs_review', 'verification', 'match_overview',
-                    'message', 'input_request', 'delivered_user_message_ids', 'pending_fields', 'observed_answers', 'material_refs', 'material_overview', 'material_choices', 'detail_hint'):
+                    'message', 'input_request', 'delivered_user_message_ids', 'pending_fields', 'observed_answers', 'material_refs', 'material_overview', 'material_choices', 'detail_hint',
+                    # Decision fields of scored/workflow results stay visible after archiving (closeout C1.2).
+                    'completed_steps', 'failed_step', 'fallback', 'opening_level', 'qualification_evidence',
+                    'seniority_warning', 'score_range', 'analysis_status', 'decision', 'pending', 'rejection_code'):
             if key in result:
                 value = result[key]
                 summary[key] = value if len(encoded(value)) <= (4000 if key in {'match_overview','material_overview','material_choices','observed_answers'} else 1000) else self.reference(value, preview=160)
@@ -616,6 +648,15 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
             rows = live.get(key, [])
             while isinstance(rows, list) and len(rows) > 2 and size > max_chars:
                 size -= len(encoded(rows.pop(0)))
+    # Ranges whose text survives in the replayed tool results are visible too; read()
+    # restores only ranges that are in neither context_evidence nor this replay.
+    for group in replay.groups:
+        for result in group.get('results', []):
+            value = result.get('value')
+            if result.get('name') != 'read_context' or not isinstance(value, dict) or not value.get('content'): continue
+            start = value.get('offset', 0)
+            archive.visible_ranges.setdefault(encoded([value.get('ref'), value.get('path') or []]), []).append(
+                [start, start + len(value['content'])])
     archive.pin(live)
     archive.pin(replay.groups)
     archive.prune()
