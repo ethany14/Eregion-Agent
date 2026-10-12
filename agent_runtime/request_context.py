@@ -475,6 +475,9 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
     # Reserve exact accessed evidence before evicting transient tool messages.
     # Old conversation prose is cheaper to retrieve than the text just requested.
     snapshot = json.loads(encoded(snapshot))
+    from agent_runtime.request_options import enabled, snapshot_refs, history_policy
+    if enabled('SNAPSHOT_REFS'):
+        snapshot = snapshot_refs(snapshot, archive)
     # Keep actionable identities inline even when complete domain objects move
     # behind references. A control action must not require searching old text.
     resources = {key:[{k:row[k] for k in
@@ -527,10 +530,27 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
 
     live, history, size = build()
     evicted = replay.dropped_since_request
-    while size > max_chars and len(replay.groups) > 1:
+    while size > max_chars and len(replay.groups) > (0 if enabled('SNAPSHOT_REFS') else 1):
         replay.groups.pop(0)  # Complete tool exchanges only, never orphan ToolMessages.
         evicted += 1
         live, history, size = build()
+    policy = history_policy()
+    if policy != 'current':
+        # Commit the same complete-group boundary to both layers. Checkpoints
+        # reserve headroom by evicting half the surviving prefix on pressure.
+        if policy == 'checkpoint' and evicted and len(replay.groups) > 1:
+            count = max(1, len(replay.groups) // 2)
+            del replay.groups[:count]
+            evicted += count
+            live, history, size = build()
+        removed = len(window.groups) - len(replay.groups)
+        if removed > 0:
+            del window.groups[:removed]
+            window.dropped_since_request += removed
+        if policy == 'aligned':
+            # Derive a persistent budget from this request's actual non-history
+            # cost, preserving the original request limit and protected data.
+            window.max_chars = max(1, max_chars - static_chars - len(encoded(live)))
     if size > max_chars:
         messages = live.get('messages', [])
         latest_user = next((i for i in range(len(messages)-1, -1, -1) if messages[i].get('role') == 'user'), None)

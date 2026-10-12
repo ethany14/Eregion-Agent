@@ -55,6 +55,13 @@ class ConversationWindow:
         self._trim()
 
     def _trim(self):
+        from agent_runtime.request_options import history_policy
+        checkpoint = history_policy() == 'checkpoint'
+        pressure = len(self.groups) > self.max_groups or len(json.dumps(self.groups, ensure_ascii=False)) > self.max_chars
+        if checkpoint and pressure and len(self.groups) > 1:
+            count = max(1, len(self.groups) // 2)
+            del self.groups[:count]
+            self.dropped_since_request += count
         while len(self.groups) > self.max_groups or (
                 len(self.groups) > 1 and len(json.dumps(self.groups, ensure_ascii=False)) > self.max_chars):
             self.groups.pop(0)
