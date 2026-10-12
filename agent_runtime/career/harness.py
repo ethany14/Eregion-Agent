@@ -110,6 +110,80 @@ class CareerHarness:
             tools=[t for t in tools if t['function']['name'] in allowed]
         return tools
 
+    def _treg_config(self):
+        from .treg_config import TregConfigError, load
+        try:
+            return load()
+        except TregConfigError:
+            return None  # invalid Treg settings block Treg only
+
+    def _source_scope(self,state):
+        from .search_policy import source_scope
+        latest=next((m.get('text','') for m in reversed(state.get('messages',[])) if m.get('role')=='user'),state.get('goal',''))
+        return source_scope(latest)
+
+    def _treg(self):
+        """Lazily built fixed-endpoint client; None when Treg cannot be used (other sources keep working)."""
+        cfg=self._treg_config()
+        if not cfg or cfg.usable():
+            return None
+        if getattr(self,'_treg_client',None) is None:
+            from .external_tool_usage import ExternalToolLedger
+            from .treg_client import TregClient
+            self._treg_client=TregClient(cfg,ExternalToolLedger(self.repository.sessions))
+        return self._treg_client
+
+    def _treg_search(self,task_id,state,args):
+        from .treg_jobs import SEARCH_ENDPOINTS, normalize_search, search_body
+        from .treg_client import TregUnavailable
+        client=self._treg()
+        provider=client.config.search_provider if client else None
+        if not client or not provider:
+            return {'jobs':[],'error':'LinkedIn search through Treg is not enabled or no provider is selected.',
+                'error_code':'treg_unavailable','no_new_evidence':True,
+                'next':'Disclose the limitation, or use the browser on LinkedIn if the user allows it.'}
+        body=search_body(provider,str(args['query']),args.get('location') or None)
+        try:
+            call=client.call(SEARCH_ENDPOINTS[provider],body,scope=task_id,task_id=task_id,
+                revision=str(state.get('chat_revision')))
+        except TregUnavailable as exc:
+            return {'jobs':[],'error':f'Treg is unavailable: {exc.reason}.','error_code':'treg_unavailable','no_new_evidence':True}
+        info={'provider':provider,'endpoint':SEARCH_ENDPOINTS[provider],'outcome':call.outcome,
+              'charged_micro':call.charged_micro,'cache':call.cache,
+              'unapplied_filters':['seniority','remote','employment type'] if provider=='crawl4ai' else ['seniority']}
+        if call.outcome!='succeeded' or call.quarantined:
+            return {'jobs':[],'treg':info,'error':'Treg search did not return usable results.','error_code':'treg_failed',
+                'no_new_evidence':True}
+        cfg=client.config
+        jobs,detail=normalize_search(provider,call.body,max_results=cfg.max_results)
+        return {'jobs':jobs,'treg':{**info,**detail},
+            'note':'LinkedIn search cards are candidates only: read each posting before qualifying, importing or scoring it.'}
+
+    def _treg_scrape(self,task_id,state,url):
+        """Complete JD text through Treg for a public non-ATS URL, or None to use the existing path."""
+        from urllib.parse import urlsplit
+        host=(urlsplit(url).hostname or '').lower()
+        ats=('greenhouse.io','lever.co','ashbyhq.com','myworkdayjobs.com')
+        client=self._treg()
+        if not client or not client.config.scrape_enabled or any(host==h or host.endswith('.'+h) for h in ats):
+            return None
+        from .treg_jobs import SCRAPE_ENDPOINT, assess_scrape
+        from .treg_client import TregUnavailable
+        candidate=next((c for c in state.get('search_candidates',{}).values() if c.get('url') and job_key(c['url'])==job_key(url)),{})
+        try:
+            call=client.call(SCRAPE_ENDPOINT,{'url':url,'format':'md'},scope=task_id,task_id=task_id,
+                revision=str(state.get('chat_revision')))
+        except TregUnavailable:
+            return None
+        if call.outcome!='succeeded' or call.quarantined:
+            return None
+        verdict=assess_scrape(candidate,call.body)
+        if not verdict['complete']:
+            return None  # not proven to be this complete JD: keep the existing read path
+        return {'url':url,'title':candidate.get('title'),'company':candidate.get('company') or '',
+            'location':candidate.get('location') or '','description':call.body['markdown'],
+            'source':'treg:crawl4ai.web.scrape','content_hash':verdict['content_hash']}
+
     def terminal_delivery(self,state):
         from .decisions import terminal_delivery
         return terminal_delivery(state)
@@ -198,8 +272,16 @@ class CareerHarness:
 
         from .candidate_health import active_rejections
         known['excluded_candidates']=active_rejections(state)
+        from .candidate_queue import enabled as candidate_batches, view as candidate_view
+        search_view=recovery(state,saved_urls=[self.runtime.workspace.application_job(a).canonical_url for a in state['jobs']])
         return {'candidate':saved.get('profile',{}),'resume_text':text[:40000],
-            'search_recovery':recovery(state,saved_urls=[self.runtime.workspace.application_job(a).canonical_url for a in state['jobs']]),
+            'search_recovery':search_view,
+            **({'candidate_queue':candidate_view(state,search_view)} if candidate_batches() and search_view else {}),
+            **({'source_policy':{'api_first':True,'source_restriction':self._source_scope(state),
+                'instruction':'Search verified company-board APIs first (search_jobs uses the directory by default). '
+                    'A LinkedIn-only request uses the configured LinkedIn source, never other boards. Use the browser '
+                    'only for an explicit page check or missing/conflicting evidence; an already-open page does not '
+                    'require a browser read.'}} if (self._treg_config() and self._treg_config().api_first) else {}),
             'known_results':known,
             'scheduled_search':recommendation,
             'recommended_jobs':state.get('recommendations',[]),
@@ -496,6 +578,12 @@ class CareerHarness:
             from .decisions import gate
             blocked=gate(state,name,args)
             if blocked:return blocked
+            from .candidate_queue import enabled as candidate_batches, gate as candidate_gate
+            if candidate_batches():
+                from .search_recovery import recovery
+                blocked=candidate_gate(state,recovery(state,saved_urls=[self.runtime.workspace.application_job(a).canonical_url
+                    for a in state['jobs']]),name)
+                if blocked:return blocked
         if name=='recommend_job':
             identifier=args['application_id'];self.require_link(state,'jobs',identifier)
             _,resume_text=self.candidate()
@@ -571,6 +659,13 @@ class CareerHarness:
             search_args={**args,**({'excluded_hosts':blocked_hosts} if blocked_hosts else {})}
             use_directory = search_args.pop('use_directory', False)
             if use_directory and args.get('boards'): raise ValueError('Choose directory selection or explicit boards.')
+            treg_cfg,source_restriction=self._treg_config(),self._source_scope(state)
+            api_first=bool(treg_cfg and treg_cfg.api_first)
+            if api_first and source_restriction=='linkedin':
+                # The user asked for LinkedIn only: never traverse other boards.
+                return self._treg_search(task_id,state,args)
+            if api_first and not args.get('boards') and not use_directory:
+                use_directory=True  # API first: verified company boards before any browser attempt
             if use_directory: search_args.pop('boards', None)
             health=state.get('search_source_health') or {}
             from .source_health import user_turn
@@ -623,6 +718,11 @@ class CareerHarness:
                     if args.get('boards'): result['board_verification'] = 'unverified explicit tokens; directory verification not established'
 
             if blocked_hosts:result['excluded_blocked_hosts']=blocked_hosts
+            if api_first and use_directory and not result.get('jobs') and source_restriction!='no_linkedin':
+                supplement=self._treg_search(task_id,state,args)
+                if supplement.get('jobs'):
+                    result['jobs']=supplement['jobs']
+                result['treg_supplement']={k:v for k,v in supplement.items() if k!='jobs'}
             jobs = result.get('jobs', [])
             for error in result.get('errors',[]):
                 source=error.get('source')
@@ -678,7 +778,9 @@ class CareerHarness:
             from agent_runtime.auto_apply.contracts import public_https_url
             url=public_https_url(args['url'])
             same_job=bool(observed and job_key(url)==job_key(observed['url']))
-            if args.get('region_ref') or same_job:
+            treg_cfg=self._treg_config()
+            api_first=bool(treg_cfg and treg_cfg.api_first)
+            if args.get('region_ref') or (same_job and not api_first):
                 # Capture the live, rendered description when a site requires JS.
                 # The model cannot supply or invent this source text.
                 read_args={k:args[k] for k in ('region_ref','observation_id') if k in args}
@@ -711,7 +813,9 @@ class CareerHarness:
                 job={'url':url,'title':first.get('primary_heading') or first.get('title'),
                     'company':first.get('job_company',''),'location':first.get('job_location',''),
                     'description':description,'source':'rendered_browser','page_url':first['url']}
-            else:job = self.discovery.job(args['url'])
+            else:
+                job=self._treg_scrape(task_id,state,url) if api_first else None
+                if job is None:job = self.discovery.job(args['url'])
             from .candidate_health import validate_and_record
             validate_and_record(self.repository,task_id,job,observed)
             self.repository.change(task_id,lambda s:{'retrieved_jobs':dict(list({**s.get('retrieved_jobs',{}),job['url']:job,args['url']:job}.items())[-20:])})

@@ -101,3 +101,27 @@ def recommendation_warning(policy,title,description=''):
     return {'requested':policy['levels'],'actual':None,
         'message':f'Level unverified: requested {requested}, but neither the title nor the description states '
             f'the opening level. Do not describe it as a {requested} match; it does not count toward the requested level.'}
+
+
+ONLY_LINKEDIN = re.compile(r'\b(?:only|just|exclusively)\s+(?:(?:search|use|look|on|from|in|at)\s+){0,2}linked\s?in\b|'
+                           r'\blinked\s?in\s+only\b|(?:只|仅)(?:在|用|从|搜|看)?\s*linked\s?in', re.I)
+NOT_ONLY_LINKEDIN = re.compile(r'\bnot\s+(?:only|just)\s+(?:(?:search|use|look|on|from|in|at)\s+){0,2}linked\s?in\b|'
+                               r'(?:不只|不仅|不光)(?:在|用|从|搜|看)?\s*linked\s?in', re.I)
+NO_LINKEDIN = re.compile(r'\b(?:no|not|exclude|excluding|without|skip|avoid)\s+(?:(?:on|from|use|using)\s+)?linked\s?in\b|'
+                         r'(?:不要|别|排除|不用)(?:在|用|从|搜|看)?\s*linked\s?in', re.I)
+
+
+def source_scope(text):
+    """User-owned source restriction from the current request: 'linkedin', 'no_linkedin' or None.
+
+    Negations ("not only LinkedIn", "不只 LinkedIn") are not a restriction. A model plan or
+    tool query is never a source of this authority.
+    """
+    text = text or ''
+    if NOT_ONLY_LINKEDIN.search(text):
+        return 'no_linkedin' if NO_LINKEDIN.search(NOT_ONLY_LINKEDIN.sub(' ', text)) else None
+    if NO_LINKEDIN.search(text):
+        return 'no_linkedin'
+    if ONLY_LINKEDIN.search(text):
+        return 'linkedin'
+    return None
