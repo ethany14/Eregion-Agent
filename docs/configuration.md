@@ -260,3 +260,54 @@ New context metrics contain hashes and counts only: persistent groups dropped
 since the preceding request, request-copy groups dropped, first replayed message
 and first complete group's hashes, tools-array hash, and system-prompt hash.
 Trimming limits and request content are unchanged.
+
+## Verified company board discovery
+
+`search_jobs` accepts `use_directory: true` plus the existing `query`, `location`
+and `limit`. It selects fresh entries from `agent_runtime/career/board_directory.json`
+by role family and observed location, then uses the existing board parser and
+role/location/seniority checks. Do not combine `use_directory` with explicit
+`boards`. Explicit tokens remain available and are labelled unverified. The tool
+list and order do not change. Requested initial sources must still be attempted;
+use the directory when those sources are blocked. All links still require read,
+posting qualification and opening-level evidence, import, score and recommendation.
+
+- `JOB_AGENT_BOARD_DIRECTORY_MAX_AGE_DAYS`: maximum age in UTC dates, default
+  `30`; older matching boards are returned in `stale_boards` and excluded.
+- `JOB_AGENT_BOARD_MIN_INTERVAL_SECONDS`: minimum API request start interval per
+  host per discovery instance, default `0.25` seconds, clamped to zero or higher.
+  A host has one active request; at most three API requests run across hosts on a
+  shared instance. A directory search visits at most five boards sequentially.
+  HTML sources are never parallelised by directory search or the limiter.
+
+The discovery instance owns a reusable HTTPX client and closes it during harness
+shutdown. It keeps environment proxies disabled, validates every redirect and
+public DNS target, and removes cookie headers through a public HTTPX request hook.
+Cancellation is checked before each board, during rate-limit waits and between
+response chunks. A blocked synchronous socket read can take up to the existing
+20-second HTTP timeout before cancellation is observed; no subsequent board is
+started. No SDK internals or challenge bypass is used.
+
+`search_source_health.sources` stores current-turn tenant outcomes with timestamps;
+`history` retains the latest outcome, timestamp, observation count and consecutive
+errors across turns. A 404, a blocked source, two errors or two empty searches
+excludes that board for the current turn. A new turn can retry. A 404 or repeated
+errors sets `refresh_required` until a successful/empty API observation clears it.
+
+Refresh (dry-run by default, read-only public GETs, sequential and rate-limited):
+
+```text
+python scripts/verify_board_directory.py
+python scripts/verify_board_directory.py --write
+python scripts/verify_board_directory.py --health exported-source-health.json
+```
+
+The optional health file contains only the exported `search_source_health` object;
+it is not a conversation export. `--write` updates dates, counts and coverage labels
+only on successful validated responses, retaining old dates on failures and
+returning a nonzero exit code. At most 200 entries are allowed. Workday remains
+supported for explicit search, but its POST listing endpoint cannot be certified
+as `public_api_get`; the verifier flags it and never invents GET verification.
+`BoardEntry` is the executable Pydantic schema; `load_directory` validates all
+entries and rejects duplicate tenants. Synthetic test entries never enter the
+production JSON directory.
