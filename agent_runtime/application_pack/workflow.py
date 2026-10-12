@@ -612,14 +612,19 @@ class ApplicationPackWorkflow:
     def _patched_revision(self, pack_id, item, current, context):
         """P7: merge block patches for a cover-letter revision, or None to run the full revision."""
         from .patches import PatchRejected, apply, blocks_for_context, enabled
-        if not enabled() or item.artifact_type != 'cover_letter' or item.status != ItemStatus.NEEDS_REVISION                 or not current or not hasattr(self._model, 'revise_patch'):
+        if (not enabled() or item.artifact_type != 'cover_letter'
+                or item.status != ItemStatus.NEEDS_REVISION
+                or not current or not hasattr(self._model, 'revise_patch')):
             return None
         snapshot = self._packs.snapshot(pack_id)
-        patch_context = context + chr(10) + 'Current blocks (data): ' + json.dumps(blocks_for_context(current), ensure_ascii=False)
+        patch_context = context + '\nPatch target (data): ' + json.dumps({
+            'artifact_id': item.artifact_id, 'artifact_version': item.version,
+            'blocks': blocks_for_context(current)}, ensure_ascii=False)
         try:
             patch = self._measured('revision_patch', item, lambda: self._model.revise_patch(patch_context))
             merged = apply(current, patch, evidence_ids=[e.evidence_id for e in snapshot.items],
-                           evidence_version_ids=[e.evidence_version_id for e in snapshot.items])
+                           evidence_version_ids=[e.evidence_version_id for e in snapshot.items],
+                           artifact_id=item.artifact_id, artifact_version=item.version)
         except PatchRejected as exc:
             logger.info('Material patch rejected: pack=%s item=%s reason=%s', pack_id, item.pack_item_id, exc)
             return None

@@ -16,6 +16,7 @@ from pydantic import Field
 from .types import CoverLetter, PackModel
 
 PATCH_SYSTEM = (
+    "Copy artifact_id and artifact_version exactly from Patch target. "
     "Return block patches for the supplied cover letter, not a full letter. Patch only the paragraphs "
     "named by repair targets or advisory notes; never touch other paragraphs. Each patch gives the "
     "block_id, the original_sha16 shown for that block, the full replacement text for that paragraph, "
@@ -36,6 +37,8 @@ class BlockPatch(PackModel):
 
 
 class MaterialPatch(PackModel):
+    artifact_id: str
+    artifact_version: int = Field(ge=1)
     needs_full_revision: bool = False
     patches: list[BlockPatch] = Field(default_factory=list, max_length=5)
 
@@ -59,8 +62,10 @@ def blocks_for_context(content):
             for index, p in enumerate((content or {}).get('paragraphs') or [], start=1)]
 
 
-def apply(content, patch, *, evidence_ids, evidence_version_ids):
+def apply(content, patch, *, evidence_ids, evidence_version_ids, artifact_id, artifact_version):
     """Merge a validated patch onto content; raise PatchRejected for anything unprovable."""
+    if patch.artifact_id != artifact_id or patch.artifact_version != artifact_version:
+        raise PatchRejected('stale_artifact')
     if patch.needs_full_revision:
         raise PatchRejected('model_requested_full_revision')
     if not patch.patches:
@@ -75,6 +80,8 @@ def apply(content, patch, *, evidence_ids, evidence_version_ids):
         if not item.block_id.startswith('paragraph-') or not item.block_id[10:].isdigit():
             raise PatchRejected('unknown_block')
         index = int(item.block_id[10:]) - 1
+        if item.block_id != f'paragraph-{index + 1}':
+            raise PatchRejected('unknown_block')
         if not 0 <= index < len(paragraphs):
             raise PatchRejected('unknown_block')
         target = paragraphs[index]
