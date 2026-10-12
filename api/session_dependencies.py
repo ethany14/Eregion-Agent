@@ -36,6 +36,7 @@ from agent_runtime.application_pack.workflow import ApplicationPackWorkflow
 from agent_runtime.multi_agent.context import AgentContextPolicy
 from agent_runtime.multi_agent.registry import AgentWorkerRegistry
 from agent_runtime.multi_agent.repository import AgentTaskRepository
+from agent_runtime.execution import ExecutionService
 from agent_runtime.multi_agent.scheduler import AgentTaskScheduler
 from agent_runtime.multi_agent.templates import AgentPlanTemplateRegistry
 from agent_runtime.job_workflow.workers import (
@@ -123,6 +124,8 @@ class SessionRuntime:
     skill_evolution: SkillEvolutionService | None = None
     conversation_learning: ConversationLearningService | None = None
     resumes: ResumeDocumentRepository | None = None
+    # One owner of background work for this process (unified loop M4/M5).
+    execution: ExecutionService | None = None
 
     def capability_skills(self, profile: str) -> frozenset[str]:
         base = CAPABILITY_SKILL_PROFILES[profile]
@@ -162,6 +165,9 @@ class SessionRuntime:
     def close(self) -> None:
         if self.agent_scheduler is not None:
             self.agent_scheduler.stop()
+        # Career/application services are closed first by the app lifespan.
+        if self.execution is not None:
+            self.execution.close(wait=True)
         if self.mcp_manager is not None:
             self.mcp_manager.stop()
         self.database.close()
@@ -305,8 +311,9 @@ def create_session_runtime(
         parent_allowed_tools=registry.names(),
         available_mcp_tools=mcp_manager.public_tool_names,
         memories=memories, evidence=evidence, skills=skills, project_id=project_id)
+    execution = ExecutionService()
     agent_scheduler = AgentTaskScheduler(tasks=agent_tasks, sessions=sessions,
-        workers=agent_workers, contexts=agent_context)
+        workers=agent_workers, contexts=agent_context, execution=execution)
     agent_scheduler.start()
     runtime = SessionRuntime(
         database=database,
@@ -338,6 +345,7 @@ def create_session_runtime(
         skill_evolution=skill_evolution,
         conversation_learning=conversation_learning,
         resumes=resumes,
+        execution=execution,
     )
     register_workflow_tools(runtime)
     return runtime

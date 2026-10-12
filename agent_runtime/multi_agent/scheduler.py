@@ -1,7 +1,7 @@
 """Single-process bounded scheduler; SQL is authoritative for task ownership."""
 from __future__ import annotations
 
-from concurrent.futures import Future, ThreadPoolExecutor, wait
+from concurrent.futures import Future, wait
 from dataclasses import dataclass
 from threading import Event, Lock, Thread
 from uuid import NAMESPACE_URL, uuid4, uuid5
@@ -36,14 +36,19 @@ class SchedulerConfig:
 class AgentTaskScheduler:
     def __init__(self, *, tasks: AgentTaskRepository, sessions: SessionRepository,
                  workers: AgentWorkerRegistry, contexts: AgentContextPolicy,
-                 config: SchedulerConfig = SchedulerConfig(), worker_id: str | None = None) -> None:
+                 config: SchedulerConfig = SchedulerConfig(), worker_id: str | None = None,
+                 execution=None) -> None:
         self.tasks, self.sessions, self.workers, self.contexts = tasks, sessions, workers, contexts
         self.config = config
         self.worker_id = worker_id or f"local-{uuid4()}"
         self._stop = Event()
         self._thread: Thread | None = None
-        self._pool = ThreadPoolExecutor(max_workers=config.max_concurrent_tasks,
-            thread_name_prefix="agent-task")
+        # SQL stays authoritative for ownership; the process ExecutionService owns
+        # the bounded worker pool (unified loop M4).
+        from agent_runtime.execution import ExecutionService
+        self._owns_execution = execution is None
+        self.execution = execution or ExecutionService()
+        self.execution.register_kind("agent_task", max_workers=config.max_concurrent_tasks)
         self._futures: set[Future] = set()
         self._lock = Lock()
 
@@ -52,6 +57,8 @@ class AgentTaskScheduler:
             return
         self._stop.clear()
         self._thread = Thread(target=self._poll, daemon=True, name="agent-task-scheduler")
+        self.execution.register_resource("agent-task-scheduler",
+            "Polls SQL for ready/expired agent tasks and enqueues claimed ones.")
         self._thread.start()
 
     def stop(self) -> None:
@@ -62,7 +69,8 @@ class AgentTaskScheduler:
             active = list(self._futures)
         if active:
             wait(active, timeout=self.config.shutdown_grace_seconds)
-        self._pool.shutdown(wait=False, cancel_futures=True)
+        if self._owns_execution:
+            self.execution.close(wait=False)
 
     def _poll(self) -> None:
         while not self._stop.is_set():
@@ -97,7 +105,8 @@ class AgentTaskScheduler:
                     worker_id=self.worker_id, lease_seconds=self.config.lease_seconds)
             except (TaskConflictError, LeaseConflictError):
                 continue
-            future = self._pool.submit(self._run_claimed, claimed)
+            # One job per SQL attempt: a new claim is never merged into an older run.
+            future = self.execution.submit("agent_task", claimed.active_attempt_id, self._run_claimed, claimed)
             with self._lock:
                 self._futures.add(future)
             submitted += 1
@@ -115,7 +124,8 @@ class AgentTaskScheduler:
                     worker_id=self.worker_id, lease_seconds=self.config.lease_seconds)
             except (TaskConflictError, LeaseConflictError):
                 continue
-            future = self._pool.submit(self._run_claimed, claimed)
+            # One job per SQL attempt: a new claim is never merged into an older run.
+            future = self.execution.submit("agent_task", claimed.active_attempt_id, self._run_claimed, claimed)
             with self._lock:
                 self._futures.add(future)
             submitted += 1
