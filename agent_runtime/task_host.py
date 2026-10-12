@@ -141,9 +141,13 @@ class TaskHost:
         count = count + 1 if stalled else 0
         self.loop.repository.change(self.task_id, progress_guard={'revision':turn.revision,'count':count})
         if count < 3:return False
+        # Deliver what was actually saved, without another model call.
+        delivery = getattr(self.loop.harness, 'terminal_delivery', None)
+        lines = delivery(state) if delivery else []
         self.loop.repository.append(self.task_id, role='assistant', text=(
             'I stopped because repeated steps produced no new evidence. Saved results are preserved; '
-            'the requested work is not yet complete. Open the saved results or retry with a different source or approach.'))
+            'the requested work is not yet complete. Open the saved results or retry with a different source or approach.'
+            + (chr(10)*2 + 'Saved so far:' + chr(10) + chr(10).join(lines) if lines else '')))
         self.loop.repository.change(self.task_id, status='needs_input', model_activity=None,
             error={'stage':'decision','code':'no_progress','retryable':True,
                    'message':'Repeated steps produced no new evidence. Saved work is preserved; the request is incomplete.'})

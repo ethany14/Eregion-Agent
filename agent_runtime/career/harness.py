@@ -66,6 +66,8 @@ TOOLS = [
     function('control_interview','Skip, end or resume an interview at the user\'s request. Cite the request message.',
         {'interview_id':TEXT,'action':{'type':'string','enum':['skip','end','resume']},'message_id':TEXT}),
 ]
+from .decisions import TOOL as DECIDE_JOB_TOOL
+TOOLS.append(DECIDE_JOB_TOOL)
 
 
 class CareerHarness:
@@ -99,14 +101,18 @@ class CareerHarness:
         if not stable and not configured_decisions().enabled:
             tools = [t for t in tools if t['function']['name'] != 'screen_jobs']
         if self.recommendation_run(state):
-            allowed=BROWSER_NAMES|{'search_jobs','screen_jobs','read_job','import_job','verify_and_score','inspect_job','score_job','score_jobs','recommend_job'}
+            allowed=BROWSER_NAMES|{'search_jobs','screen_jobs','read_job','import_job','verify_and_score','inspect_job','score_job','score_jobs','recommend_job','decide_job'}
             return [t for t in tools if t['function']['name'] in allowed]
         latest_text=latest['text'] if latest else state.get('goal','')
         positive=re.sub(r'\b(?:do not|don.t|never)\b[^.!?]*','',latest_text,flags=re.I)
         if search_request(state) and not re.search(r'\b(?:apply|submit|interview|tailor|letter|schedule|alert|write|draft|prepare|materials?|rewrite|update|create)\b',positive,re.I):
-            allowed=BROWSER_NAMES|{'search_jobs','screen_jobs','read_job','import_job','verify_and_score','list_jobs','inspect_job','score_job','score_jobs','recommend_job'}
+            allowed=BROWSER_NAMES|{'search_jobs','screen_jobs','read_job','import_job','verify_and_score','list_jobs','inspect_job','score_job','score_jobs','recommend_job','decide_job'}
             tools=[t for t in tools if t['function']['name'] in allowed]
         return tools
+
+    def terminal_delivery(self,state):
+        from .decisions import terminal_delivery
+        return terminal_delivery(state)
 
     def recommendation_run(self,state):
         run_id=(state.get('initial_context') or {}).get('recommendation_run_id')
@@ -174,15 +180,17 @@ class CareerHarness:
         latest=next((m['text'] for m in reversed(state.get('messages',[])) if m.get('role')=='user'),state['goal'])
         # Index existing resources rather than duplicating every score, field,
         # document and interview inside each observation.
+        from .decisions import statuses
+        decision_rows=statuses(state)
         known={'request':latest,'jobs':list(state['jobs']),
-            'scored_not_recommended':[j for j in state.get('scored_job_evidence',{}).values()
-                if not any(r.get('application_id')==j['application_id'] for r in state.get('recommendations',[]))],
+            'scored_not_recommended':[{**j,**decision_rows.get(j['application_id'],{})} for j in state.get('scored_job_evidence',{}).values()
+                if decision_rows.get(j['application_id'],{}).get('decision_status')!='recommended'],
             'materials':list(state['packs']), 'applications':list(state['application_runs']),
             'interviews':list(state['interviews']),
             'recent_outcomes':[{'tool':h['tool'],**{k:h.get('result',{})[k] for k in
                 ('no_new_evidence','error','error_code','blocked','url','next') if isinstance(h.get('result'),dict) and k in h['result']}}
                 for h in state.get('history',[])[-4:]],
-            'instruction':'These IDs index live saved results. Scored is not recommended. For scored_not_recommended, decide whether the actual vacancy meets requested role/location/seniority: call recommend_job with full caveats if eligible, or explain the specific exclusion. Low skill fit alone does not prohibit a disclosed recommendation. Use exact qualification_evidence rather than guessing missing years. Never auto-recommend unverified/ineligible jobs. Final search results include each read/scored URL and actual score even if not recommended.'}
+            'instruction':'These IDs index live saved results. Scored is not recommended. Every scored job needs an outcome: decision_status pending means undecided; searching for more waits until pending jobs are decided. For scored_not_recommended, decide whether the actual vacancy meets requested role/location/seniority: call recommend_job with full caveats if eligible, or decide_job with the specific exclusion or the missing evidence. Low skill fit alone does not prohibit a disclosed recommendation. Use exact qualification_evidence rather than guessing missing years. Never auto-recommend unverified/ineligible jobs. Final search results include each read/scored URL and actual score even if not recommended.'}
         from .candidate_health import active_rejections
         known['excluded_candidates']=active_rejections(state)
         return {'candidate':saved.get('profile',{}),'resume_text':text[:40000],
@@ -476,6 +484,13 @@ class CareerHarness:
                 config={k:old[k] for k in AlertConfig.model_fields if k in old}|{'enabled':args['enabled']}
             else:config=args['config']
             return self.alerts.save(config,request_key=key,alert_id=identifier,expected_version=old['version'] if old else None)
+        if name=='decide_job':
+            from .decisions import decide
+            return decide(self.repository,task_id,state,args)
+        if name in {'search_jobs','screen_jobs'}:
+            from .decisions import gate
+            blocked=gate(state,name,args)
+            if blocked:return blocked
         if name=='recommend_job':
             identifier=args['application_id'];self.require_link(state,'jobs',identifier)
             _,resume_text=self.candidate()
