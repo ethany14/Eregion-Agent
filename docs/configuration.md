@@ -351,3 +351,32 @@ bodies, workspace source/snapshot identity and existing analysis caches. Failure
 preserve granular error codes and `next` guidance; internal/validation failures
 also include `fallback` guidance to use the granular tools. Source restrictions,
 execution masks, no-progress protection and provider budgets still apply.
+
+## Optional Treg job sources
+
+Your own Treg account and key. Nothing is hosted, proxied or billed by the project. Loading order: **process environment > project-root `.env` > defaults**. The project root is fixed (independent of the working directory). An explicitly empty process variable means "not configured" and does not fall back to `.env`. A placeholder token counts as missing. Settings are read into a mapping; `os.environ` is not modified. Invalid values block Treg only.
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `TREG_TOKEN` | empty | Your Treg key. Sent only as `X-Treg-Token` to `https://treg.to/call/...`; never logged, shown or returned by tools |
+| `TREG_ORG` | empty | Team slug, only for identity tokens (`X-Treg-Org`) |
+| `JOB_AGENT_TREG_ENABLED` | `0` | Allows Treg calls. A configured key alone never spends |
+| `JOB_AGENT_JOB_API_FIRST` | `0` | API-first job search over existing company boards; independent of Treg |
+| `JOB_AGENT_TREG_SEARCH_PROVIDER` | empty | `anyapi` or `crawl4ai`. Empty refuses paid LinkedIn search. The model cannot change it |
+| `JOB_AGENT_TREG_CRAWL4AI_SCRAPE_ENABLED` | `0` | Separately allows `crawl4ai.web.scrape` for page text |
+| `JOB_AGENT_TREG_TASK_MAX_COST_USD` | `0.10` | Cumulative per task (persisted; new turns or restarts do not reset it) |
+| `JOB_AGENT_TREG_DAILY_MAX_COST_USD` | `0.50` | Per UTC day for this deployment's database (all tasks and workers); does not limit the Treg account elsewhere |
+| `JOB_AGENT_TREG_CALL_MAX_COST_USD` | `0.01` | Per-call cap, sent as `X-Treg-Route-Max-Cost` (Treg refuses with 402, nothing charged) and reserved locally |
+| `JOB_AGENT_TREG_MAX_ATTEMPTS` | `20` | All gateway attempts per task, including retries and status queries |
+| `JOB_AGENT_TREG_MAX_RESULTS` / `MAX_PAGES` | `10` / `2` | Per logical search |
+| `JOB_AGENT_TREG_MAX_CONCURRENCY` | `2` | In-process concurrent Treg requests (budgets are enforced in the database) |
+| `JOB_AGENT_TREG_LIVE_API_TEST` | `0` | Explicit opt-in for the isolated live API smoke/comparison only |
+
+Spend records (`external_tool_operations`, migration `0037`) are kept separately from model usage and in integer micro-USD:
+- The charge is taken from `X-Treg-Cost-Micro`.
+- Replays count 0, with the original cost stored separately.
+- Timeouts, lost responses and a 2xx without a cost header are `unknown` and keep their reservation.
+- Retries reuse the same `Idempotency-Key` (network error, 409, 429, saturated 503) at most once, within a deadline.
+- Responses served through Treg's overflow relay (`X-Treg-Served-Via: overflow:*`) are recorded and quarantined.
+
+Contract record: `docs/diagnostics/treg-ab-contract.md`.

@@ -234,6 +234,36 @@ saved job in Eregion to continue with materials, applications or interview prep.
 Public-page checks and synthetic application tests do not establish
 compatibility with every ATS or successful submission to every employer.
 
+## Optional: LinkedIn search through your own Treg account
+
+Eregion works without this. Without it, job search uses public company boards (Greenhouse, Lever, Ashby, Workday) and your browser.
+[Treg](https://treg.to) is an optional paid gateway for LinkedIn job search and page text extraction:
+- **You pay Treg directly.** You use your own Treg account and key; the project does not host, proxy or bill anything.
+- **"Bring your own key" here means your Treg key.** It is not Treg's own upstream BYOK feature.
+
+Setup:
+
+1. **Get a key.** Create a team key in your Treg account (see Treg's *Get a token* docs).
+2. **Create `.env` only if it does not exist yet:**
+   - Windows (PowerShell): `if (-not (Test-Path .env)) { Copy-Item .env.example .env }`
+   - macOS / Linux: `[ -f .env ] || cp .env.example .env`
+
+   If `.env` already exists, add the missing `TREG_*` and `JOB_AGENT_TREG_*` lines by hand and keep your model settings.
+3. **Add the key.** Set `TREG_TOKEN=...`. Add `TREG_ORG=<team>` only for an identity token. Process environment variables override `.env`. Restart Eregion after editing. The key is never shown in the app, logs or tool output.
+4. **Turn it on yourself.**
+   - `JOB_AGENT_TREG_ENABLED=1` allows Treg calls.
+   - `JOB_AGENT_TREG_SEARCH_PROVIDER` picks `anyapi` or `crawl4ai`.
+   - `JOB_AGENT_TREG_CRAWL4AI_SCRAPE_ENABLED=1` separately allows page text extraction.
+   - `JOB_AGENT_JOB_API_FIRST=1` makes search start from company-board APIs; it works with Treg off.
+5. **Know the limits.** Spend is capped per task (`JOB_AGENT_TREG_TASK_MAX_COST_USD`, default $0.10), per UTC day for this deployment (`JOB_AGENT_TREG_DAILY_MAX_COST_USD`, $0.50), per call (`JOB_AGENT_TREG_CALL_MAX_COST_USD`, $0.01, sent to Treg as a hard cap) and by attempt count. These limits cover this deployment's database only, not other apps using the same Treg account.
+
+What happens when something is missing:
+- **Missing key or Treg disabled:** search falls back to company boards and the browser.
+- **Authentication failure, out of balance (HTTP 402) or a reached limit:** Treg stops for that task and the reason is reported.
+- **Unknown charges** (for example a timeout after sending) stay counted against the limit until confirmed.
+
+Checking the configuration does not call Treg. The live API smoke test is a separate opt-in (`JOB_AGENT_TREG_LIVE_API_TEST=1`), and normal tests never spend. To turn Treg off, set `JOB_AGENT_TREG_ENABLED=0`. To restore the original search route completely, also set `JOB_AGENT_JOB_API_FIRST=0`. Spend records are kept. Details: [configuration](docs/configuration.md#optional-treg-job-sources).
+
 ## Documentation
 
 | Guide | Covers |
