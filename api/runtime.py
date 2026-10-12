@@ -7,9 +7,9 @@ from typing import Any
 from api.db import create_database, upgrade_database
 from api.repositories.run_repository import RunRepository
 from api.services.run_service import RunService
-from custom_agent.handlers import JobAgentStepHandler
-from custom_agent.loop import AgentLoop
-from custom_agent.repository import StateRepository
+from job_agent.workflow.handlers import JobAgentStepHandler
+from job_agent.workflow.analysis import AnalysisWorkflow
+from job_agent.workflow.repository import StateRepository
 from job_agent.results import public_result
 
 
@@ -20,7 +20,7 @@ def create_run_service(*, database_url: str | None = None,
     upgrade_database(database_url)
     database = create_database(database_url)
     try:
-        loop = AgentLoop(repository=StateRepository(database.session_factory),
+        loop = AnalysisWorkflow(repository=StateRepository(database.session_factory),
             handler=custom_handler if custom_handler is not None else JobAgentStepHandler(),
             result_projector=result_serializer)
         return RunService(repository=RunRepository(database.session_factory),

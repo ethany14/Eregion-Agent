@@ -287,7 +287,7 @@ def live_rows(data, cached, output, limit):
     from api.db import create_database, upgrade_database
     from api.services.fit_analysis_service import FitAnalysisService
     from agent_runtime.provider_usage import UsageLedger, usage_scope
-    from custom_agent.handlers import JobAgentStepHandler
+    from job_agent.workflow.handlers import JobAgentStepHandler
     from agent_runtime.fast_decisions import FastDecisions
     from job_agent.jev_fit.settings import Settings
     output.parent.mkdir(parents=True, exist_ok=True)

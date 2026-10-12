@@ -45,7 +45,7 @@ class Database:
         import agent_runtime.multi_agent.models  # noqa: F401
         import agent_runtime.workspace.models  # noqa: F401
         import agent_runtime.resumes.models  # noqa: F401
-        import custom_agent.models  # noqa: F401
+        import job_agent.workflow.models  # noqa: F401
         import agent_runtime.auto_apply.models  # noqa: F401
         import agent_runtime.career.repository  # noqa: F401
         import agent_runtime.career.alerts  # noqa: F401

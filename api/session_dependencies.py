@@ -280,7 +280,7 @@ def create_session_runtime(
         context_snapshots=context_snapshots, pack_workflow=pack_workflow)
     agent_tasks = AgentTaskRepository(database.session_factory)
     from agent_runtime.analysis_cache import AnalysisCache
-    from custom_agent.handlers import JobAgentStepHandler
+    from job_agent.workflow.handlers import JobAgentStepHandler
     analysis_handler = JobAgentStepHandler(analysis_cache=AnalysisCache(database.session_factory,
         owner=owner_resolver.resolve().owner_id))
     agent_workers = AgentWorkerRegistry()

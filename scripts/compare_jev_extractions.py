@@ -5,8 +5,8 @@ import sys,time
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from benchmark_jev import RESUME_TEXT,JOB_TEXT
 from agent_runtime.fast_decisions import FastDecisions
-from custom_agent.handlers import JobAgentStepHandler
-from custom_agent.state import AgentState,Step
+from job_agent.workflow.handlers import JobAgentStepHandler
+from job_agent.workflow.state import AgentState,Step
 from job_agent.schemas import ResumeAnalysis,JobAnalysis
 
 def main():

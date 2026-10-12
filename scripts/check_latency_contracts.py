@@ -9,8 +9,8 @@ from agent_runtime.telemetry import model_metrics
 from job_agent.job_extraction import JobExtraction
 from job_agent.resume_extraction import ResumeExtraction
 from job_agent.domain import normalize_job_analysis, normalize_resume_analysis
-from custom_agent.handlers import JobAgentStepHandler
-from custom_agent.state import AgentState
+from job_agent.workflow.handlers import JobAgentStepHandler
+from job_agent.workflow.state import AgentState
 
 def context_checks():
     window=ConversationWindow();history=[];snapshot={'goal':'Inspect fixtures','messages':[{'role':'user','text':'Read all items','id':'request'}]}

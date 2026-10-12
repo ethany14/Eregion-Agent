@@ -12,7 +12,7 @@ import time
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from api.services.fit_analysis_service import FitAnalysisService
 from agent_runtime.fast_decisions import FastDecisions
-from custom_agent.handlers import JobAgentStepHandler
+from job_agent.workflow.handlers import JobAgentStepHandler
 from job_agent.jev_fit.settings import Settings
 
 APPLICANTS={

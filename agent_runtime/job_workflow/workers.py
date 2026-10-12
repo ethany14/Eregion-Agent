@@ -29,8 +29,8 @@ from agent_runtime.workspace.repository import JobWorkspaceRepository
 from agent_runtime.multi_agent.types import AgentTask, AgentTaskResult, ExecutionContext, OutputArtifact
 from agent_runtime.multi_agent.errors import BudgetExceededError, WorkerStepError
 from agent_runtime.multi_agent.model_usage import invoke_model
-from custom_agent.handlers import JobAgentStepHandler
-from custom_agent.state import AgentState, Step
+from job_agent.workflow.handlers import JobAgentStepHandler
+from job_agent.workflow.state import AgentState, Step
 from job_agent.schemas import (
     JobAnalysis, ResumeAnalysis, ResumeEvidence, SkillMatch, TailoredResume,
     VerificationResult,

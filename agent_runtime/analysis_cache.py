@@ -126,8 +126,8 @@ def warm_resume(sessions, text, *, owner='local'):
         _warming.add(key)
     def run():
         try:
-            from custom_agent.handlers import JobAgentStepHandler
-            from custom_agent.state import AgentState, Step
+            from job_agent.workflow.handlers import JobAgentStepHandler
+            from job_agent.workflow.state import AgentState, Step
             handler = JobAgentStepHandler(analysis_cache=AnalysisCache(sessions, owner=owner))
             handler.execute(Step.ANALYZE_RESUME, AgentState(run_id='resume-warmup', resume_text=text, job_description=''))
         except Exception as exc:

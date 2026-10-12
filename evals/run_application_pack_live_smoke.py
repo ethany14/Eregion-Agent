@@ -127,7 +127,7 @@ def run() -> dict:
         pack = workflow.create(app_id, expected_version=saved.application.version,
             idempotency_key="live-smoke-pack")
         result["run_metadata"]["model_configuration"] = packs.snapshot(pack.pack_id).model_configuration
-        with patch("custom_agent.handlers.create_model", instrumented_model), \
+        with patch("job_agent.workflow.handlers.create_model", instrumented_model), \
              patch("agent_runtime.application_pack.workflow.create_model", instrumented_model):
             for artifact_type, question in (("tailored_resume", None), ("cover_letter", None),
                                             ("application_answer", "What experience do you have with Python?")):

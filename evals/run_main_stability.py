@@ -29,7 +29,7 @@ def implementation_signature():
     paths = ['job_agent/job_extraction.py', 'job_agent/batch_retry.py', 'job_agent/fast_match.py',
              'job_agent/jev_fit/core.py', 'job_agent/prompts.py', 'job_agent/schemas.py',
              'job_agent/domain.py', 'job_agent/partial_support.py', 'job_agent/resume_extraction.py', 'job_agent/compact_match.py',
-             'custom_agent/handlers.py', 'api/services/fit_analysis_service.py',
+             'job_agent/workflow/handlers.py', 'api/services/fit_analysis_service.py',
              'job_agent/model.py', 'job_agent/requirement_catalog.py',
              'agent_runtime/provider_usage.py', 'agent_runtime/fast_decisions.py',
              'evals/run_main_stability.py']
@@ -82,7 +82,7 @@ def check_manifest(plan, data):
 
 def cold_service():
     from agent_runtime.fast_decisions import FastDecisions
-    from custom_agent.handlers import JobAgentStepHandler
+    from job_agent.workflow.handlers import JobAgentStepHandler
     from api.services.fit_analysis_service import FitAnalysisService
     return FitAnalysisService(JobAgentStepHandler(decisions=FastDecisions(), analysis_cache=None),
                               cache_size=0, analysis_cache=None, jev_enabled=False)

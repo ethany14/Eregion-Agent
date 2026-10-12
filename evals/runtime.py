@@ -6,10 +6,10 @@ from tempfile import TemporaryDirectory
 from uuid import uuid4
 
 from api.db import create_database
-from custom_agent.handlers import JobAgentStepHandler
-from custom_agent.loop import AgentLoop
-from custom_agent.repository import StateRepository
-from custom_agent.state import AgentState, AgentStatus, Step
+from job_agent.workflow.handlers import JobAgentStepHandler
+from job_agent.workflow.analysis import AnalysisWorkflow
+from job_agent.workflow.repository import StateRepository
+from job_agent.workflow.state import AgentState, AgentStatus, Step
 from job_agent.model import create_model, invoke_structured
 
 
@@ -49,7 +49,7 @@ class EvaluationWorkflow:
                     f"sqlite:///{(Path(directory) / 'runs.sqlite').as_posix()}",
                     create_schema_for_tests=True)
                 try:
-                    loop = AgentLoop(repository=StateRepository(database.session_factory),
+                    loop = AnalysisWorkflow(repository=StateRepository(database.session_factory),
                                      handler=handler)
                     state = loop.start(run_id=run_id, **inputs)
                     reached = state.status == AgentStatus.AWAITING_REVIEW

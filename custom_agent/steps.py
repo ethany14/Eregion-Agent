@@ -1,20 +1,10 @@
-"""Step handler interface used by the custom loop."""
+"""Compatibility alias (unified loop M3): the module moved to job_agent.workflow.steps.
 
-from __future__ import annotations
+The old import path resolves to the same module object, so state, ORM tables
+and monkeypatches stay shared. Remove once no caller imports custom_agent.
+"""
+import sys
 
-from typing import Protocol
+from job_agent.workflow import steps as _module
 
-from pydantic import BaseModel, ConfigDict, Field
-
-from custom_agent.state import AgentState, Step
-
-
-class StepOutcome(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    updates: dict = Field(default_factory=dict)
-
-
-class StepHandler(Protocol):
-    def execute(self, step: Step, state: AgentState) -> StepOutcome:
-        """Execute one computation step. HUMAN_REVIEW is never passed here."""
-        ...
+sys.modules[__name__] = _module

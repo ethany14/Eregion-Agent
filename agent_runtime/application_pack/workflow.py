@@ -26,8 +26,8 @@ from agent_runtime.memory.types import MemoryScope, MemorySensitivity, MemoryTyp
 from agent_runtime.resumes.repository import ResumeDocumentRepository
 from agent_runtime.workspace.repository import JobWorkspaceRepository
 from agent_runtime.workspace.types import ArtifactType
-from custom_agent.handlers import JobAgentStepHandler
-from custom_agent.state import AgentState, AgentStatus, Step
+from job_agent.workflow.handlers import JobAgentStepHandler
+from job_agent.workflow.state import AgentState, AgentStatus, Step
 from job_agent.domain import make_source_entry_id, normalize_text, normalize_resume_analysis
 from job_agent.resume_sources import complete_source_evidence
 from job_agent.model import DEFAULT_ENV_PATH, shared_model, invoke_structured, optional_setting
@@ -233,7 +233,7 @@ class SharedPackModel:
     def _handler_for(self, preferences: list[dict]) -> JobAgentStepHandler:
         if not preferences:
             return self._handler
-        from custom_agent.handlers import SharedModelAnalyzer
+        from job_agent.workflow.handlers import SharedModelAnalyzer
         class PreferredAnalyzer(SharedModelAnalyzer):
             def __call__(self, schema, system_message, human_message):
                 return super().__call__(schema, system_message, human_message + '\nConfirmed writing preferences: ' + json.dumps(preferences, ensure_ascii=False))

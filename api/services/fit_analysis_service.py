@@ -19,8 +19,8 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from custom_agent.handlers import JobAgentStepHandler
-from custom_agent.state import AgentState, Step
+from job_agent.workflow.handlers import JobAgentStepHandler
+from job_agent.workflow.state import AgentState, Step
 from job_agent.prompts import JOB_PROMPT, MATCH_PROMPT, RESUME_PROMPT, PROMPT_VERSION
 from job_agent.schemas import JobAnalysis, ResumeAnalysis, SkillAssessment, SkillMatch, SCHEMA_VERSION
 

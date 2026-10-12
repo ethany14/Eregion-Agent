@@ -20,8 +20,8 @@ from agent_runtime.application_pack.verification import verify_material_resume
 from agent_runtime.application_pack.workflow import SharedPackModel
 from agent_runtime.application_pack.types import EvidenceSnapshotItem
 from api.db import create_database
-from custom_agent.handlers import SharedModelAnalyzer, JobAgentStepHandler
-from custom_agent.state import Step
+from job_agent.workflow.handlers import SharedModelAnalyzer, JobAgentStepHandler
+from job_agent.workflow.state import Step
 from job_agent.domain import normalize_skill_match
 from job_agent.model import invoke_structured, shared_model
 from job_agent.schemas import ResumeEvidence, ResumeSourceEntry, SkillAssessment, SkillEvidence

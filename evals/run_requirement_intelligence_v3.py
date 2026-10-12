@@ -14,10 +14,10 @@ from time import perf_counter
 from typing import Any
 
 from api.db import create_database
-from custom_agent.handlers import JobAgentStepHandler
-from custom_agent.loop import AgentLoop
-from custom_agent.repository import StateRepository
-from custom_agent.state import AgentStatus, Step
+from job_agent.workflow.handlers import JobAgentStepHandler
+from job_agent.workflow.analysis import AnalysisWorkflow
+from job_agent.workflow.repository import StateRepository
+from job_agent.workflow.state import AgentStatus, Step
 from evals import DATASET_VERSION
 from evals.run_evals import EVALS_DIR, load_cases, tailored_resume_text
 from job_agent.domain import calculate_score_breakdown, normalize_text
@@ -420,7 +420,7 @@ def run_evaluation(
             f"sqlite:///{database_path.as_posix()}", create_schema_for_tests=True
         )
         repository = StateRepository(database.session_factory)
-        loop = AgentLoop(repository=repository, handler=JobAgentStepHandler())
+        loop = AnalysisWorkflow(repository=repository, handler=JobAgentStepHandler())
         try:
             for case in cases:
                 for repeat in range(1, RUNS_PER_CASE + 1):

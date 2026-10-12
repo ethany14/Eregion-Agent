@@ -21,8 +21,8 @@ from agent_runtime.application_pack.workflow import SharedPackModel
 from agent_runtime.fast_decisions import FastDecisions
 from agent_runtime.provider_usage import UsageLedger, usage_scope
 from api.db import create_database
-from custom_agent.handlers import SharedModelAnalyzer
-from custom_agent.state import AgentState
+from job_agent.workflow.handlers import SharedModelAnalyzer
+from job_agent.workflow.state import AgentState
 from job_agent.fast_match import assess_skills
 from job_agent.prompts import MATCH_PROMPT
 from job_agent.schemas import (ResumeAnalysis, ResumeEvidence, JobAnalysis, JobRequirement,

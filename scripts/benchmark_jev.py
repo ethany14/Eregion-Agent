@@ -16,8 +16,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from agent_runtime.fast_decisions import FastDecisions, configured_decisions, capture_routing
 from agent_runtime.semantics import SemanticDecisions
-from custom_agent.handlers import JobAgentStepHandler, SharedModelAnalyzer
-from custom_agent.state import AgentState, Step
+from job_agent.workflow.handlers import JobAgentStepHandler, SharedModelAnalyzer
+from job_agent.workflow.state import AgentState, Step
 from job_agent.model import create_model
 from job_agent.schemas import ResumeAnalysis, ResumeEvidence, JobAnalysis, JobRequirement
 from api.services.fit_analysis_service import FitAnalysisService

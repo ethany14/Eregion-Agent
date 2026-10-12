@@ -1,21 +1,10 @@
-"""Domain errors raised by the custom agent runtime."""
+"""Compatibility alias (unified loop M3): the module moved to job_agent.workflow.errors.
 
+The old import path resolves to the same module object, so state, ORM tables
+and monkeypatches stay shared. Remove once no caller imports custom_agent.
+"""
+import sys
 
-class AgentLoopError(RuntimeError):
-    pass
+from job_agent.workflow import errors as _module
 
-
-class StateNotFoundError(AgentLoopError):
-    pass
-
-
-class StaleStateError(AgentLoopError):
-    pass
-
-
-class InvalidTransitionError(AgentLoopError):
-    pass
-
-
-class RunAlreadyExistsError(AgentLoopError):
-    pass
+sys.modules[__name__] = _module

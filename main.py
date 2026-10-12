@@ -9,10 +9,10 @@ from pathlib import Path
 from typing import Callable, Sequence
 
 from api.db import create_database, upgrade_database
-from custom_agent.handlers import JobAgentStepHandler
-from custom_agent.loop import AgentLoop
-from custom_agent.repository import StateRepository
-from custom_agent.state import AgentStatus
+from job_agent.workflow.handlers import JobAgentStepHandler
+from job_agent.workflow.analysis import AnalysisWorkflow
+from job_agent.workflow.repository import StateRepository
+from job_agent.workflow.state import AgentStatus
 from job_agent.results import public_result
 
 
@@ -47,7 +47,7 @@ def analyze_files(
     upgrade_database(database_url)
     database = create_database(database_url)
     try:
-        loop = AgentLoop(repository=StateRepository(database.session_factory),
+        loop = AnalysisWorkflow(repository=StateRepository(database.session_factory),
             handler=handler if handler is not None else JobAgentStepHandler())
         state = loop.start(run_id=thread_id, resume_text=resume_text,
                            job_description=job_description)

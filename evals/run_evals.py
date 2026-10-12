@@ -26,7 +26,7 @@ from evals.metrics import (
     phrase_detected,
 )
 from evals.runtime import EvaluationWorkflow, execute_reflection_step
-from custom_agent.state import Step
+from job_agent.workflow.state import Step
 from job_agent.model import create_model as _create_model
 from job_agent.domain import make_evidence_id, normalize_resume_analysis
 from job_agent.prompts import PROMPT_VERSION

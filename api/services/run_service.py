@@ -8,8 +8,8 @@ from uuid import uuid4
 
 from api.repositories.run_repository import RunRecord, RunRepository
 from api.schemas.runs import CreateRunRequest, CreateRunResponse, ReviewRequest, RunResponse
-from custom_agent.errors import InvalidTransitionError, StaleStateError, StateNotFoundError
-from custom_agent.loop import AgentLoop
+from job_agent.workflow.errors import InvalidTransitionError, StaleStateError, StateNotFoundError
+from job_agent.workflow.analysis import AnalysisWorkflow
 
 logger = logging.getLogger(__name__)
 SAFE_RUN_ERROR = "The agent could not complete this run."
@@ -24,9 +24,9 @@ class InvalidRunStateError(RuntimeError):
 
 
 class RunService:
-    """Run new work on AgentLoop and expose saved historical results read-only."""
+    """Run new work on AnalysisWorkflow and expose saved historical results read-only."""
 
-    def __init__(self, *, repository: RunRepository, loop: AgentLoop,
+    def __init__(self, *, repository: RunRepository, loop: AnalysisWorkflow,
                  resources: tuple[Any, ...] = ()) -> None:
         self._repository = repository
         self._loop = loop

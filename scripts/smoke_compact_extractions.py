@@ -3,8 +3,8 @@ import json,sys,time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
-from custom_agent.handlers import JobAgentStepHandler
-from custom_agent.state import AgentState, Step
+from job_agent.workflow.handlers import JobAgentStepHandler
+from job_agent.workflow.state import AgentState, Step
 RESUME='''Synthetic Candidate - Example Person
 Experience
 Example Lab - Software Developer

@@ -8,7 +8,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from job_agent.model import create_model, invoke_structured
 from job_agent.schemas import JobAnalysis, ResumeAnalysis
-from custom_agent.handlers import SharedModelAnalyzer, JobAgentStepHandler
+from job_agent.workflow.handlers import SharedModelAnalyzer, JobAgentStepHandler
 from api.services.fit_analysis_service import FitAnalysisService
 from scripts.benchmark_jev import RESUME_TEXT, JOB_TEXT
 from agent_runtime.fast_decisions import configured_decisions

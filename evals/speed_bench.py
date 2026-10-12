@@ -17,8 +17,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from api.db import create_database
 from api.services.fit_analysis_service import FitAnalysisService
 from agent_runtime.analysis_cache import AnalysisCache
-from custom_agent.handlers import SharedModelAnalyzer, JobAgentStepHandler
-from custom_agent.state import AgentState, Step
+from job_agent.workflow.handlers import SharedModelAnalyzer, JobAgentStepHandler
+from job_agent.workflow.state import AgentState, Step
 
 def saved_inputs(database_url):
     from sqlalchemy import select

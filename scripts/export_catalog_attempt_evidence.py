@@ -78,7 +78,7 @@ def main():
         'fix':'Track each encountered run in the batch. started_count/opened_or_reused_count count unique durable runs; resolved_request_count counts successful request entries.',
         'after':'29 passed, including zero new starts on replay; no real model/browser/employer claim.'}
     code=['job_agent/requirement_catalog.py','api/services/fit_analysis_service.py',
-        'agent_runtime/provider_usage.py','custom_agent/handlers.py','job_agent/job_extraction.py',
+        'agent_runtime/provider_usage.py','job_agent/workflow/handlers.py','job_agent/job_extraction.py',
         'job_agent/model.py','agent_runtime/fast_decisions.py','agent_runtime/career/harness.py']
     evidence['implementation_files']=[describe(ROOT/p) for p in code]
     with output.open('x',encoding='utf-8') as stream:json.dump(evidence,stream,ensure_ascii=False,indent=2)
