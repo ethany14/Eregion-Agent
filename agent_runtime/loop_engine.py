@@ -188,7 +188,8 @@ class AgentLoop:
                     self.event('decision_discarded', revision=turn.revision)
                     repair = None
                     continue
-                problem = output_problem(response)
+                problem = (self.host.output_problem(response) if hasattr(self.host, 'output_problem')
+                           else output_problem(response))
                 if problem:
                     self.event('output_rejected', reason=problem)
                     if invalid:
@@ -235,7 +236,10 @@ class AgentLoop:
                     try:
                         if batch_error:
                             raise batch_error
-                        validate_call(call, (turn.allowed_tools if turn.allowed_tools is not None else turn.tools) + turn.compatibility_tools)
+                        if hasattr(self.host, 'validate'):
+                            self.host.validate(call, turn)
+                        else:
+                            validate_call(call, (turn.allowed_tools if turn.allowed_tools is not None else turn.tools) + turn.compatibility_tools)
                         if index == 0:
                             self.host.progress(text, call, turn)
                         self.runtime['inflight'] = {'tool': call['name'], 'call_id': call['id'],

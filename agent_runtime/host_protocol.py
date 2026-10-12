@@ -12,8 +12,9 @@ from typing import Any, Protocol, runtime_checkable
 REQUIRED = ('active', 'revision', 'observe', 'invoke', 'progress', 'on_text',
             'execute', 'action_error', 'after_action', 'persist')
 # Used when present: fence text completion, validate a batch before any effect,
-# turn a tool screenshot into model input.
-OPTIONAL = ('text_guard', 'validate_batch', 'image_message')
+# turn a tool screenshot into model input, replace the default output check
+# (model_output.output_problem) or per-call schema validation (validate_call).
+OPTIONAL = ('text_guard', 'validate_batch', 'image_message', 'output_problem', 'validate')
 # Attribute the engine assigns its ContextArchive to when the Host declares it.
 ATTRIBUTES = ('context_archive',)
 
