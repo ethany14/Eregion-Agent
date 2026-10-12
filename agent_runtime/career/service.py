@@ -1,4 +1,5 @@
 """One conversational surface over task reasoning and the existing browser UI contract."""
+import logging
 from threading import Event, Thread
 
 from agent_runtime.task_loop import TaskLoop
@@ -317,11 +318,20 @@ class CareerService:
         return self.view(task_id)
 
     def close(self):
-        # Order matters: stop producers, drain career and interview work, and only
-        # then close the resources (discovery, Treg, browser) that work uses.
+        """Stop producers, drain career and interview work, then close the resources
+        (discovery, Treg, browser) that work uses. Returns False, keeping those
+        resources open, if interview work is still running after its bounded wait;
+        calling close again finishes the shutdown once that work has exited."""
         if scheduler:=getattr(self,'alert_scheduler',None):scheduler.close()
         if sweeping:=getattr(self,'_sweeping',None):sweeping.set()
         self.loop.close()
-        if inputs:=getattr(self.harness,'interview_inputs',None):inputs.close()
+        inputs=getattr(self.harness,'interview_inputs',None)
+        if inputs is not None and inputs.close() is False:
+            self.close_incomplete=True
+            logging.getLogger(__name__).warning(
+                'Career shutdown incomplete: interview work is still running; resources kept open.')
+            return False
+        self.close_incomplete=False
         if hasattr(self.harness,'close'):self.harness.close()
         if self._owns_execution:self.execution.close(wait=True)
+        return True

@@ -109,3 +109,52 @@ def test_stopping_one_kind_cancels_its_queued_jobs_and_leaves_other_kinds_runnin
     assert execution.inventory()['kinds']['a']['active'] == []
     assert execution.submit('b', 'z', lambda: 'ok').result(5) == 'ok'
     execution.close(wait=True)
+
+
+class InterviewHarness(Harness):
+    """A harness with a real InterviewQueue whose input run blocks on an Event."""
+
+    def __init__(self):
+        super().__init__()
+        self.events = []
+        self.interview_inputs = InterviewQueue(self)
+
+    def close(self):
+        self.interview_inputs.close()
+        self.events.append('resource_close')
+
+
+def test_interview_drain_timeout_keeps_resources_open_until_work_exits(database):
+    harness = InterviewHarness()
+    harness.repository = TaskRepository(database.session_factory)  # used by interview recovery
+    execution = ExecutionService()
+    service = CareerService(SimpleNamespace(database=database), None, harness=harness,
+                            model_factory=lambda: Model([]), start_alert_scheduler=False, execution=execution)
+    queue = harness.interview_inputs
+    queue.drain_timeout = 0.2  # short injected bound instead of 30 s
+    entered, release = threading.Event(), threading.Event()
+
+    def run(task_id):
+        entered.set()
+        assert release.wait(10)
+        harness.events.append('interview_exit')
+        with queue.lock:
+            queue.running.pop(task_id, None)
+
+    queue._run = run
+    queue.start('t1')
+    assert entered.wait(5)
+
+    started = time.monotonic()
+    assert service.close() is False              # drain timed out
+    assert time.monotonic() - started < 5
+    assert service.close_incomplete is True
+    assert 'resource_close' not in harness.events  # resources stay open while input runs
+    queue.start('t2')                              # no new work after close began
+    assert 't2' not in queue.running
+
+    release.set()
+    assert service.close() is True                 # second close completes the shutdown
+    assert harness.events == ['interview_exit', 'resource_close']
+    assert service.close_incomplete is False
+    execution.close(wait=True)

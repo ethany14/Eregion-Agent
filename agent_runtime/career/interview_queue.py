@@ -46,6 +46,7 @@ class InterviewQueue:
         self.lock=Lock();self.running={}
         self.feedback_running={}
         self.closed=False
+        self.drain_timeout=30  # seconds per kind; injectable for tests
         self.execution=None
         if execution is not None:self.bind(execution)
 
@@ -200,10 +201,14 @@ class InterviewQueue:
                 self.start(task_id)
 
     def close(self):
-        """Stop accepting inputs/feedback and drain in-flight work (bounded, as before)
-        so the harness can close its resources afterwards. Idempotent."""
+        """Stop accepting inputs/feedback and drain in-flight work so the harness can
+        close its resources afterwards. Returns False if work is still running after
+        the bounded wait; callers must then keep the resources open. Idempotent."""
         with self.lock:
             self.closed=True
-        if self.execution is not None:
-            for kind in ('interview_inputs','interview_feedback'):
-                self.execution.stop_kind(kind,timeout=30)
+        if self.execution is None:
+            return True
+        drained=True
+        for kind in ('interview_inputs','interview_feedback'):
+            drained=self.execution.stop_kind(kind,timeout=self.drain_timeout) and drained
+        return drained

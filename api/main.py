@@ -1,5 +1,6 @@
 """FastAPI application entry point."""
 
+import logging
 from contextlib import asynccontextmanager
 from collections.abc import Callable
 from typing import Any
@@ -91,7 +92,12 @@ def create_app(
         finally:
             career = getattr(application.state, 'career_agent', None)
             if career is not None:
-                await anyio.to_thread.run_sync(career.close)
+                # False means interview work outlived its drain wait and the career
+                # resources were deliberately kept open; retry once before the
+                # runtime (and database) close, otherwise leave them and say so.
+                if await anyio.to_thread.run_sync(career.close) is False and                         await anyio.to_thread.run_sync(career.close) is False:
+                    logging.getLogger(__name__).warning(
+                        "Career resources left open at shutdown: interview work did not finish.")
                 application.state.career_agent = None
             automation = getattr(application.state, "auto_apply", None)
             if automation is not None:
