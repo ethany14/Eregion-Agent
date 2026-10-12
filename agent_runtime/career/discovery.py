@@ -279,7 +279,17 @@ class JobDiscovery:
                 for key in ('jobs', 'errors', 'sources_checked', 'skipped_sources', 'board_outcomes'):
                     results[key].extend(item.get(key, []))
             from .alerts import job_key
-            results['jobs'] = list({job_key(j['url']): j for j in results['jobs']}.values())[:limit]
+            # A board can publish a posting URL that is not public HTTPS (http://, a port,
+            # credentials). Drop and count it; one bad URL must not fail the whole search.
+            keyed, invalid = {}, 0
+            for job in results['jobs']:
+                try:
+                    keyed.setdefault(job_key(job.get('url') or ''), job)
+                except ValueError:
+                    invalid += 1
+            if invalid:
+                results['dropped_invalid_urls'] = invalid
+            results['jobs'] = list(keyed.values())[:limit]
             results['directory_searched'] = [board_source(b) for b in boards[:5]]
             results['directory_remaining'] = max(0, len(boards) - 5)
             results['directory_matching'] = total

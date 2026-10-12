@@ -69,6 +69,9 @@ TOOLS = [
 ]
 from . import source_mode
 from .decisions import TOOL as DECIDE_JOB_TOOL
+
+# API-first: a directory result with fewer jobs than this gets one Treg LinkedIn supplement.
+TREG_SUPPLEMENT_BELOW = 3
 TOOLS.append(DECIDE_JOB_TOOL)
 
 
@@ -735,11 +738,26 @@ class CareerHarness:
                     if args.get('boards'): result['board_verification'] = 'unverified explicit tokens; directory verification not established'
 
             if blocked_hosts:result['excluded_blocked_hosts']=blocked_hosts
-            if api_first and use_directory and not result.get('jobs') and source_restriction!='no_linkedin':
+            # API-first: thin directory coverage (fewer than TREG_SUPPLEMENT_BELOW jobs) gets one
+            # Treg LinkedIn supplement per query/location per user turn, merged and deduped.
+            supplement_key=json.dumps([str(args['query']).strip().casefold(),str(args.get('location','')).strip().casefold()])
+            supplemented=list(health.get('treg_supplemented',[])) if health.get('user_turn_id')==turn else []
+            if (api_first and use_directory and len(result.get('jobs') or [])<TREG_SUPPLEMENT_BELOW
+                    and source_restriction!='no_linkedin' and supplement_key not in supplemented):
                 supplement=self._treg_search(task_id,state,args)
+                supplemented.append(supplement_key)
                 if supplement.get('jobs'):
-                    result['jobs']=supplement['jobs']
+                    result['jobs']=[*(result.get('jobs') or []),*supplement['jobs']]
                 result['treg_supplement']={k:v for k,v in supplement.items() if k!='jobs'}
+            # One malformed posting URL from a board must not fail the whole search.
+            valid=[]
+            for job in result.get('jobs') or []:
+                try:job_key(job.get('url') or '')
+                except ValueError:continue
+                valid.append(job)
+            if len(valid)!=len(result.get('jobs') or []):
+                result['dropped_invalid_urls']=len(result.get('jobs') or [])-len(valid)
+            result['jobs']=list({job_key(j['url']):j for j in valid}.values())
             jobs = result.get('jobs', [])
             for error in result.get('errors',[]):
                 source=error.get('source')
@@ -757,7 +775,7 @@ class CareerHarness:
             if use_directory:
                 progress={**progress,directory_key:list(dict.fromkeys([*searched,*result.get('directory_searched',[])]))}
             health={'revision':state['chat_revision'],'user_turn_id':turn,'sources':sources,'history':history,
-                    'directory_searched':progress}
+                    'directory_searched':progress,'treg_supplemented':supplemented}
             attempts[request_key]={'limit':args.get('limit',10),'result':result}
             def remember_search(s):
                 # Preserve navigation URLs but key storage by posting identity;
