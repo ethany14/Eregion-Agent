@@ -68,6 +68,26 @@ def test_body_refs_and_protected_facts():
 @pytest.mark.parametrize('case', ['r1','r2','r3','correct'])
 def test_stage2_b6_measurement(replay, career, monkeypatch, case):
     rows = []
+    byte_checks = []
+    if (all(os.getenv('JOB_AGENT_OPT_' + name, '0') != '1'
+            for name in ('SNAPSHOT_REFS','STABLE_TOOLS','PROMPT_TRIM'))
+            and os.getenv('JOB_AGENT_OPT_HISTORY_POLICY', 'current') == 'current'):
+        import agent_runtime.loop_engine as engine
+        legacy = types.ModuleType('legacy_request')
+        exec(subprocess.check_output(['git','show',BASE+':agent_runtime/request_context.py']).decode(), legacy.__dict__)
+        old_window = types.ModuleType('legacy_window')
+        exec(subprocess.check_output(['git','show',BASE+':agent_runtime/loop_context.py']).decode(), old_window.__dict__)
+        legacy.ConversationWindow = old_window.ConversationWindow
+        original_prepare = engine.prepare_request
+        def compare_request(prompt, tools, window, snapshot, archive, **kwargs):
+            expected, _ = legacy.prepare_request(prompt, tools, copy.deepcopy(window),
+                copy.deepcopy(snapshot), legacy.ContextArchive(copy.deepcopy(archive.values),
+                    copy.deepcopy(archive.reads), copy.deepcopy(archive.resources)), **kwargs)
+            actual = original_prepare(prompt, tools, window, snapshot, archive, **kwargs)
+            assert encoded([m.model_dump() for m in actual[0]]) == encoded([m.model_dump() for m in expected])
+            byte_checks.append(True)
+            return actual
+        monkeypatch.setattr(engine, 'prepare_request', compare_request)
     scoring_inputs = []
     handler = career.harness.analysis._fit_service._handler
     analyze = handler._analyze
@@ -97,7 +117,8 @@ def test_stage2_b6_measurement(replay, career, monkeypatch, case):
         target = Path(output); target.mkdir(parents=True, exist_ok=True)
         (target / (case+'.json')).write_text(json.dumps({'case':case,'requests':rows,
             'acceptance':result.acceptance,'status':result.state['status'],
-            'scoring_calls':result.scoring_calls, 'scoring_inputs':scoring_inputs}, indent=2, default=str), encoding='utf-8')
+            'scoring_calls':result.scoring_calls, 'scoring_inputs':scoring_inputs,
+            'fixed_base_byte_checks':len(byte_checks)}, indent=2, default=str), encoding='utf-8')
 
     assert all(r['orphan_free'] and r['latest_user_protected'] for r in rows)
     assert all(r.get('script_allowed', True) for r in rows)
