@@ -107,3 +107,26 @@ Prototype item 1 + 2 + 3 behind one flag (`JOB_AGENT_OPT_APPEND_ONLY`):
 Expected effect, an estimate to be verified: a similar or larger raw input, but a much larger cached share. For example, at 85% cached and a 0.1× cache price, the paid-input equivalent drops by roughly 4×.
 
 Keep the study's limits in mind: this is a reading of source code, not a benchmark of pi. Savings for our workload must be measured.
+
+## 6. Corrections after source review by Codex (2026-10-12)
+
+Codex re-read the same commit (`4270522473e677ddba7b093caa0064a3df51d459`). Claude verified each point below against the source. These corrections take precedence over §1–§5 where they conflict.
+
+| Original claim | Correction (verified) |
+|---|---|
+| Tool/system changes are appended as deltas, so "the cached prefix never moves" | Pi **stores** replayable deltas. Whether the **sent** request keeps its prefix depends on the provider adapter: `resolveTranscriptTools()` (`packages/ai/src/utils/transcript.ts`) sends the full current tool set when the provider does not support mid-conversation tool additions or when a tool is removed or redefined. Without mid-conversation system messages, the system state is merged back into the opening system prompt. **Check the final request, not the internal message list.** |
+| Send `prompt_cache_key = task_id` | In `openai-completions.ts`, `prompt_cache_key` is sent only for `api.openai.com` or for long retention with declared support; affinity headers only when `compat.sendSessionAffinityHeaders` is set. Pi would **not** send the key to an OpenAI-compatible endpoint like ours by default. Choose parameters by provider capability. Note: our provider already caches implicitly (P1b: 345,370 cached tokens with no key sent), so prefix stability alone may raise the cached share; whether a key helps needs a small paid probe. |
+| Cache-miss accounting "locates" cache problems | `cache-stats.ts` **estimates** misses: `min(previous prompt, current prompt) − cacheRead`, counted above 1,024 tokens, reset after compaction. It never compares actual request prefixes. For us, record the actual common-prefix length of consecutive requests, which parts changed (system / tools / history / state), the provider's cache read, and the estimated cost with unknowns. |
+| Add protection against executing tool calls from a length-truncated reply | **Already present:** `agent_runtime/model_output.py::output_problem()` rejects `length` / `max_tokens` / `max_output_tokens` replies before tools run. Not a new task. Context archive, complete tool-exchange protection, score caching and batch scoring also exist; improve them, don't rebuild. |
+| Pi's prompt is ~2–3K characters | That is the bare default. Project context files and the skills list are appended in full, so real requests are larger. Not a like-for-like comparison with our full prompt. |
+| Stop per-turn trimming; compact rarely | Pi's compaction also: cuts mid-turn with a separate prefix summary, never splits a tool call from its result, stores current system state with the compaction entry, rejects summaries truncated by the output limit, supports manual and overflow-recovery compaction, and spends model calls on summaries. **For us:** job identity, user constraints, score version, pending decisions and budgets stay program-owned and restorable; a model summary may describe exploration but is never the sole source of business state. |
+| One switch for append-only + larger window + cache key | Test separately so gains and failures can be attributed. |
+| "Parallel tools" | Pi runs a batch in parallel unless any tool declares sequential mode, keeps results in call order, and queues file mutations per file. For us: bounded concurrency for independent reads across sources/jobs; same-browser-session actions stay ordered; score / decision / material updates on one application keep version order; concurrent calls share the task budget. No sub-agents. |
+
+### Revised plan (replaces §5)
+
+1. **Measure the final request:** actual common-prefix length between consecutive requests, which part changed, provider cache read, and cost attribution with unknowns. Stage 0 already hashes system / tools / history prefix; add prefix length and the comparison with provider counters.
+2. **Stabilize per-task common parts:** prompt sections, tool definitions and serialization order. Validate cache parameters per provider capability (small paid probe: identical requests with and without a key).
+3. **Experiment: a small current state, versioned changes and stable history**, first for job search. The database stays authoritative, and restart recovery is preserved.
+4. **Experiment with compaction separately:** count summary cost; cover changed user conditions, job updates, cancellation and recovery.
+5. **Compare whole tasks against the baseline:** recommendation quality, calls, total cost and time. Cached share is a supporting metric only.
