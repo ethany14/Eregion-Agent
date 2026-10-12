@@ -181,7 +181,7 @@ class CareerHarness:
         if not verdict['complete']:
             return None  # not proven to be this complete JD: keep the existing read path
         return {'url':url,'title':candidate.get('title'),'company':candidate.get('company') or '',
-            'location':candidate.get('location') or '','description':call.body['markdown'],
+            'location':candidate.get('location') or '','description':verdict['description_text'],
             'source':'treg:crawl4ai.web.scrape','content_hash':verdict['content_hash']}
 
     def terminal_delivery(self,state):

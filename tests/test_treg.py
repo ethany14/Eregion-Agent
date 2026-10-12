@@ -230,3 +230,17 @@ def test_scrape_assessment_rejects_login_wall_short_text_and_wrong_job():
     assert not treg_jobs.assess_scrape(target, {'ok': True, 'markdown': other})['complete']
     closed = good + '\nNo longer accepting applications'
     assert treg_jobs.assess_scrape(target, {'ok': True, 'markdown': closed})['status'] == 'closed'
+
+
+def test_scrape_trims_other_jobs_and_counts_real_linkedin_links():
+    # Live P5: LinkedIn guest pages append "Similar jobs" / "People also viewed" (37 job links).
+    # The old single-job check never matched slugged links, so other jobs would have been scored.
+    target = {'title': 'Junior Data Analyst'}
+    body = ('Junior Data Analyst at Acme\n\n## Responsibilities\n' + 'Build dashboards. ' * 40 +
+            '\n## Requirements\n1-3 years of SQL. ' + 'Python. ' * 20)
+    others = ''.join(f'\n- [Senior Engineer](https://www.linkedin.com/jobs/view/senior-engineer-at-x-44{i:08d}?trk=a)'
+                     for i in range(30))
+    verdict = treg_jobs.assess_scrape(target, {'ok': True, 'markdown': body + '\n## Similar jobs' + others})
+    assert verdict['complete'] and verdict['trimmed_other_jobs'] > 0 and 'Senior Engineer' not in verdict['description_text']
+    flooded = treg_jobs.assess_scrape(target, {'ok': True, 'markdown': body + others})  # no heading to cut at
+    assert not flooded['checks']['single_job'] and not flooded['complete']

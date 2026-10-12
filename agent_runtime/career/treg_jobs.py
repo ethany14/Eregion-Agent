@@ -82,20 +82,34 @@ BLOCK = re.compile(r'sign in to (?:view|see)|join (?:now )?to see|log ?in to|cap
 SECTION = re.compile(r'responsibilit|requirement|qualification|what you.ll|about the role|you will|experience', re.I)
 
 
+OTHER_JOBS = re.compile(r'\n#{1,3}\s*(?:similar jobs|people also viewed|more searches|explore (?:top|collaborative)|'
+                        r'similar searches|explore more opportunities)', re.I)
+JOB_LINK = re.compile(r'/jobs/view/[^\s)\]]*?\d{8,12}')
+
+
+def posting_text(markdown):
+    """Cut a job page at the first list of OTHER jobs; those must never be scored as this JD."""
+    match = OTHER_JOBS.search(markdown or '')
+    return (markdown or '')[:match.start()] if match else (markdown or '')
+
+
 def assess_scrape(target, payload):
     """Judge whether a scrape is one complete, open job description for target."""
     payload = payload if isinstance(payload, dict) else {}
-    text = payload.get('markdown') or ''
+    raw = payload.get('markdown') or ''
+    text = posting_text(raw)
     checks = {'ok_flag': payload.get('ok') is True, 'length': len(text) >= 800,
               'sections': len(set(m.group(0).lower()[:6] for m in SECTION.finditer(text))) >= 2,
               'not_blocked': not BLOCK.search(text[:4000]),
               'title_bound': _title_overlap(target.get('title'), text[:6000]) >= 0.7,
-              'single_job': len(re.findall(r'/jobs/view/\d{8,12}', text)) <= 3}
+              # The page's own header/criteria may link back to itself; a list of other jobs may not.
+              'single_job': len(set(JOB_LINK.findall(text))) <= 3}
     closed = bool(re.search(r'no longer accepting applications|this job is no longer available|position (?:has been )?filled',
                             text, re.I))
     complete = all(checks.values()) and not closed
     return {'complete': complete, 'closed_signal': closed, 'checks': checks, 'text_len': len(text),
-            'content_hash': payload.get('content_hash') or hashlib.sha256(text.encode()).hexdigest(),
+            'raw_len': len(raw), 'trimmed_other_jobs': len(raw) - len(text), 'description_text': text if complete else None,
+            'content_hash': hashlib.sha256(text.encode()).hexdigest(),
             'cache': payload.get('cache'), 'engine': payload.get('engine'),
             'status': 'complete_jd' if complete else 'closed' if closed else 'blocked' if not checks['not_blocked']
                       else 'insufficient'}
