@@ -79,13 +79,20 @@ class TaskHost:
         if enabled('PROMPT_TRIM'):
             from agent_runtime.career.prompt import trim_prompt
             prompt = trim_prompt(prompt)
+        descriptions = {}
+        if hasattr(harness, 'api_first') and harness.api_first():
+            # One switch: prompt wording, tool descriptions and snapshot policy agree.
+            from agent_runtime.career import source_mode
+            prompt = source_mode.prompt_for(prompt, True)
+            descriptions = source_mode.tool_descriptions(True)
         if enabled('VERIFY_AND_SCORE') and any(t['function']['name'] == 'verify_and_score' for t in tools):
             from agent_runtime.career.workflows import RULE
             prompt += RULE
         stable = enabled('STABLE_TOOLS') and hasattr(harness, 'stable_tools')
         return Turn(prompt, snapshot, CONTROL_TOOLS + harness.stable_tools(state) if stable else controls + tools,
                     state['chat_revision'], allowed_tools=controls + tools if stable else None,
-                    batchable=frozenset(getattr(harness, 'batchable_tools', ())))
+                    batchable=frozenset(getattr(harness, 'batchable_tools', ())),
+                    tool_descriptions=descriptions)
 
     def invoke(self, messages, tools, turn):
         self.stage = 'model_request'

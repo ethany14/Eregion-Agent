@@ -67,6 +67,7 @@ TOOLS = [
     function('control_interview','Skip, end or resume an interview at the user\'s request. Cite the request message.',
         {'interview_id':TEXT,'action':{'type':'string','enum':['skip','end','resume']},'message_id':TEXT}),
 ]
+from . import source_mode
 from .decisions import TOOL as DECIDE_JOB_TOOL
 TOOLS.append(DECIDE_JOB_TOOL)
 
@@ -110,6 +111,11 @@ class CareerHarness:
             allowed=BROWSER_NAMES|{'search_jobs','screen_jobs','read_job','import_job','verify_and_score','list_jobs','inspect_job','score_job','score_jobs','recommend_job','decide_job'}
             tools=[t for t in tools if t['function']['name'] in allowed]
         return tools
+
+    def api_first(self):
+        """The single source-order switch for prompt, snapshot, tools and routing."""
+        cfg=self._treg_config()
+        return bool(cfg and cfg.api_first)
 
     def _treg_config(self):
         from .treg_config import TregConfigError, load
@@ -284,11 +290,7 @@ class CareerHarness:
         return {'candidate':saved.get('profile',{}),'resume_text':text[:40000],
             'search_recovery':search_view,
             **({'candidate_queue':candidate_view(state,search_view)} if candidate_batches() and search_view else {}),
-            **({'source_policy':{'api_first':True,'source_restriction':self._source_scope(state),
-                'instruction':'Search verified company-board APIs first (search_jobs uses the directory by default). '
-                    'A LinkedIn-only request uses the configured LinkedIn source, never other boards. Use the browser '
-                    'only for an explicit page check or missing/conflicting evidence; an already-open page does not '
-                    'require a browser read.'}} if (self._treg_config() and self._treg_config().api_first) else {}),
+            **source_mode.snapshot_policy(api_first:=self.api_first(),self._source_scope(state) if api_first else None),
             'known_results':known,
             'scheduled_search':recommendation,
             'recommended_jobs':state.get('recommendations',[]),

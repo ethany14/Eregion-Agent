@@ -36,6 +36,14 @@ class Turn:
     batchable: frozenset = frozenset()
     compatibility_tools: list = field(default_factory=list)
     allowed_tools: list | None = None
+    # Host-owned description overrides, applied last (after any slimming).
+    tool_descriptions: dict = field(default_factory=dict)
+
+
+def describe_tools(tools, descriptions):
+    """Copy tools whose description the host overrides; others pass through."""
+    return [{**t, 'function': {**t['function'], 'description': descriptions[t['function']['name']]}}
+            if t['function']['name'] in descriptions else t for t in tools]
 
 
 def validate_call(call, tools):
@@ -157,6 +165,8 @@ class AgentLoop:
                     turn.tools = slim_tools([t for t in turn.tools if t['function']['name'] != 'read_context'] + [READ_CONTEXT])
                 else:
                     turn.tools = [t for t in turn.tools if t['function']['name'] != 'read_context'] + ([] if restricted else [READ_CONTEXT])
+                if turn.tool_descriptions:
+                    turn.tools = describe_tools(turn.tools, turn.tool_descriptions)
                 messages, context_metrics = prepare_request(turn.prompt, turn.tools, self.context, snapshot,
                     self.archive, max_chars=self.request_chars, repair=repair)
                 self.runtime['context_metrics'] = context_metrics
