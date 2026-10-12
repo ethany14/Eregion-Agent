@@ -25,13 +25,13 @@ LIVE = pytest.mark.skipif(os.getenv('JOB_AGENT_LIVE_API_FIRST_B6') != '1',
                           reason='Explicit paid real-model + Treg API-first B6 business gate')
 
 # Model limits of the original B6 acceptance; Treg limits stay within the remaining
-# authorized Treg batch ($0.10 / 20 requests, of which 15 calls / $0.004 were used).
+# authorized Treg batch ($0.10 / 20 requests): 15 calls before R6, run-1 used 2, so 3 remain.
 FLAGS = {
     'JOB_AGENT_JOB_API_FIRST': '1',
     'JOB_AGENT_TREG_ENABLED': '1',
     'JOB_AGENT_TREG_SEARCH_PROVIDER': 'crawl4ai',
     'JOB_AGENT_TREG_CRAWL4AI_SCRAPE_ENABLED': '1',
-    'JOB_AGENT_TREG_MAX_ATTEMPTS': '5',
+    'JOB_AGENT_TREG_MAX_ATTEMPTS': '3',
     'JOB_AGENT_TREG_TASK_MAX_COST_USD': '0.05',
     'JOB_AGENT_TREG_CALL_MAX_COST_USD': '0.01',
     'JOB_AGENT_TASK_MAX_INPUT_TOKENS': '1000000',
