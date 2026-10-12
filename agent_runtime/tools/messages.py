@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any, Literal, Protocol
 from uuid import uuid4
 
-from pydantic import AliasChoices, Field, model_validator
+from pydantic import AliasChoices, Field, model_serializer, model_validator
 
 from agent_runtime.types import (
     RuntimeModel,
@@ -21,6 +21,17 @@ class NormalizedToolCall(RuntimeModel):
     )
     tool_name: str = Field(min_length=1)
     arguments: dict[str, Any] = Field(default_factory=dict)
+    # Set when the provider produced a call that must not run: malformed or
+    # non-object arguments, or a response truncated by its output limit.
+    invalid_reason: str | None = None
+
+    @model_serializer(mode="wrap")
+    def _omit_valid_marker(self, handler):
+        # Valid calls keep the pre-existing persisted shape and content hash.
+        data = handler(self)
+        if isinstance(data, dict) and data.get("invalid_reason") is None:
+            data.pop("invalid_reason", None)
+        return data
 
     @property
     def call_id(self) -> str:
@@ -63,6 +74,9 @@ class TokenUsage(RuntimeModel):
 class ToolModelResponse(RuntimeModel):
     message: AgentMessage
     usage: TokenUsage = Field(default_factory=TokenUsage)
+    # Provider stop reason ("stop", "tool_calls", "length", ...), None if unreported.
+    finish_reason: str | None = None
+    provider_metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class ToolCallStep(RuntimeModel):

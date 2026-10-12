@@ -194,6 +194,33 @@ def test_unknown_tool_and_invalid_arguments_return_safe_tool_messages(runtime):
     assert all("traceback" not in json.dumps(item).lower() for item in envelopes)
 
 
+def test_invalid_calls_are_answered_without_reaching_the_executor(runtime):
+    _, registry, tool, executor, context = runtime
+    executed = []
+    original = executor.execute
+    executor.execute = lambda request, ctx: executed.append(request) or original(request, ctx)
+    model = ScriptedModel([
+        response(calls=[
+            NormalizedToolCall(tool_call_id="cut", tool_name="echo",
+                arguments={"text": "partial"}, invalid_reason="truncated_response"),
+            NormalizedToolCall(tool_call_id="bad", tool_name="echo",
+                invalid_reason="malformed_arguments"),
+        ]),
+        response(calls=[call("retry", text="whole")]),
+        response("done"),
+    ])
+    outcome = ToolCallingLoop(model=model, registry=registry, executor=executor).run(
+        [AgentMessage(role="user", content="echo")], context)
+    assert outcome.status == ToolLoopStatus.COMPLETED
+    assert tool.calls == ["whole"]
+    assert [item.tool_name for item in executed] == ["echo"]
+    envelopes = [json.loads(item.content) for item in outcome.messages if item.role == "tool"]
+    assert [(e["tool_call_id"], e["error_code"]) for e in envelopes] == [
+        ("cut", "invalid_tool_arguments"), ("bad", "invalid_tool_arguments"),
+        ("retry", None)]
+    assert "output limit" in envelopes[0]["error_message"]
+
+
 def test_safe_failure_and_invalid_output_are_normalized(tmp_path):
     database = create_database(f"sqlite:///{(tmp_path / 'failures.sqlite').as_posix()}", create_schema_for_tests=True)
     try:

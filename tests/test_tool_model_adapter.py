@@ -98,8 +98,82 @@ def test_adapter_safely_normalizes_malformed_json_and_missing_name():
     ]})
     result = LangChainToolModelAdapter(FakeLangChainModel(response)).invoke([], schema())
     assert result.message.tool_calls[0].arguments == {}
+    assert result.message.tool_calls[0].invalid_reason == "malformed_arguments"
     assert result.message.tool_calls[1].tool_name == "__invalid_tool_call__"
     assert result.message.tool_calls[1].arguments == {}
+    assert result.message.tool_calls[1].invalid_reason == "missing_tool_name"
+
+
+def raw_response(raw_calls):
+    # A provider payload that bypasses LangChain's own argument parsing.
+    return SimpleNamespace(content="", tool_calls=[], invalid_tool_calls=[],
+        additional_kwargs={"tool_calls": raw_calls}, usage_metadata={},
+        response_metadata={}, id=None)
+
+
+@pytest.mark.parametrize("arguments", ["", "  ", None, {}])
+def test_adapter_keeps_legitimately_empty_arguments_valid(arguments):
+    response = raw_response(
+        [{"id": "c1", "function": {"name": "echo", "arguments": arguments}}])
+    call = LangChainToolModelAdapter(FakeLangChainModel(response)).invoke(
+        [], schema()).message.tool_calls[0]
+    assert call.arguments == {} and call.invalid_reason is None
+
+
+def test_adapter_marks_non_object_arguments_invalid():
+    response = raw_response(
+        [{"id": "c1", "function": {"name": "echo", "arguments": '["x"]'}}])
+    call = LangChainToolModelAdapter(FakeLangChainModel(response)).invoke(
+        [], schema()).message.tool_calls[0]
+    assert call.invalid_reason == "non_object_arguments"
+
+
+def test_adapter_keeps_langchain_invalid_tool_calls_as_invalid():
+    # LangChain parses the provider payload itself and moves broken JSON to
+    # invalid_tool_calls; it must not vanish or become an empty-argument call.
+    response = AIMessage(content="", tool_calls=[
+        {"name": "echo", "args": {"text": "ok"}, "id": "good", "type": "tool_call"}],
+        invalid_tool_calls=[{"name": "echo", "args": '{"text": "cut', "id": "bad",
+            "error": "bad json", "type": "invalid_tool_call"}])
+    calls = LangChainToolModelAdapter(FakeLangChainModel(response)).invoke(
+        [], schema()).message.tool_calls
+    assert [(c.tool_call_id, c.invalid_reason) for c in calls] == [
+        ("good", None), ("bad", "malformed_arguments")]
+    assert calls[1].arguments == {}
+
+
+def test_adapter_marks_every_call_of_a_truncated_response_invalid():
+    response = AIMessage(content="", tool_calls=[
+        {"name": "echo", "args": {"text": "partial"}, "id": "c1", "type": "tool_call"}],
+        response_metadata={"finish_reason": "length", "model_name": "m-1",
+            "token_usage": {"prompt_tokens": 3}})
+    result = LangChainToolModelAdapter(FakeLangChainModel(response)).invoke([], schema())
+    assert result.finish_reason == "length"
+    assert result.message.tool_calls[0].invalid_reason == "truncated_response"
+    assert result.message.tool_calls[0].arguments == {}
+    assert result.provider_metadata == {"model_name": "m-1", "finish_reason": "length"}
+
+
+def test_adapter_reports_finish_reason_for_normal_and_unreported_responses():
+    stop = AIMessage(content="done", response_metadata={"finish_reason": "stop"})
+    assert LangChainToolModelAdapter(FakeLangChainModel(stop)).invoke(
+        [], []).finish_reason == "stop"
+    anthropic = AIMessage(content="done", response_metadata={"stop_reason": "end_turn"})
+    assert LangChainToolModelAdapter(FakeLangChainModel(anthropic)).invoke(
+        [], []).finish_reason == "end_turn"
+    bare = AIMessage(content="done")
+    assert LangChainToolModelAdapter(FakeLangChainModel(bare)).invoke(
+        [], []).finish_reason is None
+
+
+def test_valid_calls_keep_the_previous_persisted_shape():
+    call = NormalizedToolCall(tool_call_id="c", tool_name="echo", arguments={"a": 1})
+    assert call.model_dump(mode="json") == {
+        "tool_call_id": "c", "tool_name": "echo", "arguments": {"a": 1}}
+    invalid = NormalizedToolCall(tool_call_id="c", tool_name="echo",
+        invalid_reason="malformed_arguments")
+    restored = NormalizedToolCall.model_validate(invalid.model_dump(mode="json"))
+    assert restored.invalid_reason == "malformed_arguments"
 
 
 def test_adapter_reads_usage_metadata_and_normalizes_provider_errors():
