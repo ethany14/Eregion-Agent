@@ -121,6 +121,68 @@ def board_api(url):
         host.endswith('.myworkdayjobs.com') and '/wday/cxs/' in parts.path)
 
 
+class BoardResponseCache:
+    """In-process, short-lived cache of whole-board API responses (P2a, off by default).
+
+    Keyed by the exact API URL (tenant included). Failures are never cached; concurrent
+    readers of one key share a single in-flight download; size and age are bounded.
+    Durable job evidence stays in the workspace; nothing here survives a restart.
+    """
+    TTL_SECONDS = 300
+    MAX_ENTRIES = 8
+    MAX_BYTES = 64 * 1024 * 1024
+
+    def __init__(self, *, clock=time.monotonic):
+        self.clock = clock
+        self._entries = {}
+        self._inflight = {}
+        self._lock = RLock()
+        self.stats = {'hits': 0, 'misses': 0, 'stored': 0, 'not_cached_oversize': 0}
+
+    @staticmethod
+    def applies(url):
+        return (os.getenv('JOB_AGENT_OPT_BOARD_RESPONSE_CACHE', '0') == '1'
+                and urlsplit(url).hostname == 'api.ashbyhq.com' and '/posting-api/job-board/' in urlsplit(url).path)
+
+    def get(self, url, fetch):
+        from concurrent.futures import Future
+        with self._lock:
+            entry = self._entries.get(url)
+            if entry and self.clock() - entry[0] <= self.TTL_SECONDS:
+                self.stats['hits'] += 1
+                return entry[1]
+            self._entries.pop(url, None)
+            waiting = self._inflight.get(url)
+            if waiting is None:
+                owner, waiting = True, Future()
+                self._inflight[url] = waiting
+                self.stats['misses'] += 1
+            else:
+                owner = False
+        if not owner:
+            return waiting.result()
+        try:
+            value = fetch()
+        except BaseException as exc:
+            waiting.set_exception(exc)  # failures are shared with waiters, never stored
+            raise
+        finally:
+            with self._lock:
+                self._inflight.pop(url, None)
+        waiting.set_result(value)
+        size = len(value[0].encode('utf-8', 'surrogatepass')) if isinstance(value[0], str) else 0
+        with self._lock:
+            if size > self.MAX_BYTES // 2:
+                self.stats['not_cached_oversize'] += 1
+                return value
+            self._entries[url] = (self.clock(), value, size)
+            while len(self._entries) > self.MAX_ENTRIES or sum(e[2] for e in self._entries.values()) > self.MAX_BYTES:
+                oldest = min(self._entries, key=lambda k: self._entries[k][0])
+                self._entries.pop(oldest)
+            self.stats['stored'] += 1
+        return value
+
+
 _search_cancelled = ContextVar('board_search_cancelled', default=lambda: False)
 
 
@@ -136,6 +198,7 @@ class JobDiscovery:
         self._hosts = {}
         self._api_slots = BoundedSemaphore(3)
         self.min_interval = max(0, float(os.getenv('JOB_AGENT_BOARD_MIN_INTERVAL_SECONDS', '0.25')))
+        self._board_cache = BoardResponseCache()
 
     @contextmanager
     def cancellation(self, cancelled):
@@ -230,6 +293,13 @@ class JobDiscovery:
             _search_cancelled.reset(token)
 
     def read(self,url,*,method='GET',json_body=None):
+        # P2a: a whole-board API response (Ashby lists every posting with its body) is
+        # reused for detail reads within a short TTL instead of being downloaded again.
+        if method == 'GET' and self._board_cache.applies(url):
+            return self._board_cache.get(url, lambda: self._read(url, method=method, json_body=json_body))
+        return self._read(url, method=method, json_body=json_body)
+
+    def _read(self,url,*,method='GET',json_body=None):
         # Validate each redirect before following it; refuse private DNS targets.
         client = self._get_client()
         for _ in range(5):
