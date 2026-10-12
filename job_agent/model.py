@@ -111,6 +111,7 @@ class ProviderCompatibleChatOpenAI(ChatOpenAI):
                     number += 1
                     try:
                         with provider_call(self.model_name, **sizes, **self._budget_sizes(messages, stop, wire)) as usage:
+                            usage.update(self._wire_metrics(messages, stop, wire))
                             result = ChatOpenAI._generate(model, messages, stop=stop, run_manager=run_manager, **wire)
                             record_chat_usage(usage, result)
                             return result
@@ -124,6 +125,16 @@ class ProviderCompatibleChatOpenAI(ChatOpenAI):
                         used = retry + 1
                         metadata = {'effective_reasoning': None, 'reasoning_escalation': False, 'reasoning_fallback': True}
                         break
+
+    def _wire_metrics(self, messages, stop, options):
+        """P1 measurement of the exact request body; never changes or blocks the request."""
+        try:
+            from agent_runtime.provider_usage import current_scope
+            from agent_runtime.wire_metrics import key_for, measure
+            payload = self._get_request_payload(messages, stop=stop, **options)
+            return measure(payload, key_for(current_scope(), self.model_name))
+        except Exception:
+            return {'wire_metrics_error': True}
 
     def _retry_options(self, options, retry):
         if not self._sdk_retries(): return options
@@ -168,6 +179,7 @@ class ProviderCompatibleChatOpenAI(ChatOpenAI):
                     try:
                         with provider_call(self.model_name, **model_metrics(messages, kwargs.get('tools', [])),
                                            **self._budget_sizes(messages, stop, wire)) as usage:
+                            usage.update(self._wire_metrics(messages, stop, wire))
                             result = await ChatOpenAI._agenerate(model, messages, stop=stop, run_manager=run_manager, **wire)
                             record_chat_usage(usage, result)
                             return result

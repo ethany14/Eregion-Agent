@@ -22,6 +22,32 @@ def percentiles(values):
     return {'count': len(values), 'p50': quantile(.5), 'p95': quantile(.95), 'max': values[-1]}
 
 
+def wire_summary(rows):
+    """P1: measured identical prefix of the final request vs provider-reported cache reads.
+
+    The prefix share is measured on serialized request text (characters), the cached share
+    is the provider's token counter; they are compared, never substituted for each other.
+    """
+    measured = [r for r in rows if r.get('wire_chars')]
+    known = [r for r in measured if r.get('wire_common_prefix_chars') is not None]
+    first_change = {}
+    for r in known:
+        where = r.get('wire_first_change', 'unknown')
+        where = 'message' if where.startswith('message:') else where
+        first_change[where] = first_change.get(where, 0) + 1
+    cached = [r for r in measured if isinstance(r.get('cached_input_tokens'), int) and r.get('input_tokens')]
+    return {'requests': len(measured), 'unknown_previous': len(measured) - len(known),
+            'prefix_share': (sum(r['wire_common_prefix_chars'] for r in known) / sum(r['wire_chars'] for r in known))
+                if known else None,
+            'first_change': first_change,
+            'provider_cached_share': (sum(r['cached_input_tokens'] for r in cached) / sum(r['input_tokens'] for r in cached))
+                if cached else None,
+            'provider_cache_unknown': len(measured) - len(cached),
+            # Pi-style heuristic, not a measured cache loss: tokens that could have been
+            # read from cache if the shared part of the previous prompt had been reused.
+            'heuristic_note': 'prefix_share is chars of identical leading request text; cached share is provider tokens'}
+
+
 def metrics(rows, *, include_groups=True):
     parts = [r['context_metrics']['request_parts_chars'] for r in rows
              if r.get('context_metrics', {}).get('request_parts_chars') is not None]
@@ -82,6 +108,7 @@ def metrics(rows, *, include_groups=True):
         k: v / transitions['pairs'] if transitions['pairs'] else None
         for k, v in transitions.items() if k != 'pairs'}}
     result['persistent_evicted_groups'] = sum(r.get('context_metrics', {}).get('persistent_groups_evicted', 0) for r in rows)
+    result['wire'] = wire_summary(rows)
     if include_groups:
         group_rows = [{**r, 'context_metrics': {**r['context_metrics'],
             'history_prefix_hash': r['context_metrics']['history_group_hash'],
