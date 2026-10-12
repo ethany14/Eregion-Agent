@@ -268,6 +268,11 @@ class SharedPackModel:
         context = compact_json_context(context)
         return invoke_structured(shared_model(), ApplicationAnswer, _ANSWER_SYSTEM + context_instruction(context), context)
 
+    def revise_patch(self, context: str):
+        from .patches import MaterialPatch, PATCH_SYSTEM
+        from job_agent.model import invoke_structured
+        return invoke_structured(shared_model(), MaterialPatch, _COVER_SYSTEM + chr(10) + PATCH_SYSTEM, context)
+
     def revise_blocks(self, artifact_type: str, context: str) -> CoverLetter | ApplicationAnswer:
         schema = CoverLetter if artifact_type == "cover_letter" else ApplicationAnswer
         instruction = (_COVER_SYSTEM if artifact_type == "cover_letter" else _ANSWER_SYSTEM) + "\n" + _REVISE_SYSTEM
@@ -604,6 +609,25 @@ class ApplicationPackWorkflow:
         with _pack_write_lock:
             return getattr(self._packs, method)(*args, **kwargs)
 
+    def _patched_revision(self, pack_id, item, current, context):
+        """P7: merge block patches for a cover-letter revision, or None to run the full revision."""
+        from .patches import PatchRejected, apply, blocks_for_context, enabled
+        if not enabled() or item.artifact_type != 'cover_letter' or item.status != ItemStatus.NEEDS_REVISION                 or not current or not hasattr(self._model, 'revise_patch'):
+            return None
+        snapshot = self._packs.snapshot(pack_id)
+        patch_context = context + chr(10) + 'Current blocks (data): ' + json.dumps(blocks_for_context(current), ensure_ascii=False)
+        try:
+            patch = self._measured('revision_patch', item, lambda: self._model.revise_patch(patch_context))
+            merged = apply(current, patch, evidence_ids=[e.evidence_id for e in snapshot.items],
+                           evidence_version_ids=[e.evidence_version_id for e in snapshot.items])
+        except PatchRejected as exc:
+            logger.info('Material patch rejected: pack=%s item=%s reason=%s', pack_id, item.pack_item_id, exc)
+            return None
+        except Exception as exc:  # provider/schema failure: fall back once to the full revision
+            logger.info('Material patch failed: pack=%s item=%s type=%s', pack_id, item.pack_item_id, type(exc).__name__)
+            return None
+        return CoverLetter.model_validate(merged)
+
     def continue_item(self, pack_id: str, item_id: str) -> ApplicationPackItem:
         pack = self.refresh_staleness(pack_id)
         if pack.status == PackStatus.STALE: raise PackConflictError("Pack inputs changed; create a new version.")
@@ -631,7 +655,9 @@ class ApplicationPackWorkflow:
                         context = self._context(pack_id, item)
                         if revising:
                             context = self._revision_context(pack_id, item, current)
-                            result = self._measured('revision', item, lambda: self._model.revise_blocks(item.artifact_type, context))
+                            result = self._patched_revision(pack_id, item, current, context)
+                            if result is None:
+                                result = self._measured('revision', item, lambda: self._model.revise_blocks(item.artifact_type, context))
                         else:
                             result = self._measured("generation", item, lambda: self._model.cover_letter(context) if item.artifact_type == "cover_letter" else self._model.application_answer(context))
                         content = result.model_dump(mode="json")

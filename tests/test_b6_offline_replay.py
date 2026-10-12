@@ -300,6 +300,13 @@ def replay(offline_guard, career, frozen_web, monkeypatch):
             else:
                 raise AssertionError(f'B6 replay did not settle: {state}')
             provider_usage = UsageLedger(service.repository.sessions).summary(task_id=task_id)
+            attempt_rows = []
+            if model is None:  # paid lane: keep per-attempt rows for the live report
+                from sqlalchemy import select
+                from agent_runtime.provider_usage import ProviderUsageRow
+                with service.repository.sessions() as db:
+                    attempt_rows = [json.loads(r.details_json) for r in db.scalars(
+                        select(ProviderUsageRow).where(ProviderUsageRow.task_id == task_id))]
             if model:
                 assert model.failures == []
                 assert provider_usage['calls'] == 0
@@ -322,7 +329,7 @@ def replay(offline_guard, career, frozen_web, monkeypatch):
                 'final': next((m['text'] for m in reversed(state['messages'])
                     if m['role'] == 'assistant'), ''),
                 'usage': model.usage() if model else provider_usage,
-                'provider_usage': provider_usage}
+                'provider_usage': provider_usage, 'attempt_rows': attempt_rows}
             return SimpleNamespace(state=state, summary=summary, model=model,
                 acceptance=evaluate_search(summary, 'analyst'), discovery=discovery,
                 browser=browser, scoring_calls=scoring_calls)
@@ -457,5 +464,16 @@ def test_b6_recorded_blocked_and_aggregator_outcomes(offline_guard, frozen_web):
 def test_b6_frozen_web_with_configured_model(replay):
     from agent_runtime.task_loop import TaskModel
     result = replay('correct', model_factory=TaskModel, timeout=600)
+    output = os.getenv('OPT_LIVE_OUTPUT')
+    if output:
+        from evals.opt_report import wire_summary
+        target = Path(output)
+        target.mkdir(parents=True, exist_ok=True)
+        actions = [a.get('tool') for a in result.state.get('actions', [])]
+        (target / 'result.json').write_text(json.dumps({'status': result.state['status'], 'decisions': result.state['model_calls'],
+            'error': result.summary['error'], 'acceptance': result.acceptance, 'provider_usage': result.summary['provider_usage'],
+            'wire': wire_summary(result.summary['attempt_rows']), 'actions': actions,
+            'flags': {k: v for k, v in os.environ.items() if k.startswith('JOB_AGENT_OPT_')}}, indent=1, default=str),
+            encoding='utf-8')
     assert result.state['status'] == 'completed'
     assert result.acceptance['status'] == 'passed', result.acceptance
