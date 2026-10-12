@@ -9,3 +9,15 @@ The inherited implementation only bound paragraph text. This continuation additi
 Validation: P7 + application pack + frozen B6: **52 passed, 1 skipped** (paid router opt-in), 63.28 s. Initial test execution was blocked by Python 3.13 owner-only temporary-directory ACLs; `scripts/pytest_workspace.py` uses inherited Windows ACLs for scratch directory creation only, leaving conftest isolation and assertions intact. A first executable run exposed a test comparison of JSON key ordering; comparison now canonicalizes metadata while preserving every text byte.
 
 L3 runner: `tests/test_integrated_p8_material_live.py`, 80K input / 6 provider attempts per variant; complete provider accounting including fallback, same synthetic evidence and repair target, human style review explicitly pending. Writer reasoning unchanged. Live network was unavailable at L1, so L3 was not attempted. Rollback: set the switch to 0; retain artifacts, versions and usage records. Application-answer patches are deferred; this first experiment covers cover letters only.
+
+## Addendum: unified loop R3 / M3 (2026-10-12)
+
+The r1 L3 full sample (`L3-full-r1`, `needs_revision`) is kept unchanged. It was diagnosed offline in [`unified-loop-m3-validation.md`](unified-loop-m3-validation.md):
+
+- **Paragraph 2** failed only because of the old live-fixture verifier wiring (fixed in R1).
+- **Paragraph 1** was a writer-instructed sentence stating the employer's requirement. The verifier misread it as a candidate claim.
+- **Verifier fix (`269427a`, `53a3c86`):** such a sentence is exempt only when the job text positively states the exact requirement span, with no negation and no preferred/optional qualifier in the sentence or its heading. Candidate claims are as strict as before.
+- **Offline result:** 103 passed / 4 paid skips at `53a3c86`; full suite green at `53a3c86`.
+- **Real re-check (one full node, 80K / 6 cap):** **not run**. It was blocked pending the user's explicit confirmation of the paid call.
+- **Still not run:** the patch variant and human style review.
+- **Defaults:** `JOB_AGENT_OPT_MATERIAL_PATCHES` stays `0`.
