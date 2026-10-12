@@ -3,7 +3,7 @@
 Plan: [`claude-unified-execution-plan-20261012.md`](../specs/claude-unified-execution-plan-20261012.md); migration rules: [`unified-loop-migration-plan-20261012.md`](../specs/unified-loop-migration-plan-20261012.md). Executor: Claude, with review by Codex (supervision notes M1-EVIDENCE-001, M3-GROUNDING-001, M45-SHUTDOWN-001, M6-COVERAGE-001, all addressed below).
 
 **Status.**
-- **Migration stages M1–M7:** done in code and validated offline.
+- **Migration stages M1–M7:** done in code and **accepted offline**: final full suite green at `10a07ae`.
 - **Not done:**
   - real-database dry-run and deployment (not authorized);
   - human style review of materials;
@@ -58,14 +58,18 @@ The structure is pinned by `tests/test_unified_architecture.py`, which inspects 
 | M6 | [`unified-loop-m6-validation.md`](unified-loop-m6-validation.md) | Identity mapping; coverage dry-run with independent expectation, truncation and omission counterexamples, interview sample, WAL-safe snapshot |
 | M7 | this report | Legacy decision paths removed; AST architecture test |
 
-**Final single-version full suite: NOT YET ACCEPTED.**
-- **The `fc5dc79` run hung.** It stopped at 503 results (about 20 %) in `test_career_flow.py::test_discovery_score_documents_application_and_interview_share_one_task`: process alive, CPU flat, no log growth for more than 25 min.
-- **Diagnosis from the read-only process check plus an isolated single-test reproduction with `faulthandler_timeout`:** a self-deadlock in `InterviewQueue.start_feedback` → `_execution()` → `bind()`. A non-reentrant lock was taken twice. It was introduced by `9d2f159` and fixed in `e5d6d69` (`RLock` plus a regression test that fails with the old lock). Dump: [`hang-diagnosis-isolated-fc5dc79.log`](../benchmarks/unified-loop-final-20261012/hang-diagnosis-isolated-fc5dc79.log).
-- **The hung process was left running for review,** not stopped automatically. Its partial log is kept.
-- **Next:**
-  1. stop the hung run once approved;
-  2. run one clean full suite at `e5d6d69` (or later) with no edits during the run;
-  3. sign off only if it passes.
+**Final single-version full suite: PASSED.**
+
+- **Version:** HEAD `10a07ae` (code identical to `e5d6d69`; only docs after it), recorded in [`full-suite-final-HEAD.txt`](../benchmarks/unified-loop-final-20261012/full-suite-final-HEAD.txt). No implementation or test file was edited during the run.
+- **Command** ([`full-suite-final-command.txt`](../benchmarks/unified-loop-final-20261012/full-suite-final-command.txt)): `.venv/Scripts/python.exe -m pytest -q -p no:cacheprovider -o faulthandler_timeout=600 tests --basetemp=<scratchpad>/final-full-2 --junitxml=…/full-suite-final.xml`. Offline, no live variables, no paid calls.
+- **Result:** **2242 passed / 134 skipped / 16 subtests, 0 failed, 0 errors** in 644 s. The XML agrees: tests 2392, failures 0, errors 0, skipped 134. No stack dump fired.
+- **Raw output:** [`full-suite-final.xml`](../benchmarks/unified-loop-final-20261012/full-suite-final.xml) (sha256 `1325a304…2a93`) and [`full-suite-final.log`](../benchmarks/unified-loop-final-20261012/full-suite-final.log) (sha256 `9ec16268…e7c5`).
+- **Count:** lower than M3's 2339 because M7 removed the doubled `legacy` variant of the 8 Session modules (116 tests), offset by the tests added in M4–M7.
+
+**History of this gate:**
+- The `fc5dc79` run hung at 20 %: a self-deadlock in `InterviewQueue`, introduced by `9d2f159` and fixed in `e5d6d69`.
+- With the user's delegated approval, that process tree was re-verified (command line, parent / child, start time) and stopped.
+- Its partial log is kept unchanged: [`full-suite-fc5dc79.log`](../benchmarks/unified-loop-final-20261012/full-suite-fc5dc79.log), with a committed copy `full-suite-fc5dc79-HUNG-partial.log` (sha256 `884be032…d3d2`). The isolated dump is in `hang-diagnosis-isolated-fc5dc79.log`.
 
 ## In-flight tasks and deployment to-dos (not authorized here)
 

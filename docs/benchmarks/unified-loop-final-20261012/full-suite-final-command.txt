@@ -1,0 +1,1 @@
+.venv/Scripts/python.exe -m pytest -q -p no:cacheprovider -o faulthandler_timeout=600 tests --basetemp=<scratchpad>/final-full-2 --junitxml=docs/benchmarks/unified-loop-final-20261012/full-suite-final.xml
