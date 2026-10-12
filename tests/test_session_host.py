@@ -66,3 +66,32 @@ def test_in_flight_sessions_are_listed_for_registration(runtime, monkeypatch):
     assert outcome.state.status == SessionStatus.AWAITING_TOOL_APPROVAL
     service.create_session(session_id='idle')
     assert session_host.in_flight_session_ids(sessions) == ['waiting']
+
+
+def test_two_concurrent_requests_on_one_session_decide_once(runtime, monkeypatch):
+    import threading
+    from agent_runtime.sessions.errors import SessionClaimConflictError
+    monkeypatch.delenv('JOB_AGENT_SESSION_LEGACY_DRAIN', raising=False)
+    _, sessions, tool_calls = runtime
+    entered, release = threading.Event(), threading.Event()
+
+    class BlockingModel(ScriptedModel):
+        def invoke(self, messages, tools):
+            entered.set()
+            assert release.wait(5)
+            return super().invoke(messages, tools)
+
+    model = BlockingModel([response('assistant-1', 'done')])
+    service = coordinator(sessions, tool_calls, model, RecordingTool())
+    state = service.create_session(session_id='race', allowed_tools=frozenset({'read'}))
+    results = {}
+    first = threading.Thread(target=lambda: results.setdefault('first', service.submit_user_message(
+        'race', user(), expected_version=state.version)))
+    first.start()
+    assert entered.wait(5)
+    with pytest.raises(SessionClaimConflictError):
+        service.continue_session('race')
+    release.set()
+    first.join(5)
+    assert results['first'].final_text == 'done'
+    assert len(model.calls) == 1
