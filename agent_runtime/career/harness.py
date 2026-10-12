@@ -190,7 +190,12 @@ class CareerHarness:
             'recent_outcomes':[{'tool':h['tool'],**{k:h.get('result',{})[k] for k in
                 ('no_new_evidence','error','error_code','blocked','url','next') if isinstance(h.get('result'),dict) and k in h['result']}}
                 for h in state.get('history',[])[-4:]],
-            'instruction':'These IDs index live saved results. Scored is not recommended. Every scored job needs an outcome: decision_status pending means undecided; searching for more waits until pending jobs are decided. For scored_not_recommended, decide whether the actual vacancy meets requested role/location/seniority: call recommend_job with full caveats if eligible, or decide_job with the specific exclusion or the missing evidence. Low skill fit alone does not prohibit a disclosed recommendation. Use exact qualification_evidence rather than guessing missing years. Never auto-recommend unverified/ineligible jobs. Final search results include each read/scored URL and actual score even if not recommended.'}
+            'instruction':'Saved results by ID; scored is not recommended. Every scored job needs an outcome (decision_status): '
+                'recommend_job with caveats if it meets the requested role/location/seniority, or decide_job with the specific '
+                'exclusion or missing evidence; searching waits while any is pending. A low skill score alone does not prohibit '
+                'a disclosed recommendation. Use exact qualification_evidence; never guess years or auto-recommend unverified/'
+                'ineligible jobs. Final results list each read/scored URL and actual score.'}
+
         from .candidate_health import active_rejections
         known['excluded_candidates']=active_rejections(state)
         return {'candidate':saved.get('profile',{}),'resume_text':text[:40000],

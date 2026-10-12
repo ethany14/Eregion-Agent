@@ -7,10 +7,9 @@ a changed score or a new user request reopens it.
 from agent_runtime.task_loop import TEXT, function
 
 APP = {'application_id': TEXT}
+# Kept short: it is sent on every request. The rules live in known_results.instruction.
 TOOL = function('decide_job',
-    'Record the outcome for a scored job you are not recommending now. exclude: name the unmet user '
-    'condition, qualification evidence or fit judgement (a low skill score alone is not an unmet hard '
-    'condition). needs_evidence: say what is missing and how it could be verified. Recommend with recommend_job.',
+    'Outcome for a scored job not recommended: exclude (specific unmet condition) or needs_evidence (what is missing).',
     {**APP, 'decision': {'type': 'string', 'enum': ['exclude', 'needs_evidence']}, 'reason': TEXT, 'missing': TEXT},
     ['application_id', 'decision', 'reason'])
 DISCOVERY = {'search_jobs', 'screen_jobs'}
