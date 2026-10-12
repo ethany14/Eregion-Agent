@@ -234,3 +234,24 @@ def test_refresh_empty_board_certifies_zero_without_old_coverage():
     assert report[0]['status']=='verified'
     assert directory.select_boards('data analyst','New York, NY',entries=rows)==([],[])
     d.close()
+
+
+
+def test_board_search_cancellation_check_is_throttled(career):
+    # Review: the cancellation probe loaded the whole task state once per downloaded
+    # chunk; a large board response meant hundreds of repository reads.
+    from uuid import uuid4
+    from agent_runtime.career.discovery import JobDiscovery
+    c = career
+    class Discovery(JobDiscovery):
+        def search_directory(self, query, location='', limit=10, *, cancelled, **_):
+            for _ in range(300):
+                assert cancelled() is False
+            return {'jobs': [], 'errors': [], 'sources_checked': [], 'skipped_sources': [], 'board_outcomes': []}
+    c.harness.discovery = Discovery()
+    reads = []
+    original = c.repository.get
+    c.repository.get = lambda task_id: reads.append(task_id) or original(task_id)
+    c.harness.execute(c.state['task_id'], 'search_jobs',
+        {'query': 'junior data analyst', 'location': 'New York, NY', 'use_directory': True}, call_id=str(uuid4()))
+    assert len(reads) < 30  # was ~300 polls -> ~300 full state loads

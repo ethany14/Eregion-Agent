@@ -559,9 +559,18 @@ class CareerHarness:
                 return {**previous['result'],'no_new_evidence':True,
                     'progress_feedback':'This search/source configuration already returned this list in the current user turn. No HTTP repeated. Verify a healthy observed posting, or discover a genuinely different query/source. Cached snippets are not verified vacancies.'}
             revision = state['chat_revision']
+            # Polled per downloaded chunk and limiter wait; loading the task state each
+            # time would cost hundreds of DB reads per large board. Re-check at most 4x/s.
+            checked = {'at': float('-inf'), 'value': False}
             def cancelled():
+                import time as _time
+                if checked['value'] or _time.monotonic() - checked['at'] < .25:
+                    return checked['value']
                 current = self.repository.get(task_id)
-                return current['chat_revision'] != revision or current.get('pause_requested') or current['status'] in {'cancelled','completed'}
+                checked['at'] = _time.monotonic()
+                checked['value'] = bool(current['chat_revision'] != revision or current.get('pause_requested')
+                                        or current['status'] in {'cancelled','completed'})
+                return checked['value']
             from contextlib import nullcontext
             scope = self.discovery.cancellation(cancelled) if isinstance(self.discovery, JobDiscovery) else nullcontext()
             with scope:
