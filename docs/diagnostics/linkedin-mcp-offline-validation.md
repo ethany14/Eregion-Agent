@@ -2,7 +2,10 @@
 
 **T0: PASSED (offline).** No real model or account request was made; the upstream package was not installed. Contract: [`linkedin-mcp-contract.md`](linkedin-mcp-contract.md).
 
-Tests: `tests/test_linkedin_mcp_t0.py` (11), run with the existing MCP suite `tests/test_mcp_app.py`: **18 passed** at `b2bd48b`. Raw output: [`t0-offline.xml`](../benchmarks/linkedin-mcp-20261012/t0-offline.xml) / [`t0-offline.log`](../benchmarks/linkedin-mcp-20261012/t0-offline.log).
+Tests: `tests/test_linkedin_mcp_t0.py`, run with the existing MCP suite `tests/test_mcp_app.py`.
+
+- **First version** (`b2bd48b`, 11 T0 tests): 18 passed. Raw output: [`t0-offline.xml`](../benchmarks/linkedin-mcp-20261012/t0-offline.xml) / [`t0-offline.log`](../benchmarks/linkedin-mcp-20261012/t0-offline.log).
+- **Review R7-CONTRACT-001** found that `details()` treated any non-empty section as a complete JD. It was fixed in `c31e0fe` with 6 counterexamples plus a control. `test_linkedin_mcp_t0.py` at that version: **18 passed**; raw output in `t0-offline-r7fix.*`.
 
 | T0 requirement | Test |
 |---|---|
@@ -12,6 +15,7 @@ Tests: `tests/test_linkedin_mcp_t0.py` (11), run with the existing MCP suite `te
 | No match vs partial | `test_no_match_is_empty_not_a_failure_and_partial_is_flagged` |
 | Missing filter not treated as satisfied | `test_unsupported_filter_is_reported_as_not_applied` |
 | Missing JD / closed never complete | `test_details_missing_description_and_closed_are_never_complete` |
+| Only this job's own `job_posting`, no `job_posting` error, URL bound to the job id | `test_other_sections_or_failures_never_make_a_complete_jd` (6 cases), `test_an_unrelated_section_error_does_not_block_a_complete_posting` |
 | Apply entry only for external postings | `test_apply_url_only_for_external_postings` |
 | Rate limit / login challenge stop the source, no channel switch | `test_rate_limit_or_login_challenge_stops_the_source` |
 | Cancel / timeout: no next call until confirmed | `test_timeout_blocks_the_next_call_until_cancellation_is_confirmed` |
