@@ -113,6 +113,14 @@ def board_source(board):
     return f'ats:{platform}:{company}'
 
 
+def board_api(url):
+    """Public ATS listing APIs (JSON); not arbitrary pages on those vendors."""
+    parts = urlsplit(url)
+    host = parts.hostname or ''
+    return host in {'boards-api.greenhouse.io', 'api.lever.co', 'api.eu.lever.co', 'api.ashbyhq.com'} or (
+        host.endswith('.myworkdayjobs.com') and '/wday/cxs/' in parts.path)
+
+
 _search_cancelled = ContextVar('board_search_cancelled', default=lambda: False)
 
 
@@ -155,9 +163,7 @@ class JobDiscovery:
     @contextmanager
     def _api_limit(self, url):
         host = urlsplit(url).hostname or ''
-        api = host in {'boards-api.greenhouse.io', 'api.lever.co', 'api.ashbyhq.com'} or (
-            host.endswith('.myworkdayjobs.com') and '/wday/cxs/' in urlsplit(url).path)
-        if not api:
+        if not board_api(url):
             yield
             return
         cancelled = _search_cancelled.get()
@@ -228,7 +234,9 @@ class JobDiscovery:
                 for chunk in response.iter_bytes():
                     if _search_cancelled.get()(): raise DiscoveryCancelled("Board search cancelled.")
                     total += len(chunk)
-                    if total>2_000_000:raise ValueError('This page is too large. Read a specific job page instead.')
+                    # Board APIs return every listing (Ashby includes full descriptions, so large
+                    # employers exceed 2 MB); ordinary pages keep the 2 MB cap.
+                    if total>(40_000_000 if board_api(url) else 2_000_000):raise ValueError('This page is too large. Read a specific job page instead.')
                     chunks.append(chunk)
                 body=b''.join(chunks).decode(response.encoding or 'utf-8',errors='replace')
                 if re.search(r'<title[^>]*>\s*(?:just a moment|access denied|sign in|log in)|/cdn-cgi/challenge-platform/|'
