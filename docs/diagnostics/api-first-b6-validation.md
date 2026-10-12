@@ -59,4 +59,34 @@ Evidence: [`run-1/`](../benchmarks/api-first-b6-20261012/run-1/) (`invocation.js
 
 Offline after the fixes: source suites 212 passed / 1 skipped; directory / P3 / career 75 passed / 1 skipped.
 
-RUN2
+## Run-2 (`afa9b1f`, Treg attempts capped at the remaining 3): FAILED
+
+Evidence: [`run-2/`](../benchmarks/api-first-b6-20261012/run-2/), [`run-2.xml`](../benchmarks/api-first-b6-20261012/run-2.xml), [`run-2.log`](../benchmarks/api-first-b6-20261012/run-2.log).
+
+| | |
+|---|---|
+| Result | `completed` cleanly in 58 main calls / 600 s with an honest no-match report. Acceptance failure: `fewer_than_two_verified_scored_qualifying_recommendations` (0 qualified, 0 imported). Loop, budget, usage, no-application and no-schedule checks passed |
+| Model usage | 58 provider attempts, all completed, 0 retries, 0 unknown; 674,855 input / 40,437 output (within 1M input / 60 attempts) |
+| Treg | 3 operations: 1 Crawl4AI LinkedIn search ($0.00045) + 2 scrapes ($0.00015 each). All succeeded, $0.00075 confirmed, 0 unknown. **The authorized Treg batch is now used up: 20 / 20 requests, $0.00505 of $0.10** |
+| Agent's report | Directory: 31 boards checked, 3 postings read. None was a junior NYC role (CX Data Analyst; NYT Senior Analyst; Stripe Data Analyst, NYC with no junior evidence). LinkedIn leads (e.g. Associate Data Analyst at Research Foundation CUNY) were found but not verified: `browser:www.linkedin.com` was blocked (HTTP error) |
+
+**Offline attribution:**
+
+1. **The fixes work.** The thin directory now triggers the Treg LinkedIn supplement (10 LinkedIn ids in state), and no search failed on invalid URLs.
+2. **The LinkedIn JDs could not be read.**
+   - Three LinkedIn postings were attempted. The 2 paid scrapes returned HTTP 200 but were not accepted as a complete matching JD, so the read fell back to plain HTTP. The third exceeded the Treg attempt cap and fell back to plain HTTP too, which LinkedIn blocks.
+   - **Why the scrapes were rejected cannot be determined from the saved evidence:** the verdict was not stored. A Treg idempotent replay would return it at $0 but is a request beyond the authorized batch, so it was not made.
+   - Fixed for the future in `a599ca3`: every paid scrape now records `status`, `failed_checks`, length and `operation_id` in task state (`treg_scrape_verdicts`). Test: `test_every_paid_scrape_records_its_verdict`.
+3. **Free-board coverage is thin** for "junior data analyst, New York": in both runs the directory surfaced no junior NYC posting. Qualification rules were not relaxed.
+4. **Efficiency note:** 13 of the last 24 actions were `read_context`. It is within caps but expensive (675K input). To review in R8 / R9, without changing evaluator thresholds.
+
+## Status: R6 business gate FAILED (2 bounded samples); group stopped
+
+- The gate needs at least 2 qualifying recommendations; both samples produced 0. This is **not** reported as passed, and the old browser-first failure is unchanged.
+- **Blocking on budget:** another live sample needs Treg budget beyond the exhausted batch, at least about 1 search plus N scrapes, roughly $0.0005–$0.002 per sample at observed prices. Without new Treg budget, a run could only use the free boards, which surfaced no qualifying NYC junior role in two runs. That needs the user's decision.
+- **Possible next levers,** none of them threshold changes:
+  - a Treg scrape verdict replay or re-scrape once budget exists, to fix whatever rejected the LinkedIn JDs;
+  - LinkedIn MCP for JD reading (R7, which needs an explicit account / login authorization);
+  - widening the board directory for NYC data roles (free public GETs).
+
+Total R6 live spend: model 85 attempts, 904,964 input / 55,463 output (dollar cost unknown); Treg 5 operations, $0.00105 confirmed, 0 unknown.
