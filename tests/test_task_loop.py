@@ -66,6 +66,20 @@ def test_reasoning_blocks_are_not_public_text_and_normal_analysis_is_allowed():
     assert output_problem(message) is None
 
 
+@pytest.mark.parametrize('metadata',[{'finish_reason':'length'},{'stop_reason':'max_tokens'},
+    {'finish_reason':'max_output_tokens'}])
+def test_truncated_tool_call_is_rejected_for_either_metadata_key(metadata):
+    message=AIMessage(content='',tool_calls=[{'id':'c1','name':'search_jobs','args':{'query':'data'}}],
+        response_metadata=metadata)
+    assert output_problem(message) == 'incomplete_response'
+
+
+def test_broken_tool_json_is_rejected_not_run_with_empty_arguments():
+    message=AIMessage(content='',invalid_tool_calls=[{'id':'c1','name':'search_jobs','args':'{"query":',
+        'error':'bad json','type':'invalid_tool_call'}])
+    assert output_problem(message) == 'invalid_tool_call'
+
+
 @pytest.mark.parametrize('enabled,revoked',[(True,False),(False,False),(True,True)])
 def test_visual_input_is_ephemeral_and_respects_revocation(database,enabled,revoked):
     import base64

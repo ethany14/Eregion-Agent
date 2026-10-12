@@ -16,7 +16,8 @@ def reply_text(response):
 
 def output_problem(response):
     metadata = getattr(response, 'response_metadata', {}) or {}
-    reason = str(metadata.get('finish_reason', '')).casefold()
+    # OpenAI-compatible providers report finish_reason; Anthropic-style ones stop_reason.
+    reason = str(metadata.get('finish_reason') or metadata.get('stop_reason') or '').casefold()
     if reason in {'length', 'max_tokens', 'max_output_tokens', 'max_token'}:
         return 'incomplete_response'
     if getattr(response, 'invalid_tool_calls', None):
