@@ -9,7 +9,7 @@ from eregion.domain.jev_fit.resolve import locate
 
 FIELDS=('role','location','seniority','vacancy')
 MAX_BATCH_CHARS=48000
-PARALLEL_GROUPS=4
+PARALLEL_GROUPS=3
 GROUP_SIZE=6
 
 

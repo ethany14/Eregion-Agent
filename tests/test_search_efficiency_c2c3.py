@@ -187,3 +187,21 @@ def test_truncated_reply_gets_a_specific_bounded_repair():
         repair=' '.join(str(getattr(m,'content','')) for m in seen[1])
         assert TRUNCATED_INSTRUCTION.strip() in repair and case.harness.writes==[]
     finally:case.tearDown()
+
+
+def test_one_reply_of_repeated_decisions_counts_once_toward_the_stall_limit():
+    class Repeating(loop_fixture.Harness):
+        batch_decision_tools={'write_item'}
+        def execute(self,task_id,name,args,**kwargs):
+            self.writes.append(args['value']);return {'saved':args['value'],'no_new_evidence':True}
+    case=DecisionBatch('test_independent_decisions_in_one_response_all_execute');case.setUp()
+    try:
+        case.harness=Repeating()
+        call=loop_fixture.call
+        batch=AIMessage(content='',tool_calls=[call('write_item',{'value':str(i)},str(i)) for i in range(3)])
+        model=loop_fixture.Model([batch,loop_fixture.finish('Saved results reported.')])
+        _,task=case.start(model)
+        state=loop_fixture.settled(case.repo,task)
+        assert state['status']=='completed' and case.harness.writes==['0','1','2']
+        assert state['progress_guard']['count']==1
+    finally:case.tearDown()

@@ -6,6 +6,7 @@ thread ownership, approvals and external-effect validation belong to its hosts.
 import json
 import time
 from contextlib import nullcontext
+from uuid import uuid4
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
@@ -38,6 +39,8 @@ class Turn:
     allowed_tools: list | None = None
     # Host-owned description overrides, applied last (after any slimming).
     tool_descriptions: dict = field(default_factory=dict)
+    # One observation/model reply; independent actions of that reply share it.
+    reply_id: str = field(default_factory=lambda: uuid4().hex)
 
 
 def describe_tools(tools, descriptions):

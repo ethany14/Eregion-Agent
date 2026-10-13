@@ -135,18 +135,23 @@ class TaskHost:
                 'For ordinary conversation or questions requiring no tools, finish_task can directly deliver the answer.',
                 'message_delivered': True, 'completion_required': True}
 
-    def no_progress(self, turn, stalled):
+    def no_progress(self, turn, stalled, batched=False):
         """A durable per-request circuit breaker, independent of loop slices."""
         with self.loop.lock:
-            return self._no_progress_locked(turn,stalled)
+            return self._no_progress_locked(turn,stalled,batched)
 
-    def _no_progress_locked(self,turn,stalled):
+    def _no_progress_locked(self,turn,stalled,batched=False):
         state = self.state()
         if state['chat_revision'] != turn.revision or not self.active():return False
         prior = state.get('progress_guard', {})
         count = prior.get('count', 0) if prior.get('revision') == turn.revision else 0
+        # Several independent (batchable) actions of one model reply are one decision:
+        # a batch of repeated actions counts once toward the stall limit, not per call.
+        reply = getattr(turn, 'reply_id', None)
+        if batched and stalled and prior.get('revision') == turn.revision and prior.get('reply') == reply:
+            return False
         count = count + 1 if stalled else 0
-        self.loop.repository.change(self.task_id, progress_guard={'revision':turn.revision,'count':count})
+        self.loop.repository.change(self.task_id, progress_guard={'revision':turn.revision,'count':count,'reply':reply})
         if count < 3:return False
         # Deliver what was actually saved, without another model call.
         delivery = getattr(self.loop.harness, 'terminal_delivery', None)
@@ -319,7 +324,7 @@ class TaskHost:
             return None
         if latest['status'] in {'needs_input', 'waiting', 'completed'} or not self.active():
             return {'reason': latest['status']}
-        if self.no_progress(turn, stalled):return {'reason':'no_progress'}
+        if self.no_progress(turn, stalled, batched=name in turn.batchable):return {'reason':'no_progress'}
         return None
 
     def image_message(self, image):
