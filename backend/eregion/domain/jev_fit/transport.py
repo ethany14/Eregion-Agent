@@ -29,6 +29,9 @@ def semantic_value(value):
     return value
 
 
+_WAKE = object()
+
+
 @dataclass
 class Pending:
     state: dict
@@ -52,6 +55,10 @@ class Broker:
         # A warm cache needs no HTTP client or TLS initialization.
         self.http, self.transport = None, transport
         self.queue = queue.Queue()
+        # Workers expected to submit concurrently. A batch waits (bounded) until every
+        # live worker has submitted, so one stage of several jobs is one paid request.
+        self.active, self.align_seconds = 0, 2.0
+        self._active_lock = threading.Lock()
         self.thread = threading.Thread(target=self._run, name='jev-fit-broker', daemon=True)
         self.thread.start()
 
@@ -60,6 +67,15 @@ class Broker:
         self.thread.join()
         if self.http is not None:
             self.http.close()
+
+    def expect(self, workers):
+        with self._active_lock:
+            self.active += workers
+
+    def leave(self):
+        with self._active_lock:
+            self.active -= 1
+        self.queue.put(_WAKE)
 
     def submit(self, *, state, questions, purpose, scope, task_id):
         future = Future()
@@ -78,17 +94,25 @@ class Broker:
             item = self.queue.get()
             if item is None:
                 return
+            if item is _WAKE:
+                continue
             pending = [item]
             if self.batch:
                 deadline = time.monotonic() + .025
+                aligned = time.monotonic() + self.align_seconds
                 while True:
+                    # Local work between stages is CPU-only; the bound keeps a slow
+                    # worker from delaying the others indefinitely.
+                    limit = aligned if len(pending) < self.active else deadline
                     try:
-                        item = self.queue.get(timeout=max(0, deadline-time.monotonic()))
+                        item = self.queue.get(timeout=max(0, limit-time.monotonic()))
                     except queue.Empty:
                         break
                     if item is None:
                         stop = True
                         break
+                    if item is _WAKE:
+                        continue
                     pending.append(item)
             groups = {}
             for p in pending:
@@ -197,12 +221,15 @@ class Broker:
         keys = {(id(p), k): self._key(p, q) for p in pending for k,q in p.questions.items()}
         cached = self.cache.get_many(keys.values(), self.config.model) if self.cache else {}
         unique, targets, identifiers = {}, {}, {}
-        states={digest(p.state):p.state for p in pending}
+        states={digest(p.state):p.state for p in pending if p.questions}
         cases={key:'case'+str(i) for i,key in enumerate(states)}
-        state=pending[0].state if len(states)==1 else {
-            'policy':'Each question identifies one independent context_case. Use only that case as its complete state. '
-                     'Never borrow facts, job requirements or document instructions from another case.',
-            'cases':{cases[k]:v for k,v in states.items()}}
+        def state_for(needed):
+            # A request carries only the cases its questions reference.
+            return next(iter(states.values())) if len(states)==1 else {
+                'policy':'Each question identifies one independent context_case. Use only that case as its complete state. '
+                         'Never borrow facts, job requirements or document instructions from another case.',
+                'cases':{cases[k]:states[k] for k in states if k in needed}}
+        case_of={}
         for p in pending:
             for k,q in p.questions.items():
                 if q.get('type') != 'noul':
@@ -226,12 +253,13 @@ class Broker:
                 if wire in unique and unique[wire] != wire_question:
                     raise ValueError('Question hash collision')
                 unique[wire] = wire_question
+                case_of[wire] = digest(p.state)
                 targets.setdefault(wire, []).append((p,k,key,event))
         batches, current = [], {}
         purpose = pending[0].purpose
         for k,q in unique.items():
             trial = {**current, k:q}
-            payload = {'model':self.config.model,'state':state,'questions':trial}
+            payload = {'model':self.config.model,'state':state_for({case_of[w] for w in trial}),'questions':trial}
             if current and (len(trial)>MAX_QUESTIONS or len(json.dumps(payload,ensure_ascii=False).encode())>MAX_PAYLOAD_BYTES):
                 batches.append(current)
                 current={}
@@ -239,6 +267,7 @@ class Broker:
         if current:
             batches.append(current)
         for batch in batches:
+            state=state_for({case_of[w] for w in batch})
             result,status,record = self._request(state,batch,purpose,pending[0].context)
             from eregion.domain.reasoning import cacheable_attempts
             eligible = cacheable_attempts([record]) if record else True
@@ -271,6 +300,11 @@ class Client:
         self.task_id=str(uuid.uuid4())
         self.categories={}
         self.requests=0
+
+    def checkpoint(self,purpose):
+        """Join a concurrent stage without questions; never a paid request by itself."""
+        if self.broker.active>1:
+            self.broker.submit(state={},questions={},purpose=purpose,scope=self.scope,task_id=self.task_id)
 
     def evaluate(self,state,questions,purpose):
         if not questions:

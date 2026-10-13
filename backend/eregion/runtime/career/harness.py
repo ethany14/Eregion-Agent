@@ -85,6 +85,9 @@ class CareerHarness:
     tools, prompt = [*TOOLS,*BROWSER_TOOLS],SYSTEM
     # These reads do not alter browser observation tokens or external state.
     batchable_tools = frozenset({'list_jobs', 'inspect_job', 'inspect_materials', 'inspect_interview'})
+    # Independent per-job outcomes the prompt already invites in one response; each
+    # call still re-reads state and runs its own gates. Not inspection tools for waits.
+    batch_decision_tools = frozenset({'recommend_job', 'decide_job', 'dismiss_candidate', 'read_context'})
 
     def stable_tools(self, state):
         # A new user revision can change task kind; browser and progress cannot.

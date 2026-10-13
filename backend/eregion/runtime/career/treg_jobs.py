@@ -34,7 +34,8 @@ def search_body(provider, query, location=None, posted=None, *, experience_level
         if location: body['location'] = location
         if posted: body['postedLimit'] = POSTED[posted][0]
         for key,value in (('experienceLevel',experience_level),('workplaceType',work_type),('employmentType',employment_type)):
-            if value: body[key]=value
+            # A combined LinkedIn-only arrangement has no single provider value; not applied.
+            if value and not (key=='workplaceType' and value not in {'remote','hybrid','onsite'}): body[key]=value
     else:
         body = {'query': query, 'limit': min(20,max(1,int(limit)))}
         if location: body['location'] = location

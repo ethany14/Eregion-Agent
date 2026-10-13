@@ -84,13 +84,13 @@ def test_only_failed_extraction_batch_retries_once_and_does_not_hide_terminal_fa
     def invoke(model,schema,prompt,payload):
         targets=tuple(json.loads(payload)['extract_sentence_ids'])
         with lock:attempts[targets]+=1;n=attempts[targets]
-        if targets[0]=='s8' and n==1:raise TimeoutError('synthetic timeout')
+        if targets[0]=='s20' and n==1:raise TimeoutError('synthetic timeout')
         return ReferencedJobExtraction(title=None,summary='',statements=[],responsibility_sentence_ids=[])
     monkeypatch.setattr('eregion.domain.model.invoke_structured',invoke)
-    text='\n'.join(f'- Candidate must demonstrate qualification {i}.' for i in range(25))
+    text='\n'.join(f'- Candidate must demonstrate qualification {i}.' for i in range(45))
     extract_job(object(),text)
-    assert sorted(attempts.values())==[1,1,1,2]
-    assert sum(len(k) for k in attempts)==25
+    assert sorted(attempts.values())==[1,1,2]
+    assert sum(len(k) for k in attempts)==45
 
 
 def test_only_failed_matching_chunk_retries_instead_of_whole_analysis():

@@ -4,7 +4,9 @@ from .search_policy import constraints
 FILTER_FIELDS = ('experience_level', 'work_type', 'employment_type', 'posted')
 FILTER_SCHEMA = {
     'experience_level': {'type':'string','enum':['internship','entry','associate','mid-senior','director','executive']},
-    'work_type': {'type':'string','enum':['remote','hybrid','onsite']},
+    'work_type': {'type':'string','enum':['remote','hybrid','onsite','onsite_or_hybrid'],
+                  'description':'Provider work-arrangement filter. A remote-only posting must still show where it may be worked '
+                                'to satisfy a requested city; onsite_or_hybrid narrows retrieval to postings tied to a workplace.'},
     'employment_type': {'type':'string','enum':['full-time','part-time','contract','internship','temporary']},
     'posted': {'type':'string','enum':['24h','week','month']},
 }
@@ -20,6 +22,9 @@ def effective_filters(state, args):
     if values and None not in values and len(values)==1:
         result['experience_level']=next(iter(values))
     return result
+
+LINKEDIN_WORK_TYPES={'remote':'remote','hybrid':'hybrid','onsite':'on_site','onsite_or_hybrid':'on_site,hybrid'}
+
 
 def filter_cards(jobs, state):
     from .search_strategy import card_priority

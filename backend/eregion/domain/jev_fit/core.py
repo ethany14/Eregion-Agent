@@ -161,7 +161,14 @@ def job_units(text):
         r'Nice to have|Must have|What you.ll do|Who you are|Who we are|About the team|'
         r'Benefits(?=\s*:)|Perks(?=\s*:)|Compensation(?=\s*:)|'
         r'Required(?=\s*:)|Preferred(?=\s*:))(?=\s*:|\s+[-*•]|\s+[A-Z0-9]|\s*$)',re.M)
-    headings = [(m.start(), m.end(), m.group()) for m in heading.finditer(text)]
+    headings = []
+    for m in heading.finditer(text):
+        # 'Key Responsibilities:' / 'Desired Skills/Qualifications:' are one heading; a short
+        # title-case prefix on the same line must not become a stray one-word unit.
+        line_start = text.rfind('\n', 0, m.start()) + 1
+        prefix = text[line_start:m.start()]
+        start = line_start if prefix.strip() and re.fullmatch(r"[ \t]*(?:[A-Z][\w'’]*[ /&-]+){1,4}", prefix) else m.start()
+        headings.append((start, m.end(), text[start:m.end()]))
     # A flattened company heading without ':' is recoverable when the named
     # company immediately starts its own description. Do not guess a boundary
     # from any capitalized word or split a technology list.
@@ -215,7 +222,9 @@ def job_units(text):
     # A bare one-item-per-line list ("Python\nSQL"): adjacent short lines are separate
     # items when the next starts like an item. Wrapped prose continues in lower case or
     # after a connector, so it stays one unit.
-    for m in re.finditer(r'(?m)^([^\n]{1,60})\n(?=[ \t]*[A-Z0-9][^\n]{0,59}$)', text):
+    # Unbulleted list items one per line (common in board/LinkedIn text) are not
+    # limited to short lines: 'Bachelor's Degree ... experience\n0-2 years of ...'.
+    for m in re.finditer(r'(?m)^([^\n]{1,300})\n(?=[ \t]*[A-Z0-9$][^\n]{0,299}$)', text):
         line = m.group(1).strip()
         if line and not re.search(r'(?:[,/&(-]|\b(?:and|or|of|with|in|to|for|the|a|an))$', line, re.I):
             starts.add(m.end())
@@ -274,7 +283,8 @@ def _independent_clause(text):
         r'^(?:Build|Design|Develop|Lead|Create|Manage|Implement|Maintain|Analyze|Conduct|Write|Support|Collaborate)\s+', text))
 
 
-FLAT_ITEM_START = re.compile(r'(?<=[a-z0-9)%])\s+(?=(?:'
+# A possessive degree name ('Bachelor's Degree') is one qualification, not two items.
+FLAT_ITEM_START = re.compile(r'(?<=[a-z0-9)%])(?<![\'’]s)\s+(?=(?:'
     r'Own|Ship|Build|Design|Lead|Drive|Partner|Develop|Develops|Work|Create|Define|Manage|Deliver|Write|Analy[sz]e|'
     r'Communicate|Mentor|Contribute|Translate|Support|Maintain|Improve|Conduct|Use|Establish|Help|Advocate|Run|'
     r'Collaborate|Champion|Shape|Influence|Identify|Implement|Evaluate|Present|Ensure|Execute|Facilitate|Coordinate|'
@@ -350,6 +360,16 @@ class JevFit:
     def __init__(self, client):
         self.client = client
 
+    def _stage(self, state, questions, purpose):
+        # An optional stage with nothing to ask still checks in, so concurrent jobs
+        # stay at the same stage and share one request (no semantic effect).
+        if questions:
+            return self.client.evaluate(state, questions, purpose)
+        checkpoint = getattr(self.client, 'checkpoint', None)
+        if checkpoint:
+            checkpoint(purpose)
+        return {}, []
+
     def extract(self, jd):
         units = job_units(jd)
         questions = {}
@@ -364,7 +384,7 @@ class JevFit:
             if key.startswith('e') else 'Does this qualification explicitly say preferred, optional or nice-to-have, including its section heading?'),
             span=q['instructions']['span'],section=q['instructions'].get('section'),criteria=q['criteria'])
             for key,q in questions.items() if boolean(answers.get(key)) is None}
-        refined,failed=self.client.evaluate({'policy':POLICY},refinement,'refine_extraction_yes_no') if refinement and not errors else ({},[])
+        refined,failed=self._stage({'policy':POLICY},refinement,'refine_extraction_yes_no') if not errors else ({},[])
         errors+=failed
         for key,value in refined.items():
             if boolean(value) is not None:answers[key]=value
@@ -416,7 +436,7 @@ class JevFit:
         ambiguous_categories={key:yesno('Does the requirement ask for personal permission, consent, availability or willingness? '
             'Skills, degrees, professional experience and credentials are qualifications, not personal conditions.',
             requirement=q['instructions']['requirement']) for key,q in category_questions.items() if boolean(categories.get(key)) is None}
-        refined_categories,failed=self.client.evaluate({'policy':POLICY},ambiguous_categories,'condition_category_yes_no') if ambiguous_categories and not errors else ({},[])
+        refined_categories,failed=self._stage({'policy':POLICY},ambiguous_categories,'condition_category_yes_no') if not errors else ({},[])
         categories.update({key:value for key,value in refined_categories.items() if boolean(value) is not None})
         errors+=failed
         decisions, failed = self.client.evaluate(state, support_questions, 'support_yes_no') if not errors else ({}, [])
@@ -437,7 +457,7 @@ class JevFit:
                     focused[f'{k}{i}'] = yesno(question, **({'requirement': r['text']} if k == 'f' else {'subject': related_topic(r['text'])}), excerpt=excerpt)
                     if k == 'r':
                         focused[f'{k}{i}']['criteria'] = questions[f'r{i}']['criteria']
-        refined, failed = self.client.evaluate({'policy': POLICY}, focused, 'focused_yes_no') if focused and not errors else ({}, [])
+        refined, failed = self._stage({'policy': POLICY}, focused, 'focused_yes_no') if not errors else ({}, [])
         errors += failed
         initial_decisions = dict(decisions)
         for key, answer in refined.items():
@@ -450,7 +470,7 @@ class JevFit:
             'Answer no when any requested component is not established; related experience alone is insufficient for yes.',
             requirement=r['text'],criteria=questions[f'f{i}']['criteria']) for i,r in enumerate(requirements)
             if f'f{i}' in questions and boolean(decisions.get(f'f{i}')) is None}
-        clarified,failed=self.client.evaluate(state,clarification,'clarify_full_support_yes_no') if clarification and not errors else ({},[])
+        clarified,failed=self._stage(state,clarification,'clarify_full_support_yes_no') if not errors else ({},[])
         errors+=failed
         for key,answer in clarified.items():
             if boolean(answer) is not None:decisions[key]=answer
@@ -496,7 +516,7 @@ class JevFit:
                 continue
             proposals[i] = proposed
             citation_questions[f'v{i}'] = yesno('Does this excerpt substantiate the stated support level for this requirement? Matched means every requested component/qualifier. Partial means some concrete relevant experience with a shortfall. Preserve negation, dates, units and ownership; do not infer facts absent from this excerpt.', requirement=m['text'], support_level=m['status'], excerpt='\n'.join(b['text'] for b in proposed))
-        citation_answers, failed = self.client.evaluate({'policy': POLICY}, citation_questions, 'verify_citations_yes_no') if citation_questions and not errors else ({}, [])
+        citation_answers, failed = self._stage({'policy': POLICY}, citation_questions, 'verify_citations_yes_no') if not errors else ({}, [])
         errors += failed
         for i, m in enumerate(matches):
             if m['status'] not in ('matched', 'partial'):

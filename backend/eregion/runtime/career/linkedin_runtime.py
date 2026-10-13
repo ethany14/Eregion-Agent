@@ -2,7 +2,7 @@
 from copy import deepcopy
 from .linkedin_source import LinkedInMcpSource, LinkedInSourceStopped
 from .source_health import user_turn
-from .search_filters import effective_filters, filter_cards
+from .search_filters import effective_filters, filter_cards, LINKEDIN_WORK_TYPES
 from .alerts import job_key
 
 
@@ -30,16 +30,17 @@ def invoke(harness,task_id,state,operation,arguments):
         return result
     from .search_strategy import source_limits
     limits=source_limits(state,arguments)
-    source=LinkedInMcpSource(call,store=store,call_budget=limits['calls'],max_pages=4)
+    source=LinkedInMcpSource(call,store=store,call_budget=limits['calls'],max_pages=limits['pages'])
     try:
         check()
         if operation=='search':
             filters=effective_filters(state,arguments)
             level=filters.get('experience_level')
             if level=='mid-senior':level='mid_senior'
-            result=source.search(arguments['query'],arguments.get('location'),experience_level=level,max_pages=limits['pages'])
+            result=source.search(arguments['query'],arguments.get('location'),experience_level=level,
+                                 work_type=LINKEDIN_WORK_TYPES.get(filters.get('work_type')),max_pages=limits['pages'])
             result['jobs'],result['local_filter']=filter_cards(result['jobs'],state)
-            result['unapplied_filters']+= [k for k in filters if k!='experience_level']
+            result['unapplied_filters']+= [k for k in filters if k not in {'experience_level','work_type'}]
             return result
         return source.details(arguments['job_id'])
     finally:
@@ -55,6 +56,7 @@ def _search_one(harness,task_id,state,args):
         'query':' '.join(args['query'].casefold().split()),
         'location':' '.join(args.get('location','').casefold().split()),
         'experience_level':filters.get('experience_level'),
+        'work_type':filters.get('work_type'),
         'max_pages':source_limits(state,args)['pages']})
     cached=state.get('linkedin_mcp_search_cache',{}).get(key)
     if cached is not None:return {**cached,'cached':True,'no_new_evidence':True}

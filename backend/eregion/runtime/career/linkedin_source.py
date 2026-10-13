@@ -16,6 +16,8 @@ BUSINESS_TOOLS = frozenset({'search_jobs', 'get_job_details', 'get_job_apply_url
                             'search_companies', 'get_company_profile'})
 LIFECYCLE_TOOLS = frozenset({'close_session'})
 EXPERIENCE_LEVELS = frozenset({'internship', 'entry', 'associate', 'mid_senior', 'director', 'executive'})
+WORK_TYPES = frozenset({'on_site', 'remote', 'hybrid'})
+UPSTREAM_MAX_PAGES = 10      # pinned upstream search_jobs bound
 MAX_PAGES = 2                 # T1: at most two pages per search group
 DEFAULT_DEADLINE = 120.0      # seconds per tool call (T1)
 DEFAULT_CALL_BUDGET = 26      # T1 batch: 3 searches + 15 details + 6 apply URLs + 2 company lookups
@@ -63,6 +65,15 @@ def search_cards(payload):
     anchors=[i for i,line in enumerate(lines) if line in titles]
     # Repeated titles bind only when the whole text and URL sequences agree.
     ordered=len(anchors)==len(job_refs) and [lines[i] for i in anchors]==[r.get('text') for r in job_refs]
+    # Multi-page text repeats promoted cards verbatim while job_ids/references are
+    # de-duplicated. Per title, the k-th reference binds the k-th distinct card text
+    # (title, company, place) only when both counts agree; otherwise fields stay unknown.
+    variants={}
+    for i in anchors:
+        variants.setdefault(lines[i],[])
+        if tuple(lines[i:i+3]) not in [tuple(lines[k:k+3]) for k in variants[lines[i]]]:variants[lines[i]].append(i)
+    per_title={t:sum(1 for r in job_refs if r.get('text')==t) for t in variants}
+    nth={}
     for ordinal,ref in enumerate(job_refs):
         if not isinstance(ref,dict) or ref.get('kind')!='job':continue
         url=urljoin('https://www.linkedin.com',str(ref.get('url') or ''))
@@ -71,8 +82,9 @@ def search_cards(payload):
         title=str(ref.get('text') or '').strip()
         if not title:continue
         card={'title':title,'company':None,'location':None}
-        if ordered or lines.count(title)==1:
-            i=anchors[ordinal] if ordered else lines.index(title)
+        k=nth[title]=nth.get(title,-1)+1
+        if ordered or lines.count(title)==1 or len(variants.get(title,[]))==per_title.get(title):
+            i=anchors[ordinal] if ordered else lines.index(title) if lines.count(title)==1 else variants[title][k]
             if i+2<len(lines):
                 company,location=lines[i+1:i+3]
                 # A location-shaped line prevents treating a UI badge as company/place.
@@ -101,13 +113,13 @@ class LinkedInMcpSource:
         self.store.setdefault('stopped', None)
         self.store.setdefault('log', [])
         self.call_budget, self.deadline, self.max_bytes = call_budget, deadline_seconds, max_response_bytes
-        self.max_pages=max(1,min(int(max_pages),4))
+        self.max_pages=max(1,min(int(max_pages),UPSTREAM_MAX_PAGES))
         self.store['call_limit']=call_budget
 
     # -- business operations --------------------------------------------------------
 
     def search(self, keywords: str, location: str | None = None, *, experience_level: str | None = None,
-               max_pages: int = 1) -> dict:
+               work_type: str | None = None, max_pages: int = 1) -> dict:
         args: dict[str, Any] = {'keywords': keywords, 'max_pages': max(1, min(int(max_pages), self.max_pages))}
         if location:
             args['location'] = location
@@ -118,6 +130,12 @@ class LinkedInMcpSource:
                 args['experience_level'] = ','.join(levels)
             else:
                 unapplied.append('experience_level')  # never pretend an unsupported filter was applied
+        if work_type:
+            types = [v.strip() for v in work_type.split(',') if v.strip()]
+            if types and all(v in WORK_TYPES for v in types):
+                args['work_type'] = ','.join(types)
+            else:
+                unapplied.append('work_type')
         payload = self._invoke('search_jobs', args)
         errors = payload.get('section_errors') or {}
         if any((e or {}).get('error_type',(e or {}).get('type')) == 'no_matching_jobs' for e in errors.values() if isinstance(e, dict)):

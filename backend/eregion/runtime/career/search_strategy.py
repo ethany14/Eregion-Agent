@@ -14,8 +14,10 @@ def source_limits(state,args=None):
     large=bool(request and request['count']>=10)
     fields=request_fields(state);query=normalized((args or {}).get('query'))
     broad=query in {normalized(fields['role']),normalized(f"{fields['role']} in {fields['location']}")}
+    # One broad LinkedIn call can page deep (one source call, ~9 s/page); 8 pages keeps
+    # it inside the 120 s per-call deadline instead of repeating near-duplicate queries.
     return {'calls':50 if large else 26,
-            'pages':4 if large and broad else 2 if (args or {}).get('limit',10)>10 else 1}
+            'pages':8 if large and broad else 2 if (args or {}).get('limit',10)>10 else 1}
 
 
 def variants(state,args):
@@ -26,9 +28,10 @@ def variants(state,args):
     if not request or request['count']<10 or not role or not levels or not levels<={'junior','new_grad'}:
         return [args['query']]
     place=request_fields(state)['location']
-    queries=[f'"{role}" AND (junior OR "entry level")',f'"{role}" AND (graduate OR "new grad")',
-             f'"{role}" in {place}' if place else f'"{role}"',f'"{role}"']
-    aliases=[f'junior {role}',f'entry level {role}',f'graduate {role}',role,*queries]
+    # The provider level filter already scopes the broad query; '"role" in place' only
+    # repeated it with extra keywords. Explicit early-career wording is ranked first.
+    queries=[f'"{role}" AND (junior OR "entry level" OR graduate OR "new grad")',f'"{role}"']
+    aliases=[f'junior {role}',f'entry level {role}',f'graduate {role}',role,f'{role} in {place}',f'junior {role} in {place}',*queries]
     if normalized(args['query']) not in {normalized(q) for q in aliases}:
         return [args['query']]
     return list(dict.fromkeys(queries))  # Original source filters and final gates remain mandatory.

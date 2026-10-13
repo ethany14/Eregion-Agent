@@ -28,14 +28,19 @@ class JevFitService:
         started=time.perf_counter()
         evidence=resume_text+('\nUSER PROVIDED FACTS\n'+canonical(candidate_facts)if candidate_facts else '')
         def work(job):
-            client=Client(broker,{'owner':self.owner,'resume':digest(resume_text),
-                'facts':digest(candidate_facts or {}),'job':digest(semantic_value(job['job_description']))})
-            raw=JevFit(client).analyze(evidence,jd=job['job_description'])
+            try:
+                client=Client(broker,{'owner':self.owner,'resume':digest(resume_text),
+                    'facts':digest(candidate_facts or {}),'job':digest(semantic_value(job['job_description']))})
+                raw=JevFit(client).analyze(evidence,jd=job['job_description'])
+            finally:
+                broker.leave()
             if raw.get('provider_errors')or 'matches'not in raw:
                 raise JevFitError('Jev fit analysis could not complete: '+','.join(raw.get('provider_errors')or[raw['status']]))
             return job,client,raw
+        # All jobs (at most eight) run together so each stage is one shared request.
+        broker.expect(len(jobs))
         try:
-            with ThreadPoolExecutor(max_workers=min(len(jobs),4),thread_name_prefix='jev-fit')as pool:
+            with ThreadPoolExecutor(max_workers=len(jobs),thread_name_prefix='jev-fit')as pool:
                 futures=[pool.submit(copy_context().run,work,job)for job in jobs]
                 completed=[f.result()for f in futures]
         finally:

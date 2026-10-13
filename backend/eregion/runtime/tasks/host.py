@@ -91,7 +91,7 @@ class TaskHost:
         stable = enabled('STABLE_TOOLS') and hasattr(harness, 'stable_tools')
         return Turn(prompt, snapshot, CONTROL_TOOLS + harness.stable_tools(state) if stable else controls + tools,
                     state['chat_revision'], allowed_tools=controls + tools if stable else None,
-                    batchable=frozenset(getattr(harness, 'batchable_tools', ())),
+                    batchable=frozenset(getattr(harness, 'batchable_tools', ())) | frozenset(getattr(harness, 'batch_decision_tools', ())),
                     tool_descriptions=descriptions)
 
     def invoke(self, messages, tools, turn):

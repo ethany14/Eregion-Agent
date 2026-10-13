@@ -75,7 +75,7 @@ def test_actual_provider_records_are_not_double_counted_and_failed_usage_is_unkn
 
 
 @pytest.mark.parametrize('metered',[False,True])
-def test_shared_analyzer_25_bullets_uses_four_extraction_batches_two_matching_batches(monkeypatch,metered):
+def test_shared_analyzer_25_bullets_uses_two_extraction_batches_two_matching_batches(monkeypatch,metered):
     from eregion.domain.workflow.handlers import SharedModelAnalyzer
     from eregion.domain.job_extraction import ReferencedJobExtraction
     from eregion.domain.resume_extraction import ResumeExtraction
@@ -111,12 +111,12 @@ def test_shared_analyzer_25_bullets_uses_four_extraction_batches_two_matching_ba
             f'- Candidate must deliver unique project {i}.' for i in range(25)))
         warm=service._analyze_sync(resume_text='Candidate',job_description='\n'.join(
             f'- Candidate must deliver unique project {i}.' for i in range(25)))
-    assert Counter(s for s,_ in calls)=={'ResumeExtraction':1,'ReferencedJobExtraction':4,'CompactSkillAssessment':2}
+    assert Counter(s for s,_ in calls)=={'ResumeExtraction':1,'ReferencedJobExtraction':2,'CompactSkillAssessment':2}
     assert all(task=='offline-multibatch' for _,task in calls)
     assert len(result.job_analysis.requirements)==len(result.skill_match.matches)==25
-    assert result.model_calls==result.main_model_calls==7
-    assert len(result.provider_attempts)==7 and warm.model_calls==0
-    assert result.provider_usage['unknown_usage_calls']==(0 if metered else 7)
+    assert result.model_calls==result.main_model_calls==5
+    assert len(result.provider_attempts)==5 and warm.model_calls==0
+    assert result.provider_usage['unknown_usage_calls']==(0 if metered else 5)
     assert result.provider_usage['usage_complete']==metered
 
 

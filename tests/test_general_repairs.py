@@ -157,11 +157,11 @@ def test_job_batches_preserve_context_and_complete_sentence_ownership():
         data=json.loads(text);seen.append(data)
         return ReferencedJobExtraction(title='Engineer',summary='',statements=[],responsibility_sentence_ids=[])
     with patch('eregion.domain.model.invoke_structured',invoke):
-        extract_job(object(),'\n'.join(f'Line {i}: qualification.' for i in range(27)))
-    assert len(seen)==4
-    assert all(len(row['source_sentences'])==27 for row in seen)
+        extract_job(object(),'\n'.join(f'Line {i}: qualification.' for i in range(47)))
+    assert len(seen)==3  # 20-sentence groups
+    assert all(len(row['source_sentences'])==47 for row in seen)
     ids=[k for row in seen for k in row['extract_sentence_ids']]
-    assert len(ids)==len(set(ids))==27
+    assert len(ids)==len(set(ids))==47
 
 
 def test_large_tool_result_keeps_full_controls_and_recovery_feedback():

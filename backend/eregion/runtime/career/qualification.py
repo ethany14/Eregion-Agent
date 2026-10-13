@@ -9,6 +9,7 @@ from eregion.domain.jev_fit.resolve import locate
 
 FIELDS=('role','location','seniority','vacancy')
 MAX_BATCH_CHARS=48000
+PARALLEL_GROUPS=3
 
 
 def user_request(state):
@@ -106,10 +107,10 @@ def record_many(repository,task_id,jobs):
         if part and (len(part)>=4 or size+n>MAX_BATCH_CHARS):groups.append(part);part=[];size=len(request)
         part.append(job);size+=n
     if part:groups.append(part)
-    for group in groups:
+    def ask(group):
+        """Model IO only; runs in a worker. Persistence stays on the calling thread."""
         check()
         postings=[{'posting_id':str(i),**{k:j.get(k) or '' for k in ('title','location','description')}} for i,j in enumerate(group)]
-        error=None;decisions={}
         try:
             if len(json.dumps(postings,ensure_ascii=False))+len(request)>MAX_BATCH_CHARS:
                 raise ValueError('Qualification input too large; complete text was not truncated.')
@@ -117,9 +118,10 @@ def record_many(repository,task_id,jobs):
             ids=[d.posting_id for d in response.decisions]
             if len(ids)!=len(group) or set(ids)!={str(i) for i in range(len(group))}:
                 raise ValueError('Qualification response identities do not match the supplied batch.')
-            decisions={d.posting_id:d for d in response.decisions}
+            return {d.posting_id:d for d in response.decisions},None
         except (TaskProviderBudgetExceeded,LoopStop):raise
-        except Exception as exc:error=type(exc).__name__
+        except Exception as exc:return {},type(exc).__name__
+    def save(group,decisions,error):
         check()
         outputs={}
         for i,job in enumerate(group):
@@ -128,6 +130,18 @@ def record_many(repository,task_id,jobs):
             outputs[job_key(job['url'])]=result(state,job,checks,method='model_unavailable' if error else 'model_with_verified_quotes')
         repository.change(task_id,lambda s:{'candidate_qualifications':dict(list({
             **s.get('candidate_qualifications',{}),**outputs}.items())[-100:])})
+    # Independent groups are judged concurrently (bounded) to keep a large batch
+    # inside the task deadline; every call still meters against the same owner.
+    from concurrent.futures import ThreadPoolExecutor
+    from contextvars import copy_context
+    with ThreadPoolExecutor(max_workers=max(1,min(len(groups),PARALLEL_GROUPS)),thread_name_prefix='qualify') as pool:
+        futures=[(group,pool.submit(copy_context().run,ask,group)) for group in groups]
+        try:
+            for group,future in futures:
+                save(group,*future.result())
+        except BaseException:
+            for _,future in futures:future.cancel()
+            raise
     current=repository.get(task_id)
     return [assess(current,j) for j in jobs]
 
