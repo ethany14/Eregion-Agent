@@ -67,7 +67,7 @@ def run(harness, task_id, args, call_id):
         if not saved and record.get('retrieved_job'):
             saved = record['retrieved_job']
             repo.change(task_id, lambda s: {'retrieved_jobs': dict(list({
-                **s.get('retrieved_jobs', {}), saved['url']: saved}.items())[-20:])})
+                **s.get('retrieved_jobs', {}), saved['url']: saved}.items())[-100:])})
         if not saved and not args.get('job_text'):
             saved = step('read_job', {k: v for k, v in args.items()
                                     if k in ('url', 'region_ref', 'observation_id')})

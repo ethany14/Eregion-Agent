@@ -15,7 +15,9 @@ GOAL='Find 15 current junior data analyst positions in New York for my saved res
 
 def test_variants_preserve_role_and_do_not_expand_other_requests():
     state={'goal':GOAL};args={'query':'junior data analyst','location':'New York'}
-    assert variants(state,args)==['junior data analyst','entry level data analyst','graduate data analyst','"data analyst"']
+    assert variants(state,args)==['"data analyst" AND (junior OR "entry level")',
+                                 '"data analyst" AND (graduate OR "new grad")',
+                                 '"data analyst" in New York','"data analyst"']
     assert variants({'goal':GOAL.replace('15','2')},args)==['junior data analyst']
     assert variants(state,{**args,'query':'data analyst at Example'})==['data analyst at Example']
 
@@ -85,6 +87,54 @@ def test_linkedin_scope_excludes_other_jobs_and_keeps_original_offsets():
     assert source.details('4475055219')['status']=='incomplete'
 
 
+def test_opening_header_recovers_metadata_with_bound_source_offsets():
+    from eregion.runtime.career.posting_text import header
+    raw='Example Inc\n\nData Analyst\n\nNew York, NY · Reposted 2 weeks ago · 15 applicants\n\nAbout the job\n'+'0-2 years of analytics experience. '*20
+    extracted=header(raw)
+    assert extracted['location']=='New York, NY' and extracted['company']=='Example Inc'
+    for item in extracted['metadata_evidence'].values():
+        assert raw[item['start']:item['end']]==item['quote']
+    source=LinkedInMcpSource(lambda *a,**kw:result({**DETAIL,'sections':{'job_posting':raw}}))
+    detail=source.details('4475055219')
+    assert assess({'goal':GOAL},{**detail,'title':detail['title']})['qualified']
+    assert not header('Example\nAbout the job\nOur office is in New York, NY\n'+raw)
+    wrong=LinkedInMcpSource(lambda *a,**kw:result({**DETAIL,'url':'https://www.linkedin.com/jobs/view/9999999/',
+                                               'sections':{'job_posting':raw}})).details('4475055219')
+    assert wrong['status']=='incomplete' and 'metadata_evidence' not in wrong
+
+
+def test_repeated_card_titles_keep_each_observed_location():
+    from eregion.runtime.career.linkedin_source import search_cards
+    payload={'sections':{'search_results':'Data Analyst\nExample A\nNew York, NY (Hybrid)\nPromoted\nData Analyst\nExample B\nBoston, MA (On-site)'},
+             'references':{'search_results':[{'kind':'job','url':f'/jobs/view/{id}/','text':'Data Analyst'} for id in ('111111','222222')]}}
+    cards=search_cards(payload)
+    assert cards['111111']['company']=='Example A' and cards['222222']['location']=='Boston, MA (On-site)'
+    # Partial evidence must not attach either ambiguous card to a URL by guessing.
+    payload['sections']['search_results']+='\nData Analyst\nExample C\nChicago, IL'
+    assert all(j['location'] is None for j in search_cards(payload).values())
+
+
+def test_detail_metadata_replaces_missing_card_fields_and_stale_location(career,monkeypatch):
+    raw='Example Inc\nData Analyst\nBoston, MA · 2 days ago · 12 applicants\nAbout the job\n'+'0-2 years of analytics experience. '*20
+    c=career;fake,manager=setup(c,monkeypatch,{'get_job_details':result({**DETAIL,'sections':{'job_posting':raw}})})
+    try:
+        ask(c,GOAL)
+        c.repository.change(c.state['task_id'],search_candidates={DETAIL['url']:{'url':DETAIL['url'],'title':'Data Analyst','location':'New York, NY'}})
+        job=execute(c,'read_job',url=DETAIL['url'])
+        assert job['location']=='Boston, MA' and job['company']=='Example Inc'
+        assert not assess({'goal':GOAL},job)['qualified']
+        saved=next(iter(c.repository.get(c.state['task_id'])['retrieved_jobs'].values()))
+        assert saved['metadata_evidence']['location']['quote'].startswith('Boston')
+        assert saved['discovery_card']['location']=='New York, NY'
+    finally:manager.stop()
+
+
+def test_official_mcp_error_type_does_not_return_unrelated_recommendations():
+    payload={**SEARCH,'section_errors':{'search_results':{'error_type':'no_matching_jobs','error_message':'No matches'}}}
+    value=LinkedInMcpSource(lambda *a,**kw:result(payload)).search('data analyst')
+    assert value['status']=='no_match' and value['jobs']==[]
+
+
 def test_effective_query_cache_ignores_local_flags_and_default_filter(career,monkeypatch):
     c=career;fake,manager=setup(c,monkeypatch,{'search_jobs':result(SEARCH)})
     try:
@@ -143,3 +193,14 @@ def test_known_search_and_qualification_summaries_are_not_bulk_paged(value):
     key='issues' if 'issues' in value else 'jobs'
     assert archive.read(ref,path=[key])['content']
     assert archive.read(ref,historical=True)['content']
+
+
+def test_large_discovery_retains_actionable_cards_without_nested_refs():
+    from eregion.runtime.request_context import ContextArchive
+    archive=ContextArchive()
+    jobs=[{'url':f'https://example.com/jobs/{i}','title':'Data Analyst','location':'New York','company':'Example'} for i in range(60)]
+    summary=archive.tool_result({'jobs':jobs,'linkedin_mcp':{'status':'ok'},'sources_checked':['x'*2000]})
+    assert isinstance(summary['jobs'],list) and len(summary['jobs'])==8
+    assert all('context_ref' not in j for j in summary['jobs'])
+    assert summary['discovery_count']==60
+    assert archive.read(summary['context_ref'],path=['jobs','40'])['content']

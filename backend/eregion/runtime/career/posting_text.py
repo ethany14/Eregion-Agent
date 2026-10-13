@@ -2,6 +2,21 @@
 import re
 
 
+def header(text):
+    """Read the URL-bound opening header, never a company address later in the JD."""
+    lines=[m for m in re.finditer(r'[^\n]+',text or '') if m[0].strip()]
+    if len(lines)<3:return {}
+    company,title,place=[m[0].strip() for m in lines[:3]]
+    if any(len(v)>240 for v in (company,title,place)) or title.casefold()=='about the job':return {}
+    match=re.fullmatch(r'(.+?)\s+·\s+(?:Reposted\s+)?(?:\d+\s+(?:minute|hour|day|week|month|year)s?\s+ago|Just now|Today|Yesterday)\b.*',place,re.I)
+    if not match:return {}
+    location=match[1].strip()
+    return {'company':company,'title':title,'location':location,
+            'metadata_evidence':{field:{'quote':m[0].strip(),'start':m.start()+len(m[0])-len(m[0].lstrip()),
+                                        'end':m.start()+len(m[0].rstrip())}
+                                 for field,m in zip(('company','title','location'),lines[:3])}}
+
+
 def scope(text):
     start=re.search(r'(?im)^\s*About the job\s*$',text or '')
     if not start:return {'text':text or '', 'start':0,'end':len(text or ''),'bounded':False}

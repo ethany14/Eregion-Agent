@@ -32,13 +32,13 @@ TOOLS = [
         {'message_id':TEXT,'alert_id':TEXT,'enabled':{'type':'boolean'}}),
     function('recommend_job','Recommend an actually read and scored job in this conversation, with fit reasons and uncertainties. Also adds it to the digest when this task was started by a schedule. No schedule is needed for a normal search.',
         {**APP,'reason':TEXT,'caveats':TEXT}),
-    function('search_jobs','HTTP/API discovery, especially after a browser source is blocked. Requested initial sources must still be attempted. Returns observed posting links; read, import, batch score and recommend them. Optional boards contain platform and company board token.',
+    function('search_jobs','API-first discovery through configured LinkedIn MCP and public company boards. Returns observed posting cards; process candidate_queue.next_unread with verify_and_score_jobs. Search again for new boards only after actionable candidates are processed. Optional boards contain platform and company board token.',
         {**FILTER_SCHEMA,'query':TEXT,'location':TEXT,'use_directory':{'type':'boolean','description':'Select fresh verified boards by role and location; prefer after blocked requested sources.'},'boards':{'type':'array','maxItems':5,'items':{'type':'object',
             'properties':{'platform':{'type':'string','enum':['greenhouse','lever','ashby','workday']},'company':TEXT,'host':TEXT,'site':TEXT},
             'required':['platform','company'],'additionalProperties':False}},'limit':{'type':'integer','minimum':1,'maximum':20}},['query']),
     function('screen_jobs','Quickly rank a batch of actually observed job links against a short search query. Use after browser search to choose which descriptions to read and score. Advisory only; cannot replace score_job or establish eligibility. Unknowns remain available to you.',
         {'urls':{'type':'array','minItems':1,'maxItems':20,'items':TEXT},'query':TEXT}),
-    function('read_job','Capture the current browser job description before importing it. On a split results/detail page supply the observed detail region_ref and observation_id to exclude other jobs. URL may be the current page or its matching canonical posting link. Uses HTTP only for pages not open in the browser.',
+    function('read_job','Read and cache the canonical posting via configured LinkedIn MCP or public APIs. Prefer verify_and_score_jobs for a batch. Browser detail regions are a fallback; supply observed region_ref and observation_id for split pages. A cached body needs no repeated read.',
         {'url':TEXT,'region_ref':TEXT,'observation_id':TEXT},['url']),
     function('import_job','Save a retrieved job. Only for a pasted JD, supply message_id and its literal job_text excerpt (never the task instruction). Returns application_id.',
         {'url':TEXT,'message_id':TEXT,'job_text':TEXT,'title':TEXT,'company':TEXT,'location':TEXT},['url']),
@@ -850,7 +850,7 @@ class CareerHarness:
                 # tracking-only variants must not evict genuinely new targets.
                 candidates={job_key(j['url']):j for j in s.get('search_candidates',{}).values() if j.get('url')}
                 candidates.update({job_key(j['url']):j for j in jobs})
-                return {'search_source_health':health,'search_candidates':dict(list(candidates.items())[-60:]),
+                return {'search_source_health':health,'search_candidates':dict(list(candidates.items())[-100:]),
                     'search_request_cache':{'user_turn_id':turn,'requests':dict(list(attempts.items())[-32:])}}
             self.repository.change(task_id,remember_search)
             from eregion.runtime.fast_decisions import configured_decisions
@@ -942,8 +942,11 @@ class CareerHarness:
                         raise ValueError('LinkedIn MCP posting is '+detail['status']+'; no automatic paid or browser retry.')
                     candidate=next((j for j in state.get('search_candidates',{}).values()
                         if j.get('url') and job_key(j['url'])==identity),{})
-                    job={'url':detail['url'],'title':candidate.get('title') or '',
-                         'company':candidate.get('company') or '', 'location':candidate.get('location') or '',
+                    job={'url':detail['url'],'title':detail.get('title') or candidate.get('title') or '',
+                         'company':detail.get('company') or candidate.get('company') or '',
+                         'location':detail.get('location') or candidate.get('location') or '',
+                         'metadata_evidence':detail.get('metadata_evidence',{}),
+                         'discovery_card':{k:candidate.get(k) for k in ('title','company','location')},
                          'description':detail['description'],'source':'linkedin_mcp',
                          'raw_posting':detail.get('raw_posting'),'posting_scope':detail.get('posting_scope')}
                 if job is None:job=self._treg_scrape(task_id,state,url) if api_first else None

@@ -59,7 +59,11 @@ def search_cards(payload):
     refs=(payload.get('references') or {}).get('search_results') or []
     cards={}
     titles={r.get('text') for r in refs if isinstance(r,dict) and r.get('kind')=='job'}
-    for ref in refs:
+    job_refs=[r for r in refs if isinstance(r,dict) and r.get('kind')=='job']
+    anchors=[i for i,line in enumerate(lines) if line in titles]
+    # Repeated titles bind only when the whole text and URL sequences agree.
+    ordered=len(anchors)==len(job_refs) and [lines[i] for i in anchors]==[r.get('text') for r in job_refs]
+    for ordinal,ref in enumerate(job_refs):
         if not isinstance(ref,dict) or ref.get('kind')!='job':continue
         url=urljoin('https://www.linkedin.com',str(ref.get('url') or ''))
         match=re.fullmatch(r'/jobs/view/([0-9]{5,20})/?',urlsplit(url).path)
@@ -67,8 +71,8 @@ def search_cards(payload):
         title=str(ref.get('text') or '').strip()
         if not title:continue
         card={'title':title,'company':None,'location':None}
-        if lines.count(title)==1:
-            i=lines.index(title)
+        if ordered or lines.count(title)==1:
+            i=anchors[ordinal] if ordered else lines.index(title)
             if i+2<len(lines):
                 company,location=lines[i+1:i+3]
                 # A location-shaped line prevents treating a UI badge as company/place.
@@ -114,7 +118,7 @@ class LinkedInMcpSource:
                 unapplied.append('experience_level')  # never pretend an unsupported filter was applied
         payload = self._invoke('search_jobs', args)
         errors = payload.get('section_errors') or {}
-        if any((e or {}).get('type') == 'no_matching_jobs' for e in errors.values() if isinstance(e, dict)):
+        if any((e or {}).get('error_type',(e or {}).get('type')) == 'no_matching_jobs' for e in errors.values() if isinstance(e, dict)):
             return {'status': 'no_match', 'jobs': [], 'partial': False, 'unapplied_filters': unapplied}
         cards=search_cards(payload)
         jobs, dropped = [], 0
@@ -128,7 +132,7 @@ class LinkedInMcpSource:
         jobs = list({j['provider_job_id']: j for j in jobs}.values())
         total = payload.get('total') or {}
         return {'status': 'partial' if errors else 'ok', 'jobs': jobs, 'partial': bool(errors),
-                'section_errors': sorted(errors), 'dropped_without_identity': dropped,
+                'section_errors': sorted(errors), 'search_warnings':errors, 'dropped_without_identity': dropped,
                 'total': total.get('count'), 'total_exact': total.get('exact'),
                 'unapplied_filters': unapplied}
 
@@ -141,7 +145,7 @@ class LinkedInMcpSource:
         errors = payload.get('section_errors') or {}
         apply = payload.get('apply') or {}
         posting = str(sections.get('job_posting') or '').strip()
-        from .posting_text import scope
+        from .posting_text import scope, header
         scoped=scope(posting)
         evidence = '\n\n'.join(f'[{name}]\n{value}' for name, value in sections.items() if value).strip()
         reasons = []
@@ -163,6 +167,7 @@ class LinkedInMcpSource:
         else:
             status = 'complete_jd'
         return {'status': status, 'incomplete_reasons': reasons, 'url': url or job_url(job_id),
+                **(header(posting) if status=='complete_jd' else {}),
                 'provider_job_id': job_id, 'description': scoped['text'] if status == 'complete_jd' else None,
                 'raw_posting':posting,'posting_scope':{k:v for k,v in scoped.items() if k!='text'},
                 'evidence_text': evidence, 'section_errors': sorted(errors),

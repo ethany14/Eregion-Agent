@@ -392,7 +392,15 @@ class ContextArchive:
         if not isinstance(result, dict):
             return summary
         if isinstance(result.get('jobs'),list):
-            summary['jobs']=compact_resources('jobs',result['jobs'],self)
+            discovery=any(k in result for k in ('linkedin_mcp','query_variants','directory_searched','sources_checked','unapplied_filters'))
+            if discovery and not any(j.get('application_id') for j in result['jobs']):
+                # Cards have no hidden JD. Per-card refs inflate the list until
+                # the entire actionable list gets archived again.
+                summary['jobs']=[{k:j[k] for k in ('url','title','company','location','source') if k in j}
+                                 for j in result['jobs'][:8]]
+                summary['discovery_count']=len(result['jobs'])
+                summary['next']='Process candidate_queue.next_unread with verify_and_score_jobs. Remaining observed cards stay in the queue; no context paging is needed to acquire them.'
+            else:summary['jobs']=compact_resources('jobs',result['jobs'],self)
         if isinstance(result.get('candidates'),list):
             summary['candidates']=self.candidate_summary(result['candidates'])
             if 'qualified_count' in result:summary['qualified_count']=result['qualified_count']

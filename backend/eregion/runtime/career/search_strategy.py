@@ -15,10 +15,13 @@ def variants(state,args):
     levels=set(constraints(state).get('levels',[]))
     if not request or request['count']<10 or not role or not levels or not levels<={'junior','new_grad'}:
         return [args['query']]
-    queries=[f'junior {role}',f'entry level {role}',f'graduate {role}',f'"{role}"']
-    if normalized(args['query']) not in {normalized(q) for q in queries}:
+    place=request_fields(state)['location']
+    queries=[f'"{role}" AND (junior OR "entry level")',f'"{role}" AND (graduate OR "new grad")',
+             f'"{role}" in {place}' if place else f'"{role}"',f'"{role}"']
+    aliases=[f'junior {role}',f'entry level {role}',f'graduate {role}',role,*queries]
+    if normalized(args['query']) not in {normalized(q) for q in aliases}:
         return [args['query']]
-    return queries  # Source entry filter and user's location remain identical for all four.
+    return list(dict.fromkeys(queries))  # Original source filters and final gates remain mandatory.
 
 
 def card_mismatch(job,state):
@@ -39,8 +42,10 @@ def card_mismatch(job,state):
 
 
 def card_priority(job,state):
+    from .search_policy import seniority
     fields=request_fields(state);role=normalized(fields['role']);title=normalized(job.get('title'))
     exact=bool(role and re.search(r'\b'+re.escape(role)+r'\b',title))
     words=len(set(role.split()) & set(title.split()))
     place=normalized(fields['location']);location=normalized(job.get('location'))
-    return (-int(exact),-int(bool(place) and place in location),-words)
+    entry=seniority(job.get('title') or '') in {'junior','new_grad'}
+    return (-int(exact),-int(bool(place) and place in location),-int(entry),-words)
