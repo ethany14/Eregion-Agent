@@ -53,9 +53,14 @@ def recovery(state,*,saved_urls=()):
     retrieved={job_key(j['url']) for j in state.get('retrieved_jobs',{}).values() if j.get('url')}
     from .source_health import active_sources, browser_source
     sources=active_sources(state)
+    linkedin=state.get('linkedin_mcp_state') or {}
+    # A stopped or exhausted LinkedIn MCP source cannot read its cards in this turn.
+    linkedin_closed=bool(linkedin.get('stopped')) or (bool(linkedin.get('call_limit'))
+                                                   and linkedin.get('calls_used',0)>=linkedin['call_limit'])
     pending=[j for key,j in candidates.items() if key not in retrieved and key not in excluded
         and key not in legacy_tried and tried.get(key)!=revision
-        and not sources.get(browser_source(j['url']),{}).get('blocked')]
+        and not sources.get(browser_source(j['url']),{}).get('blocked')
+        and not (linkedin_closed and j.get('source')=='linkedin_mcp')]
     from .search_filters import filter_cards
     from .candidate_queue import enabled
     if enabled():pending,_=filter_cards(pending,state)

@@ -4,6 +4,7 @@ from eregion.runtime.core.engine import LoopStop
 from eregion.runtime.provider_usage import usage_scope, TaskProviderBudgetExceeded
 from .alerts import job_key
 from .qualification import record_many
+from .linkedin_source import LinkedInSourceStopped
 
 TOOL=function('verify_and_score_jobs',
     'Process 1-20 observed posting URLs together: read/reuse, qualify against the user request, import qualified jobs, '
@@ -53,6 +54,10 @@ def run(harness,task_id,args,call_id):
                     save(pending=None)
                 except (ValueError,LookupError) as exc:
                     items.append({'url':url,'status':'source_error','error':str(exc)[:400]});save(pending=None)
+                except LinkedInSourceStopped as exc:
+                    # The source (e.g. its call budget) stopped: keep processing postings
+                    # already read instead of discarding the whole batch.
+                    items.append({'url':url,'status':'source_stopped','error':exc.reason});save(pending=None)
             check();save(pending='qualify_jobs')
             qualifications=record_many(repo,task_id,ready)
             for job,qualification,item in zip(ready,qualifications,ready_items):

@@ -84,7 +84,9 @@ class TaskModel:
         self.timeout = model_timeout(self.model)
 
     def invoke(self, messages, tools):
-        return self.model.bind_tools(tools).invoke(messages, timeout=self.timeout, max_tokens=2400)
+        # Per-reply output bound. A complete 10-15 job final report (URL, score and
+        # risk per job) plus reasoning was cut off at 2400 in live runs.
+        return self.model.bind_tools(tools).invoke(messages, timeout=self.timeout, max_tokens=4000)
 
 
 class TaskLoop:

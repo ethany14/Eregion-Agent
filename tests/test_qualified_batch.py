@@ -186,3 +186,25 @@ def test_repeated_recommendation_is_reported_as_already_saved(career,monkeypatch
     assert len(state['recommendations'])==1
     snapshot=c.harness.observe(state)['recommended_jobs']
     assert snapshot==[{k:state['recommendations'][0][k] for k in ('application_id','title','company','url','match_score')}]
+
+
+def test_source_stop_mid_batch_keeps_already_read_postings(career,monkeypatch):
+    from eregion.runtime.career.linkedin_source import LinkedInSourceStopped
+    c=career;jobs=[posting(1),posting(2)];prepare(c,monkeypatch,jobs)
+    execute(c,'verify_and_score_jobs',urls=[jobs[0]['url']])
+    def stopped(url):raise LinkedInSourceStopped('call_budget_exhausted')
+    monkeypatch.setattr(c.harness.discovery,'job',stopped)
+    result=execute(c,'verify_and_score_jobs',urls=[jobs[0]['url'],jobs[1]['url']])
+    statuses={i['url']:i['status'] for i in result['candidates']}
+    assert statuses[jobs[1]['url']]=='source_stopped' and result['qualified_count']==1
+
+
+def test_exhausted_linkedin_cards_are_not_pending_work(career):
+    from eregion.runtime.career.search_recovery import recovery
+    c=career
+    card={'url':'https://www.linkedin.com/jobs/view/4472375348/','title':'Junior Data Analyst','source':'linkedin_mcp'}
+    c.repository.change(c.state['task_id'],goal=GOAL,messages=[],search_candidates={card['url']:card},
+                        linkedin_mcp_state={'calls_used':49,'call_limit':50,'stopped':None,'log':[]})
+    assert recovery(c.repository.get(c.state['task_id']))['pending_candidates']
+    c.repository.change(c.state['task_id'],linkedin_mcp_state={'calls_used':50,'call_limit':50,'stopped':None,'log':[]})
+    assert not recovery(c.repository.get(c.state['task_id']))['pending_candidates']

@@ -50,4 +50,5 @@ REPAIR_INSTRUCTION = (
 # off (often many decisions in one reply), not malformed by intent.
 TRUNCATED_INSTRUCTION = (
     ' It was cut off at the output length limit. Send fewer actions this time (at most three '
-    'independent tool calls) with short arguments; remaining decisions can follow in the next response.')
+    'independent tool calls) with short arguments; remaining decisions can follow in the next response. '
+    'For a final reply, use one compact line per job (title, URL, Score, one short risk).')
