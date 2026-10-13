@@ -2,7 +2,7 @@
  "baseline": "5f3e858 (implementation a37f6e4)",
  "final_code": "see git log; last live run at 68db2c9",
  "acceptance_requirement": ">=10 of 15 verified, scored, qualifying recommendations; 60 provider attempts, 1M input tokens, 900 s, LinkedIn MCP 50 calls, blind audit <=6 calls/200k tokens",
- "verdict": "NOT PASSED under the user's strict standard. Run 10 passed the automated harness but 4 of its 12 recommendations had model-acknowledged mandatory gaps or person-specific eligibility, and its seniority judgments inferred junior level from missing senior markers; it is not counted.",
+ "verdict": "NOT PASSED under the user's strict standard. Run 10 passed the automated harness but 4 of its 12 recommendations had model-acknowledged mandatory gaps or person-specific eligibility, and its seniority judgments inferred junior level from missing senior markers; it is not counted. The single approved expanded-limits acceptance (15d26b7) also failed: 2 recommendations passed the strengthened audit (incl. personal eligibility); the loop stopped no_progress after 23 reads.",
  "live_runs": [
   {
    "run": "default-batch-claude-model-owned-01",
@@ -2337,6 +2337,29 @@
    "kind": "one LinkedIn MCP search_jobs call (10 pages, on_site+hybrid), zero model calls",
    "linkedin_mcp_calls": 1,
    "seconds": 92.13
+  },
+  {
+   "probe": "semantic-qualification-probe-claude-levels-01",
+   "route": null,
+   "jobs": null,
+   "provider_attempts": 3,
+   "input_tokens": 4951,
+   "output_tokens": 10540,
+   "unknown_usage_calls": 0,
+   "seconds": 46.87,
+   "cost_usd": null,
+   "gold_cases": "10 junior + 4 senior-request cases, 14/14"
+  },
+  {
+   "probe": "claude-main-fit-probe-05-8jobs",
+   "route": "main",
+   "jobs": 8,
+   "provider_attempts": 39,
+   "input_tokens": 90354,
+   "output_tokens": 210305,
+   "unknown_usage_calls": 0,
+   "seconds": 132.44,
+   "cost_usd": null
   }
  ],
  "totals": {
@@ -2347,14 +2370,102 @@
   "audit_provider_attempts": 44,
   "audit_input_tokens": 232687,
   "audit_output_tokens": 134151,
-  "probe_provider_attempts": 156,
-  "probe_input_tokens": 984313,
-  "probe_output_tokens": 440223,
+  "probe_provider_attempts": 198,
+  "probe_input_tokens": 1079618,
+  "probe_output_tokens": 661068,
   "probe_unknown_usage_calls": 1,
   "linkedin_mcp_calls": 666,
   "live_execution_seconds": 9115.68,
   "audit_seconds": 1027.77,
   "cost_usd": null,
-  "cost_note": "No provider billing evidence; dollar cost unknown, not zero. Counts and tokens are complete except where unknown_usage_calls > 0."
+  "cost_note": "No provider billing evidence; dollar cost unknown, not zero. Counts and tokens are complete except where unknown_usage_calls > 0.",
+  "expanded_run": {
+   "provider_attempts": 52,
+   "input_tokens": 585620,
+   "output_tokens": 58644,
+   "audit_calls": 1,
+   "audit_input_tokens": 5414,
+   "audit_output_tokens": 3565,
+   "linkedin_mcp_calls": 24,
+   "seconds": 610.96
+  }
+ },
+ "expanded_run": {
+  "run": "default-batch-claude-expanded-01",
+  "code": "f55b4006019cc0907f685a82e543aebd6b48168b",
+  "limits_profile": "expanded",
+  "limits": {
+   "provider_attempts": 100,
+   "input_tokens": 1500000,
+   "deadline_seconds": 1500,
+   "linkedin_calls": 100
+  },
+  "acceptance": "failed",
+  "failures": [
+   "loop_not_completed_cleanly",
+   "fewer_than_ten_verified_scored_qualifying_recommendations"
+  ],
+  "audited_qualifying": 2,
+  "recommended": 3,
+  "loop_status": "needs_input",
+  "loop_error": "no_progress",
+  "provider_attempts": 52,
+  "by_route": {
+   "main": {
+    "calls": 27,
+    "input_tokens": 419572,
+    "output_tokens": 22397
+   },
+   "qualification": {
+    "calls": 6,
+    "input_tokens": 33798,
+    "output_tokens": 20059
+   },
+   "jev": {
+    "calls": 19,
+    "input_tokens": 132250,
+    "output_tokens": 16188
+   }
+  },
+  "input_tokens": 585620,
+  "output_tokens": 58644,
+  "unknown_usage_calls": 0,
+  "execution_seconds": 610.96,
+  "audit": {
+   "calls": 1,
+   "input_tokens": 5414,
+   "output_tokens": 3565,
+   "unknown_usage_calls": 0,
+   "seconds": 23.36,
+   "error": null
+  },
+  "linkedin_mcp_calls": 24,
+  "recommendations": [
+   {
+    "title": "Graduate Data Analyst",
+    "company": "adMarketplace",
+    "url": "https://www.linkedin.com/jobs/view/4469763828/",
+    "match_score": 81.11,
+    "audit_personal": "met",
+    "caveats": "New York office role; confirm work authorization and hybrid schedule."
+   },
+   {
+    "title": "Data Analyst",
+    "company": "Good Apple",
+    "url": "https://www.linkedin.com/jobs/view/4432001930/",
+    "match_score": 43.45,
+    "audit_personal": "met",
+    "caveats": "NYC in-person 4 days/week; confirm US work authorization; limited fit on advanced SQL/client presenting."
+   },
+   {
+    "title": "Marketing Analytics - Data Analyst - July 2027 Start Date - ADP",
+    "company": "Veeva Crossix",
+    "url": "https://www.linkedin.com/jobs/view/4439835443/",
+    "match_score": 46.28,
+    "audit_personal": "unmet",
+    "caveats": "July 2027 start; NYC on-site 4 days/week, 45-60 min commute; confirm US work authorization"
+   }
+  ],
+  "cost_usd": null
  }
 }
