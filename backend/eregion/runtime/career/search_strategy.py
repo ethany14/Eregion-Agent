@@ -30,7 +30,9 @@ def variants(state,args):
     place=request_fields(state)['location']
     # The provider level filter already scopes the broad query; '"role" in place' only
     # repeated it with extra keywords. Explicit early-career wording is ranked first.
-    queries=[f'"{role}" AND (junior OR "entry level" OR graduate OR "new grad")',f'"{role}"']
+    # The unquoted form also reaches equivalent titles that split the words
+    # ('Analyst, Data Operations'); the model still judges the occupation from the JD.
+    queries=[f'"{role}" AND (junior OR "entry level" OR graduate OR "new grad")',f'"{role}"',role]
     aliases=[f'junior {role}',f'entry level {role}',f'graduate {role}',role,f'{role} in {place}',f'junior {role} in {place}',*queries]
     if normalized(args['query']) not in {normalized(q) for q in aliases}:
         return [args['query']]

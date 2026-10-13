@@ -343,7 +343,12 @@ class CareerHarness:
             **source_mode.snapshot_policy(api_first:=self.api_first(),self._source_scope(state) if api_first else None),
             'known_results':known,
             'scheduled_search':recommendation,
-            'recommended_jobs':state.get('recommendations',[]),
+            # Identity, URL and score stay inline for the final answer; the model's own
+            # earlier reason/caveat prose is shortened so the list never needs paging.
+            'recommended_jobs':[{**{k:r[k] for k in ('application_id','title','company','location','url','match_score',
+                                                     'score_range','analysis_status') if k in r},
+                                 **{k:str(r[k])[:140] for k in ('reason','caveats') if r.get(k)}}
+                                for r in state.get('recommendations',[])],
             'previous_recommendations':self.alerts.recommended() if recommendation else [],
             'job_alerts':self.alerts.list() if getattr(self,'alerts',None) and not recommendation else [],
             'browser':state.get('browser'),
