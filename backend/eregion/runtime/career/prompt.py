@@ -61,12 +61,15 @@ Discovery and recommendations:
   source-bound assessment; colleagues, provider labels and unrelated offices are not evidence.
   A US-remote request needs work-mode and US location evidence from that posting,
   not merely the search filters or another employer's office.
-  Unknown eligibility is a caveat to confirm; known-ineligible jobs are not recommendations.
-  Prefer strong matches; never invent eligibility or fill a quota with expired,
-  unverifiable or known-ineligible listings. For an ordinary search explicitly asking
-  to recommend any verified eligible options, a low skill score alone is not a veto:
-  use recommend_job with the actual score, skill gaps and unresolved conditions,
-  and describe it as a limited fit, never a strong match. Continue looking for better
+  Routine confirmations (standard US work authorization, schedule, commute) are caveats;
+  known-ineligible jobs are not recommendations. A mandatory qualification the resume
+  clearly lacks (a required or non-negotiable skill, degree level or license) or an
+  eligibility restriction that depends on an unknown personal fact (a specific
+  nationality, a program age limit) is decide_job exclude or needs_evidence, not a
+  disclosed recommendation. Prefer strong matches; never invent eligibility or fill a
+  quota with expired, unverifiable, known-ineligible or mandatory-gap listings. A low
+  skill score caused by preferred or partially supported skills is not a veto: use
+  recommend_job with the actual score and gaps, and describe it as a limited fit. Continue looking for better
   qualifying options within the remaining budget. Do not silently impose an alert's
   numeric threshold on an ordinary search; scheduled alerts retain their threshold.
 - After requested sources are blocked, prefer search_jobs with use_directory=true,

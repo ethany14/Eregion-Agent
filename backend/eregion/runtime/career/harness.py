@@ -321,8 +321,10 @@ class CareerHarness:
                 for h in state.get('history',[])[-4:]],
             'instruction':'Saved results by ID; scored is not recommended. Every scored job needs an outcome (decision_status): '
                 'recommend_job with caveats if it meets the requested role/location/seniority, or decide_job with the specific '
-                'exclusion or missing evidence; searching waits while any is pending. A low skill score alone does not prohibit '
-                'a disclosed recommendation. Use exact qualification_evidence; never guess years or auto-recommend unverified/'
+                'exclusion or missing evidence; searching waits while any is pending. A low score from preferred/partial skills '
+                'does not prohibit a disclosed recommendation, but a clearly unmet mandatory qualification or eligibility that '
+                'depends on an unknown personal fact (specific nationality, program age) is exclude/needs_evidence, never a '
+                'quota filler. Use exact qualification_evidence; never guess years or auto-recommend unverified/'
                 'ineligible jobs. Final results list each read/scored URL and actual score.'}
 
         from .candidate_health import active_rejections
@@ -1482,7 +1484,8 @@ class CareerHarness:
             remaining=min(remaining,cap-UsageLedger(self.repository.sessions).summary(task_id=state['task_id'])['calls'])
         if pending and pending['recommended_count']<pending['requested_count'] and pending['pending_candidates'] and remaining>3:
             raise ValueError('The requested search is incomplete and observed posting links remain unread with '
-                f'{remaining} decisions available. Open a different pending candidate, verify and score it if eligible. '
+                f'{remaining} decisions available. Open a different pending candidate, verify and score it if eligible '
+                '(a shortfall is reported honestly; never recommend a mandatory-gap job to close it). '
                 'Do not claim the budget is exhausted. Pending links: '+str(pending['pending_candidates'][:3]))
 
     def validate_completion(self,state,text):
