@@ -28,7 +28,7 @@ def constraints(applicant, job):
     low_ranges = re.finditer(
         r'(?:^|\n)\s*(?:[-*•]\s*)?'
         r'(?:(?:requires?|minimum(?: of)?|at least|must have|candidates? must have)\s+)?'
-        r'(\d+)\s*[-–]\s*(\d+)\s+years?(?:\s+of)?\s+[^\n.;:!?]{0,80}?experience\b', description)
+        r"(\d+)\s*[-–]\s*(\d+)\s+years?['’]?(?:\s+of)?\s+[^\n.;:!?]{0,80}?experience\b", description)
     junior = junior or any(0 <= int(m[1]) <= int(m[2]) <= 3 for m in low_ranges)
     minimum_years = re.finditer(
         r'\b(?:require[ds]?|minimum|at least|must have)\s+(?:(?:at least|of)\s+)?(\d+)'

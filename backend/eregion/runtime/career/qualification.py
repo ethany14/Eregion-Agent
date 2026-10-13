@@ -67,4 +67,4 @@ def deferred(state):
     bodies={job_key(j['url']):j for j in state.get('retrieved_jobs',{}).values() if j.get('url')}
     return {key for key,row in state.get('candidate_qualifications',{}).items()
             if row.get('revision')==state.get('chat_revision',0) and not row['qualified']
-            and key in bodies and row['body_hash']==body_hash(bodies[key])}
+            and (key not in bodies or row['body_hash']==body_hash(bodies[key]))}

@@ -58,6 +58,15 @@ class ContextArchive:
             return self.incomplete(ref)
         value = stored['value']
         root_value = value
+        if (not path and not historical and isinstance(value,dict)
+                and 'qualified_count' in value and isinstance(value.get('candidates'),list)):
+            return {'ref':ref,'content':'','no_new_evidence':True,
+                    'candidates':self.candidate_summary(value['candidates']),
+                    'qualified_count':value['qualified_count'],
+                    'available_paths':[{'path':['candidates',str(i),'qualification','checks']}
+                                       for i in range(len(value['candidates']))],
+                    'next':'These batch verdicts are already available. Decide scored jobs or search different candidates. '
+                           'For an unresolved fact read a specific candidate field; historical=true is for an intentional audit.'}
         progress_only = (isinstance(value, list) and bool(value) and all(
             isinstance(row, dict) and row.get('role') == 'assistant' and 'text' in row
             and 'id' in row and 'at' in row for row in value))
@@ -339,6 +348,13 @@ class ContextArchive:
             return self.incomplete()
         return {k: self.clean_history(v) for k, v in value.items()}
 
+    @staticmethod
+    def candidate_summary(rows):
+        return [{**{k:r[k] for k in ('url','title','status','application_id','error') if k in r},
+                 'checks':{k:{'status':c['status'],'quote':c.get('quote','')[:200]}
+                           for k,c in r.get('qualification',{}).get('checks',{}).items()}}
+                for r in rows[:8]]
+
     def tool_result(self, result):
         """Keep complete tool data; audit truncation is not model context storage."""
         secrets = {'image', 'password', 'credentials', 'secret', 'api_key', 'access_token',
@@ -365,9 +381,8 @@ class ContextArchive:
         if isinstance(result.get('jobs'),list):
             summary['jobs']=compact_resources('jobs',result['jobs'],self)
         if isinstance(result.get('candidates'),list):
-            summary['candidates']=[{**{k:r[k] for k in ('url','title','status','application_id','error') if k in r},
-                'checks':{k:c['status'] for k,c in r.get('qualification',{}).get('checks',{}).items()}}
-                for r in result['candidates'][:8]]
+            summary['candidates']=self.candidate_summary(result['candidates'])
+            if 'qualified_count' in result:summary['qualified_count']=result['qualified_count']
         if result.get('job_detail'):summary['job_detail']=result['job_detail']
         if isinstance(result.get('regions'),list):
             summary['regions']=[{k:r[k] for k in ('ref','label','tag','text_length') if k in r}

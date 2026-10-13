@@ -324,6 +324,14 @@ class CareerHarness:
 
         from .candidate_health import active_rejections
         known['excluded_candidates']=active_rejections(state)
+        source=state.get('linkedin_mcp_state') or {}
+        if source:
+            log=source.get('log',[])
+            known['linkedin_source_facts']={
+                'calls_used':source.get('calls_used',0),'stop_reason':source.get('stopped'),
+                'successful_searches':sum(r.get('tool')=='search_jobs' and r.get('outcome')=='ok' for r in log),
+                'successful_details':sum(r.get('tool')=='get_job_details' and r.get('outcome')=='ok' for r in log),
+                'instruction':'A later source stop or exhausted budget does not erase earlier successful results. Report both accurately.'}
         from .candidate_queue import enabled as candidate_batches, view as candidate_view
         search_view=recovery(state,saved_urls=[self.runtime.workspace.application_job(a).canonical_url for a in state['jobs']])
         return {'candidate':saved.get('profile',{}),'resume_text':text[:40000],
@@ -939,10 +947,10 @@ class CareerHarness:
                 if job is None:job = self.discovery.job(args['url'])
             from .candidate_health import validate_and_record
             validate_and_record(self.repository,task_id,job,observed)
-            self.repository.change(task_id,lambda s:{'retrieved_jobs':dict(list({**s.get('retrieved_jobs',{}),job['url']:job,args['url']:job}.items())[-20:])})
+            self.repository.change(task_id,lambda s:{'retrieved_jobs':dict(list({**s.get('retrieved_jobs',{}),job['url']:job,args['url']:job}.items())[-100:])})
             if job.get('source') in {'treg:crawl4ai.web.scrape','linkedin_mcp'} and turn:
                 self.repository.change(task_id,lambda s:{'successful_read_turns':dict(list({
-                    **s.get('successful_read_turns',{}),job_key(url):turn}.items())[-20:])})
+                    **s.get('successful_read_turns',{}),job_key(url):turn}.items())[-100:])})
             from .posting_brief import with_brief
             return with_brief(job)
         if name=='import_job':

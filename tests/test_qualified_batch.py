@@ -100,3 +100,39 @@ def test_granular_scoring_cannot_bypass_location_guard(career,monkeypatch):
     execute(c,'read_job',url=jobs[0]['url']);saved=execute(c,'import_job',url=jobs[0]['url'])
     assert execute(c,'score_job',application_id=saved['application_id'])['error_code']=='qualification_needed'
     assert execute(c,'score_jobs',application_ids=[saved['application_id']])['error_code']=='qualification_needed'
+
+
+def test_deferred_survives_body_eviction_but_not_new_evidence():
+    from eregion.runtime.career.alerts import job_key
+    job=posting(1,location='US Remote')
+    state={'goal':GOAL,'chat_revision':1,'retrieved_jobs':{}}
+    state['candidate_qualifications']={job_key(job['url']):assess(state,job)}
+    assert deferred(state)=={job_key(job['url'])}
+    state['retrieved_jobs']={job['url']:posting(1)}
+    assert not deferred(state)
+
+
+@pytest.mark.parametrize('apostrophe',["'",'\u2019'])
+def test_possessive_experience_range_is_same_requirement(apostrophe):
+    from eregion.runtime.career.search_policy import opening_level
+    from scripts.remaining_search_acceptance import constraints
+    assert opening_level(f"1 - 2 years{apostrophe} Data Analysis experience")=='junior'
+    assert constraints('analyst',posting(1,title='Data Analyst',
+                       description=f"1 - 2 years{apostrophe} Data Analysis experience"))['seniority']
+    assert opening_level(f"1 - 2 years{apostrophe} experience\nRequires 5 years of experience")=='senior'
+    assert opening_level(f"4 - 6 years{apostrophe} experience") is None
+
+
+def test_batch_context_root_does_not_page_through_known_verdicts():
+    from eregion.runtime.request_context import ContextArchive
+    result={'jobs':[],'candidates':[{'url':posting(i)['url'],'title':'Data Analyst',
+             'status':'needs_evidence','qualification':assess({'goal':GOAL},posting(i,location='US Remote'))}
+             for i in range(8)],'qualified_count':0,'next':'Search different candidates.'}
+    archive=ContextArchive();summary=archive.tool_result(result)
+    ref=summary['context_ref']
+    for offset in (0,3000,6000):
+        read=archive.read(ref,offset)
+        assert read['no_new_evidence'] and read['content']=='' and len(read['candidates'])==8
+    source=archive.read(ref,path=['candidates','0','qualification','checks','location'])
+    assert 'US Remote' in source['content']
+    assert archive.read(ref,historical=True)['content']
