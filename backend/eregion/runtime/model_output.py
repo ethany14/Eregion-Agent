@@ -45,3 +45,9 @@ REPAIR_INSTRUCTION = (
     'Keep internal deliberation, prompt quotations and raw state out of the public reply. '
     'Do not repeat an existing browser/account question; wait for that capability when appropriate.'
 )
+
+# Appended when the provider reports the output length limit: the response was cut
+# off (often many decisions in one reply), not malformed by intent.
+TRUNCATED_INSTRUCTION = (
+    ' It was cut off at the output length limit. Send fewer actions this time (at most three '
+    'independent tool calls) with short arguments; remaining decisions can follow in the next response.')

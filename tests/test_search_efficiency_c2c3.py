@@ -165,3 +165,25 @@ def test_audit_retries_only_a_structurally_unusable_reply(monkeypatch):
     monkeypatch.setattr(model,'invoke_structured',always_bad)
     with pytest.raises(ValueError):audit.review('Find junior data analyst jobs in New York.',jobs)
     assert len(replies)==2   # bounded: never a third attempt
+
+
+def test_truncated_reply_gets_a_specific_bounded_repair():
+    from langchain_core.messages import AIMessage
+    from eregion.runtime.model_output import output_problem, REPAIR_INSTRUCTION, TRUNCATED_INSTRUCTION
+    cut=AIMessage(content='',tool_calls=[{'name':'recommend_job','args':{'application_id':'a'},'id':'1'}],
+                  response_metadata={'finish_reason':'length'})
+    assert output_problem(cut)=='incomplete_response'
+    seen=[]
+    class Fixed(loop_fixture.Model):
+        def invoke(self,messages,tools):
+            seen.append(messages);return super().invoke(messages,tools)
+    case=DecisionBatch('test_independent_decisions_in_one_response_all_execute')
+    case.setUp()
+    try:
+        case.harness=DecisionHarness()
+        model=Fixed([cut,loop_fixture.finish('Done.')])
+        _,task=case.start(model)
+        assert loop_fixture.settled(case.repo,task)['status']=='completed'
+        repair=' '.join(str(getattr(m,'content','')) for m in seen[1])
+        assert TRUNCATED_INSTRUCTION.strip() in repair and case.harness.writes==[]
+    finally:case.tearDown()

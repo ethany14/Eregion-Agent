@@ -18,7 +18,8 @@ RULE += ('For multi-job requests prefer verify_and_score_jobs with 8-20 observed
          'Do not page through JD context first. After deciding scored results, continue a different candidate '
          'batch or query; never keep proposing the same deferred URLs. Use decision_brief for each scored job: '
          'it exposes strengths, gaps and known ineligibility. Read a precise match_report field only if a necessary '
-         'fact is absent. You can issue decisions for multiple independent scored jobs in one response.\n')
+         'fact is absent. You can issue decisions for multiple independent scored jobs in one response: at most six per '
+         'response, with reason and caveats under 30 words each, so the reply fits the output limit.\n')
 RULE += ('Large entry-level searches expand equivalent role queries automatically, preserving location and provider level filters. '
          'Do not repeat that search with presentation-only changes. Card ordering is advisory, not a qualification. '
          'Expanded city searches default to work_type=onsite_or_hybrid; pass work_type=remote explicitly to look at remote postings. '

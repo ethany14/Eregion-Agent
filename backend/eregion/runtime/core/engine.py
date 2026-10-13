@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 
 
 from eregion.runtime.core.context import ConversationWindow, trace_value
-from eregion.runtime.model_output import output_problem, reply_text, REPAIR_INSTRUCTION
+from eregion.runtime.model_output import output_problem, reply_text, REPAIR_INSTRUCTION, TRUNCATED_INSTRUCTION
 from eregion.runtime.request_context import ContextArchive, READ_CONTEXT, prepare_request
 from eregion.runtime.provider_usage import usage_scope, record_tool_action, TaskProviderBudgetExceeded
 
@@ -194,7 +194,8 @@ class AgentLoop:
                     self.event('output_rejected', reason=problem)
                     if invalid:
                         raise LoopStop('invalid_model_response')
-                    invalid, repair = 1, REPAIR_INSTRUCTION
+                    invalid, repair = 1, (REPAIR_INSTRUCTION + TRUNCATED_INSTRUCTION
+                                          if problem == 'incomplete_response' else REPAIR_INSTRUCTION)
                     continue
                 invalid, repair, self.notice = 0, None, None
                 self.runtime.pop('recovery', None)
