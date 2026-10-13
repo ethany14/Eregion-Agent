@@ -1,0 +1,133 @@
+{
+  "status": "needs_input",
+  "calls": 39,
+  "seconds": 427.77,
+  "jobs": 0,
+  "materials": 0,
+  "applications": 0,
+  "error": "no_progress",
+  "final": "I stopped because repeated steps produced no new evidence. Saved results are preserved; the requested work is not yet complete. Open the saved results or retry with a different source or approach.",
+  "usage": {
+    "calls": 39,
+    "completed": 39,
+    "failed": 0,
+    "pending": 0,
+    "discarded": 0,
+    "retries": 0,
+    "input_tokens": 473095,
+    "output_tokens": 35132,
+    "unknown_usage_calls": 0,
+    "groups": [
+      {
+        "purpose": "agent",
+        "model": "muse-spark-1.3-contributor",
+        "calls": 39,
+        "input_tokens": 473095,
+        "output_tokens": 35132,
+        "unknown_usage_calls": 0,
+        "cached_input_tokens": 191061,
+        "reasoning_tokens": 28431,
+        "cache_hit_ratio": 0.40385334869318,
+        "reasoning_share": 0.8092622110896049
+      }
+    ],
+    "budget_input_tokens": 473095,
+    "cached_input_tokens": 191061,
+    "reasoning_tokens": 28431,
+    "cache_hit_ratio": 0.40385334869318,
+    "reasoning_share": 0.8092622110896049,
+    "usage_complete": true,
+    "provider_attempts": 39
+  },
+  "recommendations": [],
+  "schedules": 0,
+  "verified_jobs": [],
+  "audit": {
+    "tool_counts": {
+      "search_jobs": 9,
+      "read_job": 12,
+      "read_context": 15,
+      "update_plan": 2,
+      "list_jobs": 1
+    },
+    "tool_execution_seconds": {
+      "list_jobs": 0.012,
+      "read_context": 0.002,
+      "read_job": 17.167,
+      "search_jobs": 45.526,
+      "update_plan": 0
+    },
+    "candidate_count": 35,
+    "retrieved_count": 10,
+    "rejections": {},
+    "history_window": 24,
+    "tool_events": 39,
+    "context_reads": [
+      {
+        "arguments": {
+          "ref": "ctx-8b197c4f128227cbafa36036"
+        },
+        "already_read": null,
+        "offset": 0,
+        "next_offset": 3000
+      },
+      {
+        "arguments": {
+          "ref": "ctx-203a9b160d01514f5dd3ddef"
+        },
+        "already_read": null,
+        "offset": 0,
+        "next_offset": 3000
+      },
+      {
+        "arguments": {
+          "ref": "ctx-203a9b160d01514f5dd3ddef"
+        },
+        "already_read": true,
+        "offset": 3000,
+        "next_offset": 6000
+      },
+      {
+        "arguments": {
+          "ref": "ctx-494326dd2e58d682897d33dd"
+        },
+        "already_read": null,
+        "offset": 0,
+        "next_offset": 3000
+      },
+      {
+        "arguments": {
+          "ref": "ctx-c3363a15c79c0e6854bd2397"
+        },
+        "already_read": null,
+        "offset": 0,
+        "next_offset": 3000
+      },
+      {
+        "arguments": {
+          "ref": "ctx-a90a1cd0ca6bf858ff2e9fc5"
+        },
+        "already_read": true,
+        "offset": 6000,
+        "next_offset": 9000
+      },
+      {
+        "arguments": {
+          "ref": "ctx-a14896da36c487f74e9a26eb"
+        },
+        "already_read": null,
+        "offset": 0,
+        "next_offset": 3000
+      },
+      {
+        "arguments": {
+          "ref": "ctx-259a4ea003dd51faa6246f47"
+        },
+        "already_read": null,
+        "offset": 0,
+        "next_offset": 3000
+      }
+    ]
+  },
+  "actual_model_cost_usd": null
+}

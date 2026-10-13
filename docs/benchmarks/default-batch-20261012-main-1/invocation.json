@@ -1,0 +1,17 @@
+{
+  "head": "4d2e9b82d351b8966942860d6979761beeca907c",
+  "goal": "Find 15 current junior data analyst positions in New York for my saved resume. Aim for at least 10 verified, scored, qualifying recommendations. Use LinkedIn MCP and public company job-board APIs first. Keep the role, seniority and location constraints; report insufficient results honestly. Include each recommended job URL and match score. Do not apply, generate materials, or create a schedule.",
+  "flags": {
+    "JOB_AGENT_JOB_API_FIRST": "1",
+    "JOB_AGENT_TREG_ENABLED": "0",
+    "JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS": "60",
+    "JOB_AGENT_TASK_MAX_INPUT_TOKENS": "1000000"
+  },
+  "minimum_qualified": 10,
+  "target": 15,
+  "mcp_call_limit": 26,
+  "deadline_seconds": 900,
+  "synthetic_candidate": true,
+  "cost_usd": null,
+  "cost_note": "Provider billing unavailable; attempt and token caps enforced."
+}
