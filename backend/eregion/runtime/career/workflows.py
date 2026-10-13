@@ -8,7 +8,11 @@ TOOL = function('verify_and_score',
     'On failure inspect completed_steps and use the indicated granular fallback.',
     {k: TEXT for k in ('url', 'region_ref', 'observation_id', 'message_id',
                       'job_text', 'title', 'company', 'location')}, ['url'])
-RULE = '\nPrefer verify_and_score for a chosen posting; decide recommend_job separately.\n'
+RULE = ('\nFor a promising observed posting use verify_and_score to read, import and score in one call; '
+        'do not first page through its complete archived JD. Decide recommend_job separately from its actual score '
+        'and qualification evidence. For a posting already read, use verify_and_score to reuse it, or '
+        'dismiss_candidate with an exact source quote and reason if unsuitable. Finish started candidates before '
+        'searching again. A progress message or plan is not completed candidate work.\n')
 FALLBACK = 'Use read_job, import_job, then score_job individually; inspect saved progress first.'
 
 

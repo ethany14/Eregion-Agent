@@ -78,6 +78,12 @@ def test_default_route_ten_to_fifteen(career, monkeypatch):
         assert acceptance['status'] == 'passed', acceptance
     finally:
         if task:
+            from sqlalchemy import select
+            from eregion.runtime.provider_usage import ProviderUsageRow
+            with c.repository.sessions() as db:
+                rows = db.scalars(select(ProviderUsageRow).where(ProviderUsageRow.task_id == task['run_id']))
+                (output/'provider-ledger.json').write_text(json.dumps(
+                    [json.loads(row.details_json) for row in rows], indent=2), encoding='utf-8')
             state = service.repository.get(task['run_id'])
             ledger = ExternalToolLedger(c.repository.sessions).summary(task['run_id'])
             (output/'sources.json').write_text(json.dumps({

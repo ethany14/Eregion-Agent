@@ -6,6 +6,30 @@ from .alerts import job_key
 from .posting_qualification import PostingRejected, validate_posting
 
 
+def dismiss(repository, task_id, args):
+    """A reversible, turn-scoped model decision grounded in a retrieved posting."""
+    state = repository.get(task_id)
+    identity = job_key(args['url'])
+    job = next((j for j in state.get('retrieved_jobs', {}).values()
+                if j.get('url') and job_key(j['url']) == identity), None)
+    if not job:
+        raise ValueError('Read this posting before dismissing it; search snippets are not verified evidence.')
+    quote, reason = args['quote'].strip(), args['reason'].strip()
+    if not quote or len(quote) > 600 or not reason or len(reason) > 600:
+        raise ValueError('Provide a source quote and reason, each at most 600 characters.')
+    if not any(quote in str(job.get(k) or '') for k in ('title','location','description')):
+        raise ValueError('quote must be an exact excerpt of the retrieved title, location or JD.')
+    body_hash = hashlib.sha256(json.dumps(job, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    record = {'revision':state.get('chat_revision',0), 'url':job['url'], 'title':job.get('title'),
+              'body_hash':body_hash, 'reason':reason, 'quote':quote,
+              'rejection_code':'model_source_decision', 'page_evidence_hash':None}
+    old = state.get('candidate_rejections', {}).get(identity)
+    repository.change(task_id, lambda s: {'candidate_rejections':dict(list({
+        **s.get('candidate_rejections',{}), identity:record}.items())[-100:])})
+    return {'decision':'dismissed', 'url':job['url'], 'quote':quote, 'reason':reason,
+            'no_new_evidence':old == record, 'next':'Process another saved candidate. This decision expires on new user input.'}
+
+
 def active_rejections(state):
     return [r for r in state.get('candidate_rejections',{}).values()
         if r['revision']==state.get('chat_revision',0)]

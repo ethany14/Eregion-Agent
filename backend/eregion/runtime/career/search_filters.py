@@ -31,5 +31,10 @@ def filter_cards(jobs, state):
             excluded.append({'url':job.get('url'),'title':job.get('title'),
                              'reason':'explicit_seniority_mismatch','actual':actual})
         else: kept.append(job)
+    from .search_recovery import search_request
+    import re
+    request = search_request(state)
+    if request and request['words']:
+        kept.sort(key=lambda j: -len(request['words'] & set(re.findall(r'[a-z]+', (j.get('title') or '').lower()))))
     return kept, {'excluded_count':len(excluded),'excluded':excluded,
                   'unknowns_retained':True,'qualification':'cards_only; JD verification still required'}

@@ -1,4 +1,4 @@
-"""Bounded candidate batches (P3, JOB_AGENT_OPT_CANDIDATE_BATCHES, default off).
+"""Bounded candidate batches (default on for API-first; explicit flag overrides).
 
 A query view over existing state (search candidates, read bodies, imported jobs, scores,
 decisions, rejections); it stores no second copy of any status. Work already started is
@@ -15,7 +15,9 @@ DETAIL_LIMIT = 5
 
 
 def enabled():
-    return os.getenv('JOB_AGENT_OPT_CANDIDATE_BATCHES', '0') == '1'
+    from .treg_config import settings
+    default = str(settings()['JOB_AGENT_JOB_API_FIRST']).strip().lower() in {'1','true','yes','on'}
+    return os.getenv('JOB_AGENT_OPT_CANDIDATE_BATCHES', '1' if default else '0') == '1'
 
 
 def view(state, recovery):
@@ -28,7 +30,8 @@ def view(state, recovery):
     in_progress = []
     for item in recovery.get('read_not_imported', []):
         in_progress.append({'stage': 'import', 'url': item['url'], 'title': item.get('title'),
-                            'next': {'tool': 'import_job', 'arguments': {'url': item['url']}}})
+                            'next': {'tool': 'verify_and_score or import_job', 'arguments': {'url': item['url']}},
+                            'alternative': 'dismiss_candidate with an exact source quote and reason if unsuitable'})
     for app in state.get('jobs', []):
         if app in evidence:
             continue
@@ -64,4 +67,4 @@ def gate(state, recovery, name):
         return None
     return {'error': 'Finish the candidates already in progress before searching for more.',
             'error_code': 'candidates_in_progress', 'no_new_evidence': True, 'in_progress': started,
-            'next': 'Import read postings and score imported jobs (or decide them), then search for remaining gaps.'}
+            'next': 'Use verify_and_score on read postings, or dismiss_candidate with source evidence; score imported jobs and decide them before more discovery.'}

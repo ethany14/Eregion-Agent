@@ -369,7 +369,7 @@ class ContextArchive:
             summary['regions']=[{k:r[k] for k in ('ref','label','tag','text_length') if k in r}
                 for r in result['regions'][:6]]
         for key in ('error', 'error_code', 'next', 'progress_feedback', 'no_new_evidence', 'retryable', 'saved', 'failed', 'action_performed', 'recovery',
-                    'url', 'title', 'heading', 'observation_id', 'blocked', 'control_count', 'control_offset',
+                    'url', 'title', 'company', 'location', 'triage_evidence', 'heading', 'observation_id', 'blocked', 'control_count', 'control_offset',
                     'page_evidence_hash','primary_heading','body_scope',
                     'text_offset', 'text_length', 'region_ref', 'application_id', 'pack_id', 'run_id', 'mock_interview_id', 'current_question',
                     'status', 'version', 'match_score', 'requirement_counts', 'gaps', 'result_at',
@@ -380,7 +380,7 @@ class ContextArchive:
                     'seniority_warning', 'score_range', 'analysis_status', 'decision', 'pending', 'rejection_code'):
             if key in result:
                 value = result[key]
-                summary[key] = value if len(encoded(value)) <= (4000 if key in {'match_overview','material_overview','material_choices','observed_answers'} else 1000) else self.reference(value, preview=160)
+                summary[key] = value if len(encoded(value)) <= (4000 if key in {'triage_evidence','match_overview','material_overview','material_choices','observed_answers'} else 1000) else self.reference(value, preview=160)
         if isinstance(result.get('material_overview'), list) and isinstance(result.get('items'), list):
             documents = []
             for info, item in zip(result['material_overview'], result['items']):

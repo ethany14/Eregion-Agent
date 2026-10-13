@@ -3,8 +3,8 @@ import copy
 import os
 
 
-def enabled(name):
-    return os.getenv('JOB_AGENT_OPT_' + name, '0') == '1'
+def enabled(name, *, default=False):
+    return os.getenv('JOB_AGENT_OPT_' + name, '1' if default else '0') == '1'
 
 
 def history_policy():

@@ -85,7 +85,7 @@ class TaskHost:
             from eregion.runtime.career import source_mode
             prompt = source_mode.prompt_for(prompt, True)
             descriptions = source_mode.tool_descriptions(True)
-        if enabled('VERIFY_AND_SCORE') and any(t['function']['name'] == 'verify_and_score' for t in tools):
+        if any(t['function']['name'] == 'verify_and_score' for t in tools):
             from eregion.runtime.career.workflows import RULE
             prompt += RULE
         stable = enabled('STABLE_TOOLS') and hasattr(harness, 'stable_tools')
@@ -212,6 +212,9 @@ class TaskHost:
         return {**self._action_error(exc), **getattr(exc, 'workflow_detail', {})}
 
     def _action_error(self, exc):
+        if isinstance(exc, ToolArgumentsError) and str(exc).startswith('update_plan.'):
+            return {'error':str(exc), 'error_code':'tool_arguments',
+                    'next':'Pass steps as plain strings, for example {"steps":["Verify candidates","Score matches"]}. Do not use objects with title or description. Or skip the plan and execute the next useful tool.'}
         from eregion.runtime.career.source_health import SourceBlocked
         if isinstance(exc,SourceBlocked):return {'error':str(exc),'error_code':'source_blocked',
             'source':exc.source,'no_new_evidence':True,

@@ -24,6 +24,8 @@ from .search_filters import FILTER_SCHEMA, FILTER_FIELDS, effective_filters, fil
 APP = {'application_id':TEXT}
 ITEM = {'pack_id':TEXT,'item_id':TEXT}
 TOOLS = [
+    function('dismiss_candidate','Exclude a retrieved but unsuitable posting for this user turn without paid scoring. Quote its exact title, location or JD and explain the mismatch with the user request. This is a model decision, not proof the vacancy is closed.',
+        {'url':TEXT,'quote':{'type':'string','minLength':1,'maxLength':600},'reason':{'type':'string','minLength':1,'maxLength':600}}),
     function('configure_job_alert','Create or update a daily autonomous job recommendation schedule explicitly requested in the cited user message. Timezone is required; never guess it. This schedules research only, not applications.',
         {'message_id':TEXT,'alert_id':TEXT,'config':AlertConfig.model_json_schema()},['message_id','config']),
     function('set_job_alert_enabled','Pause or resume a daily search at the user\'s explicit request.',
@@ -93,7 +95,7 @@ class CareerHarness:
         from .search_recovery import search_request
         tools=[t for t in self.tools if stable or state.get('visual_fallback') or t['function']['name'] not in VISUAL_NAMES]
         from eregion.runtime.request_options import enabled
-        if enabled('VERIFY_AND_SCORE'):
+        if enabled('VERIFY_AND_SCORE', default=self.api_first()):
             from .workflows import TOOL
             tools = [*tools, TOOL]
         # Offer operations for resources that actually exist in this process.
@@ -107,12 +109,12 @@ class CareerHarness:
         if not stable and not configured_decisions().enabled:
             tools = [t for t in tools if t['function']['name'] != 'screen_jobs']
         if self.recommendation_run(state):
-            allowed=BROWSER_NAMES|{'search_jobs','screen_jobs','read_job','import_job','verify_and_score','inspect_job','score_job','score_jobs','recommend_job','decide_job'}
+            allowed=BROWSER_NAMES|{'dismiss_candidate','search_jobs','screen_jobs','read_job','import_job','verify_and_score','inspect_job','score_job','score_jobs','recommend_job','decide_job'}
             return [t for t in tools if t['function']['name'] in allowed]
         latest_text=latest['text'] if latest else state.get('goal','')
         positive=re.sub(r'\b(?:do not|don.t|never)\b[^.!?]*','',latest_text,flags=re.I)
         if search_request(state) and not re.search(r'\b(?:apply|submit|interview|tailor|letter|schedule|alert|write|draft|prepare|materials?|rewrite|update|create)\b',positive,re.I):
-            allowed=BROWSER_NAMES|{'search_jobs','screen_jobs','read_job','import_job','verify_and_score','list_jobs','inspect_job','score_job','score_jobs','recommend_job','decide_job'}
+            allowed=BROWSER_NAMES|{'dismiss_candidate','search_jobs','screen_jobs','read_job','import_job','verify_and_score','list_jobs','inspect_job','score_job','score_jobs','recommend_job','decide_job'}
             tools=[t for t in tools if t['function']['name'] in allowed]
         return tools
 
@@ -571,9 +573,12 @@ class CareerHarness:
         return {k:profile[k]for k in ('city','country')if profile.get(k)} or None
 
     def execute(self,task_id,name,args,*,call_id):
+        if name == 'dismiss_candidate':
+            from .candidate_health import dismiss
+            return dismiss(self.repository, task_id, args)
         if name == 'verify_and_score':
             from eregion.runtime.request_options import enabled
-            if not enabled('VERIFY_AND_SCORE'):
+            if not enabled('VERIFY_AND_SCORE', default=self.api_first()):
                 raise ValueError('verify_and_score is disabled.')
             from .workflows import run
             return run(self, task_id, args, call_id)
@@ -862,7 +867,8 @@ class CareerHarness:
             if (api_first and not args.get('region_ref') and turn and cached
                 and cached.get('source') in {'treg:crawl4ai.web.scrape','linkedin_mcp'}
                 and state.get('successful_read_turns',{}).get(job_key(url))==turn):
-                return {**cached,'cached':True,'no_new_evidence':True}
+                from .posting_brief import with_brief
+                return {**with_brief(cached),'cached':True,'no_new_evidence':True}
             if args.get('region_ref') or (same_job and not api_first):
                 # Capture the live, rendered description when a site requires JS.
                 # The model cannot supply or invent this source text.
@@ -922,7 +928,8 @@ class CareerHarness:
             if job.get('source') in {'treg:crawl4ai.web.scrape','linkedin_mcp'} and turn:
                 self.repository.change(task_id,lambda s:{'successful_read_turns':dict(list({
                     **s.get('successful_read_turns',{}),job_key(url):turn}.items())[-20:])})
-            return job
+            from .posting_brief import with_brief
+            return with_brief(job)
         if name=='import_job':
             retrieved = next((job for job in state.get('retrieved_jobs', {}).values()
                               if job.get('url') and job_key(job['url']) == job_key(args['url'])), None)

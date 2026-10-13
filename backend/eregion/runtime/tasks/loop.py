@@ -64,8 +64,8 @@ def function(name, description, properties=None, required=None):
 
 TEXT = {'type':'string'}
 CONTROL_TOOLS = [
-    function('update_plan','Save or revise your plan. Steps are intentions, not a fixed workflow.',
-        {'steps':{'type':'array','items':TEXT,'maxItems':10}}),
+    function('update_plan','Save a plan only when useful. steps must be plain strings, e.g. ["Verify candidates", "Score matches"], never title/description objects. Steps are intentions, not evidence of progress.',
+        {'steps':{'type':'array','items':{'type':'string','maxLength':300},'maxItems':10}}),
     function('say','Send a concise progress message to the user.',{'text':TEXT}),
     function('ask_user','Ask a focused question in chat. Keep working if independent work remains.',
         {'text':TEXT,'wait_for_reply':{'type':'boolean'}}),
