@@ -44,6 +44,8 @@ def test_batch_only_scores_qualified_and_reuses_persisted_results(career,monkeyp
     assert len(deferred(state))==1 and len(state['jobs'])==2
     repeated=execute(c,'verify_and_score_jobs',**args)
     assert repeated['no_new_evidence'] and len(groups)==1 and len(reads)==3
+    regrouped=execute(c,'verify_and_score_jobs',urls=[jobs[0]['url'],jobs[2]['url']])
+    assert regrouped['no_new_evidence'] and len(groups)==1 and len(reads)==3
     extra=posting(4);jobs.append(extra)
     c.repository.change(c.state['task_id'],lambda s:{'search_candidates':{**s['search_candidates'],extra['url']:extra}})
     execute(c,'verify_and_score_jobs',urls=[jobs[0]['url'],extra['url']])
@@ -94,6 +96,7 @@ def test_budget_stop_keeps_imports_and_resume_uses_same_jobs(career,monkeypatch)
     execute(c,'verify_and_score_jobs',urls=[j['url'] for j in jobs])
     after=c.repository.get(c.state['task_id'])
     assert after['jobs']==before['jobs'] and len(reads)==2 and len(after['analyses'])==2
+    assert all(not v.get('failure') for v in after['batch_verifications'].values())
 
 def test_granular_scoring_cannot_bypass_location_guard(career,monkeypatch):
     c=career;jobs=[posting(1,location='US Remote')];prepare(c,monkeypatch,jobs)
@@ -136,3 +139,11 @@ def test_batch_context_root_does_not_page_through_known_verdicts():
     source=archive.read(ref,path=['candidates','0','qualification','checks','location'])
     assert 'US Remote' in source['content']
     assert archive.read(ref,historical=True)['content']
+
+
+def test_failed_source_does_not_manufacture_batch_progress(career,monkeypatch):
+    jobs=[posting(1)];prepare(career,monkeypatch,jobs)
+    def fail(url):raise ValueError('Unavailable posting')
+    monkeypatch.setattr(career.harness.discovery,'job',fail)
+    result=execute(career,'verify_and_score_jobs',urls=[jobs[0]['url']])
+    assert result['no_new_evidence'] and result['candidates'][0]['status']=='source_error'

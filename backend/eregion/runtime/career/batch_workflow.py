@@ -20,7 +20,7 @@ def run(harness,task_id,args,call_id):
               for j in initial.get(kind,{}).values() if j.get('url')}
     if any(key not in observed for key in identities):raise ValueError('Use URLs from observed search results or saved retrieved postings.')
     key=harness.key(initial,'verify_and_score_jobs',{'urls':sorted(identities)})
-    journal=dict(initial.get('batch_verifications',{}).get(key,{}));items=[];apps=[]
+    journal=dict(initial.get('batch_verifications',{}).get(key,{}));items=[];apps=[];changed=False
     def check():
         s=repo.get(task_id)
         if s['chat_revision']!=revision or s.get('pause_requested') or s['status'] in {'cancelled','completed'}:
@@ -38,24 +38,31 @@ def run(harness,task_id,args,call_id):
                 check();state=repo.get(task_id)
                 job=next((j for j in state.get('retrieved_jobs',{}).values() if j.get('url') and job_key(j['url'])==job_key(url)),None)
                 try:
+                    new_read=job is None
                     job=job or invoke('read_job',{'url':url})
                     if job.get('error'):items.append({'url':url,'status':'read_failed','error':job['error']});continue
+                    if new_read:changed=True
                     check();qualification=record(repo,task_id,job)
+                    previous=state.get('candidate_qualifications',{}).get(job_key(url),{})
+                    if any(previous.get(k)!=qualification.get(k) for k in
+                           ('revision','body_hash','requested','checks','qualified')):changed=True
                     item={'url':url,'title':job.get('title'),'qualification':qualification}
                     if not qualification['qualified']:
                         items.append({**item,'status':'needs_evidence'});save(pending=None);continue
                     imported=invoke('import_job',{'url':url})
                     if imported.get('error'):items.append({**item,'status':'import_failed','error':imported['error']});continue
                     apps.append(imported['application_id'])
+                    if apps[-1] not in initial.get('jobs',[]):changed=True
                     items.append({**item,'application_id':apps[-1],'status':'imported'})
                     save(pending=None)
                 except (ValueError,LookupError) as exc:
                     items.append({'url':url,'status':'source_error','error':str(exc)[:400]});save(pending=None)
             result=invoke('score_jobs',{'application_ids':apps}) if apps else {'jobs':[]}
             if result.get('error'):save(pending=None,failure=result);return {**result,'candidates':items}
-            save(pending=None,completed=True)
+            if apps and not result.get('no_new_evidence'):changed=True
+            save(pending=None,completed=True,failure=None)
             return {'jobs':result['jobs'],'candidates':items,'qualified_count':len(apps),
-                    'no_new_evidence':initial.get('batch_verifications',{}).get(key,{}).get('completed',False) and (not apps or bool(result.get('no_new_evidence'))),
+                    'no_new_evidence':not changed,
                     'next':'Decide each scored job. Deferred jobs are not quota matches; discover different postings when no qualified pending candidates remain.'}
     except TaskProviderBudgetExceeded:
         save(failure='provider_budget');raise
