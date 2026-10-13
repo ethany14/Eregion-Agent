@@ -2,7 +2,7 @@
  "baseline": "5f3e858 (implementation a37f6e4)",
  "final_code": "see git log; last live run at 68db2c9",
  "acceptance_requirement": ">=10 of 15 verified, scored, qualifying recommendations; 60 provider attempts, 1M input tokens, 900 s, LinkedIn MCP 50 calls, blind audit <=6 calls/200k tokens",
- "verdict": "NOT PASSED under the user's strict standard. Run 10 passed the automated harness but 4 of its 12 recommendations had model-acknowledged mandatory gaps or person-specific eligibility, and its seniority judgments inferred junior level from missing senior markers; it is not counted. The single approved expanded-limits acceptance (15d26b7) also failed: 2 recommendations passed the strengthened audit (incl. personal eligibility); the loop stopped no_progress after 23 reads.",
+ "verdict": "NOT PASSED under the user's strict standard. Run 10 passed the automated harness but 4 of its 12 recommendations had model-acknowledged mandatory gaps or person-specific eligibility, and its seniority judgments inferred junior level from missing senior markers; it is not counted. The single approved expanded-limits acceptance (15d26b7) also failed: 2 recommendations passed the strengthened audit (incl. personal eligibility); the loop stopped no_progress after 23 reads. Expanded acceptance 02 (c29928e, see expanded_run_02) also failed: clean completion, 3 audited recommendations, 2 unknown-usage calls.",
  "live_runs": [
   {
    "run": "default-batch-claude-model-owned-01",
@@ -2360,6 +2360,160 @@
    "unknown_usage_calls": 0,
    "seconds": 132.44,
    "cost_usd": null
+  },
+  {
+   "probe": "decision-replay-claude-01",
+   "kind": "decision replay (setup error: non-Jev scorer)",
+   "provider_attempts": 2,
+   "input_tokens": 33843,
+   "output_tokens": 1646,
+   "unknown_usage_calls": 0,
+   "passed": false,
+   "seconds": 20.27,
+   "cost_usd": null
+  },
+  {
+   "probe": "decision-replay-claude-02",
+   "kind": "decision replay",
+   "provider_attempts": 2,
+   "input_tokens": 32485,
+   "output_tokens": 2492,
+   "unknown_usage_calls": 0,
+   "passed": true,
+   "seconds": 23.92,
+   "cost_usd": null
+  },
+  {
+   "probe": "claude-fit-decomposition-01",
+   "kind": "Jev vs main-model fit decomposition (4 saved jobs)",
+   "provider_attempts": 65,
+   "input_tokens": 178290,
+   "output_tokens": 156113,
+   "unknown_usage_calls": 0,
+   "seconds": 572.49,
+   "results": [
+    {
+     "title": "Graduate Data Analyst",
+     "scores": {
+      "A_jev": 79.35,
+      "B_main": 48.0,
+      "C_main_on_jev_catalog": 78.6,
+      "D_jev_statuses_main_formula": {
+       "none": null,
+       "excluded": 93.8,
+       "missing": 53.6
+      }
+     },
+     "requirement_counts": {
+      "A_jev": 14,
+      "B_main": 29,
+      "C_main_on_jev_catalog": 14
+     },
+     "same_catalog_agreement": {
+      "same_catalog_items": 14,
+      "same_status": 8,
+      "pairs": {
+       "partial->partial": 1,
+       "matched->matched": 7,
+       "unknown->matched": 3,
+       "unknown->partial": 1,
+       "unknown->missing": 2
+      }
+     }
+    },
+    {
+     "title": "Data Analyst",
+     "scores": {
+      "A_jev": 43.06,
+      "B_main": 28.3,
+      "C_main_on_jev_catalog": 26.5,
+      "D_jev_statuses_main_formula": {
+       "none": null,
+       "excluded": 36.4,
+       "missing": 11.1
+      }
+     },
+     "requirement_counts": {
+      "A_jev": 21,
+      "B_main": 29,
+      "C_main_on_jev_catalog": 21
+     },
+     "same_catalog_agreement": {
+      "same_catalog_items": 21,
+      "same_status": 8,
+      "pairs": {
+       "unknown->missing": 8,
+       "partial->partial": 3,
+       "unknown->partial": 2,
+       "unknown->matched": 2,
+       "missing->missing": 3,
+       "matched->matched": 1,
+       "needs_confirmation->needs_confirmation": 1,
+       "unknown->needs_confirmation": 1
+      }
+     }
+    },
+    {
+     "title": "Marketing Analytics - Data Analyst - July 2027 Start Date - ADP",
+     "scores": {
+      "A_jev": 46.47,
+      "B_main": 30.0,
+      "C_main_on_jev_catalog": 43.8,
+      "D_jev_statuses_main_formula": {
+       "none": null,
+       "excluded": 33.3,
+       "missing": 6.2
+      }
+     },
+     "requirement_counts": {
+      "A_jev": 20,
+      "B_main": 22,
+      "C_main_on_jev_catalog": 20
+     },
+     "same_catalog_agreement": {
+      "same_catalog_items": 20,
+      "same_status": 6,
+      "pairs": {
+       "unknown->matched": 4,
+       "unknown->partial": 3,
+       "unknown->missing": 6,
+       "missing->missing": 1,
+       "partial->partial": 1,
+       "partial->matched": 1,
+       "needs_confirmation->needs_confirmation": 4
+      }
+     }
+    },
+    {
+     "title": "Data Analyst I (Dr Branch's Lab) - Liver",
+     "scores": {
+      "A_jev": 52.08,
+      "B_main": 70.0,
+      "C_main_on_jev_catalog": 66.7,
+      "D_jev_statuses_main_formula": {
+       "none": null,
+       "excluded": 100.0,
+       "missing": 22.2
+      }
+     },
+     "requirement_counts": {
+      "A_jev": 5,
+      "B_main": 4,
+      "C_main_on_jev_catalog": 5
+     },
+     "same_catalog_agreement": {
+      "same_catalog_items": 5,
+      "same_status": 1,
+      "pairs": {
+       "unknown->matched": 1,
+       "unknown->partial": 2,
+       "matched->matched": 1,
+       "unknown->missing": 1
+      }
+     }
+    }
+   ],
+   "cost_usd": null
   }
  ],
  "totals": {
@@ -2370,9 +2524,9 @@
   "audit_provider_attempts": 44,
   "audit_input_tokens": 232687,
   "audit_output_tokens": 134151,
-  "probe_provider_attempts": 198,
-  "probe_input_tokens": 1079618,
-  "probe_output_tokens": 661068,
+  "probe_provider_attempts": 267,
+  "probe_input_tokens": 1324236,
+  "probe_output_tokens": 821319,
   "probe_unknown_usage_calls": 1,
   "linkedin_mcp_calls": 666,
   "live_execution_seconds": 9115.68,
@@ -2388,6 +2542,17 @@
    "audit_output_tokens": 3565,
    "linkedin_mcp_calls": 24,
    "seconds": 610.96
+  },
+  "expanded_run_02": {
+   "provider_attempts": 98,
+   "input_tokens": 895688,
+   "output_tokens": 108753,
+   "unknown_usage_calls": 2,
+   "audit_calls": 2,
+   "audit_input_tokens": 9717,
+   "audit_output_tokens": 7305,
+   "linkedin_mcp_calls": 62,
+   "seconds": 1068.04
   }
  },
  "expanded_run": {
@@ -2464,6 +2629,100 @@
     "match_score": 46.28,
     "audit_personal": "unmet",
     "caveats": "July 2027 start; NYC on-site 4 days/week, 45-60 min commute; confirm US work authorization"
+   }
+  ],
+  "cost_usd": null
+ },
+ "expanded_run_02": {
+  "run": "default-batch-claude-expanded-02",
+  "code": "c29928e5b0f5c4fc65103979cc9877ce8f9ed8d0",
+  "limits": {
+   "provider_attempts": 100,
+   "input_tokens": 1500000,
+   "deadline_seconds": 1500,
+   "linkedin_calls": 100
+  },
+  "acceptance": "failed",
+  "failures": [
+   "incomplete_usage",
+   "fewer_than_ten_verified_scored_qualifying_recommendations"
+  ],
+  "audited_qualifying": 3,
+  "recommended": 5,
+  "loop_status": "completed",
+  "provider_attempts": 98,
+  "by_route": {
+   "main": {
+    "calls": 28,
+    "input_tokens": 539927,
+    "output_tokens": 23191
+   },
+   "qualification": {
+    "calls": 16,
+    "input_tokens": 78055,
+    "output_tokens": 51181
+   },
+   "jev": {
+    "calls": 54,
+    "input_tokens": 277706,
+    "output_tokens": 34381
+   }
+  },
+  "input_tokens": 895688,
+  "output_tokens": 108753,
+  "unknown_usage_calls": 2,
+  "execution_seconds": 1068.04,
+  "audit": {
+   "calls": 2,
+   "input_tokens": 9717,
+   "output_tokens": 7305,
+   "seconds": 53.66
+  },
+  "linkedin_mcp_calls": 62,
+  "recommendations": [
+   {
+    "title": "Graduate Data Analyst",
+    "company": "adMarketplace",
+    "url": "https://www.linkedin.com/jobs/view/4469763828/",
+    "match_score": 80.66,
+    "audit_checks_failed": [],
+    "audit_personal": "met"
+   },
+   {
+    "title": "Data Analyst",
+    "company": "Good Apple",
+    "url": "https://www.linkedin.com/jobs/view/4432001930/",
+    "match_score": 43.11,
+    "audit_checks_failed": [],
+    "audit_personal": "met"
+   },
+   {
+    "title": "Marketing Analytics - Data Analyst - July 2027 Start Date - ADP",
+    "company": "Veeva Crossix",
+    "url": "https://www.linkedin.com/jobs/view/4439835443/",
+    "match_score": 45.47,
+    "audit_checks_failed": [
+     "personal"
+    ],
+    "audit_personal": "unknown"
+   },
+   {
+    "title": "Data Driven Marketing Analyst - Audience Design",
+    "company": "Deluxe",
+    "url": "https://www.linkedin.com/jobs/view/4460400303/",
+    "match_score": 46.14,
+    "audit_checks_failed": [
+     "personal"
+    ],
+    "audit_personal": "unmet"
+   },
+   {
+    "title": "Analyst - Pricing Analytics",
+    "company": "Gap",
+    "url": "https://www.linkedin.com/jobs/view/4478770314/",
+    "match_score": 38.32,
+    "audit_checks_failed": [],
+    "audit_personal": "met"
    }
   ],
   "cost_usd": null

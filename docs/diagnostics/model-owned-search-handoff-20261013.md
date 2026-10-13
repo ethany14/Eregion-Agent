@@ -277,3 +277,61 @@ Git 内可移交的脱敏摘要位于 [`../benchmarks/model-owned-search-2026101
 
 - 是否批准再做一次扩额验收（同一 `expanded` 档）以验证 `dfeb364` 的决策摘要修复；上一轮没有用完任何一项上限，失败点是主循环行为。
 - 无 Jev 路线是否给予单独验收预算（建议 provider 120 次，其余同 `expanded`）。
+
+## 9. 决策摘要、决策回放与第二次扩额验收（2026-10-13，续）
+
+### 9.1 决策摘要补全（`3a45e28`）
+
+`decision_brief` 列出全部“必需但未被简历证实”的要求（missing、partial、unknown，按此顺序；状态取自评分器，partial 不被自动当作不合格）与全部待确认项。每项含稳定要求 ID、必需/偏好级别、状态、岗位原文（截断时标 `text_truncated`），列表给出 `total` 与 `omitted`；另给出按“级别:状态”的计数。`inspect_job(requirement_ids=[...])` 按 ID 精确返回完整原文、评分理由与简历证据，不再返回整份报告。摘要永不被归档为引用。
+
+### 9.2 真实主模型决策回放（`tests/test_decision_replay_live.py`）
+
+恢复第一次扩额验收保存的结果（4 个已评分岗位，清空推荐、决策、历史与上下文），使用真实主模型；抓取、资格判断、导入、评分工具只记录不执行；最多 10 次模型调用。
+
+- 回放 01：失败，原因是我的回放搭建错误——用了非 Jev 评分器配置，保存的 Jev 分数被判为过期，模型因此要求重新评分（2 次调用，33,843 / 1,646 token）。已修正配置并加入“分数指纹一致”的免费前置检查。
+- 回放 02：**通过**。2 次调用（32,485 / 2,492 token）：推荐 adMarketplace、Good Apple、Veeva Crossix，将 Hermès VIE 列为待补证据（国籍），0 次翻阅报告，随后对 20 个新候选调用 `verify_and_score_jobs`。
+- 回放中 Veeva 在岗位强制 GPA 而简历未写的情况下被推荐；按用户意见，这类未写明的必需个人信息应保持 unknown、等待补充。已在共用资格规则中写明（`c29928e`），审计口径一致。
+
+### 9.3 第二次扩额验收：未通过（`c29928e`，`default-batch-claude-expanded-02`）
+
+条件同上一档（provider 100、LinkedIn 100、输入 1.5M、1500 秒，盲审不变，最低 10 条）。
+
+- **主循环已正常**：模型以 `finish_task` 干净结束，没有反复翻页（`read_context` 8 次，均在不同批次之后）。
+- 读取 62 份正文（LinkedIn 58、招聘板 4），资格判断 46 份有结论，其中 9 份合格。模型排除 4 份：硕士学位要求 ×2、VIE 国籍、Point72 投研背景。推荐 5 份，强化盲审确认 3 份：
+  1. Graduate Data Analyst — adMarketplace — Score 80.66 — https://www.linkedin.com/jobs/view/4469763828/
+  2. Data Analyst — Good Apple — Score 43.11 — https://www.linkedin.com/jobs/view/4432001930/
+  3. Analyst - Pricing Analytics — Gap — Score 38.32 — https://www.linkedin.com/jobs/view/4478770314/
+
+  另两份未计入：Veeva Crossix（GPA 未知，个人资格 unknown）、Deluxe（审计判 Excel/R 强制要求不满足）。
+- 失败原因：不足 10 条；2 次资格判断调用在并发时同时断开（约 19 秒后 `OpenAIConnectionError`，请求已发出，usage 如实为未知），另 1 组回复身份无效，三组共 16 份已读正文因此停在 unknown；provider 用到 98/100。
+- 用量：provider 98 次（主 28 / 资格 16 / Jev 54）、895,688 / 108,753 token、2 次未知；盲审 2 次、9,717 / 7,305 token；执行 1,068 秒；LinkedIn 62 次。
+
+已离线修复（`78f9ecd`，未再跑付费验收）：资格判断组遇传输失败或身份无效时，在预算内有且只有一次重试；预算停止与取消不重试，判断结论从不重试。
+
+### 9.4 无 Jev 评分差异分解（`claude-fit-decomposition-01`，4 个已保存岗位）
+
+同一简历分别计算：A Jev 全流程；B 主模型全流程；C 主模型在 A 的“经原文跨度核验的要求目录”上判断；D 用主模型公式对 A 的状态计分（本地计算）。
+
+| 岗位 | A Jev | B 主模型 | C 主模型 + Jev 目录 | D：unknown 排除 / 计为 missing | 要求数 A/B |
+|---|---:|---:|---:|---:|---:|
+| Graduate Data Analyst | 79.35 | 48.0 | 78.6 | 93.8 / 53.6 | 14 / 29 |
+| Good Apple Data Analyst | 43.06 | 28.3 | 26.5 | 36.4 / 11.1 | 21 / 29 |
+| Veeva Crossix | 46.47 | 30.0 | 43.8 | 33.3 / 6.2 | 20 / 22 |
+| Mount Sinai Data Analyst I | 52.08 | 70.0 | 66.7 | 100.0 / 22.2 | 5 / 4 |
+
+结论（两边都不是真值）：
+- 在同一目录上，Jev 作出明确判断的要求，主模型几乎全部同意（4 个岗位中仅 1 处 partial→matched）；分歧基本都是 Jev 弃权（unknown 分别为 6/14、13/21、13/20、4/5）而主模型给出明确结论。
+- Graduate Data Analyst 与 Veeva 的差距主要来自要求抽取：主模型抽出更多条目（29 vs 14）并判为 missing；改用同一目录后与 Jev 接近。
+- Good Apple 与 Mount Sinai 的差距来自对 Jev unknown 项的处理：主模型分别多判为 missing 或判为满足。
+- 计分公式影响很大：Jev 分数依赖其概率给 unknown 项的部分分；同样状态用主模型公式会因 unknown 无分，或在排除/计为 missing 之间从 93.8 变到 53.6。
+- 主模型在同一目录上仍有可疑判断：例如“每周四天到岗”判为 missing（应为待确认条件），职责类句子（“与内部团队协作……”）判为缺少技能。
+
+用量：65 次调用（各阶段分别限额，合计超过我原先说的 60 次）、178,290 / 156,113 token、0 次未知、572 秒。
+
+### 9.5 离线回归与下一步
+
+`78f9ecd` 上：**891 passed / 12 skipped / 0 failed**（含验收与回放测试模块的导入）。
+
+需要用户决定：
+1. 带 Jev 路线：上两次扩额验收的瓶颈已分别修复（主循环翻页、资格判断组掉线），但在严格标准下这名合成候选人的合格供给约为每 60 份正文 3–5 条。是否再做一次同档验收，或先扩大来源（更多招聘板、经授权的其他来源）。
+2. 无 Jev 路线：在给 120 次验收预算之前，建议先修主模型的要求抽取（职责不当作要求）与条件类判断（到岗、授权应为待确认），再用同一分解工具复测。
