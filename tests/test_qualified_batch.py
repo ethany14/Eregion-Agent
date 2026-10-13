@@ -208,3 +208,13 @@ def test_exhausted_linkedin_cards_are_not_pending_work(career):
     assert recovery(c.repository.get(c.state['task_id']))['pending_candidates']
     c.repository.change(c.state['task_id'],linkedin_mcp_state={'calls_used':50,'call_limit':50,'stopped':None,'log':[]})
     assert not recovery(c.repository.get(c.state['task_id']))['pending_candidates']
+
+
+def test_decision_brief_lists_required_items_not_established(career,monkeypatch):
+    c=career;jobs=[posting(1)];prepare(c,monkeypatch,jobs)
+    job=execute(c,'verify_and_score_jobs',urls=[jobs[0]['url']])['jobs'][0]
+    brief=job['decision_brief']
+    overview=job['match_overview']
+    expected=[r['requirement'][:90] for s in ('missing','partial','unknown') for r in overview[s] if r.get('level')=='required']
+    assert [r['requirement'] for r in brief['required_unresolved']]==expected[:8]
+    assert all(r['status'] in {'missing','partial','unknown'} for r in brief['required_unresolved'])

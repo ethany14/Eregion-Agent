@@ -398,7 +398,13 @@ class CareerHarness:
                 'gaps':[r['requirement'][:100] for r in [*overview['missing'],*overview['partial']][:4]],
                 'needs_confirmation':[r['requirement'][:100] for r in overview['needs_confirmation'][:3]],
                 'unknown_count':len(overview['unknown']),
-                'note':'Scoring is complete. These are previews; full match_overview/report remain available for a specific missing fact.'}
+                # The eligibility decision needs required (not preferred) items that are not
+                # established; without them the model paged the full report per job.
+                'required_unresolved':[{'requirement':r['requirement'][:90],'status':status}
+                    for status in ('missing','partial','unknown') for r in overview[status]
+                    if r.get('level')=='required'][:8],
+                'note':'Scoring is complete. required_unresolved lists required items not established by the resume; '
+                       'decide from it and the JD-based qualification evidence. Full match_overview/report only for a specific missing fact.'}
             result.update(score_range=match.content.get('score_range'),
                 analysis_status=match.content.get('analysis_status','completed'),
                 analysis_status_label=display_label(match.content.get('analysis_status','completed')),

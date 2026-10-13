@@ -51,10 +51,13 @@ only when the human imposed no such condition. Missing or conflicting evidence s
 Separately judge personal eligibility (personal) from the supplied candidate facts only: the resume
 text and facts the candidate stated. Never assume a skill, credential or status they do not state.
 - unmet: the posting makes a qualification mandatory (required, must, non-negotiable, minimum) and
-  the candidate facts clearly do not establish it. List each in mandatory_gaps with exact posting text.
-- unknown: no clear gap, but eligibility depends on a person-specific fact the candidate has not
-  provided: a specific citizenship or nationality, a visa or program status, an age limit, a
-  license or a security clearance. List each in restricted_conditions with exact posting text.
+  the candidate facts contradict it or clearly lack it (for example a required tool absent from a
+  detailed skills list, or a higher degree than the one stated). List each in mandatory_gaps with
+  exact posting text.
+- unknown: no clear gap, but a mandatory condition depends on a fact the candidate has not provided:
+  a specific citizenship or nationality, a visa or program status, an age limit, a license, a
+  security clearance, or a required detail such as a GPA the resume does not state. List each in
+  restricted_conditions with exact posting text.
 - met: neither applies. Preferred or nice-to-have gaps never matter. Routine confirmations that
   apply to most hires (general authorization to work in the country, background checks, schedule,
   commute, start date) are not restricted conditions.'''
