@@ -143,3 +143,25 @@ def test_batch_summary_keeps_every_candidate_visible_without_paging():
     assert len(summary['candidates'])==20
     assert summary['candidates'][19]['checks']=={'role':{'status':'met'},
         'location':{'status':'unknown','reason':'Only a country is stated.'}}
+
+
+def test_audit_retries_only_a_structurally_unusable_reply(monkeypatch):
+    from evals import search_semantic_audit as audit
+    from eregion.domain import model
+    replies=[]
+    def invoke(_model,schema,prompt,text):
+        postings=json.loads(text)['postings']
+        value=response('Find junior data analyst jobs in New York.',postings)
+        if not replies:value.decisions[0].posting_id='posting-0'   # malformed identity once
+        replies.append(value);return value
+    monkeypatch.setattr(model,'invoke_structured',invoke)
+    monkeypatch.setattr(model,'shared_model',lambda **_:object())
+    jobs=[job(i) for i in range(2)]
+    out=audit.review('Find junior data analyst jobs in New York.',jobs)
+    assert len(replies)==2 and set(out)=={j['url'] for j in jobs}
+    replies.clear()
+    def always_bad(_model,schema,prompt,text):
+        value=response('x',json.loads(text)['postings']);value.decisions[0].posting_id='bad';replies.append(1);return value
+    monkeypatch.setattr(model,'invoke_structured',always_bad)
+    with pytest.raises(ValueError):audit.review('Find junior data analyst jobs in New York.',jobs)
+    assert len(replies)==2   # bounded: never a third attempt

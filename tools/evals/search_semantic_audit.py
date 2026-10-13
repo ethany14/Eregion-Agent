@@ -31,11 +31,15 @@ def review(request,jobs):
         group=jobs[start:start+4]
         payload={'request':request,'postings':[{'posting_id':str(i),**{k:j.get(k) or ''
                  for k in ('title','location','description')}} for i,j in enumerate(group)]}
-        with usage_scope(purpose='acceptance_semantic_audit'):
-            result=invoke_structured(shared_model(purpose='search_qualification'),SearchQualification,PROMPT,
-                                     json.dumps(payload,ensure_ascii=False))
-        ids=[d.posting_id for d in result.decisions]
-        if len(ids)!=len(group) or set(ids)!={str(i) for i in range(len(group))}:
+        # One retry per group, only for a structurally unusable reply (identities).
+        # A content verdict is never retried; the audit budget still caps calls.
+        for attempt in range(2):
+            with usage_scope(purpose='acceptance_semantic_audit'):
+                result=invoke_structured(shared_model(purpose='search_qualification'),SearchQualification,PROMPT,
+                                         json.dumps(payload,ensure_ascii=False))
+            ids=[d.posting_id for d in result.decisions]
+            if len(ids)==len(group) and set(ids)=={str(i) for i in range(len(group))}:break
+        else:
             raise ValueError('Audit identities do not match the supplied postings.')
         for decision in result.decisions:
             job=group[int(decision.posting_id)]

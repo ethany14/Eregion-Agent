@@ -173,3 +173,16 @@ def test_failed_source_does_not_manufacture_batch_progress(career,monkeypatch):
     monkeypatch.setattr(career.harness.discovery,'job',fail)
     result=execute(career,'verify_and_score_jobs',urls=[jobs[0]['url']])
     assert result['no_new_evidence'] and result['candidates'][0]['status']=='source_error'
+
+
+def test_repeated_recommendation_is_reported_as_already_saved(career,monkeypatch):
+    c=career;jobs=[posting(1)];prepare(c,monkeypatch,jobs)
+    identifier=execute(c,'verify_and_score_jobs',urls=[jobs[0]['url']])['jobs'][0]['application_id']
+    first=execute(c,'recommend_job',application_id=identifier,reason='Python fit',caveats='')
+    again=execute(c,'recommend_job',application_id=identifier,reason='Python fit',caveats='')
+    assert first['recommended'] and not first.get('already_recommended')
+    assert again['already_recommended'] and again['no_new_evidence']
+    state=c.repository.get(c.state['task_id'])
+    assert len(state['recommendations'])==1
+    snapshot=c.harness.observe(state)['recommended_jobs']
+    assert snapshot==[{k:state['recommendations'][0][k] for k in ('application_id','title','company','url','match_score')}]

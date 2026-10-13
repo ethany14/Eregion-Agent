@@ -343,11 +343,11 @@ class CareerHarness:
             **source_mode.snapshot_policy(api_first:=self.api_first(),self._source_scope(state) if api_first else None),
             'known_results':known,
             'scheduled_search':recommendation,
-            # Identity, URL and score stay inline for the final answer; the model's own
-            # earlier reason/caveat prose is shortened so the list never needs paging.
-            'recommended_jobs':[{**{k:r[k] for k in ('application_id','title','company','location','url','match_score',
-                                                     'score_range','analysis_status') if k in r},
-                                 **{k:str(r[k])[:140] for k in ('reason','caveats') if r.get(k)}}
+            # Identity, URL and score stay inline for the final answer. The model's own
+            # reason/caveat prose stays in state: inline it pushed 11+ rows behind a
+            # ref, the model could not see what it had saved and re-recommended them.
+            'recommended_jobs':[{k:r[k] for k in ('application_id','title','company','url','match_score',
+                                                  'score_range') if k in r}
                                 for r in state.get('recommendations',[])],
             'previous_recommendations':self.alerts.recommended() if recommendation else [],
             'job_alerts':self.alerts.list() if getattr(self,'alerts',None) and not recommendation else [],
@@ -670,6 +670,11 @@ class CareerHarness:
                 if blocked:return blocked
         if name=='recommend_job':
             identifier=args['application_id'];self.require_link(state,'jobs',identifier)
+            saved_rec=next((r for r in state.get('recommendations',[]) if r.get('application_id')==identifier),None)
+            if saved_rec and saved_rec.get('match_score')==self.job_summary(identifier)['match_score']:
+                return {'recommended':True,'already_recommended':True,'no_new_evidence':True,
+                        'recommendation':{k:saved_rec[k] for k in ('application_id','title','url','match_score') if k in saved_rec},
+                        'next':'Already saved with this score; do not repeat it. Continue with other candidates or finish.'}
             _,resume_text=self.candidate()
             application=rt.workspace.get_application(identifier)
             fingerprint=self.analysis_fingerprint(resume_text,application.current_snapshot_id)
