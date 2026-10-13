@@ -1510,7 +1510,8 @@ class CareerHarness:
             except ValueError:continue
         evidence={job_key(r['url']):r for r in [*observed,*state.get('recommendations',[])] if r.get('url')}
         missing=[r['url'] for r in evidence.values() if job_key(r['url']) not in urls]
-        if missing:raise ValueError('Final search results must include each saved recommendation URL and its observed score, with risks. Missing URLs: '+str(missing))
+        if missing:raise ValueError('Final search results must include each saved recommendation URL and its observed score, with risks '
+            '(scored jobs that were excluded or need evidence are listed too, marked as such). Missing URLs: '+str(missing))
         scores={}
         for url,values in reply_job_evidence(text).items():
             entry=scores.setdefault(job_key(url),{'scores':[],'ranges':[]})
@@ -1528,7 +1529,8 @@ class CareerHarness:
             elif (type(expected) not in (int,float) or not values['scores'] or values['ranges']
                     or any(value!=expected for value in values['scores'])):
                 raise ValueError('Final recommendation score is missing or differs from the saved observed score '
-                    f'for {recommendation["url"]}: expected {expected}. Keep each score in its own job entry; salary/age/ID numbers are not scores.')
+                    f'for {recommendation["url"]}: expected {expected}. Label it explicitly in that job entry, e.g. '
+                    f'"Score {expected}" (a bare bolded number is not read as a score); salary/age/ID numbers are not scores.')
 
     def validate_reply(self,state,text):
         """Fence common plural completion claims against the request's actual URLs."""

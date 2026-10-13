@@ -247,7 +247,11 @@ def test_last_provider_attempts_offer_only_decisions_then_only_the_reply(career,
     assert 'search_jobs' in names(host.observe())
     for i in range(7):ledger.start(f'c{i}',{'task_id':c.state['task_id']},{'purpose':'agent','input_tokens':1,'output_tokens':1})
     turn=host.observe()
-    assert turn.snapshot['completion_required'] and names(turn)=={'finish_task','recommend_job','decide_job'}
+    assert turn.snapshot['completion_required'] and names(turn)=={'finish_task'}   # nothing left to decide
+    c.repository.change(c.state['task_id'],scored_job_evidence={'app-1':{'application_id':'app-1','url':'https://example.com/1'}})
+    turn=host.observe()
+    assert names(turn)=={'finish_task','recommend_job','decide_job'}
+    assert 'Score <saved value>' in turn.snapshot['completion_reason']
     ledger.start('c7',{'task_id':c.state['task_id']},{'purpose':'agent','input_tokens':1,'output_tokens':1})
     assert names(host.observe())=={'finish_task'}   # two attempts remain for the reply and one correction
 
