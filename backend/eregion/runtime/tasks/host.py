@@ -79,11 +79,11 @@ class TaskHost:
             if provider_remaining<=REPLY_RESERVE:
                 snapshot['completion_required']=True
                 snapshot['completion_reason']=('The provider budget is nearly spent: no further paid search, reading or scoring. '
-                    + ('Record decisions for already scored jobs if needed, then finish. ' if provider_remaining>1 else
-                       'This is the final call: finish now. ')
+                    + ('Record decisions for already scored jobs if needed, then finish. ' if provider_remaining>2 else
+                       'Finish now; the remaining call is only for correcting a rejected reply. ')
                     + 'Report saved recommendations with their URLs and scores and the honest shortfall.')
                 decisions=getattr(harness,'batch_decision_tools',set())-{'read_context','dismiss_candidate'}
-                tools=[t for t in tools if provider_remaining>1 and t['function']['name'] in decisions]
+                tools=[t for t in tools if provider_remaining>2 and t['function']['name'] in decisions]
                 controls=[t for t in CONTROL_TOOLS if t['function']['name']=='finish_task']
         if snapshot['budget_remaining']<=3:
             snapshot['completion_required']=True

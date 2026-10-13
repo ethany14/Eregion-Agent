@@ -27,7 +27,7 @@ class TaskProviderBudgetExceeded(BaseException):
 # The last provider attempts of a capped task belong to the main model, so a
 # task that spends its budget on tool work can still decide and reply. Tool
 # work (qualification, Jev, nested) stops first; the task cap itself is unchanged.
-REPLY_RESERVE = 2
+REPLY_RESERVE = 3  # one decision turn plus the reply and one corrected reply
 
 
 class ReplyBudgetReserved(TaskProviderBudgetExceeded):

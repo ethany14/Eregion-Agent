@@ -18,7 +18,8 @@ def reply_job_evidence(final):
         r'|\b(?:match(?:\s+score)?|fit(?:\s+score)?|score(?:\s+(?:vs\.?|against|for)\s+(?:(?:saved|your|my)\s+)?(?:resume|profile))?)\s*[:=]?\s*' + number +
         r'|(?:评分|匹配度|匹配分数)\s*[:：]?\s*' + number, re.I)
     interval_number = r'(-?\d+(?:\.\d+)?)'
-    interval_body = interval_number + r'\s*(?:[-–—]|\bto\b)\s*' + interval_number
+    # A spaced em dash separates clauses ('Score 46.12 — 45-60 min commute'), not bounds.
+    interval_body = interval_number + r'\s*(?:[-–]|(?<!\s)—|—(?!\s)|\bto\b)\s*' + interval_number
     interval_pattern = re.compile(
         r'(?<![\w.])' + interval_body + r'\s*(?:/\s*100|%)'
         + r'|\b(?:match(?:\s+score)?|fit(?:\s+score)?|score)\s*(?:range|interval)?\s*[:=]?\s*' + interval_body
@@ -59,11 +60,15 @@ def reply_job_evidence(final):
             text = url_pattern.sub('', line).replace('*', '').replace('`', '')
             # "Seniority fit: 0-2 years" is level metadata, not a skill score.
             score_text = re.sub(r'\b(?:seniority|location|culture)\s+fit\s*:[^\n]*', '', text, flags=re.I)
-            intervals = list(interval_pattern.finditer(score_text))
-            values = [('range', tuple(float(g) for g in m.groups() if g is not None)) for m in intervals]
+            # A descending pair is not an interval; it is a score followed by other numbers.
+            bounds = lambda m: [float(g) for g in m.groups() if g is not None]
+            intervals = [m for m in interval_pattern.finditer(score_text) if bounds(m)[0] <= bounds(m)[1]]
+            values = [('range', tuple(bounds(m))) for m in intervals]
             # A bound is not a point score: mask the entire interval before
             # looking for points (including the upper bound before /100).
-            point_text = interval_pattern.sub(' ', score_text)
+            point_text = score_text
+            for m in reversed(intervals):
+                point_text = point_text[:m.start()] + ' ' + point_text[m.end():]
             values += [('score', float(next(g for g in m.groups() if g is not None)))
                 for m in score_pattern.finditer(point_text)]
             if table:

@@ -215,9 +215,9 @@ def test_last_attempts_are_reserved_for_the_main_model_reply(tmp_path):
         ledger=UsageLedger(db.session_factory);scope={'task_id':'t'};limits={'provider_attempts':10}
         def start(i,purpose):
             ledger.start(f'c{i}',scope,{'purpose':purpose,'input_tokens':1,'output_tokens':1},limits=limits)
-        for i in range(8):start(i,'jev:fit:support_yes_no')
-        with pytest.raises(ReplyBudgetReserved):start(8,'search_qualification:SearchQualification')
-        start(8,'agent');start(9,'agent')            # the reply keeps its reserve
+        for i in range(7):start(i,'jev:fit:support_yes_no')
+        with pytest.raises(ReplyBudgetReserved):start(7,'search_qualification:SearchQualification')
+        start(7,'agent');start(8,'agent');start(9,'agent')   # the reply keeps its reserve
         with pytest.raises(TaskProviderBudgetExceeded):start(10,'agent')   # the task cap is unchanged
     finally:db.close()
 
@@ -245,8 +245,18 @@ def test_last_provider_attempts_offer_only_decisions_then_only_the_reply(career,
     c=career;host=host_for(c);ledger=UsageLedger(c.repository.sessions)
     names=lambda turn:{t['function']['name'] for t in turn.tools}
     assert 'search_jobs' in names(host.observe())
-    for i in range(8):ledger.start(f'c{i}',{'task_id':c.state['task_id']},{'purpose':'agent','input_tokens':1,'output_tokens':1})
+    for i in range(7):ledger.start(f'c{i}',{'task_id':c.state['task_id']},{'purpose':'agent','input_tokens':1,'output_tokens':1})
     turn=host.observe()
     assert turn.snapshot['completion_required'] and names(turn)=={'finish_task','recommend_job','decide_job'}
-    ledger.start('c8',{'task_id':c.state['task_id']},{'purpose':'agent','input_tokens':1,'output_tokens':1})
-    assert names(host.observe())=={'finish_task'}
+    ledger.start('c7',{'task_id':c.state['task_id']},{'purpose':'agent','input_tokens':1,'output_tokens':1})
+    assert names(host.observe())=={'finish_task'}   # two attempts remain for the reply and one correction
+
+
+def test_clause_after_a_score_is_not_a_descending_score_interval():
+    from eregion.runtime.career.reply_evidence import reply_job_evidence
+    text=('7. **Data Analyst — Veeva Crossix** — New York, NY — Score **46.12** — 45-60 min NYC commute\n'
+          '   https://www.linkedin.com/jobs/view/4439835443/\n'
+          '8. Data Analyst — Good Apple — Score range 40–55\n   https://www.linkedin.com/jobs/view/4432001930/')
+    found=reply_job_evidence(text)
+    assert found['https://www.linkedin.com/jobs/view/4439835443/']=={'scores':[46.12],'ranges':[]}
+    assert found['https://www.linkedin.com/jobs/view/4432001930/']=={'scores':[],'ranges':[[40.0,55.0]]}

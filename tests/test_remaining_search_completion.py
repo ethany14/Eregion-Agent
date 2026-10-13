@@ -171,5 +171,5 @@ def test_provider_attempt_reserve_also_allows_honest_incomplete_result(career,mo
     for i in range(8):ledger.start(f'c{i}',{'task_id':c.state['task_id']},{'purpose':'jev:fit:support_yes_no'})
     with pytest.raises(ValueError,match='decisions available'):   # 4 attempts left: keep working
         c.harness.validate_finish(c.repository.get(c.state['task_id']))
-    for i in range(8,10):ledger.start(f'c{i}',{'task_id':c.state['task_id']},{'purpose':'agent'})
+    ledger.start('c8',{'task_id':c.state['task_id']},{'purpose':'agent'})
     c.harness.validate_finish(c.repository.get(c.state['task_id']))   # only the reply reserve remains
