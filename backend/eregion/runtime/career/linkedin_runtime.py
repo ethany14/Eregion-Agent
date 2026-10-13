@@ -82,6 +82,12 @@ def search(harness,task_id,state,args):
     from .search_strategy import variants, card_priority
     queries=variants(state,args)
     if len(queries)==1:return _search_one(harness,task_id,state,args)
+    from .qualification import request_fields
+    if request_fields(state)['location'] and not args.get('work_type'):
+        # Expanded city searches page deep; remote-only cards almost never show the
+        # requested work city, so they would take the result slots of local postings.
+        # Retrieval scope only: an explicit work_type (including remote) is respected.
+        args={**args,'work_type':'onsite_or_hybrid'}
     results=[];jobs={}
     for query in queries:
         current=harness.repository.get(task_id)
@@ -95,4 +101,5 @@ def search(harness,task_id,state,args):
             'query_variants':results,'queries_attempted':len(results),
             'no_new_evidence':all(r.get('no_new_evidence',False) for r in results),
             'error_code':results[-1].get('error_code'),
+            'retrieval_filters':{'work_type':args.get('work_type')},
             'qualification':'Discovery expansion only: original role, location and seniority checks remain mandatory.'}

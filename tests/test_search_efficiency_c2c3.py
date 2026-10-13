@@ -122,7 +122,7 @@ def test_qualification_groups_run_concurrently_and_bind_their_own_postings(caree
 def test_budget_stop_in_one_group_propagates_and_saves_nothing_unverified(career,monkeypatch):
     repo,tid=setup(career)
     def judge(request,postings):
-        if postings[0]['title'].endswith(' 4'):raise TaskProviderBudgetExceeded('limit')
+        if any(p['title'].endswith(' 7') for p in postings):raise TaskProviderBudgetExceeded('limit')
         return response(request,postings)
     monkeypatch.setattr(q,'judge',judge)
     jobs=[job(i,title=f'Data Analyst {i}') for i in range(12)]
@@ -130,4 +130,16 @@ def test_budget_stop_in_one_group_propagates_and_saves_nothing_unverified(career
         q.record_many(repo,tid,jobs)
     saved=repo.get(tid).get('candidate_qualifications',{})
     assert all(row['review']['method']=='model_with_verified_quotes' for row in saved.values())
-    assert not any(k.endswith('/4') for k in saved)
+    assert not any(k.endswith('/7') for k in saved)
+
+
+def test_batch_summary_keeps_every_candidate_visible_without_paging():
+    from eregion.runtime.request_context import ContextArchive
+    rows=[{'url':f'https://www.linkedin.com/jobs/view/{1000000+i}/','title':f'Data Analyst {i}','status':'needs_evidence',
+           'qualification':{'checks':{'role':{'status':'met','quote':'Data Analyst '*40},
+                                      'location':{'status':'unknown','quote':'','reason':'Only a country is stated.'}}}}
+          for i in range(20)]
+    summary=ContextArchive().tool_result({'jobs':[],'candidates':rows,'qualified_count':0,'filler':'x'*6000})
+    assert len(summary['candidates'])==20
+    assert summary['candidates'][19]['checks']=={'role':{'status':'met'},
+        'location':{'status':'unknown','reason':'Only a country is stated.'}}

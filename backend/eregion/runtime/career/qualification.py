@@ -9,7 +9,8 @@ from eregion.domain.jev_fit.resolve import locate
 
 FIELDS=('role','location','seniority','vacancy')
 MAX_BATCH_CHARS=48000
-PARALLEL_GROUPS=3
+PARALLEL_GROUPS=4
+GROUP_SIZE=6
 
 
 def user_request(state):
@@ -104,7 +105,7 @@ def record_many(repository,task_id,jobs):
     groups=[];part=[];size=len(request)
     for job in pending:
         n=len(json.dumps({k:job.get(k) for k in ('title','location','description')},ensure_ascii=False))
-        if part and (len(part)>=4 or size+n>MAX_BATCH_CHARS):groups.append(part);part=[];size=len(request)
+        if part and (len(part)>=GROUP_SIZE or size+n>MAX_BATCH_CHARS):groups.append(part);part=[];size=len(request)
         part.append(job);size+=n
     if part:groups.append(part)
     def ask(group):

@@ -21,7 +21,9 @@ RULE += ('For multi-job requests prefer verify_and_score_jobs with 8-20 observed
          'fact is absent. You can issue decisions for multiple independent scored jobs in one response.\n')
 RULE += ('Large entry-level searches expand equivalent role queries automatically, preserving location and provider level filters. '
          'Do not repeat that search with presentation-only changes. Card ordering is advisory, not a qualification. '
-         'For a city-specific request you may set work_type (e.g. onsite_or_hybrid): remote-only cards rarely show the work city. '
+         'Expanded city searches default to work_type=onsite_or_hybrid; pass work_type=remote explicitly to look at remote postings. '
+         'Choose which cards to read: the source budget is finite, so read cards whose title and location plausibly fit '
+         'before cards whose title states a different level or whose location is another city or only a country. '
          'The qualification model already reviews the complete saved JD and gives verified source quotes. '
          'If it remains unknown, only new source evidence for the unresolved field helps; rereading the same JD does not. '
          'When sources and actionable candidates are exhausted, finish honestly with saved qualified recommendations and the shortfall.\n')

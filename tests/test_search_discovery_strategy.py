@@ -158,9 +158,12 @@ def test_large_search_uses_two_distinct_queries_once(career,monkeypatch):
         again=execute(c,'search_jobs',query='entry level data analyst',location='New York',limit=20,use_directory=True,
                       work_type='onsite_or_hybrid')
         assert again['no_new_evidence'] and len(fake.calls)==2 and len(found['jobs'])==2
-        # A different provider filter is a different upstream query, never a cached answer.
+        # City expansion defaults to onsite_or_hybrid, so omitting it reuses the cache.
         execute(c,'search_jobs',query='entry level data analyst',location='New York',limit=20)
-        assert len(fake.calls)==4 and 'work_type' not in fake.calls[-1][1]
+        assert len(fake.calls)==2
+        # An explicit remote request is a different upstream query, never a cached answer.
+        execute(c,'search_jobs',query='entry level data analyst',location='New York',limit=20,work_type='remote')
+        assert len(fake.calls)==4 and fake.calls[-1][1]['work_type']=='remote'
     finally:manager.stop()
 
 

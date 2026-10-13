@@ -363,10 +363,13 @@ class ContextArchive:
 
     @staticmethod
     def candidate_summary(rows):
+        # Every candidate of the batch (at most 20) stays visible: hiding rows 9-20
+        # behind a ref cost a model turn per batch. Met checks need no quote here.
         return [{**{k:r[k] for k in ('url','title','status','application_id','error') if k in r},
-                 'checks':{k:{'status':c['status'],'quote':c.get('quote','')[:200]}
+                 'checks':{k:({'status':c['status']} if c['status']=='met' else
+                              {'status':c['status'],'reason':(c.get('reason') or '')[:160]})
                            for k,c in r.get('qualification',{}).get('checks',{}).items()}}
-                for r in rows[:8]]
+                for r in rows[:20]]
 
     def tool_result(self, result):
         """Keep complete tool data; audit truncation is not model context storage."""

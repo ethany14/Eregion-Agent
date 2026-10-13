@@ -122,7 +122,7 @@ def test_bounded_groups_keep_full_text_and_all_identities(career,monkeypatch):
     monkeypatch.setattr(q,'judge',judge)
     jobs=[job(i) for i in range(12)]
     assert all(r['qualified'] for r in q.record_many(repo,tid,jobs))
-    assert [len(batch) for batch in calls]==[4,4,4]
+    assert [len(batch) for batch in calls]==[6,6]
     too_large=job(99,description='Complete evidence. '*5000)
     result=q.record(repo,tid,too_large)
-    assert not result['qualified'] and len(calls)==3
+    assert not result['qualified'] and len(calls)==2
