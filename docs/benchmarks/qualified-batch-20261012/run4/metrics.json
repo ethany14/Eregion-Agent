@@ -1,0 +1,125 @@
+{
+  "status": "needs_input",
+  "calls": 37,
+  "seconds": 542.82,
+  "jobs": 1,
+  "materials": 0,
+  "applications": 0,
+  "error": "no_progress",
+  "usage": {
+    "calls": 45,
+    "completed": 45,
+    "failed": 0,
+    "pending": 0,
+    "discarded": 0,
+    "retries": 0,
+    "input_tokens": 472772,
+    "output_tokens": 29415,
+    "unknown_usage_calls": 0,
+    "groups": [
+      {
+        "purpose": "agent",
+        "model": "muse-spark-1.3-contributor",
+        "calls": 37,
+        "input_tokens": 454113,
+        "output_tokens": 27015,
+        "unknown_usage_calls": 0,
+        "cached_input_tokens": 166974,
+        "reasoning_tokens": 21587,
+        "cache_hit_ratio": 0.3676926227612951,
+        "reasoning_share": 0.7990745881917454
+      },
+      {
+        "purpose": "jev:fit:extract_requirements",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 11183,
+        "output_tokens": 1722,
+        "unknown_usage_calls": 0,
+        "cache_hit_ratio": null,
+        "reasoning_share": null
+      },
+      {
+        "purpose": "jev:fit:refine_extraction_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 1270,
+        "output_tokens": 106,
+        "unknown_usage_calls": 0,
+        "cache_hit_ratio": null,
+        "reasoning_share": null
+      },
+      {
+        "purpose": "jev:fit:condition_category_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 2,
+        "input_tokens": 1504,
+        "output_tokens": 161,
+        "unknown_usage_calls": 0,
+        "cache_hit_ratio": null,
+        "reasoning_share": null
+      },
+      {
+        "purpose": "jev:fit:support_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 1888,
+        "output_tokens": 246,
+        "unknown_usage_calls": 0,
+        "cache_hit_ratio": null,
+        "reasoning_share": null
+      },
+      {
+        "purpose": "jev:fit:focused_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 1036,
+        "output_tokens": 72,
+        "unknown_usage_calls": 0,
+        "cache_hit_ratio": null,
+        "reasoning_share": null
+      },
+      {
+        "purpose": "jev:fit:clarify_full_support_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 1130,
+        "output_tokens": 72,
+        "unknown_usage_calls": 0,
+        "cache_hit_ratio": null,
+        "reasoning_share": null
+      },
+      {
+        "purpose": "jev:fit:verify_citations_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 648,
+        "output_tokens": 21,
+        "unknown_usage_calls": 0,
+        "cache_hit_ratio": null,
+        "reasoning_share": null
+      }
+    ],
+    "budget_input_tokens": 472772,
+    "cached_input_tokens": 166974,
+    "reasoning_tokens": 21587,
+    "cache_hit_ratio": 0.35318081443063465,
+    "reasoning_share": 0.733877273499915,
+    "usage_complete": true,
+    "provider_attempts": 45
+  },
+  "schedules": 0,
+  "scored": 1,
+  "recommendations": 1,
+  "qualification_records": 26,
+  "tool_counts": {
+    "search_jobs": 8,
+    "verify_and_score_jobs": 10,
+    "read_context": 12,
+    "verify_and_score": 1,
+    "dismiss_candidate": 1,
+    "recommend_job": 2,
+    "update_plan": 1,
+    "inspect_job": 2
+  }
+}

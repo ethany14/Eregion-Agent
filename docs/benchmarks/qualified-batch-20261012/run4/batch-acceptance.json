@@ -1,0 +1,38 @@
+{
+  "status": "failed",
+  "failures": [
+    "loop_not_completed_cleanly",
+    "fewer_than_two_verified_scored_qualifying_recommendations",
+    "fewer_than_ten_verified_scored_qualifying_recommendations"
+  ],
+  "qualified_count": 1,
+  "main_input_tokens": 454113,
+  "total_input_tokens": 472772,
+  "limits": {
+    "main_calls": 60,
+    "main_input_tokens": 1000000,
+    "total_input_tokens": 1000000,
+    "minimum_qualified": 10
+  },
+  "jobs": [
+    {
+      "application_id": "e5ab26f3-e228-4291-8fb7-c089b31f6445",
+      "url": "https://www.linkedin.com/jobs/view/4469955024/",
+      "title": "Data Analyst",
+      "location": "New York City Metropolitan Area (On-site)",
+      "score": 71.93,
+      "checks": {
+        "role": true,
+        "seniority": true,
+        "location": true,
+        "scored": true,
+        "retrieved": true,
+        "recommended": true,
+        "reply_url": true,
+        "reply_score": true,
+        "eligible": true,
+        "distinct": true
+      }
+    }
+  ]
+}

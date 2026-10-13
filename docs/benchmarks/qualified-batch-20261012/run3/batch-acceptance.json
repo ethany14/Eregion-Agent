@@ -1,0 +1,17 @@
+{
+  "status": "failed",
+  "failures": [
+    "fewer_than_two_verified_scored_qualifying_recommendations",
+    "fewer_than_ten_verified_scored_qualifying_recommendations"
+  ],
+  "qualified_count": 0,
+  "main_input_tokens": 741067,
+  "total_input_tokens": 741067,
+  "limits": {
+    "main_calls": 60,
+    "main_input_tokens": 1000000,
+    "total_input_tokens": 1000000,
+    "minimum_qualified": 10
+  },
+  "jobs": []
+}

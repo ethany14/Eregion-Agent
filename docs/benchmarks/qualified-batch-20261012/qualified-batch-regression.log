@@ -1,0 +1,69 @@
+.....F.................................................................. [ 51%]
+...................................................................  [100%]
+================================== FAILURES ===================================
+________________ test_recommendation_rechecks_current_request _________________
+
+career = namespace(runtime=namespace(database=Database(engine=Engine(sqlite:///C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiy...tLab generated PDF document -- digest (opensource)\n\n/Info 5 0 R\n/Root 4 0 R\n/Size 8\n>>\nstartxref\n1104\n%%EOF\n')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001AC14158050>
+
+    def test_recommendation_rechecks_current_request(career,monkeypatch):
+        c=career;jobs=[posting(1)];prepare(c,monkeypatch,jobs)
+        result=execute(c,'verify_and_score_jobs',urls=[jobs[0]['url']])
+        identifier=result['jobs'][0]['application_id']
+        c.repository.change(c.state['task_id'],goal=GOAL.replace('New York','Boston'))
+        result=execute(c,'recommend_job',application_id=identifier,reason='Good Python fit',caveats='')
+        assert result['error_code']=='qualification_needed'
+>       assert not c.repository.get(c.state['task_id'])['recommendations']
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'recommendations'
+
+tests\test_qualified_batch.py:63: KeyError
+---------------------------- Captured stderr setup ----------------------------
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 0001_create_runs, Create persisted API runs table.
+INFO  [alembic.runtime.migration] Running upgrade 0001_create_runs -> 0002_custom_agent, Create custom agent state and event tables.
+INFO  [alembic.runtime.migration] Running upgrade 0002_custom_agent -> 0003_tool_runtime, Create persistent tool-call audit tables.
+INFO  [alembic.runtime.migration] Running upgrade 0003_tool_runtime -> 0004_backend_cutover, Add persisted backend ownership for controlled custom-runtime cutover.
+INFO  [alembic.runtime.migration] Running upgrade 0004_backend_cutover -> 0005_session_runtime, Create versioned session snapshots, messages, and events.
+INFO  [alembic.runtime.migration] Running upgrade 0005_session_runtime -> 0006_session_resumability, Add persisted pending-decision and loop-limit fields to sessions.
+INFO  [alembic.runtime.migration] Running upgrade 0006_session_resumability -> 0007_execution_claims, Add session and tool execution claims.
+INFO  [alembic.runtime.migration] Running upgrade 0007_execution_claims -> 0008_session_cancellation_deadlines, Add session cancellation and deadline state.
+INFO  [alembic.runtime.migration] Running upgrade 0008_session_cancellation_deadlines -> 0009_memory_runtime, Add governed memory items and audit events.
+INFO  [alembic.runtime.migration] Running upgrade 0009_memory_runtime -> 0010_skill_runtime, Add governed Skill registry, versions, and lifecycle events.
+INFO  [alembic.runtime.migration] Running upgrade 0010_skill_runtime -> 0011_context_runtime, Add immutable model-context snapshots and usage audit.
+INFO  [alembic.runtime.migration] Running upgrade 0011_context_runtime -> 0012_context_management, Add the distinct approved Skill lifecycle state.
+INFO  [alembic.runtime.migration] Running upgrade 0012_context_management -> 0013_job_workspace, Create persistent Job Workspace domain.
+INFO  [alembic.runtime.migration] Running upgrade 0013_job_workspace -> 0014_workspace_failure, Add safe Workspace analysis failure state.
+INFO  [alembic.runtime.migration] Running upgrade 0014_workspace_failure -> 0015_career_evidence, Career Evidence Vault tables.
+INFO  [alembic.runtime.migration] Running upgrade 0015_career_evidence -> 0016_interviewer_agent, Application-scoped Interviewer sessions, assessments and immutable turns.
+INFO  [alembic.runtime.migration] Running upgrade 0016_interviewer_agent -> 0017_application_pack, Versioned application packs and evidence snapshots.
+INFO  [alembic.runtime.migration] Running upgrade 0017_application_pack -> 0018_multi_agent_runtime, Persist deterministic multi-agent task graphs and attempts.
+INFO  [alembic.runtime.migration] Running upgrade 0018_multi_agent_runtime -> 0019_multi_agent_job_workflow, Persist explicit Standard versus Multi-Agent ownership.
+INFO  [alembic.runtime.migration] Running upgrade 0019_multi_agent_job_workflow -> 0020_interview_match_cohorts, Keep interview assessments for each projected match report separately.
+INFO  [alembic.runtime.migration] Running upgrade 0020_interview_match_cohorts -> 0021_mock_interview, Persistent mock interviews, immutable turns, plans, reports and audit.
+INFO  [alembic.runtime.migration] Running upgrade 0021_mock_interview -> 0022_feedback_learning, Governed feedback events and reviewable learning candidates.
+INFO  [alembic.runtime.migration] Running upgrade 0022_feedback_learning -> 0023_governed_skill_evolution, Add governed Skill evolution records without changing historical Skill rows.
+INFO  [alembic.runtime.migration] Running upgrade 0023_governed_skill_evolution -> 0024_conversation_first_assistant, Add stable Assistant timeline and registered action requests.
+INFO  [alembic.runtime.migration] Running upgrade 0024_conversation_first_assistant -> 0025_conversation_learning, Add governed conversation experiences and reusable learning patterns.
+INFO  [alembic.runtime.migration] Running upgrade 0025_conversation_learning -> 0026_resume_documents, Add server-side PDF resume documents.
+INFO  [alembic.runtime.migration] Running upgrade 0026_resume_documents -> 0027_session_archive, Add local conversation archive projection.
+INFO  [alembic.runtime.migration] Running upgrade 0027_session_archive -> 0028_review_integrity, Persist analysis sources, regeneration instructions and model budgets.
+INFO  [alembic.runtime.migration] Running upgrade 0028_review_integrity -> 0029_auto_applications, Persist site-specific application attempts and submission uncertainty.
+INFO  [alembic.runtime.migration] Running upgrade 0029_auto_applications -> 0030_application_memory, Confirmed application answers, scoped to the candidate email.
+INFO  [alembic.runtime.migration] Running upgrade 0030_application_memory -> 0031_saved_candidate, Durable local applicant profile and original resume for new applications.
+INFO  [alembic.runtime.migration] Running upgrade 0031_saved_candidate -> 0032_career_tasks, Unified career conversations over reusable job capabilities.
+INFO  [alembic.runtime.migration] Running upgrade 0032_career_tasks -> 0033_career_task_meta, Conversation organisation: custom titles, pins, groups, archive and a 30-day trash.
+INFO  [alembic.runtime.migration] Running upgrade 0033_career_task_meta -> 0034_career_job_alerts, Scheduled autonomous searches and recommendation digests.
+INFO  [alembic.runtime.migration] Running upgrade 0034_career_job_alerts -> 0035_analysis_cache, Persist validated analyses and pack timing summaries.
+INFO  [alembic.runtime.migration] Running upgrade 0035_analysis_cache -> 0036_provider_usage, Durable provider usage without conversation or application version changes.
+INFO  [alembic.runtime.migration] Running upgrade 0036_provider_usage -> 0037_external_tool_operations, Durable spend records for external paid tools (Treg), separate from model usage.
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:53
+  C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\starlette\testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_qualified_batch.py::test_recommendation_rechecks_current_request
+1 failed, 138 passed, 1 warning, 4 subtests passed in 82.69s (0:01:22)
