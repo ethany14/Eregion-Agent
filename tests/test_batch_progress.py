@@ -58,9 +58,10 @@ def test_brief_keeps_exact_late_requirements_without_replacing_body():
 def test_role_ranking_retains_unknown_candidates():
     state={'goal':'Find 15 current junior data analyst positions in New York.'}
     cards=[{'title':'Yield Analyst'},{'title':'Data Analyst'},{'title':'Unknown'}]
-    result,_=filter_cards(cards,state)
+    result,info=filter_cards(cards,state)
     assert result[0]['title']=='Data Analyst'
-    assert len(result)==3
+    assert result==[{'title':'Data Analyst'},{'title':'Unknown'}]
+    assert info['excluded'][0]['title']=='Yield Analyst'
 
 
 def test_plan_repair_returns_exact_valid_shape():

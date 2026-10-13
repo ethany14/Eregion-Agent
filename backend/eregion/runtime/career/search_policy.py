@@ -75,9 +75,10 @@ def opening_level(description):
     junior=bool(re.search(r'\b(?:entry[- ]level|junior)[ -]+(?:role|position|opportunity)\b|'
         r'\bthis (?:role|position) is (?:an? )?(?:entry[- ]level|junior)\b',text))
     junior=junior or any(0<=int(m[1])<=int(m[2])<=3 for m in re.finditer(
-        r'(?:^|\n)\s*(?:[-*•]\s*)?(?:(?:requires?|minimum(?: of)?|at least|must have|candidates? must have)\s+)?'
+        r'(?:^|\n)\s*(?:[-*•]\s*)?(?:(?:requires?|minimum(?: of)?|at least|must have|candidates? must have|'
+        r'you (?:have|bring)|(?:the )?(?:ideal|successful) candidate (?:has|will have)|experience\s*:)\s+)?'
         r"(\d+)\s*[-–]\s*(\d+)\s+years?['’]?(?:\s+of)?\s+[^\n.;:!?]{0,80}?experience\b",text))
-    minimum=re.finditer(r'\b(?:require[ds]?|minimum|at least|must have)\s+(?:(?:at least|of)\s+)?(\d+)'
+    minimum=re.finditer(r'\b(?:require[ds]?|minimum|at least|must have|you (?:have|bring))\s+(?:(?:at least|of)\s+)?(\d+)'
         r'(?:\s*[-–]\s*\d+)?\+?\s+years?\b|\b(\d+)(?:\s*[-–]\s*\d+)?\+?\s+years? (?:of )?experience\s+(?:is )?required\b',text)
     if any(int(next(g for g in m.groups() if g is not None))>=4 for m in minimum):return 'senior'
     return 'junior' if junior else None

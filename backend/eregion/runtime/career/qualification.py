@@ -8,7 +8,7 @@ from .search_policy import constraints, recommendation_warning, LEVELS
 
 def request_fields(state):
     text=next((m['text'] for m in reversed(state.get('messages',[])) if m.get('role')=='user'),state.get('goal',''))
-    match=re.search(r'\bfind\s+(?:one|two|three|four|\d+)\s+(?:current\s+)?(.+?)\s+(?:positions|jobs|roles)\b',text,re.I)
+    match=re.search(r'\bfind\s+(?:(?:one|two|three|four|\d+)\s+)?(?:current\s+)?(.+?)\s+(?:positions|jobs|roles)\b',text,re.I)
     role=match[1] if match else ''
     location=''
     if match:
@@ -31,28 +31,40 @@ def assess(state,job):
     def add(field,status,quote,reason):
         checks[field]={'status':status,'quote':quote or '', 'reason':reason}
     if requested['role']:
-        tokens=set(re.findall(r'[a-z0-9]+',requested['role'].lower()))
-        observed=set(re.findall(r'[a-z0-9]+',(job.get('title') or '').lower()))
-        add('role','met' if tokens and tokens<=observed else 'unknown',job.get('title'),
-            'Literal requested role terms must be present in the verified posting title; related titles are not assumed equivalent.')
+        normalize=lambda t:' '.join(re.findall(r'[a-z0-9]+',(t or '').casefold()))
+        phrase=normalize(requested['role'])
+        add('role','met' if phrase and re.search(r'\b'+re.escape(phrase)+r'\b',normalize(job.get('title'))) else 'unknown',job.get('title'),
+            'The requested occupational phrase must be evidenced by the posting title; scattered keywords do not establish the same role.')
     if requested['location']:
         norm=lambda s:' '.join((s or '').casefold().split())
         matched=bool(re.search(r'(?<!\w)'+re.escape(norm(requested['location']))+r'(?!\w)',norm(job.get('location'))))
-        add('location','met' if matched else 'unknown',job.get('location'),
+        quote=job.get('location')
+        if not matched and norm(quote) in {'','remote','united states','united states (remote)','us remote'}:
+            for m in re.finditer(r'(?im)^\s*(?:location\s*:|(?:this|the)\s+(?:role|position|job)\s+is\s+(?:based|located)\s+in)\s*([^\n.!?]{1,200})',job.get('description','')):
+                if re.search(r'(?<!\w)'+re.escape(norm(requested['location']))+r'(?!\w)',norm(m[1])):
+                    matched=True;quote=m[0].strip();break
+        add('location','met' if matched else 'unknown',quote,
             'The requested place must be evidenced by this posting; US-remote does not prove the requested city.')
     policy=constraints(state)
     if policy:
         try:warning=recommendation_warning({**policy,'strict':False},job.get('title',''),job.get('description',''))
         except ValueError:warning={'actual':None}
-        from .posting_brief import with_brief
-        evidence=with_brief(job)['triage_evidence']
+        from .posting_text import qualification_lines
+        evidence=qualification_lines(job.get('description',''))
         add('seniority','met' if not warning else 'unmet' if warning.get('actual') else 'unknown',
             job.get('title'),warning.get('message','Requested seniority is not established.') if warning else 'Opening level is supported; explicit higher minimum overrides the title.')
         checks['seniority']['source_excerpts']=evidence
+        from .search_policy import opening_level
+        decisive=next((e['quote'] for e in evidence if opening_level(e['quote'])==opening_level(job.get('description',''))
+                       and opening_level(e['quote']) is not None),None)
+        if decisive:checks['seniority']['quote']=decisive
+    unresolved=[k for k,v in checks.items() if v['status']=='unknown']
     return {'url':job['url'],'revision':state.get('chat_revision',0),'body_hash':body_hash(job),
             **({'application_id':job['application_id']} if job.get('application_id') else {}),
             'requested':requested,'checks':checks,'qualified':all(c['status']=='met' for c in checks.values()),
             'status':'qualified' if all(c['status']=='met' for c in checks.values()) else 'needs_evidence',
+            'review':{'method':'complete_saved_jd_scan','unresolved':unresolved,
+                      'next':'Only new source evidence for these fields can resolve them; rereading the same body or source entry-level filter cannot.' if unresolved else 'No unresolved search constraints.'},
             'interpretation':'Search constraints only; scoring must still check personal eligibility.'}
 
 

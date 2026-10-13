@@ -44,8 +44,14 @@ def invoke(harness,task_id,state,operation,arguments):
         harness.repository.change(task_id,linkedin_mcp_state=deepcopy(store))
 
 
-def search(harness,task_id,state,args):
-    key=harness.key(state,'linkedin_mcp_search', {**{k:v for k,v in args.items() if k!='limit'},
+def _search_one(harness,task_id,state,args):
+    # Only upstream-effective parameters identify a remote query. Directory mode,
+    # explicit default filters and presentation limits cannot mint duplicate calls.
+    filters=effective_filters(state,args)
+    key=harness.key(state,'linkedin_mcp_search', {
+        'query':' '.join(args['query'].casefold().split()),
+        'location':' '.join(args.get('location','').casefold().split()),
+        'experience_level':filters.get('experience_level'),
         'max_pages':2 if args.get('limit',10)>10 else 1})
     cached=state.get('linkedin_mcp_search_cache',{}).get(key)
     if cached is not None:return {**cached,'cached':True,'no_new_evidence':True}
@@ -65,3 +71,23 @@ def search(harness,task_id,state,args):
             'linkedin_mcp_search_cache':dict(list({**s.get('linkedin_mcp_search_cache',{}),key:result}.items())[-16:])}
     harness.repository.change(task_id,save)
     return result
+
+
+def search(harness,task_id,state,args):
+    from .search_strategy import variants, card_priority
+    queries=variants(state,args)
+    if len(queries)==1:return _search_one(harness,task_id,state,args)
+    results=[];jobs={}
+    for query in queries:
+        current=harness.repository.get(task_id)
+        result=_search_one(harness,task_id,current,{**args,'query':query})
+        results.append({'query':query,**{k:v for k,v in result.items() if k!='jobs'}})
+        jobs.update({job_key(j['url']):j for j in result.get('jobs',[])})
+        if result.get('status') in {'blocked','unavailable'}:break
+    ordered=sorted(jobs.values(),key=lambda j:card_priority(j,state))
+    final_status=results[-1].get('status','no_match')
+    return {'jobs':ordered,'status':final_status if final_status in {'blocked','unavailable'} else 'ok' if ordered else final_status,
+            'query_variants':results,'queries_attempted':len(results),
+            'no_new_evidence':all(r.get('no_new_evidence',False) for r in results),
+            'error_code':results[-1].get('error_code'),
+            'qualification':'Discovery expansion only: original role, location and seniority checks remain mandatory.'}

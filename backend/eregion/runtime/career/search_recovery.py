@@ -56,6 +56,9 @@ def recovery(state,*,saved_urls=()):
     pending=[j for key,j in candidates.items() if key not in retrieved and key not in excluded
         and key not in legacy_tried and tried.get(key)!=revision
         and not sources.get(browser_source(j['url']),{}).get('blocked')]
+    from .search_filters import filter_cards
+    from .candidate_queue import enabled
+    if enabled():pending,_=filter_cards(pending,state)
     saved={job_key(url) for url in saved_urls if url}|{job_key(j['url']) for j in state.get('recommendations',[]) if j.get('url')}
     read_not_imported={job_key(j['url']):{k:j[k] for k in ('url','title','company','location') if k in j}
         for j in state.get('retrieved_jobs',{}).values() if j.get('url') and job_key(j['url']) not in excluded|saved}

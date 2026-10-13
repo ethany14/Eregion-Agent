@@ -27,11 +27,12 @@ def constraints(applicant, job):
         r'\bthis (?:role|position) is (?:an? )?(?:entry[- ]level|junior)\b', description))
     low_ranges = re.finditer(
         r'(?:^|\n)\s*(?:[-*•]\s*)?'
-        r'(?:(?:requires?|minimum(?: of)?|at least|must have|candidates? must have)\s+)?'
+        r'(?:(?:requires?|minimum(?: of)?|at least|must have|candidates? must have|you (?:have|bring)|'
+        r'(?:the )?(?:ideal|successful) candidate (?:has|will have)|experience\s*:)\s+)?'
         r"(\d+)\s*[-–]\s*(\d+)\s+years?['’]?(?:\s+of)?\s+[^\n.;:!?]{0,80}?experience\b", description)
     junior = junior or any(0 <= int(m[1]) <= int(m[2]) <= 3 for m in low_ranges)
     minimum_years = re.finditer(
-        r'\b(?:require[ds]?|minimum|at least|must have)\s+(?:(?:at least|of)\s+)?(\d+)'
+        r'\b(?:require[ds]?|minimum|at least|must have|you (?:have|bring))\s+(?:(?:at least|of)\s+)?(\d+)'
         r'(?:\s*[-–]\s*\d+)?\+?\s+years?\b|'
         r'\b(\d+)(?:\s*[-–]\s*\d+)?\+?\s+years? (?:of )?experience\s+(?:is )?required\b', description)
     if any(int(next(g for g in match.groups() if g is not None)) >= 4 for match in minimum_years):
@@ -46,9 +47,13 @@ def constraints(applicant, job):
             'location': bool(re.search(r'\b(remote|fully remote|100% remote)\b', location)) and
                 us_location}
     if applicant == 'analyst':
+        ny_location=bool(re.search(r'\bnew york\b|\bnyc\b',location))
+        if not ny_location and ' '.join(location.split()) in {'','remote','united states','united states (remote)','us remote'}:
+            ny_location=any(re.search(r'\bnew york\b',m[1]) for m in re.finditer(
+                r'(?m)^\s*(?:location\s*:|(?:this|the)\s+(?:role|position|job)\s+is\s+(?:based|located)\s+in)\s*([^\n.!?]{1,200})',description))
         return {'role': bool(re.search(r'\bdata analyst\b', title)), 'seniority': junior and
             not re.search(r'\b(senior|staff|principal|director)\b', title),
-            'location': bool(re.search(r'\bnew york\b|\bnyc\b', location))}
+            'location': ny_location}
     if applicant == 'student':
         return {'role': bool(re.search(r'\b(machine learning|ml)\b', title)),
             'seniority': bool(re.search(r'\b(intern|internship)\b', title)),

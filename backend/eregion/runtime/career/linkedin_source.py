@@ -141,6 +141,8 @@ class LinkedInMcpSource:
         errors = payload.get('section_errors') or {}
         apply = payload.get('apply') or {}
         posting = str(sections.get('job_posting') or '').strip()
+        from .posting_text import scope
+        scoped=scope(posting)
         evidence = '\n\n'.join(f'[{name}]\n{value}' for name, value in sections.items() if value).strip()
         reasons = []
         if 'job_posting' in errors:
@@ -149,7 +151,7 @@ class LinkedInMcpSource:
                                              else 'error'))
         if not posting:
             reasons.append('job_posting_missing')
-        elif len(posting) < MIN_POSTING_CHARS:
+        elif len(scoped['text']) < MIN_POSTING_CHARS:
             reasons.append('job_posting_too_short')
         url = str(payload.get('url') or '')
         if not _matches_job_url(url, job_id):
@@ -161,7 +163,8 @@ class LinkedInMcpSource:
         else:
             status = 'complete_jd'
         return {'status': status, 'incomplete_reasons': reasons, 'url': url or job_url(job_id),
-                'provider_job_id': job_id, 'description': posting if status == 'complete_jd' else None,
+                'provider_job_id': job_id, 'description': scoped['text'] if status == 'complete_jd' else None,
+                'raw_posting':posting,'posting_scope':{k:v for k,v in scoped.items() if k!='text'},
                 'evidence_text': evidence, 'section_errors': sorted(errors),
                 'apply_status': apply.get('type') or 'unknown', 'source': 'linkedin_mcp'}
 

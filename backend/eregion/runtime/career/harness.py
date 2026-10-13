@@ -873,6 +873,11 @@ class CareerHarness:
                 raise ValueError('Screen only links from observed browser/search results or retrieved jobs.')
             return self.screen(task_id, state, [candidates[job_key(url)] for url in urls], args['query'])
         if name=='read_job':
+            if self.api_first():
+                card=next((j for j in state.get('search_candidates',{}).values()
+                           if j.get('url') and job_key(j['url'])==job_key(args['url'])),None)
+                if card and not filter_cards([card],state)[0]:
+                    raise ValueError('The observed card explicitly conflicts with the requested occupation or seniority. Choose a matching or ambiguous card; no detail request sent.')
             # Persist attempted identities even when the read rejects a blocked or
             # ambiguous page, so completion recovery cannot force an endless retry.
             self.repository.change(task_id,lambda s:{'job_read_attempts':dict(list({
@@ -939,7 +944,8 @@ class CareerHarness:
                         if j.get('url') and job_key(j['url'])==identity),{})
                     job={'url':detail['url'],'title':candidate.get('title') or '',
                          'company':candidate.get('company') or '', 'location':candidate.get('location') or '',
-                         'description':detail['description'],'source':'linkedin_mcp'}
+                         'description':detail['description'],'source':'linkedin_mcp',
+                         'raw_posting':detail.get('raw_posting'),'posting_scope':detail.get('posting_scope')}
                 if job is None:job=self._treg_scrape(task_id,state,url) if api_first else None
                 if job and job.get('closed'):
                     raise ValueError('This posting reports it is closed or no longer accepting applications; '

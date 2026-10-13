@@ -17,6 +17,11 @@ RULE += ('For multi-job requests prefer verify_and_score_jobs with 4-8 observed 
          'unverified role/location/seniority without scoring and shares the scorer across qualified candidates. '
          'Do not page through JD context first. After deciding scored results, continue a different candidate '
          'batch or query; never keep proposing the same deferred URLs.\n')
+RULE += ('Large entry-level searches expand equivalent role queries automatically, preserving location and provider level filters. '
+         'Do not repeat that search with presentation-only changes. Card exclusions are not unknown qualifications. '
+         'The qualification review already scans the complete saved JD and gives exact requirement lines. '
+         'If it remains unknown, only new source evidence for the unresolved field helps; rereading the same JD does not. '
+         'When sources and actionable candidates are exhausted, finish honestly with saved qualified recommendations and the shortfall.\n')
 FALLBACK = 'Use read_job, import_job, then score_job individually; inspect saved progress first.'
 
 

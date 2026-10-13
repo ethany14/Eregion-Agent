@@ -134,7 +134,8 @@ def test_an_unrelated_section_error_does_not_block_a_complete_posting():
     payload = {**DETAIL, 'sections': {**DETAIL['sections'], 'references': 'More jobs'},
                'section_errors': {'references': {'type': 'timeout'}}}
     detail = LinkedInMcpSource(FakeLinkedIn({'get_job_details': result(payload)}).call_tool_for()).details('4475055219')
-    assert detail['status'] == 'complete_jd' and detail['description'].startswith('About the job')
+    assert detail['status'] == 'complete_jd' and detail['description'].startswith('Analyse data.')
+    assert detail['raw_posting']==DETAIL['sections']['job_posting'].strip()
     assert 'More jobs' not in detail['description'] and 'More jobs' in detail['evidence_text']
 
 

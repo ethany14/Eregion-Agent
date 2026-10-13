@@ -1,0 +1,25 @@
+"""Source-bound LinkedIn job section, with original text retained for audit."""
+import re
+
+
+def scope(text):
+    start=re.search(r'(?im)^\s*About the job\s*$',text or '')
+    if not start:return {'text':text or '', 'start':0,'end':len(text or ''),'bounded':False}
+    offset=start.end()
+    stop=re.search(r'(?im)^\s*(?:Set alert for similar jobs|About the company|More jobs|'
+                   r'Unlock hiring insights[^\n]*|Applicant (?:seniority|education) level)\s*$',text[offset:])
+    end=offset+stop.start() if stop else len(text)
+    body=text[offset:end];left=len(body)-len(body.lstrip());right=len(body.rstrip())
+    return {'text':body.strip(),'start':offset+left,'end':offset+right,'bounded':True}
+
+
+def qualification_lines(text):
+    """Inspect the complete scoped JD once, not just its first eight matching lines."""
+    lines=[]
+    for m in re.finditer(r'[^\n]+',text or ''):
+        if re.search(r'\byears?\b|entry[- ]level|junior|graduate|qualification|requirements|'
+                     r'work location|based in|located in|work from',m[0],re.I):
+            lines.append({'quote':m[0][:400],'start':m.start(),'end':min(m.end(),m.start()+400)})
+    # Put explicit experience evidence ahead of generic headings/benefits.
+    lines.sort(key=lambda v:not bool(re.search(r'\b\d+\s*[-–+]?\s*\d*\s+years?\b',v['quote'],re.I)))
+    return lines[:12]
