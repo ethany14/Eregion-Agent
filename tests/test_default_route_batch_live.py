@@ -57,7 +57,7 @@ def test_default_route_ten_to_fifteen(career, monkeypatch):
     (output/'invocation.json').write_text(json.dumps({
         'head':subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
         'goal':GOAL, 'flags':FLAGS, 'minimum_qualified':10, 'target':15,
-        'mcp_call_limit':26, 'deadline_seconds':900, 'synthetic_candidate':True,
+        'mcp_call_limit':50, 'deadline_seconds':900, 'synthetic_candidate':True,
         'cost_usd':None, 'cost_note':'Provider billing unavailable; attempt and token caps enforced.'
     }, indent=2), encoding='utf-8')
     try:
@@ -88,6 +88,11 @@ def test_default_route_ten_to_fifteen(career, monkeypatch):
             ledger = ExternalToolLedger(c.repository.sessions).summary(task['run_id'])
             (output/'sources.json').write_text(json.dumps({
                 'linkedin':state.get('linkedin_mcp_state'), 'treg':ledger},indent=2,default=str),encoding='utf-8')
+            # Preserve the isolated test DB before pytest retention removes it.
+            import sqlite3
+            source=Path(c.repository.sessions.kw['bind'].url.database)
+            with sqlite3.connect(source.as_uri()+'?mode=ro',uri=True) as original, sqlite3.connect(output/'career.sqlite3') as saved:
+                original.backup(saved)
         service.close()
         try:
             manager.call_tool('linkedin','close_session',{},timeout_seconds=15)

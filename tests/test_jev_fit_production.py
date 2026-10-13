@@ -124,6 +124,36 @@ class JevProductionTests(unittest.TestCase):
         model = self.service(config=replace(self.config, model='jev-1.13.1'))
         self.assertGreater(self.analyze(model).model_calls, 0)
 
+    def test_distinct_jobs_batch_without_borrowing_document_context(self):
+        original=self.endpoint.__call__
+        def endpoint(request):
+            payload=json.loads(request.content)
+            if 'cases' in payload['state']:
+                for q in payload['questions'].values():
+                    args=q['instructions'];own=payload['state']['cases'][args['context_case']]
+                    if 'span' in args:
+                        self.assertIn(args['span'],own['job_description'])
+            return original(request)
+        service=self.service();service._jev_transport=httpx.MockTransport(endpoint)
+        jobs=[{'id':'python','job_description':'Engineer\nRequired: Python\n'},
+              {'id':'kubernetes','job_description':'Engineer\nRequired: Kubernetes\n'}]
+        values=asyncio.run(service.analyze_many(resume_text=self.resume,jobs=jobs))
+        self.assertTrue(any('cases' in p['state'] for p in self.endpoint.requests))
+        self.assertLessEqual(len(self.endpoint.requests),5)
+        self.assertGreater(values['python'].skill_match.overall_score,values['kubernetes'].skill_match.overall_score)
+        self.assertEqual(sum(v.fast_model_calls for v in values.values()),len(self.endpoint.requests))
+        # A single-job retry reuses its own mapped decisions, never the other's.
+        self.assertEqual(self.analyze(job_description=jobs[0]['job_description']).model_calls,0)
+
+    def test_shared_requirement_reuses_same_resume_across_different_jobs(self):
+        self.analyze(job_description='Engineer\nRequired: Python\n')
+        before=len(self.endpoint.requests)
+        self.analyze(job_description='Different Engineer\nRequired: Python\nRequired: SQL\n')
+        sent=[q for p in self.endpoint.requests[before:] for q in p['questions'].values()]
+        self.assertFalse(any(q['instructions'].get('requirement')=='Python' and
+                             q['instructions']['question']=='Does the evidence support this requirement?' for q in sent))
+        self.assertTrue(any(q['instructions'].get('requirement')=='SQL' for q in sent))
+
     def test_presentation_whitespace_reuses_decisions_but_keeps_original_spans(self):
         first=self.analyze()
         spaced=self.jd+'\n'

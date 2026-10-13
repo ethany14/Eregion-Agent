@@ -64,6 +64,6 @@ def recovery(state,*,saved_urls=()):
         for j in state.get('retrieved_jobs',{}).values() if j.get('url') and job_key(j['url']) not in excluded|saved}
     return {'requested_count':request['count'],'recommended_count':len(state.get('recommendations',[])),
         'pending_candidates':[{**{k:j[k] for k in ('url','title','source','source_page') if k in j},
-            'read_job_arguments':{'url':j['url']}} for j in pending[:8]],
+            'read_job_arguments':{'url':j['url']}} for j in pending[:20]],
         'read_not_imported':[{**j,'import_job_arguments':{'url':j['url']}} for j in list(read_not_imported.values())[:3]],
         'instruction':'Pending links are discovery only, not verified jobs. Use the bounded read_job arguments to verify the target posting, identity, location, seniority and eligibility. Saved retrieved bodies can be imported without another remote read, but are not automatically qualifying or recommended. Do not repeat blocked sources or already-read details. If no eligible candidate remains, change public source or query to discover genuinely different postings; do not repeat identical result lists.'}

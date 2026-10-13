@@ -328,7 +328,7 @@ class CareerHarness:
         if source:
             log=source.get('log',[])
             known['linkedin_source_facts']={
-                'calls_used':source.get('calls_used',0),'stop_reason':source.get('stopped'),
+                'calls_used':source.get('calls_used',0),'call_limit':source.get('call_limit',26),'stop_reason':source.get('stopped'),
                 'successful_searches':sum(r.get('tool')=='search_jobs' and r.get('outcome')=='ok' for r in log),
                 'successful_details':sum(r.get('tool')=='get_job_details' and r.get('outcome')=='ok' for r in log),
                 'instruction':'A later source stop or exhausted budget does not erase earlier successful results. Report both accurately.'}
@@ -377,12 +377,21 @@ class CareerHarness:
             parsed=next((a for a in reversed(artifacts) if a.artifact_type==ArtifactType.JOB_ANALYSIS
                 and a.created_at>=boundary),None)
             requirements=parsed.content.get('requirements',[]) if parsed else []
-            from eregion.domain.jev_fit.core import job_units
+            from .posting_text import qualification_lines
+            from .search_policy import opening_level
             body=rt.workspace.current_snapshot(application_id).cleaned_job_description
-            result['qualification_evidence']=[{'quote':u['text'],'start':u['start'],'end':u['end']}
-                for u in job_units(body) if re.search(r'\b\d+(?:\s*[-–]\s*\d+|\+)?\s+years?\b',u['text'],re.I)][:8]
+            result['qualification_evidence']=[u for u in qualification_lines(body) if opening_level(u['quote'])][:4]
             result.update(self.requirement_summary(match.content,requirements))
             result['match_overview'] = self.match_overview(match.content,requirements)
+            overview=result['match_overview']
+            result['decision_brief']={
+                'confirmed_ineligible':any(m.get('match_status')=='confirmed_condition' and m.get('condition_satisfied') is False
+                                          for m in match.content.get('matches',[])),
+                'strengths':[r['requirement'][:100] for r in overview['matched'][:3]],
+                'gaps':[r['requirement'][:100] for r in [*overview['missing'],*overview['partial']][:4]],
+                'needs_confirmation':[r['requirement'][:100] for r in overview['needs_confirmation'][:3]],
+                'unknown_count':len(overview['unknown']),
+                'note':'Scoring is complete. These are previews; full match_overview/report remain available for a specific missing fact.'}
             result.update(score_range=match.content.get('score_range'),
                 analysis_status=match.content.get('analysis_status','completed'),
                 analysis_status_label=display_label(match.content.get('analysis_status','completed')),
@@ -572,7 +581,7 @@ class CareerHarness:
 
     def save_scored_evidence(self,task_id,identifiers):
         results={identifier:{k:v for k,v in self.job_summary(identifier).items() if k in {
-            'application_id','title','company','url','location','match_score','score_range','qualification_evidence'}}
+            'application_id','title','company','url','location','match_score','score_range','qualification_evidence','decision_brief'}}
             for identifier in identifiers}
         self.repository.change(task_id,lambda s:{'scored_job_evidence':{**s.get('scored_job_evidence',{}),**results}})
 

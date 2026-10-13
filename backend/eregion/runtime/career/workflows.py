@@ -13,10 +13,12 @@ RULE = ('\nFor a promising observed posting use verify_and_score to read, import
         'and qualification evidence. For a posting already read, use verify_and_score to reuse it, or '
         'dismiss_candidate with an exact source quote and reason if unsuitable. Finish started candidates before '
         'searching again. A progress message or plan is not completed candidate work.\n')
-RULE += ('For multi-job requests prefer verify_and_score_jobs with 4-8 observed URLs per call: it defers '
+RULE += ('For multi-job requests prefer verify_and_score_jobs with 8-20 observed URLs per call (or all remaining if fewer): it defers '
          'unverified role/location/seniority without scoring and shares the scorer across qualified candidates. '
          'Do not page through JD context first. After deciding scored results, continue a different candidate '
-         'batch or query; never keep proposing the same deferred URLs.\n')
+         'batch or query; never keep proposing the same deferred URLs. Use decision_brief for each scored job: '
+         'it exposes strengths, gaps and known ineligibility. Read a precise match_report field only if a necessary '
+         'fact is absent. You can issue decisions for multiple independent scored jobs in one response.\n')
 RULE += ('Large entry-level searches expand equivalent role queries automatically, preserving location and provider level filters. '
          'Do not repeat that search with presentation-only changes. Card exclusions are not unknown qualifications. '
          'The qualification review already scans the complete saved JD and gives exact requirement lines. '

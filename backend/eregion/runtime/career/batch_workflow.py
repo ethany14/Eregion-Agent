@@ -6,16 +6,16 @@ from .alerts import job_key
 from .qualification import record
 
 TOOL=function('verify_and_score_jobs',
-    'Process 1-8 observed posting URLs together: read/reuse, qualify against the user request, import qualified jobs, '
-    'then call the existing shared batch scorer once. Unknown/mismatched jobs stay deferred without paid scoring. '
+    'Process 1-20 observed posting URLs together: read/reuse, qualify against the user request, import qualified jobs, '
+    'then score qualified jobs in shared groups of at most eight. Unknown/mismatched jobs stay deferred without paid scoring. '
     'Never recommends; decide the returned scored jobs separately. Prefer this for multi-job searches.',
-    {'urls':{'type':'array','minItems':1,'maxItems':8,'uniqueItems':True,'items':TEXT}})
+    {'urls':{'type':'array','minItems':1,'maxItems':20,'uniqueItems':True,'items':TEXT}})
 
 
 def run(harness,task_id,args,call_id):
     repo=harness.repository;initial=repo.get(task_id);revision=initial['chat_revision']
     urls=args['urls'];identities=[job_key(u) for u in urls]
-    if not 1<=len(urls)<=8 or len(set(identities))!=len(urls):raise ValueError('Choose 1-8 distinct observed postings.')
+    if not 1<=len(urls)<=20 or len(set(identities))!=len(urls):raise ValueError('Choose 1-20 distinct observed postings.')
     observed={job_key(j['url']) for kind in ('search_candidates','observed_job_candidates','retrieved_jobs')
               for j in initial.get(kind,{}).values() if j.get('url')}
     if any(key not in observed for key in identities):raise ValueError('Use URLs from observed search results or saved retrieved postings.')
@@ -57,11 +57,14 @@ def run(harness,task_id,args,call_id):
                     save(pending=None)
                 except (ValueError,LookupError) as exc:
                     items.append({'url':url,'status':'source_error','error':str(exc)[:400]});save(pending=None)
-            result=invoke('score_jobs',{'application_ids':apps}) if apps else {'jobs':[]}
-            if result.get('error'):save(pending=None,failure=result);return {**result,'candidates':items}
-            if apps and not result.get('no_new_evidence'):changed=True
+            scored=[]
+            for start in range(0,len(apps),8):
+                result=invoke('score_jobs',{'application_ids':apps[start:start+8]})
+                if result.get('error'):save(pending=None,failure=result);return {**result,'jobs':scored,'candidates':items}
+                scored.extend(result['jobs'])
+                if not result.get('no_new_evidence'):changed=True
             save(pending=None,completed=True,failure=None)
-            return {'jobs':result['jobs'],'candidates':items,'qualified_count':len(apps),
+            return {'jobs':scored,'candidates':items,'qualified_count':len(apps),
                     'no_new_evidence':not changed,
                     'next':'Decide each scored job. Deferred jobs are not quota matches; discover different postings when no qualified pending candidates remain.'}
     except TaskProviderBudgetExceeded:

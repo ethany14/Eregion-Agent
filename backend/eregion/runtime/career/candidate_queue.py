@@ -10,8 +10,8 @@ import os
 
 from .alerts import job_key
 
-BATCH_LIMIT = 10
-DETAIL_LIMIT = 5
+BATCH_LIMIT = 20
+DETAIL_LIMIT = 20
 
 
 def enabled():

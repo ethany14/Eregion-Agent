@@ -94,19 +94,21 @@ class LinkedInMcpSource:
 
     def __init__(self, call: Callable[..., Any], *, store: dict | None = None, server_id: str = SERVER_ID,
                  call_budget: int = DEFAULT_CALL_BUDGET, deadline_seconds: float = DEFAULT_DEADLINE,
-                 max_response_bytes: int = MAX_RESPONSE_BYTES):
+                 max_response_bytes: int = MAX_RESPONSE_BYTES, max_pages: int = MAX_PAGES):
         self._call, self.server_id = call, server_id
         self.store = store if store is not None else {}
         self.store.setdefault('calls_used', 0)
         self.store.setdefault('stopped', None)
         self.store.setdefault('log', [])
         self.call_budget, self.deadline, self.max_bytes = call_budget, deadline_seconds, max_response_bytes
+        self.max_pages=max(1,min(int(max_pages),4))
+        self.store['call_limit']=call_budget
 
     # -- business operations --------------------------------------------------------
 
     def search(self, keywords: str, location: str | None = None, *, experience_level: str | None = None,
                max_pages: int = 1) -> dict:
-        args: dict[str, Any] = {'keywords': keywords, 'max_pages': max(1, min(int(max_pages), MAX_PAGES))}
+        args: dict[str, Any] = {'keywords': keywords, 'max_pages': max(1, min(int(max_pages), self.max_pages))}
         if location:
             args['location'] = location
         unapplied = []

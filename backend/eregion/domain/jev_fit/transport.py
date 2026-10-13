@@ -1,4 +1,4 @@
-"""Bounded exact-state batching. Paid usage is recorded once per HTTP request."""
+"""Bounded isolated-state batching. Paid usage is recorded once per HTTP request."""
 from concurrent.futures import Future
 from contextvars import copy_context
 from dataclasses import dataclass
@@ -80,7 +80,7 @@ class Broker:
                 return
             pending = [item]
             if self.batch:
-                deadline = time.monotonic() + .008
+                deadline = time.monotonic() + .025
                 while True:
                     try:
                         item = self.queue.get(timeout=max(0, deadline-time.monotonic()))
@@ -92,11 +92,20 @@ class Broker:
                     pending.append(item)
             groups = {}
             for p in pending:
-                key = digest([p.state, p.purpose, p.scope['owner'], p.scope['resume'], p.scope['facts']])
+                key = digest([p.purpose, p.scope['owner'], p.scope['resume'], p.scope['facts']])
                 if not self.batch:
                     key += p.task_id
                 groups.setdefault(key, []).append(p)
+            bounded=[]
             for group in groups.values():
+                part=[];states={}
+                for p in group:
+                    trial={**states,digest(p.state):p.state}
+                    if part and len(canonical(trial).encode())>MAX_PAYLOAD_BYTES//2:
+                        bounded.append(part);part=[];states={}
+                    part.append(p);states[digest(p.state)]=p.state
+                if part:bounded.append(part)
+            for group in bounded:
                 try:
                     self._dispatch(group)
                 except BaseException as exc:
@@ -106,7 +115,10 @@ class Broker:
 
     def _key(self, p, q):
         from eregion.domain.reasoning import resolve, escalation_enabled
-        return digest([self.signature, p.scope, p.purpose, p.state, q,
+        # State + question contain the full semantic input. The consumer's job
+        # ID/hash must not prevent reuse of the same resume/requirement decision.
+        scope={k:v for k,v in p.scope.items() if k!='job'}
+        return digest([self.signature, scope, p.purpose, p.state, q,
                        resolve(self.config.reasoning, p.purpose), escalation_enabled()])
 
     def _request(self, state, questions, purpose, context, *, retry=False, plain=False):
@@ -185,6 +197,12 @@ class Broker:
         keys = {(id(p), k): self._key(p, q) for p in pending for k,q in p.questions.items()}
         cached = self.cache.get_many(keys.values(), self.config.model) if self.cache else {}
         unique, targets, identifiers = {}, {}, {}
+        states={digest(p.state):p.state for p in pending}
+        cases={key:'case'+str(i) for i,key in enumerate(states)}
+        state=pending[0].state if len(states)==1 else {
+            'policy':'Each question identifies one independent context_case. Use only that case as its complete state. '
+                     'Never borrow facts, job requirements or document instructions from another case.',
+            'cases':{cases[k]:v for k,v in states.items()}}
         for p in pending:
             for k,q in p.questions.items():
                 if q.get('type') != 'noul':
@@ -198,14 +216,19 @@ class Broker:
                     answers[id(p)][k] = hit['answer']
                     event.update(expires_at=hit['expires_at'], provenance=hit['provenance'])
                     continue
-                qhash = digest(q)
+                wire_question=q
+                if len(states)>1:
+                    wire_question={**q,'instructions':{**q['instructions'],
+                        'context_case':cases[digest(p.state)],
+                        'context_rule':'Evaluate using only state.cases[context_case]; other cases are unrelated.'}}
+                qhash = digest([p.state,q])
                 wire = identifiers.setdefault(qhash, 'q'+str(len(identifiers)))
-                if wire in unique and unique[wire] != q:
+                if wire in unique and unique[wire] != wire_question:
                     raise ValueError('Question hash collision')
-                unique[wire] = q
+                unique[wire] = wire_question
                 targets.setdefault(wire, []).append((p,k,key,event))
         batches, current = [], {}
-        state, purpose = pending[0].state, pending[0].purpose
+        purpose = pending[0].purpose
         for k,q in unique.items():
             trial = {**current, k:q}
             payload = {'model':self.config.model,'state':state,'questions':trial}

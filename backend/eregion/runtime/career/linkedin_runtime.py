@@ -28,14 +28,16 @@ def invoke(harness,task_id,state,operation,arguments):
         result=harness.runtime.mcp_manager.call_tool(server,tool,args,**kwargs)
         check()
         return result
-    source=LinkedInMcpSource(call,store=store)
+    from .search_strategy import source_limits
+    limits=source_limits(state,arguments)
+    source=LinkedInMcpSource(call,store=store,call_budget=limits['calls'],max_pages=4)
     try:
         check()
         if operation=='search':
             filters=effective_filters(state,arguments)
             level=filters.get('experience_level')
             if level=='mid-senior':level='mid_senior'
-            result=source.search(arguments['query'],arguments.get('location'),experience_level=level,max_pages=2 if arguments.get('limit',10)>10 else 1)
+            result=source.search(arguments['query'],arguments.get('location'),experience_level=level,max_pages=limits['pages'])
             result['jobs'],result['local_filter']=filter_cards(result['jobs'],state)
             result['unapplied_filters']+= [k for k in filters if k!='experience_level']
             return result
@@ -48,11 +50,12 @@ def _search_one(harness,task_id,state,args):
     # Only upstream-effective parameters identify a remote query. Directory mode,
     # explicit default filters and presentation limits cannot mint duplicate calls.
     filters=effective_filters(state,args)
+    from .search_strategy import source_limits
     key=harness.key(state,'linkedin_mcp_search', {
         'query':' '.join(args['query'].casefold().split()),
         'location':' '.join(args.get('location','').casefold().split()),
         'experience_level':filters.get('experience_level'),
-        'max_pages':2 if args.get('limit',10)>10 else 1})
+        'max_pages':source_limits(state,args)['pages']})
     cached=state.get('linkedin_mcp_search_cache',{}).get(key)
     if cached is not None:return {**cached,'cached':True,'no_new_evidence':True}
     stopped=(state.get('linkedin_mcp_state') or {}).get('stopped')

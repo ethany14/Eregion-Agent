@@ -417,7 +417,7 @@ class ContextArchive:
                     'message', 'input_request', 'delivered_user_message_ids', 'pending_fields', 'observed_answers', 'material_refs', 'material_overview', 'material_choices', 'detail_hint',
                     # Decision fields of scored/workflow results stay visible after archiving (closeout C1.2).
                     'completed_steps', 'failed_step', 'fallback', 'opening_level', 'qualification_evidence',
-                    'seniority_warning', 'score_range', 'analysis_status', 'decision', 'pending', 'rejection_code'):
+                    'seniority_warning', 'score_range', 'analysis_status', 'decision', 'decision_brief', 'pending', 'rejection_code'):
             if key in result:
                 value = result[key]
                 summary[key] = value if len(encoded(value)) <= (4000 if key in {'triage_evidence','match_overview','material_overview','material_choices','observed_answers'} else 1000) else self.reference(value, preview=160)
@@ -447,7 +447,7 @@ class ContextArchive:
         for key in sorted(list(summary), key=lambda k: len(encoded(summary[k])), reverse=True):
             if len(encoded(summary)) <= 5500:
                 break
-            if key in {'context_ref', 'error_code', 'observation_id', 'progress_feedback', 'next','job_detail','regions'}:
+            if key in {'context_ref', 'error_code', 'observation_id', 'progress_feedback', 'next','job_detail','regions','jobs'}:
                 continue
             if len(encoded(summary[key])) > 500:
                 summary[key] = self.reference(summary[key], preview=100)
@@ -524,7 +524,7 @@ def compact_resources(key,rows,archive):
                          'latest_feedback','report_available','failure'),
           'materials':('pack_id','application_id','status','version','material_overview','items'),
           'jobs':('application_id','title','company','url','location','status','match_score','score_range','qualification_evidence',
-                  'analysis_status','score_algorithm','score_valid_until','requirement_counts','gaps')}
+                  'analysis_status','score_algorithm','score_valid_until','requirement_counts','gaps','decision_brief')}
     result=[]
     for row in rows:
         if not isinstance(row,dict):continue

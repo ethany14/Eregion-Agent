@@ -70,7 +70,7 @@ def gate(state, name, args):
     return {'error': 'Decide the scored jobs before searching for more.', 'error_code': 'pending_decisions',
             'no_new_evidence': True,
             'pending': [{k: evidence[a].get(k) for k in ('application_id', 'title', 'company', 'url', 'match_score',
-                         'qualification_evidence') if k in evidence[a]} for a in open_jobs],
+                         'qualification_evidence','decision_brief') if k in evidence[a]} for a in open_jobs],
             'next': 'For each pending job call recommend_job (with caveats) or decide_job (exclude with the specific '
                     'reason, or needs_evidence with what is missing). Then search again for remaining gaps.'}
 

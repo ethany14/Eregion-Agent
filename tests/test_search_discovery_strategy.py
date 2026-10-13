@@ -153,6 +153,8 @@ def test_large_search_uses_four_distinct_queries_once(career,monkeypatch):
         found=execute(c,'search_jobs',query='junior data analyst',location='New York',limit=20)
         assert len(fake.calls)==4 and len({args['keywords']for _,args,_ in fake.calls})==4
         assert all(args['experience_level']=='entry' and args['location']=='New York' for _,args,_ in fake.calls)
+        assert [args['max_pages'] for _,args,_ in fake.calls]==[2,2,4,4]
+        assert c.repository.get(c.state['task_id'])['linkedin_mcp_state']['call_limit']==50
         again=execute(c,'search_jobs',query='entry level data analyst',location='New York',limit=20,use_directory=True)
         assert again['no_new_evidence'] and len(fake.calls)==4 and len(found['jobs'])==2
     finally:manager.stop()

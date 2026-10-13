@@ -8,6 +8,16 @@ def normalized(text):
     return ' '.join(re.findall(r'[a-z0-9]+',(text or '').casefold()))
 
 
+def source_limits(state,args=None):
+    from .search_recovery import search_request
+    request=search_request(state)
+    large=bool(request and request['count']>=10)
+    fields=request_fields(state);query=normalized((args or {}).get('query'))
+    broad=query in {normalized(fields['role']),normalized(f"{fields['role']} in {fields['location']}")}
+    return {'calls':50 if large else 26,
+            'pages':4 if large and broad else 2 if (args or {}).get('limit',10)>10 else 1}
+
+
 def variants(state,args):
     from .search_recovery import search_request
     request=search_request(state)
