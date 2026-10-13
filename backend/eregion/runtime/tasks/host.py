@@ -233,8 +233,10 @@ class TaskHost:
                     result = self.loop.harness.execute(self.task_id, call['name'], call['args'], call_id=call['id'])
             except ReplyBudgetReserved as exc:
                 # Saved progress stays; only new paid tool work is refused.
+                # A budget transition, not a stall: the next observation is already
+                # restricted to decisions and the reply, so it must not end the loop.
                 return {'error':'The remaining provider budget is reserved for your decisions and final reply.',
-                        'error_code':'provider_budget_reserved','no_new_evidence':True,
+                        'error_code':'provider_budget_reserved',
                         **getattr(exc,'workflow_detail',{}),
                         'next':'Start no further paid work. Decide any scored jobs (free), then finish with the saved '
                                'recommendations, their URLs and scores, and the honest shortfall.'}

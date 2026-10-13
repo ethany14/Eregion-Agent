@@ -264,3 +264,18 @@ def test_clause_after_a_score_is_not_a_descending_score_interval():
     found=reply_job_evidence(text)
     assert found['https://www.linkedin.com/jobs/view/4439835443/']=={'scores':[46.12],'ranges':[]}
     assert found['https://www.linkedin.com/jobs/view/4432001930/']=={'scores':[],'ranges':[[40.0,55.0]]}
+
+
+@pytest.mark.parametrize('jev,used,expected',[(True,5,4),(True,9,0),(False,5,2)])
+def test_scoring_batch_is_sized_to_the_attempts_that_can_finish_it(career,monkeypatch,jev,used,expected):
+    from eregion.runtime.provider_usage import UsageLedger, ReplyBudgetReserved
+    monkeypatch.setenv('JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS','20')
+    c=career;ledger=UsageLedger(c.repository.sessions)
+    for i in range(used):ledger.start(f'c{i}',{'task_id':c.state['task_id']},{'purpose':'agent'})
+    monkeypatch.setattr(c.harness.analysis,'uses_jev',lambda:jev)
+    ids=[f'app-{i}' for i in range(10)]
+    if not expected:
+        with pytest.raises(ReplyBudgetReserved):c.harness.affordable_scoring(c.state['task_id'],ids)
+        return
+    now,later=c.harness.affordable_scoring(c.state['task_id'],ids)
+    assert now==ids[:expected] and later==ids[expected:]

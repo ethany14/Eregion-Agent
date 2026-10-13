@@ -23,6 +23,8 @@ from .search_filters import FILTER_SCHEMA, FILTER_FIELDS, effective_filters, fil
 
 APP = {'application_id':TEXT}
 ITEM = {'pack_id':TEXT,'item_id':TEXT}
+JEV_STAGE_REQUESTS = 8          # measured: one shared request per Jev stage per batch
+MAIN_ROUTE_REQUESTS_PER_JOB = 5 # measured without Jev (claude-main-fit-probe-03)
 TOOLS = [
     function('dismiss_candidate','Exclude a retrieved but unsuitable posting for this user turn without paid scoring. Quote its exact title, location or JD and explain the mismatch with the user request. This is a model decision, not proof the vacancy is closed.',
         {'url':TEXT,'quote':{'type':'string','minLength':1,'maxLength':600},'reason':{'type':'string','minLength':1,'maxLength':600}}),
@@ -1062,11 +1064,14 @@ class CareerHarness:
                 return {'error':'Verify requested constraints before paid batch scoring.','error_code':'qualification_needed','qualifications':qualifications}
             _,text=self.candidate()
             if not text:raise ValueError('Attach a resume in this chat before comparing fit.')
+            identifiers,deferred=self.affordable_scoring(task_id,identifiers)
             asyncio.run(self.analysis.analyze_many(identifiers,resume_text=text,candidate_facts=self.fit_facts()))
             fingerprints={a:self.analysis_fingerprint(text,rt.workspace.get_application(a).current_snapshot_id)for a in identifiers}
             self.repository.change(task_id,lambda s:{'analyses':{**s.get('analyses',{}),**fingerprints}})
             self.save_scored_evidence(task_id,identifiers)
             return {'jobs':[self.job_summary(a,detail=True)for a in identifiers],
+                    **({'unscored_for_budget':deferred,'budget_note':'Imported and qualified but not scored: the '
+                        'remaining provider attempts could not complete their scoring. Not recommendations.'} if deferred else {}),
                     'no_new_evidence':all(rt.workspace.get_application(a).version==versions[a] for a in identifiers)}
         if name=='score_job':
             from .qualification import record
@@ -1468,6 +1473,21 @@ class CareerHarness:
             [account.get(k) for k in ('origin','mode','stage')],
             [c['key'] for c in account.get('consents',[])],
             child.get('message') if child['status']=='needs_input' else None]
+
+    def affordable_scoring(self,task_id,identifiers):
+        """Start only a scoring batch the task's remaining attempts can finish.
+
+        A Jev batch costs about one extraction per job plus shared stage requests; the
+        main-model route about five requests per job. A batch cut off midway spends
+        its extraction requests and yields no score, so the batch is sized first.
+        """
+        from eregion.runtime.provider_usage import task_limits, UsageLedger, REPLY_RESERVE, ReplyBudgetReserved
+        cap=task_limits().get('provider_attempts')
+        if not cap or cap<=2*REPLY_RESERVE:return identifiers,[]
+        room=cap-REPLY_RESERVE-UsageLedger(self.repository.sessions).summary(task_id=task_id)['calls']
+        fits=room-JEV_STAGE_REQUESTS if self.analysis.uses_jev() else room//MAIN_ROUTE_REQUESTS_PER_JOB
+        if fits<1:raise ReplyBudgetReserved('reply_reserve')
+        return identifiers[:fits],identifiers[fits:]
 
     def validate_finish(self,state):
         for run_id in state['application_runs']:
