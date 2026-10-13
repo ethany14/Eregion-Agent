@@ -1,0 +1,90 @@
+"""Explicit live default-route acceptance: 10-15 jobs; no applications or schedules."""
+import json
+import os
+import subprocess
+from dataclasses import replace
+from pathlib import Path
+from uuid import uuid4
+
+import pytest
+from test_career_flow import career
+
+GOAL = ('Find 15 current junior data analyst positions in New York for my saved resume. '
+        'Aim for at least 10 verified, scored, qualifying recommendations. Use LinkedIn MCP '
+        'and public company job-board APIs first. Keep the role, seniority and location '
+        'constraints; report insufficient results honestly. Include each recommended job URL '
+        'and match score. Do not apply, generate materials, or create a schedule.')
+FLAGS = {'JOB_AGENT_JOB_API_FIRST': '1', 'JOB_AGENT_TREG_ENABLED': '0',
+         'JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS': '60',
+         'JOB_AGENT_TASK_MAX_INPUT_TOKENS': '1000000'}
+
+@pytest.mark.skipif(os.getenv('JOB_AGENT_LIVE_DEFAULT_BATCH') != '1', reason='Explicit paid live opt-in')
+def test_default_route_ten_to_fifteen(career, monkeypatch):
+    from eregion.runtime.career.discovery import JobDiscovery
+    from eregion.runtime.career.service import CareerService
+    from eregion.runtime.career.external_tool_usage import ExternalToolLedger
+    from eregion.runtime.mcp.config import load_mcp_runtime_config
+    from eregion.runtime.mcp.manager import McpToolManager
+    from eregion.runtime.registry import ToolRegistry
+    from eregion.api.services.fit_analysis_service import FitAnalysisService
+    from eregion.domain.jev_fit.settings import Settings
+    from eregion.domain.pdf_rendering import render_letter_pdf
+    from scripts.e2e_repair_evaluation import APPLICANTS
+    from test_remaining_live import settle_live
+
+    output = Path(os.environ['OPT_LIVE_OUTPUT'])
+    assert not output.exists(), 'Never overwrite or automatically repeat a live sample'
+    output.mkdir(parents=True)
+    for key, value in FLAGS.items():
+        monkeypatch.setenv(key, value)
+    config = load_mcp_runtime_config()
+    assert len(config.servers) == 1 and config.servers[0].server_id == 'linkedin'
+    allowed = {'search_jobs', 'get_job_details', 'close_session'}
+    assert config.servers[0].tool_allowlist == allowed
+    manager = McpToolManager(config=config, registry=ToolRegistry())
+    c = career
+    c.runtime.mcp_manager = manager
+    c.repository.change(c.state['task_id'], status='cancelled', pause_requested=True)
+    c.applications.repository.save_candidate(
+        {'first_name':'Synthetic','last_name':'analyst','email':'analyst@example.com'},
+        resume=render_letter_pdf(APPLICANTS['analyst']), name='synthetic.pdf', extracted=True)
+    c.harness.discovery = JobDiscovery()
+    c.harness.analysis._fit_service = FitAnalysisService(jev_enabled=True,
+        jev_config=replace(Settings.load(cache_path=output/'fit.sqlite3'), resolve_unknowns=False))
+    service = CareerService(c.runtime, c.applications, harness=c.harness, start_alert_scheduler=False)
+    service.loop.budget = 60
+    task = None
+    (output/'invocation.json').write_text(json.dumps({
+        'head':subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
+        'goal':GOAL, 'flags':FLAGS, 'minimum_qualified':10, 'target':15,
+        'mcp_call_limit':26, 'deadline_seconds':900, 'synthetic_candidate':True,
+        'cost_usd':None, 'cost_note':'Provider billing unavailable; attempt and token caps enforced.'
+    }, indent=2), encoding='utf-8')
+    try:
+        manager.start()
+        assert 'mcp__linkedin__search_jobs' in manager.public_tool_names
+        task = service.start(GOAL, str(uuid4()))
+        try:
+            settle_live(service, task['run_id'], output, 'analyst', timeout=900)
+        except AssertionError:
+            if not (output/'acceptance.json').exists():
+                raise
+        acceptance = json.loads((output/'acceptance.json').read_text(encoding='utf-8'))
+        if acceptance['qualified_count'] < 10:
+            acceptance['failures'].append('fewer_than_ten_verified_scored_qualifying_recommendations')
+        acceptance['limits']['minimum_qualified'] = 10
+        acceptance['status'] = 'failed' if acceptance['failures'] else 'passed'
+        (output/'batch-acceptance.json').write_text(json.dumps(acceptance,indent=2),encoding='utf-8')
+        assert acceptance['status'] == 'passed', acceptance
+    finally:
+        if task:
+            state = service.repository.get(task['run_id'])
+            ledger = ExternalToolLedger(c.repository.sessions).summary(task['run_id'])
+            (output/'sources.json').write_text(json.dumps({
+                'linkedin':state.get('linkedin_mcp_state'), 'treg':ledger},indent=2,default=str),encoding='utf-8')
+        service.close()
+        try:
+            manager.call_tool('linkedin','close_session',{},timeout_seconds=15)
+        except Exception:
+            pass
+        manager.stop()
