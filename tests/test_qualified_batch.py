@@ -210,11 +210,35 @@ def test_exhausted_linkedin_cards_are_not_pending_work(career):
     assert not recovery(c.repository.get(c.state['task_id']))['pending_candidates']
 
 
-def test_decision_brief_lists_required_items_not_established(career,monkeypatch):
+def test_decision_brief_lists_every_required_unresolved_item_with_ids_and_caps(career,monkeypatch):
+    from eregion.runtime.career.harness import CareerHarness
+    long='Required: '+'expert knowledge of advanced statistical modelling, '*6
+    matches=[{'requirement_id':f'j{i}','requirement_level':'required','match_status':s,'job_skill':f'Skill {i}' if i else long}
+             for i,s in enumerate(['partial','missing','unknown']*5)]
+    matches+=[{'requirement_id':'p1','requirement_level':'preferred','match_status':'missing','job_skill':'Nice to have: R'},
+              {'requirement_id':'c1','requirement_level':'required','match_status':'needs_confirmation','job_skill':'US work authorization'}]
+    overview=CareerHarness.match_overview({'matches':matches})
+    brief=CareerHarness.decision_brief({'matches':matches},overview)
+    unresolved=brief['required_unresolved']
+    assert unresolved['total']==15 and unresolved['omitted']==5 and len(unresolved['items'])==10
+    assert [i['status'] for i in unresolved['items']][:5]==['missing']*5   # missing first, then partial
+    assert all(i['id'] and i['level']=='required' for i in unresolved['items'])
+    truncated=next(i for i in unresolved['items'] if i['id']=='j0')
+    assert truncated['text_truncated'] and len(truncated['requirement'])==CareerHarness.BRIEF_TEXT
+    assert brief['needs_confirmation']=={'total':1,'items':[{'id':'c1','level':'required','status':'needs_confirmation',
+                                                             'requirement':'US work authorization'}],'omitted':0}
+    assert brief['counts']['preferred:missing']==1 and 'p1' not in str(unresolved)
+    from eregion.runtime.request_context import ContextArchive
+    archived=ContextArchive().tool_result({'jobs':[{'application_id':'a','decision_brief':brief}],'filler':'x'*9000})
+    assert archived['jobs'][0]['decision_brief']==brief      # stays inline, never behind a reference
+
+
+def test_inspect_job_reads_exact_requirements_by_id(career,monkeypatch):
     c=career;jobs=[posting(1)];prepare(c,monkeypatch,jobs)
     job=execute(c,'verify_and_score_jobs',urls=[jobs[0]['url']])['jobs'][0]
-    brief=job['decision_brief']
-    overview=job['match_overview']
-    expected=[r['requirement'][:90] for s in ('missing','partial','unknown') for r in overview[s] if r.get('level')=='required']
-    assert [r['requirement'] for r in brief['required_unresolved']]==expected[:8]
-    assert all(r['status'] in {'missing','partial','unknown'} for r in brief['required_unresolved'])
+    ids=[m['requirement_id'] for m in job['match_report']['matches']][:2] if job.get('match_report') else []
+    if not ids:
+        ids=[i['id'] for i in job['decision_brief']['required_unresolved']['items']][:2]
+    detail=execute(c,'inspect_job',application_id=job['application_id'],requirement_ids=[*ids,'missing-id'])
+    assert [r['id'] for r in detail['requirements']]==ids and detail['unknown_ids']==['missing-id']
+    assert 'materials' not in detail and all('requirement' in r and 'resume_evidence' in r for r in detail['requirements'])

@@ -423,7 +423,9 @@ class ContextArchive:
                     'seniority_warning', 'score_range', 'analysis_status', 'decision', 'decision_brief', 'pending', 'rejection_code'):
             if key in result:
                 value = result[key]
-                summary[key] = value if len(encoded(value)) <= (4000 if key in {'triage_evidence','match_overview','material_overview','material_choices','observed_answers'} else 1000) else self.reference(value, preview=160)
+                limit = (BRIEF_LIMIT if key == 'decision_brief' else 4000 if key in {'triage_evidence','match_overview',
+                         'material_overview','material_choices','observed_answers'} else 1000)
+                summary[key] = value if len(encoded(value)) <= limit else self.reference(value, preview=160)
         if isinstance(result.get('material_overview'), list) and isinstance(result.get('items'), list):
             documents = []
             for info, item in zip(result['material_overview'], result['items']):
@@ -517,6 +519,11 @@ def compact_snapshot(snapshot, archive):
     return value
 
 
+# The decision brief is the bounded decision view itself; archiving it behind a
+# reference made the model page reports turn after turn (expanded-01).
+BRIEF_LIMIT = 7000
+
+
 def compact_resources(key,rows,archive):
     """Keep a list of live objects, with heavy contents available per object.
 
@@ -537,7 +544,7 @@ def compact_resources(key,rows,archive):
             value=row[field]
             if key=='materials' and field=='items' and isinstance(value,list):
                 value=[{k:item[k] for k in ('pack_item_id','artifact_type','status','version','verification') if k in item} for item in value]
-            summary[field]=value if len(encoded(value))<=4000 else archive.reference(value)
+            summary[field]=value if len(encoded(value))<=(BRIEF_LIMIT if field=='decision_brief' else 4000) else archive.reference(value)
         result.append(summary)
     return result
 

@@ -46,7 +46,9 @@ TOOLS = [
     function('import_job','Save a retrieved job. Only for a pasted JD, supply message_id and its literal job_text excerpt (never the task instruction). Returns application_id.',
         {'url':TEXT,'message_id':TEXT,'job_text':TEXT,'title':TEXT,'company':TEXT,'location':TEXT},['url']),
     function('list_jobs','Inspect saved jobs from the old workspace as well as this task.',{'query':TEXT},[]),
-    function('inspect_job','Read a saved job, score, gaps and linked artifacts.',APP),
+    function('inspect_job','Read a saved job, score, gaps and linked artifacts. With requirement_ids (from decision_brief), '
+        'return only those requirements: full posting text, level, status, reason and resume evidence.',
+        {**APP,'requirement_ids':{'type':'array','maxItems':20,'uniqueItems':True,'items':TEXT}}),
     function('score_job','Run the existing resume/JD match analysis and persist the actual score and requirement gaps.',APP),
     function('score_jobs','Compare up to sixteen imported jobs against the current resume in one batch. Uses shared Jev context when enabled; preserves uncertainty and separate results.',
         {'application_ids':{'type':'array','minItems':1,'maxItems':16,'uniqueItems':True,'items':TEXT}},['application_ids']),
@@ -391,20 +393,7 @@ class CareerHarness:
             result.update(self.requirement_summary(match.content,requirements))
             result['match_overview'] = self.match_overview(match.content,requirements)
             overview=result['match_overview']
-            result['decision_brief']={
-                'confirmed_ineligible':any(m.get('match_status')=='confirmed_condition' and m.get('condition_satisfied') is False
-                                          for m in match.content.get('matches',[])),
-                'strengths':[r['requirement'][:100] for r in overview['matched'][:3]],
-                'gaps':[r['requirement'][:100] for r in [*overview['missing'],*overview['partial']][:4]],
-                'needs_confirmation':[r['requirement'][:100] for r in overview['needs_confirmation'][:3]],
-                'unknown_count':len(overview['unknown']),
-                # The eligibility decision needs required (not preferred) items that are not
-                # established; without them the model paged the full report per job.
-                'required_unresolved':[{'requirement':r['requirement'][:90],'status':status}
-                    for status in ('missing','partial','unknown') for r in overview[status]
-                    if r.get('level')=='required'][:8],
-                'note':'Scoring is complete. required_unresolved lists required items not established by the resume; '
-                       'decide from it and the JD-based qualification evidence. Full match_overview/report only for a specific missing fact.'}
+            result['decision_brief']=self.decision_brief(match.content,overview)
             result.update(score_range=match.content.get('score_range'),
                 analysis_status=match.content.get('analysis_status','completed'),
                 analysis_status_label=display_label(match.content.get('analysis_status','completed')),
@@ -414,6 +403,63 @@ class CareerHarness:
             result.update(description=rt.workspace.current_snapshot(application_id).cleaned_job_description,
                 match_report=match.content if match else None)
         return result
+
+    BRIEF_ITEMS = 10
+    BRIEF_TEXT = 140
+
+    @classmethod
+    def decision_brief(cls,report,overview):
+        """Everything a recommend/exclude/needs-evidence decision needs, without paging.
+
+        Each item keeps its stable requirement ID, level and the scorer's status; text is
+        the posting's own requirement, shortened only with an explicit flag. Totals and the
+        omitted count make any cap visible; inspect_job(requirement_ids=...) reads exact
+        items. Statuses are reported, never converted into a verdict here.
+        """
+        matches=[m for m in report.get('matches',[]) if isinstance(m,dict)]
+        def item(m):
+            text=str(m.get('job_skill') or m.get('display_name') or '')
+            row={'id':m.get('requirement_id'),'level':m.get('requirement_level'),'status':m.get('match_status'),
+                 'requirement':text[:cls.BRIEF_TEXT]}
+            if len(text)>cls.BRIEF_TEXT:row['text_truncated']=True
+            return row
+        def listed(rows):
+            return {'total':len(rows),'items':[item(m) for m in rows[:cls.BRIEF_ITEMS]],
+                    'omitted':max(0,len(rows)-cls.BRIEF_ITEMS)}
+        unresolved=[m for m in matches if m.get('requirement_level')=='required'
+                    and m.get('match_status') in {'missing','partial','unknown'}]
+        # Missing first, then partial, then unknown: the order a reader checks gaps.
+        unresolved.sort(key=lambda m:['missing','partial','unknown'].index(m['match_status']))
+        confirm=[m for m in matches if m.get('match_status')=='needs_confirmation']
+        counts={}
+        for m in matches:
+            key=f"{m.get('requirement_level') or 'unspecified'}:{m.get('match_status')}"
+            counts[key]=counts.get(key,0)+1
+        return {'confirmed_ineligible':any(m.get('match_status')=='confirmed_condition' and m.get('condition_satisfied') is False
+                                          for m in matches),
+                'counts':counts,
+                'strengths':[r['requirement'][:100] for r in overview['matched'][:3]],
+                'required_unresolved':listed(unresolved),
+                'needs_confirmation':listed(confirm),
+                'note':'Scoring is complete. Statuses come from the scorer: partial means some supporting evidence, not '
+                       'automatically disqualifying; decide with the posting and qualification evidence. For exact text or '
+                       'resume evidence of any item (listed, truncated or omitted) call inspect_job with requirement_ids.'}
+
+    def requirement_details(self,application_id,requirement_ids):
+        report=(self.job_summary(application_id,detail=True).get('match_report') or {})
+        wanted=list(dict.fromkeys(str(i) for i in requirement_ids))[:20]
+        found={m.get('requirement_id'):m for m in report.get('matches',[]) if isinstance(m,dict)}
+        def evidence(m):
+            rows=[str(e) for e in (m.get('resume_evidence') or [])][:2]
+            return [r[:600] for r in rows]
+        return {'application_id':application_id,
+                'requirements':[{'id':i,'level':found[i].get('requirement_level'),'status':found[i].get('match_status'),
+                                 'requirement':found[i].get('job_skill'),'reason':found[i].get('match_reason'),
+                                 'resume_evidence':evidence(found[i]),
+                                 **({'condition_satisfied':found[i].get('condition_satisfied')}
+                                    if found[i].get('match_status')=='confirmed_condition' else {})}
+                                for i in wanted if i in found],
+                'unknown_ids':[i for i in wanted if i not in found]}
 
     @staticmethod
     def match_overview(report,requirements=()):
@@ -1048,6 +1094,9 @@ class CareerHarness:
             self.require_link(state,'application_runs',args['run_id'])
             if name!='inspect_application':self.require_application_owner(state,self.applications.repository.get(args['run_id']))
         if 'interview_id' in args:self.require_link(state,'interviews',args['interview_id'])
+        if name=='inspect_job' and args.get('requirement_ids'):
+            # Exact read by stable requirement ID: no full report, no materials.
+            return self.requirement_details(args['application_id'],args['requirement_ids'])
         if name=='inspect_job':
             # A new conversation can discover a saved job's existing materials.
             # Linking them here keeps subsequent inspect/revise calls scoped to
