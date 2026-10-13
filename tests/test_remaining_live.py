@@ -64,9 +64,7 @@ def settle_live(service,task_id,output,applicant,timeout=600,*,semantic_review=F
                 from evals.search_semantic_audit import candidate_hash
                 _,resume_text=service.harness.candidate()
                 facts=service.harness.fit_facts()
-                candidate=(resume_text or '')+('
-CANDIDATE-STATED FACTS
-'+json.dumps(facts,ensure_ascii=False,sort_keys=True) if facts else '')
+                candidate=(resume_text or '')+('\nCANDIDATE-STATED FACTS\n'+json.dumps(facts,ensure_ascii=False,sort_keys=True) if facts else '')
                 summary['audit_candidate_hash']=candidate_hash(candidate)
                 summary['semantic_review']=review(summary['user_request'],[j for j in summary['verified_jobs'] if j['url'] in urls],candidate)
         except (Exception,TaskProviderBudgetExceeded) as exc:
