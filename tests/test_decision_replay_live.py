@@ -20,7 +20,7 @@ WORK_TOOLS = {'search_jobs', 'screen_jobs', 'read_job', 'import_job', 'verify_an
 MAX_MODEL_CALLS = 10
 LIMITS = {'JOB_AGENT_JOB_API_FIRST': '1', 'JOB_AGENT_TREG_ENABLED': '0',
           'JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS': '100', 'JOB_AGENT_TASK_MAX_INPUT_TOKENS': '1500000',
-          'JOB_AGENT_LINKEDIN_MAX_CALLS': '100', 'TYPESAFE_ENABLED': 'false', 'JOB_AGENT_ANALYSIS_WARMUP': '0'}
+          'JOB_AGENT_LINKEDIN_MAX_CALLS': '100', 'JOB_AGENT_ANALYSIS_WARMUP': '0'}
 
 
 class ReplayStop(RuntimeError):
@@ -62,11 +62,23 @@ def test_decision_replay(tmp_path, monkeypatch):
         raise AssertionError('Decision replay must not call qualification or scoring.')
     monkeypatch.setattr(qualification, 'judge', no_paid_semantics)
 
+    # Same scorer configuration as the live sample, so its saved scores stay current;
+    # scoring itself is never executed here.
+    from dataclasses import replace
+    from eregion.api.services.fit_analysis_service import FitAnalysisService
+    from eregion.domain.jev_fit.settings import Settings
     harness = CareerHarness(runtime, applications, repository)
+    harness.analysis._fit_service = FitAnalysisService(jev_enabled=True,
+        jev_config=replace(Settings.load(cache_path=tmp_path / 'fit.sqlite3'), resolve_unknowns=False))
     task_id = next(s['task_id'] for s in repository.list())
     state = repository.get(task_id)
     scored = sorted(state.get('scored_job_evidence') or {})
     assert scored, 'The source sample has no scored jobs to decide.'
+    # Free precondition: every saved score is current for this resume and scorer.
+    _, resume_text = harness.candidate()
+    for app in scored:
+        snapshot = runtime.workspace.get_application(app).current_snapshot_id
+        assert state['analyses'].get(app) == harness.analysis_fingerprint(resume_text, snapshot),             'Replay setup does not reproduce the sample scorer; no model call made.'
     # Restore the moment the jobs were scored: no decisions, no stalled transcript.
     repository.change(task_id, recommendations=[], job_decisions={}, error=None, status='queued', pause_requested=False,
                       progress_guard={}, loop_runtime=None, history=[], input_request=None, wait=None,
