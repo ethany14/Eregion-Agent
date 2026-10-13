@@ -32,37 +32,24 @@ def matches(job):
         explanation='Offline catalogue identity probe, not a quality judgment.',recommendations=[])
 
 
-def test_default_main_service_scores_a_local_deterministic_catalogue(tmp_path):
-    """A1 default route: no free-form extraction; the same ordered IDs on every cold run."""
-    from eregion.domain.requirement_catalog import FrozenRequirementCatalog, LOCAL_PRODUCER
-    jev=inputs(tmp_path)
-    asked=[]
+@pytest.mark.parametrize('obsolete_mode',['local','extract'])
+def test_default_main_service_uses_model_extraction_and_reuses_its_result(tmp_path,monkeypatch,obsolete_mode):
+    monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG',obsolete_mode)
+    jev=inputs(tmp_path);asked=[]
     class OfflineMain:
-        def cache_namespace(self):return 'offline-default-catalogue-local-v1'
+        def cache_namespace(self):return 'offline-model-catalogue-v1'
         def __call__(self,schema,system,content):
             asked.append(schema.__name__)
             if schema is ResumeAnalysis:return jev.resume_analysis
-            if schema is JobAnalysis:raise AssertionError('The default route must not extract a catalogue')
+            if schema is JobAnalysis:return jev.job_analysis
             job=JobAnalysis.model_validate_json(content.split('\n\nJob analysis:\n')[1])
             return matches(job)
-    runs=[FitAnalysisService(JobAgentStepHandler(analyzer=OfflineMain()),jev_enabled=False,cache_size=0)._analyze_sync(
-        resume_text=RESUME,job_description=BODY) for _ in range(4)]
-    local=FrozenRequirementCatalog.from_local_units(BODY)
-    ids=[[r.requirement_id for r in run.job_analysis.requirements] for run in runs]
-    assert ids[0] and all(i==ids[0] for i in ids)
-    assert all(run.catalogue_identity['producer_signature']==LOCAL_PRODUCER for run in runs)
-    assert all(run.catalogue_identity['catalogue_sha256']==local.catalogue_sha256 for run in runs)
-    assert 'JobAnalysis' not in asked
-    (tmp_path/'default-local-catalogue.json').write_text(json.dumps({'status':'A1_local_default','ids':ids,
-        'catalogue_sha256':local.catalogue_sha256},indent=2),encoding='utf-8')
-
-
-def test_default_route_can_opt_back_into_free_extraction(tmp_path,monkeypatch):
-    monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG','extract')
-    assert FitAnalysisService._default_catalogue(BODY) is None
-    monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG','local')
-    assert FitAnalysisService._default_catalogue(BODY) is not None
-    assert FitAnalysisService._default_catalogue('Thank you for your interest in our company.') is None
+    service=FitAnalysisService(JobAgentStepHandler(analyzer=OfflineMain()),jev_enabled=False)
+    first=service._analyze_sync(resume_text=RESUME,job_description=BODY)
+    warm=service._analyze_sync(resume_text=RESUME,job_description=BODY)
+    assert asked==['ResumeAnalysis','JobAnalysis','SkillAssessment']
+    assert first.catalogue_identity is None and warm.model_calls==0
+    assert first.job_analysis==warm.job_analysis
 
 
 def test_production_matching_step_preserves_an_explicit_frozen_jev_catalogue_four_times(tmp_path):
@@ -100,10 +87,17 @@ def catalog(tmp_path):
         producer_signature='offline-jev-frozen-signature-v1',provenance='MockTransport Jev result, not live')
 
 
-def main_handler(calls,cache=None):
+def main_handler(calls,cache=None,*,allow_extraction=False):
     def analyzer(schema,system,content):
         calls.append(schema.__name__)
         if schema is ResumeAnalysis:return ResumeAnalysis(summary='',skills=[],evidence=[],education=[])
+        if schema is JobAnalysis and allow_extraction:
+            from eregion.domain.schemas import JobRequirement
+            # Explicit scripted extraction for historical loop replay only.
+            text=next(line.strip() for line in content.splitlines() if line.strip())
+            return JobAnalysis(title=None,summary='',responsibilities=[],requirements=[JobRequirement(
+                requirement_id='recorded-0',canonical_name=text,display_name=text,original_text=text,
+                atomic_text=text,source_text=text,category='other',verification_mode='resume_evidence',level='required')])
         assert schema is SkillAssessment, 'Frozen main matching must not extract another catalogue'
         job=JobAnalysis.model_validate_json(content.split('\n\nJob analysis:\n')[1])
         return matches(job)

@@ -11,12 +11,12 @@ from test_remaining_search_completion import prepare
 FIXTURE=json.loads((Path(__file__).parent/'fixtures/remaining_candidate_recovery.json').read_text())
 
 
-def test_actual_gain_america_talent_network_cannot_be_imported_as_a_current_vacancy(career):
+def test_actual_talent_network_is_read_then_model_dismissal_blocks_import(career):
     c=career;job=FIXTURE['jobs'][0]
     c.harness.discovery=SimpleNamespace(job=lambda _:job)
-    with pytest.raises(ValueError,match='talent|network|vacancy'):
-        execute(c,'read_job',url=job['url'])
-    assert not c.repository.get(c.state['task_id']).get('retrieved_jobs')
+    assert execute(c,'read_job',url=job['url'])['description']==job['description']
+    execute(c,'dismiss_candidate',url=job['url'],quote=job['description'][:300],
+            reason='Model identified a talent network rather than a specific vacancy.')
     with pytest.raises(ValueError,match='talent|network|vacancy'):
         execute(c,'import_job',url=job['url'],title='Junior Data Analyst')
     assert not c.repository.get(c.state['task_id'])['jobs']
@@ -27,16 +27,16 @@ def test_actual_gain_america_talent_network_cannot_be_imported_as_a_current_vaca
     'Register your interest in our talent pool. This is not a current vacancy; recruiters may contact you later.',
     'Our program places graduates into roles with leading employers. Join the early careers talent network.',
 ])
-def test_network_and_program_pages_are_not_specific_vacancies(career,description):
+def test_network_and_program_words_do_not_trigger_a_read_time_regex_verdict(career,description):
     c=career;url='https://careers.example.com/jobs/100'
     c.harness.discovery=SimpleNamespace(job=lambda _:dict(url=url,title='Junior Data Analyst',description=description))
-    with pytest.raises(ValueError,match='vacancy|network|program'):
-        execute(c,'read_job',url=url)
+    assert execute(c,'read_job',url=url)['description']==description
+    assert not c.repository.get(c.state['task_id']).get('candidate_rejections')
 
 
-def test_generic_heading_cannot_be_overridden_by_model_import_metadata(career):
+def test_missing_heading_cannot_be_overridden_by_model_import_metadata(career):
     c=career;url='https://careers.example.com/jobs/100'
-    c.harness.discovery=SimpleNamespace(job=lambda _:dict(url=url,title='Job description',description='Requires Python and SQL. '*12))
+    c.harness.discovery=SimpleNamespace(job=lambda _:dict(url=url,title='',description='Requires Python and SQL. '*12))
     with pytest.raises(ValueError,match='title|identity'):
         execute(c,'import_job',url=url,title='Junior Data Analyst')
     assert not c.repository.get(c.state['task_id'])['jobs']

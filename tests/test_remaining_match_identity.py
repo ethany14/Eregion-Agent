@@ -30,7 +30,8 @@ def test_known_id_cannot_be_borrowed_by_another_predicate(duration):
     job,resume,quote=inputs(duration)
     result=normalize_skill_match(resume,job,assessment(job,quote,[job.requirements[0].requirement_id]))
     assert result.matches[0].match_status=='matched'
-    assert result.matches[1].match_status=='missing' and not result.matches[1].resume_evidence
+    assert result.matches[1].match_status=='unknown' and not result.matches[1].resume_evidence
+    assert result.overall_score is None
 
 
 @pytest.mark.parametrize('ids',['wrong','missing','duplicate'])
@@ -41,14 +42,14 @@ def test_wrong_missing_and_duplicate_ids_do_not_gain_other_predicate_evidence(id
         with pytest.raises(ValueError,match='duplicate'):normalize_skill_match(resume,job,assessment(job,quote,values))
     else:
         result=normalize_skill_match(resume,job,assessment(job,quote,values))
-        assert all(m.match_status=='missing' and not m.resume_evidence for m in result.matches)
+        assert all(m.match_status=='unknown' and not m.resume_evidence for m in result.matches)
 
 
 def test_internal_legacy_no_id_requires_unique_one_to_one_name():
     job,resume,quote=inputs();single=job.model_copy(update={'requirements':job.requirements[:1]})
     assert normalize_skill_match(resume,single,assessment(single,quote,[None])).matches[0].match_status=='matched'
     result=normalize_skill_match(resume,single,assessment(single,quote,[None,None]))
-    assert result.matches[0].match_status=='missing'
+    assert result.matches[0].match_status=='unknown'
     # Public wire schema still requires an ID; no new schema loophole.
     with pytest.raises(ValueError):SkillEvidence.model_validate({'job_skill':'python','requirement_level':'required',
         'match_status':'matched','resume_evidence':[quote],'confidence':1})
@@ -69,4 +70,4 @@ def test_production_main_and_chunked_matching_refuse_incomplete_identity_coverag
         with pytest.raises(ValueError,match='incomplete'):handler.execute(Step.MATCH_SKILLS,state)
     else:
         result=handler.execute(Step.MATCH_SKILLS,state).updates['skill_match']
-        assert result.matches[1].match_status=='missing' and not result.matches[1].resume_evidence
+        assert result.matches[1].match_status=='unknown' and not result.matches[1].resume_evidence

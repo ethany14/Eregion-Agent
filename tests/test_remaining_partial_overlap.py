@@ -1,4 +1,4 @@
-"""Synthetic resolver decisions exercise a necessary relevance gate, not AUC."""
+"""Model decisions own semantic relevance; code validates citations and cache identity, not AUC."""
 import re
 
 import pytest
@@ -12,9 +12,9 @@ def offline_identity(monkeypatch):
     monkeypatch.setattr(resolve,'identity',lambda _: 'offline-partial-contract-v1')
 
 
-def decision(rid,quote):
+def decision(rid,quote,status="partial"):
     return resolve.UnknownDecision(requirement_id=rid,is_candidate_requirement=True,
-        level='required',personal_condition=False,status='partial',evidence_quote=quote,
+        level='required',personal_condition=False,status=status,evidence_quote=quote,
         reason='Synthetic decision; relevant component only, remaining scope not demonstrated.')
 
 
@@ -33,23 +33,23 @@ def decision(rid,quote):
     ('Production C# programming','Built C APIs for two years.','missing'),
     ('Financial forecasting A I X','Built Python APIs A I X.','missing'),
 ])
-def test_single_resolver_partial_requires_content_or_listed_synonym(requirement,quote,status):
+def test_single_resolver_preserves_source_bound_model_status(requirement,quote,status):
     result=resolve.resolve_unknowns(raw_with_unknowns(requirement),quote,model=None,
-        invoke=lambda *_:resolve.UnknownResolution(decisions=[decision('j0',quote)]))
+        invoke=lambda *_:resolve.UnknownResolution(decisions=[decision('j0',quote,status)]))
     match=result['matches'][0]
     assert match['status']==status and result['score']==(50 if status=='partial' else 0)
-    assert match['citations'][0]['exact_text']==quote  # audit the rejected support too
+    if status=='partial':assert match['citations'][0]['exact_text']==quote
 
 
 @pytest.mark.parametrize('text,quote,status',[
     ('Financial forecasting','Built Python APIs.','missing'),
     ('Production Kubernetes ownership','Used k8s in a course prototype.','partial'),
 ])
-def test_eight_job_fanout_and_new_store_cache_apply_identical_relevance_gate(tmp_path,text,quote,status):
+def test_eight_job_fanout_and_cache_preserve_model_decision(tmp_path,text,quote,status):
     calls=[]
     def invoke(model,schema,prompt,payload):
         ids=re.findall(r'^- (\S+) \[',payload,re.M);calls.append(ids)
-        return resolve.UnknownResolution(decisions=[decision(i,quote) for i in ids])
+        return resolve.UnknownResolution(decisions=[decision(i,quote,status) for i in ids])
     path=tmp_path/'partial.sqlite3'
     def run(store):
         return resolve.resolve_unknowns_many({str(i):raw_with_unknowns(text) for i in range(8)},
@@ -67,9 +67,8 @@ def test_quote_fabrication_stays_unknown_not_missing():
     assert result['matches'][0]['status']=='unknown'
 
 
-def test_transparent_inflection_and_no_arbitrary_single_letter_or_unlisted_alias():
-    from eregion.domain.partial_support import partial_overlap
-    assert partial_overlap('Financial forecasting','Built financial forecasts.')
-    assert partial_overlap('Build REST APIs','Developed REST APIs.')
-    assert not partial_overlap('Financial forecasting A I X','Python APIs A I X')
-    assert not partial_overlap('Financial forecasting','Business modelling')
+def test_model_can_recognize_related_activity_without_shared_keywords():
+    quote='Produced quarterly revenue projections.'
+    result=resolve.resolve_unknowns(raw_with_unknowns('Financial forecasting'),quote,model=None,
+        invoke=lambda *_:resolve.UnknownResolution(decisions=[decision('j0',quote)]))
+    assert result['matches'][0]['status']=='partial' and result['score']==50

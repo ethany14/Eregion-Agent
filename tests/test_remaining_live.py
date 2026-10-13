@@ -19,7 +19,7 @@ from scripts.remaining_search_acceptance import evaluate_search
 pytestmark=pytest.mark.skipif(os.getenv('JOB_AGENT_LIVE_REMAINING')!='1',reason='Explicit paid real-model/public research check')
 
 
-def settle_live(service,task_id,output,applicant,timeout=600):
+def settle_live(service,task_id,output,applicant,timeout=600,*,semantic_review=False):
     from eregion.runtime.provider_usage import UsageLedger
     started=time.monotonic()
     while time.monotonic()-started<timeout:
@@ -47,6 +47,29 @@ def settle_live(service,task_id,output,applicant,timeout=600):
             for m in (job.get('match_report') or {}).get('matches',[]))
         summary['verified_jobs'].append(job)
     summary['tool_evidence']=[{'tool':h['tool'],'arguments':h.get('arguments'),'result':h.get('result')} for h in state['history']]
+    if semantic_review:
+        from eregion.runtime.provider_usage import usage_scope,TaskProviderBudgetExceeded
+        from eregion.runtime.career.qualification import user_request
+        from evals.search_semantic_audit import review
+        summary['qualification_method']='model'
+        summary['user_request']=user_request(state)
+        audit_id=str(uuid4());audit_started=time.monotonic()
+        saved={k:os.environ.get(k) for k in ('JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS','JOB_AGENT_TASK_MAX_INPUT_TOKENS')}
+        try:
+            os.environ.update(JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS='6',JOB_AGENT_TASK_MAX_INPUT_TOKENS='200000')
+            urls={r['url'] for r in summary['recommendations']}
+            with usage_scope(task_id=audit_id,ledger=UsageLedger(service.repository.sessions)):
+                summary['semantic_review']=review(summary['user_request'],[j for j in summary['verified_jobs'] if j['url'] in urls])
+        except (Exception,TaskProviderBudgetExceeded) as exc:
+            summary['semantic_review_error']=type(exc).__name__
+        finally:
+            for k,v in saved.items():
+                if v is None:os.environ.pop(k,None)
+                else:os.environ[k]=v
+            summary['audit_usage']=UsageLedger(service.repository.sessions).summary(task_id=audit_id)
+            summary['audit_seconds']=round(time.monotonic()-audit_started,2)
+            (output/'semantic-audit.json').write_text(json.dumps({k:v for k,v in summary.items()
+                if k.startswith('semantic_review') or k.startswith('audit_')},ensure_ascii=False,indent=2),encoding='utf-8')
     (output/'summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps({k:v for k,v in summary.items() if k not in {'tool_evidence','verified_jobs'}},ensure_ascii=True),flush=True)
     acceptance=evaluate_search(summary,applicant)

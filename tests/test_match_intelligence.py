@@ -113,7 +113,7 @@ def test_user_confirmation_is_separate_from_missing_requirements():
     result = normalize_one(
         work_authorization,
         resume_with(),
-        assessment_for(work_authorization, status="missing"),
+        assessment_for(work_authorization, status="needs_confirmation"),
     )
 
     assert result.matches[0].match_status == "needs_confirmation"
@@ -123,7 +123,7 @@ def test_user_confirmation_is_separate_from_missing_requirements():
 
 
 @pytest.mark.parametrize("model_status", ["matched", "partial"])
-def test_matched_or_partial_without_valid_resume_evidence_becomes_missing(model_status):
+def test_matched_or_partial_without_valid_resume_evidence_remains_unknown(model_status):
     python = requirement("python")
     result = normalize_one(
         python,
@@ -132,14 +132,15 @@ def test_matched_or_partial_without_valid_resume_evidence_becomes_missing(model_
     )
 
     match = result.matches[0]
-    assert match.match_status == "missing"
+    assert match.match_status == "unknown"
     assert match.resume_evidence == []
     assert match.confidence == 0
-    assert result.missing_required_requirements[0].canonical_name == "python"
+    assert result.overall_score is None
+    assert result.missing_required_requirements == []
 
 
-def test_in_progress_education_cannot_be_a_full_match():
-    fact = "Currently pursuing a Bachelor of Science; expected graduation 2027."
+def test_model_distinguishes_completed_and_in_progress_education_in_one_quote():
+    fact = "Bachelor of Science completed 2023; currently pursuing a master's degree, expected 2027."
     degree = requirement("bachelors_degree", category=RequirementCategory.EDUCATION)
     result = normalize_one(
         degree,
@@ -147,19 +148,19 @@ def test_in_progress_education_cannot_be_a_full_match():
         assessment_for(degree, evidence=[fact]),
     )
 
-    assert result.matches[0].match_status == "partial"
-    assert result.matches[0].match_reason == "The cited education is still in progress."
+    assert result.matches[0].match_status == "matched"
+    assert result.matches[0].resume_evidence == [fact]
 
 
 @pytest.mark.parametrize(
-    ("fact", "expected_years"),
+    ("fact", "model_status", "model_years"),
     [
-        ("Built Python APIs.", None),
-        ("Three years of Python experience.", 3),
+        ("Python engineer, January 2020 through December 2024.", 'matched', 5),
+        ("Three years of Python experience.", 'partial', 3),
     ],
 )
-def test_unsupported_or_insufficient_years_cannot_be_a_full_match(
-    fact, expected_years
+def test_duration_and_fit_are_preserved_from_the_grounded_model_assessment(
+    fact, model_status, model_years
 ):
     python = requirement(
         "python",
@@ -170,21 +171,21 @@ def test_unsupported_or_insufficient_years_cannot_be_a_full_match(
     result = normalize_one(
         python,
         resume_with(fact),
-        assessment_for(python, evidence=[fact], supported_years=10),
+        assessment_for(python, status=model_status, evidence=[fact], supported_years=model_years),
     )
 
-    assert result.matches[0].match_status == "partial"
-    assert result.matches[0].supported_years == expected_years
+    assert result.matches[0].match_status == model_status
+    assert result.matches[0].supported_years == model_years
 
 
 @pytest.mark.parametrize("name", ["power_bi", "claude", "claude_code"])
-def test_adjacent_tools_do_not_prove_specific_requirement(name):
+def test_model_rejects_adjacent_tools_without_a_harness_tool_dictionary(name):
     fact = "Built Tableau dashboards and applied general AI models."
     target = requirement(name)
     result = normalize_one(
         target,
         resume_with(fact),
-        assessment_for(target, evidence=[fact]),
+        assessment_for(target, status='missing'),
     )
 
     assert result.matches[0].match_status == "missing"
@@ -201,7 +202,7 @@ def test_custom_handler_applies_match_post_processing():
         responsibilities=[],
     )
     resume = resume_with(fact)
-    assessment = assessment_for(power_bi, evidence=[fact])
+    assessment = assessment_for(power_bi, status='partial', evidence=[fact])
 
     handler = JobAgentStepHandler(
         analyzer=lambda schema, system_message, human_message: assessment
@@ -216,4 +217,5 @@ def test_custom_handler_applies_match_post_processing():
     )
     custom = handler.execute(Step.MATCH_SKILLS, state).updates["skill_match"]
 
-    assert custom.matches[0].match_status == "missing"
+    assert custom.matches[0].match_status == "partial"
+    assert custom.matches[0].resume_evidence == [fact]

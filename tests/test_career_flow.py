@@ -36,8 +36,22 @@ from eregion.runtime.workspace.repository import JobWorkspaceRepository
 from eregion.domain.pdf_rendering import render_letter_pdf
 from test_auto_apply import FakeBrowser, wait
 from test_application_pack import FakePackModel
-from test_job_workflow import fake_analyze
+from test_job_workflow import fake_analyze as workflow_analyze
 from test_mock_interview import ScriptedModel as InterviewModel
+
+
+def fake_analyze(schema, system, human):
+    from eregion.domain.schemas import JobAnalysis, JobRequirement
+    if schema is JobAnalysis:
+        # Explicit model stand-in for these synthetic workflow fixtures. This is
+        # not a semantic-quality oracle or a production extraction fallback.
+        text = 'Python' if 'Python' in human else 'SQL'
+        assert text in human
+        return JobAnalysis(title='Engineer', summary='', responsibilities=[], requirements=[JobRequirement(
+            requirement_id='fixture', requirement_group_id='fixture', canonical_name=text.lower(),
+            display_name=text, original_text=text, source_text=text, atomic_text=text,
+            category='skill', verification_mode='resume_evidence', level='required')])
+    return workflow_analyze(schema, system, human)
 
 
 class ToolModel:
@@ -70,6 +84,9 @@ def career(tmp_path, monkeypatch):
     monkeypatch.setenv('JOB_AGENT_JOB_API_FIRST', '0')
     # This fixture scripts discovery, scoring and writing; screening must be offline too.
     monkeypatch.setenv('TYPESAFE_ENABLED', 'false')
+    from eregion.runtime.career import qualification
+    from fake_search_qualification import judge
+    monkeypatch.setattr(qualification,'judge',judge)
     url=f"sqlite:///{(tmp_path/'career.db').as_posix()}"
     upgrade_database(url)
     db=create_database(url)
@@ -107,7 +124,7 @@ def execute(c,name,**args):return c.harness.execute(c.state['task_id'],name,args
 
 def test_scoring_reuses_extractions_across_jobs_and_conversations(career,monkeypatch):
     from eregion.domain.schemas import ResumeAnalysis, JobAnalysis, SkillAssessment
-    # Counts model job extraction per posting; the local catalogue default is covered elsewhere.
+    # Counts model job extraction per posting and verifies warm reuse.
     monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG','extract')
 
     c=career

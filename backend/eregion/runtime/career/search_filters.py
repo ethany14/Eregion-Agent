@@ -1,5 +1,5 @@
-"""Conservative card filtering; unknown evidence is never an exclusion."""
-from .search_policy import constraints, seniority
+"""Provider filter translation and advisory card ordering; no eligibility verdicts."""
+from .search_policy import constraints
 
 FILTER_FIELDS = ('experience_level', 'work_type', 'employment_type', 'posted')
 FILTER_SCHEMA = {
@@ -22,22 +22,13 @@ def effective_filters(state, args):
     return result
 
 def filter_cards(jobs, state):
-    from .search_strategy import card_mismatch, card_priority
-    levels=set(constraints(state).get('levels',[]))
-    if levels & {'junior','new_grad'}: levels |= {'junior','new_grad'}
-    kept,excluded=[],[]
-    for job in jobs:
-        actual=seniority(job.get('title') or '')
-        if levels and actual and actual not in levels:
-            excluded.append({'url':job.get('url'),'title':job.get('title'),
-                             'reason':'explicit_seniority_mismatch','actual':actual})
-        elif mismatch:=card_mismatch(job,state):
-            excluded.append({'url':job.get('url'),'title':job.get('title'),**mismatch})
-        else: kept.append(job)
+    from .search_strategy import card_priority
+    # Ranking is advisory. Semantic rejection belongs to the model after it
+    # has the actual posting, not a growing vocabulary of title exclusions.
+    kept=list(jobs)
     from .search_recovery import search_request
-    import re
     request = search_request(state)
     if request and request['words']:
         kept.sort(key=lambda j:card_priority(j,state))
-    return kept, {'excluded_count':len(excluded),'excluded':excluded,
-                  'unknowns_retained':True,'qualification':'cards_only; JD verification still required'}
+    return kept, {'excluded_count':0,'excluded':[],
+                  'unknowns_retained':True,'qualification':'advisory_order_only; model assessment of the JD still required'}

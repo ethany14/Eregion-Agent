@@ -283,41 +283,6 @@ def canonicalize_requirement(name: str, original_text: str) -> str:
     return normalized.replace(" ", "_")
 
 
-_ELIGIBILITY_PHRASES = (
-    "authorized to work",
-    "authorised to work",
-    "work authorization",
-    "work authorisation",
-    "visa sponsorship",
-    "require sponsorship",
-    "citizenship",
-    "security clearance",
-    "background check",
-    "drug test",
-    "willing to relocate",
-    "willingness to relocate",
-    "willing to travel",
-    "driver's license",
-    "driving licence",
-)
-
-
-def is_eligibility_requirement(requirement: JobRequirement) -> bool:
-    if requirement.category == RequirementCategory.ELIGIBILITY:
-        return True
-    searchable = normalize_text(
-        " ".join(
-            (
-                requirement.canonical_name.replace("_", " "),
-                requirement.display_name,
-                requirement.atomic_text,
-                requirement.source_text,
-            )
-        )
-    )
-    return any(phrase in searchable for phrase in _ELIGIBILITY_PHRASES)
-
-
 def normalize_job_analysis(
     analysis: JobAnalysis,
     original_job_description: str,
@@ -345,14 +310,6 @@ def normalize_job_analysis(
             continue
 
         group_id = make_requirement_group_id(item.source_text)
-        minimum_years = extract_minimum_years(item.atomic_text)
-        if minimum_years is None:
-            minimum_years = extract_minimum_years(item.source_text)
-        # The quoted source decides the duration. A model value that the quote does not
-        # state (e.g. inferred from "Senior") is dropped; a stated number always wins.
-        # This never weakens a requirement the posting actually states, and one bad
-        # atom no longer fails the whole analysis.
-
         normalized = JobRequirement.model_validate(
             {
                 **item.model_dump(mode="python"),
@@ -360,17 +317,9 @@ def normalize_job_analysis(
                 "requirement_group_id": group_id,
                 "canonical_name": canonical_name,
                 "original_text": item.atomic_text,
-                "minimum_years": minimum_years,
+                "minimum_years": item.minimum_years,
             }
         )
-        if is_eligibility_requirement(normalized):
-            normalized = JobRequirement.model_validate(
-                {
-                    **normalized.model_dump(mode="python"),
-                    "verification_mode": VerificationMode.USER_CONFIRMATION,
-                }
-            )
-
         # A shared skill label is not a shared predicate: duration, verification
         # mode, category and the complete atomic clause must remain distinct.
         key = (canonical_name, normalize_text(normalized.atomic_text), normalized.minimum_years,
@@ -391,43 +340,6 @@ def normalize_job_analysis(
             "requirements": list(requirements_by_predicate.values()),
         }
     )
-
-
-_IN_PROGRESS_EDUCATION_PHRASES = (
-    "currently pursuing",
-    "in progress",
-    "expected graduation",
-    "graduation expected",
-    "anticipated graduation",
-    "candidate for",
-    "currently enrolled",
-)
-
-
-def _requires_explicit_tool_evidence(requirement: JobRequirement) -> str | None:
-    target = normalize_text(
-        " ".join(
-            (
-                requirement.canonical_name.replace("_", " "),
-                requirement.display_name,
-                requirement.atomic_text,
-            )
-        )
-    )
-    if re.search(r"\bpower\s*bi\b", target):
-        return "power bi"
-    if "claude code" in target:
-        return "claude code"
-    if re.search(r"\bclaude\b", target):
-        return "claude"
-    return None
-
-
-def _evidence_mentions_tool(evidence: list[str], tool: str) -> bool:
-    combined = " ".join(normalize_text(item) for item in evidence)
-    if tool == "power bi":
-        return re.search(r"\bpower\s*bi\b", combined) is not None
-    return tool in combined
 
 
 def _missing_requirement(requirement: JobRequirement) -> MissingRequirement:
@@ -472,8 +384,8 @@ def normalize_skill_match(
                 requirement_id=requirement.requirement_id,
                 job_skill=requirement.canonical_name,
                 requirement_level=requirement.level,
-                match_status="missing",
-                match_reason="No matching assessment or resume evidence was supplied.",
+                match_status="unknown",
+                match_reason="No model assessment was supplied for this requirement.",
                 resume_evidence=[],
                 confidence=1,
             )
@@ -489,60 +401,13 @@ def normalize_skill_match(
         confidence = item.confidence
         supported_years = item.supported_years
 
-        if requirement.verification_mode == VerificationMode.USER_CONFIRMATION:
-            status = "needs_confirmation"
-            reason = "This requirement must be confirmed by the user."
+        # Validate provenance only. Education status, equivalent tools, experience
+        # duration and partial support are semantic model decisions, not regex gates.
+        if status in {'matched','partial','confirmed_condition'} and not valid_evidence:
+            status = 'unknown'
+            reason = 'The model did not supply a valid source citation for this judgment.'
+            confidence = 0
             supported_years = None
-        else:
-            tool = _requires_explicit_tool_evidence(requirement)
-            if tool is not None and not _evidence_mentions_tool(valid_evidence, tool):
-                valid_evidence = []
-                status = "missing"
-                reason = f"The resume evidence does not explicitly mention {tool}."
-                confidence = 0
-                supported_years = None
-
-            if status in {"matched", "partial"} and not valid_evidence:
-                status = "missing"
-                reason = "No valid resume evidence supports this requirement."
-                confidence = 0
-                supported_years = None
-
-            if (
-                status == "matched"
-                and requirement.category == RequirementCategory.EDUCATION
-                and any(
-                    phrase in normalize_text(evidence)
-                    for evidence in valid_evidence
-                    for phrase in _IN_PROGRESS_EDUCATION_PHRASES
-                )
-            ):
-                status = "partial"
-                reason = "The cited education is still in progress."
-
-            if requirement.minimum_years is not None and valid_evidence:
-                explicit_years = [
-                    years
-                    for evidence in valid_evidence
-                    if (years := extract_minimum_years(evidence)) is not None
-                ]
-                supported_years = max(explicit_years) if explicit_years else None
-                if status == "matched" and (
-                    supported_years is None
-                    or supported_years < requirement.minimum_years
-                ):
-                    status = "partial"
-                    reason = (
-                        "The resume evidence does not explicitly support the required "
-                        f"minimum of {requirement.minimum_years} years."
-                    )
-
-        if status == 'partial':
-            from eregion.domain.partial_support import partial_overlap
-            if not any(partial_overlap(requirement.atomic_text, quote) for quote in valid_evidence):
-                status = 'missing'
-                reason = 'The exact evidence has no requirement content term or listed synonym for partial support.'
-                supported_years = None
 
         matches.append(
             SkillEvidence.model_validate(

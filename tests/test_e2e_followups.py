@@ -51,7 +51,7 @@ def test_ambiguous_two_line_header_stays_unowned():
 
 
 # ---- C4 / D4: requirement splitting ---------------------------------------------------------
-from eregion.domain.jev_fit.core import boilerplate, job_units
+from eregion.domain.jev_fit.core import job_units
 
 
 def texts(jd):
@@ -72,13 +72,6 @@ def test_lists_and_in_phrase_dashes():
     assert texts('Salary range: $170,000 - $210,000') == ['Salary range:', '$170,000 - $210,000']
 
 
-def test_benefits_salary_and_eeo_are_context_not_requirements():
-    units = job_units('Requirements: Strong SQL. Benefits: 401(k) match. '
-                      'We are an equal opportunity employer regardless of race or religion.')
-    flags = {u['text']: boilerplate(u) for u in units}
-    assert flags['Strong SQL.'] is False
-    assert flags['401(k) match.'] is True
-    assert flags['We are an equal opportunity employer regardless of race or religion.'] is True
 
 
 # ---- C4: main-model resolution of requirements Jev leaves unknown -----------------------------
@@ -322,58 +315,30 @@ def test_flattened_lists_are_restored_without_splitting_proper_nouns():
     assert not any(u.startswith(('Figma', 'Python', 'Prototyping')) for u in units)
 
 
-# ---- A1: default main-model catalogue from deterministic local units --------------------------
-def test_local_catalogue_requirements_levels_years_and_duties():
-    from eregion.domain.requirement_catalog import local_job_analysis
-    body = ('About us: We build payments.\nWhat you\'ll do\n- Own the API platform\n- Mentor engineers\n'
-            'Requirements\n- 8+ years of backend experience\n- Strong SQL\n- Willing to travel up to 25%\n'
-            'Nice to have\n- Experience with Kafka\nBenefits:\n- 401(k) match\n')
-    job = local_job_analysis(body)
-    by = {r.source_text: r for r in job.requirements}
-    assert by['8+ years of backend experience'].minimum_years == 8
-    assert by['8+ years of backend experience'].verification_mode == 'years_experience'
-    assert by['Strong SQL'].level == 'required' and by['Experience with Kafka'].level == 'preferred'
-    assert by['Willing to travel up to 25%'].category == 'eligibility'
-    assert 'Own the API platform' in job.responsibilities and not any('401(k)' in r for r in by)
-    assert [r.requirement_id for r in local_job_analysis(body).requirements] == [r.requirement_id for r in job.requirements]
+# Requirement classification is tested through model responses in test_jev_model_owned_classification.
 
 
-def test_story_text_is_not_a_condition_and_conditions_only_postings_fall_back():
-    from eregion.api.services.fit_analysis_service import FitAnalysisService
-    from eregion.domain.jev_fit.core import CANDIDATE_CONDITION
-    assert not CANDIDATE_CONDITION.search('which he had encountered when traveling in Japan')
-    assert CANDIDATE_CONDITION.search('Requires frequent travel to client sites')
-    story = 'Product Designer\nOur founder loved traveling in Japan.\nLogistics\nHybrid in San Francisco or New York.\n'
-    assert FitAnalysisService._default_catalogue(story) is None  # only a work condition -> free extraction
 
 
-def test_duty_only_posting_scores_its_stated_duties_deterministically():
-    from eregion.api.services.fit_analysis_service import FitAnalysisService
-    from eregion.domain.requirement_catalog import local_job_analysis
-    body = ("Senior Product Designer\nWhat you'll do\n- Own product architecture and interaction design\n"
-            "- Prototype new experiments\nLogistics\nHybrid in New York.\n")
-    job = local_job_analysis(body)
-    assert [r.category for r in job.requirements] == ['responsibility', 'responsibility', 'eligibility']
-    assert FitAnalysisService._default_catalogue(body) is not None
-    assert [r.requirement_id for r in local_job_analysis(body).requirements] == [r.requirement_id for r in job.requirements]
 
 
-def test_model_duration_not_stated_in_source_is_dropped_not_fatal():
+def test_model_duration_interpretation_is_not_replaced_by_a_numeric_regex():
     from eregion.domain.domain import normalize_job_analysis
     from eregion.domain.schemas import JobAnalysis, JobRequirement
-    jd = 'Senior Designer\nRequirements\n- Strong portfolio of shipped products\n'
+    phrase = 'Half a decade designing shipped products'
+    jd = 'Senior Designer\nRequirements\n- ' + phrase + '\n'
     item = JobRequirement(requirement_id='r1', requirement_group_id='r1', canonical_name='portfolio', display_name='Portfolio',
-        original_text='Strong portfolio of shipped products', source_text='Strong portfolio of shipped products',
-        atomic_text='Strong portfolio of shipped products', category='experience', verification_mode='years_experience',
+        original_text=phrase, source_text=phrase,
+        atomic_text=phrase, category='experience', verification_mode='years_experience',
         level='required', minimum_years=5)
     out = normalize_job_analysis(JobAnalysis(title=None, summary='', requirements=[item], responsibilities=[]), jd)
-    assert out.requirements[0].minimum_years is None
+    assert out.requirements[0].minimum_years == 5
 
 
 def test_level_free_title_needs_opening_level_evidence_for_junior_request():
     # B6 live: "Associate Data Analyst" with a preferred one-year minimum was
     # recommended as a junior match because only the title was checked.
-    from eregion.runtime.career.search_policy import recommendation_warning
+    from fake_search_qualification import recommendation_warning
     policy={'levels':['junior'],'strict':False}
     warning=recommendation_warning(policy,'Associate Data Analyst',
         'A minimum of 1 year data management experience is preferred.')
@@ -401,21 +366,6 @@ def test_board_search_needs_role_terms_not_one_shared_word():
     assert [j['title'] for j in result['jobs']]==['Data Analyst','Junior Data Analyst, Growth']
 
 
-@pytest.mark.parametrize('body,expected', [
-    ('Requirements:\nPython\nSQL', [('Python', 'required'), ('SQL', 'required')]),
-    ('Qualifications\nMachine Learning\nData Visualization', [('Machine Learning', 'required'), ('Data Visualization', 'required')]),
-    ('Python experience preferred.', [('Python experience preferred.', 'preferred')]),
-    ('Requirements:\nPython experience preferred.\nSQL required.', [('Python experience preferred.', 'preferred'), ('SQL required.', 'required')]),
-    ('Nice to have:\n- Go\n- Kubernetes experience required', [('Go', 'preferred'), ('Kubernetes experience required', 'required')]),
-    ('Requirements:\n- Docker is a plus', [('Docker is a plus', 'preferred')]),
-    ('Requirements:\n- Desired outcomes include faster builds', [('Desired outcomes include faster builds', 'required')]),
-    ('Requirements:\n- R\n- C#', [('R', 'required'), ('C#', 'required')]),
-])
-def test_local_catalogue_bare_lists_and_inline_levels(body, expected):
-    # Review findings: bare one-per-line lists were read as headings (0 requirements) and
-    # an item's own "preferred" was overridden by its section.
-    from eregion.domain.requirement_catalog import local_job_analysis
-    assert [(r.atomic_text, r.level) for r in local_job_analysis(body).requirements] == expected
 
 
 def test_bare_list_lines_are_items_but_prose_headings_still_split():
@@ -428,21 +378,21 @@ def test_bare_list_lines_are_items_but_prose_headings_still_split():
     assert units('Experience with Python and\nSQL databases.') == [('Experience with Python and\nSQL databases.', None)]
 
 
-def test_fit_cache_signature_changes_with_main_catalogue_mode(monkeypatch):
+def test_obsolete_local_catalogue_flag_cannot_restore_rule_based_extraction(monkeypatch):
     from eregion.api.services.fit_analysis_service import FitAnalysisService
     service = FitAnalysisService(handler=type('H', (), {'analysis_cache_namespace': lambda self: 'ns'})(), jev_enabled=False)
     monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG', 'local')
     local = service.cache_signature()
     monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG', 'extract')
-    assert service.cache_signature() != local
+    assert service.cache_signature() == local
     monkeypatch.delenv('JOB_AGENT_MAIN_CATALOG')
-    assert service.cache_signature() == local  # unset means the local default
+    assert service.cache_signature() == local  # the obsolete flag no longer changes extraction
 
 
-def test_resume_analysis_is_reused_across_locally_catalogued_jobs(monkeypatch):
+def test_resume_analysis_is_reused_across_model_extracted_jobs(monkeypatch):
     from eregion.api.services.fit_analysis_service import FitAnalysisService
     from eregion.domain.workflow.handlers import JobAgentStepHandler
-    from eregion.domain.schemas import ResumeAnalysis, ResumeEvidence, SkillAssessment, SkillEvidence, JobAnalysis
+    from eregion.domain.schemas import ResumeAnalysis, ResumeEvidence, SkillAssessment, SkillEvidence, JobAnalysis, JobRequirement
     monkeypatch.setenv('TYPESAFE_ENABLED', 'false')
     monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG', 'local')
     calls = []
@@ -451,6 +401,11 @@ def test_resume_analysis_is_reused_across_locally_catalogued_jobs(monkeypatch):
         if schema is ResumeAnalysis:
             return ResumeAnalysis(summary='Dev', skills=['Python'], education=[],
                 evidence=[ResumeEvidence(evidence_id='e', source_section='Skills', exact_text='Python')])
+        if schema is JobAnalysis:
+            return JobAnalysis(title=None, summary='', responsibilities=[], requirements=[JobRequirement(
+                requirement_id='fixture', canonical_name='Python', display_name='Python',
+                original_text='Python', source_text='Python', atomic_text='Python',
+                category='skill', verification_mode='resume_evidence', level='required')])
         job = JobAnalysis.model_validate_json(human.split('\n\nJob analysis:\n')[1])
         return SkillAssessment(matches=[SkillEvidence(requirement_id=r.requirement_id, job_skill=r.canonical_name,
             requirement_level=r.level, match_status='matched', resume_evidence=['Python'], confidence=1)
@@ -458,7 +413,7 @@ def test_resume_analysis_is_reused_across_locally_catalogued_jobs(monkeypatch):
     service = FitAnalysisService(JobAgentStepHandler(analyzer=analyze))
     for body in ('Requirements:\nPython\nSQL', 'Python experience preferred.'):
         service._analyze_sync(resume_text='Skills\nPython', job_description=body)
-    assert calls.count(ResumeAnalysis) == 1 and calls.count(JobAnalysis) == 0
+    assert calls.count(ResumeAnalysis) == 1 and calls.count(JobAnalysis) == 2
 
 
 @pytest.mark.parametrize('text,rejected', [
@@ -484,7 +439,7 @@ def test_absence_claim_check_allows_the_disclaimer_that_denies_it(text, rejected
 def test_new_grad_title_satisfies_junior_request_and_vice_versa():
     # Paid P1b: "Graduate Data Analyst" (qualified by the evaluator) got
     # "Seniority mismatch: requested junior; this posting is new_grad".
-    from eregion.runtime.career.search_policy import recommendation_warning
+    from fake_search_qualification import recommendation_warning
     assert recommendation_warning({'levels': ['junior'], 'strict': False}, 'Graduate Data Analyst', '') is None
     assert recommendation_warning({'levels': ['new_grad'], 'strict': False}, 'Junior Data Analyst', '') is None
     assert recommendation_warning({'levels': ['junior'], 'strict': False}, 'Data Analyst Intern', '')['actual'] == 'intern'

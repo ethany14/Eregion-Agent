@@ -377,10 +377,6 @@ class CareerHarness:
             parsed=next((a for a in reversed(artifacts) if a.artifact_type==ArtifactType.JOB_ANALYSIS
                 and a.created_at>=boundary),None)
             requirements=parsed.content.get('requirements',[]) if parsed else []
-            from .posting_text import qualification_lines
-            from .search_policy import opening_level
-            body=rt.workspace.current_snapshot(application_id).cleaned_job_description
-            result['qualification_evidence']=[u for u in qualification_lines(body) if opening_level(u['quote'])][:4]
             result.update(self.requirement_summary(match.content,requirements))
             result['match_overview'] = self.match_overview(match.content,requirements)
             overview=result['match_overview']
@@ -583,6 +579,12 @@ class CareerHarness:
         results={identifier:{k:v for k,v in self.job_summary(identifier).items() if k in {
             'application_id','title','company','url','location','match_score','score_range','qualification_evidence','decision_brief'}}
             for identifier in identifiers}
+        from .qualification import assess
+        state=self.repository.get(task_id)
+        for identifier,row in results.items():
+            q=assess(state,self.job_summary(identifier,detail=True))
+            row['qualification_evidence']=[{'field':field,**quote}
+                for field,item in q['checks'].items() for quote in item.get('evidence',[])][:8]
         self.repository.change(task_id,lambda s:{'scored_job_evidence':{**s.get('scored_job_evidence',{}),**results}})
 
     def fit_facts(self):
@@ -598,7 +600,8 @@ class CareerHarness:
             return run(self,task_id,args,call_id)
         if name == 'dismiss_candidate':
             from .candidate_health import dismiss
-            return dismiss(self.repository, task_id, args)
+            return dismiss(self.repository, task_id, args,
+                           self._browsing.inspect(task_id) if self._browsing else None)
         if name == 'verify_and_score':
             from eregion.runtime.request_options import enabled
             if not enabled('VERIFY_AND_SCORE', default=self.api_first()):
@@ -679,21 +682,15 @@ class CareerHarness:
                 raise ValueError('A confirmed personal condition is not satisfied; this job cannot be recommended as eligible.')
             retrieved=next((j for j in state.get('retrieved_jobs',{}).values() if j.get('url') and job_key(j['url'])==job_key(job['url'])),None)
             if not retrieved:raise ValueError('Read the current posting before recommending it.')
-            if self.api_first():
-                from .qualification import record
-                qualification=record(self.repository,task_id,retrieved)
-                if not qualification['qualified']:
-                    return {'error':'Requested search constraints are not verified; this job cannot count as a recommendation.',
-                            'error_code':'qualification_needed','qualification':qualification,
-                            'next':'Use decide_job with needs_evidence or exclude. Do not claim it meets the requested conditions.'}
-            from .search_policy import constraints, recommendation_warning
-            policy=constraints(state)
-            warning=recommendation_warning(policy,job['title'] or '',job.get('description') or '')
+            from .qualification import record
+            qualification=record(self.repository,task_id,retrieved)
+            if not qualification['qualified']:
+                return {'error':'Requested search constraints are not verified; this job cannot count as a recommendation.',
+                        'error_code':'qualification_needed','qualification':qualification,
+                        'next':'Use decide_job with needs_evidence or exclude. Do not claim it meets the requested conditions.'}
             if not isinstance(args['reason'],str) or not 1<=len(args['reason'])<=2000 or not isinstance(args['caveats'],str) or len(args['caveats'])>2000:
                 raise ValueError('Keep the recommendation reason and caveats concise.')
             payload={k:job[k] for k in ('application_id','title','company','location','url','match_score')}|{'reason':args['reason'],'caveats':args['caveats']}
-            if warning:
-                payload.update(seniority_warning=warning,caveats=(warning['message']+' '+args['caveats']).strip())
             if job['match_score'] is None:
                 payload.update(score_range=interval,analysis_status=job.get('analysis_status'),
                     caveats=('Unresolved qualifications: fit is an interval, not a point score. '+payload['caveats']).strip())
@@ -882,11 +879,6 @@ class CareerHarness:
                 raise ValueError('Screen only links from observed browser/search results or retrieved jobs.')
             return self.screen(task_id, state, [candidates[job_key(url)] for url in urls], args['query'])
         if name=='read_job':
-            if self.api_first():
-                card=next((j for j in state.get('search_candidates',{}).values()
-                           if j.get('url') and job_key(j['url'])==job_key(args['url'])),None)
-                if card and not filter_cards([card],state)[0]:
-                    raise ValueError('The observed card explicitly conflicts with the requested occupation or seniority. Choose a matching or ambiguous card; no detail request sent.')
             # Persist attempted identities even when the read rejects a blocked or
             # ambiguous page, so completion recovery cannot force an endless retry.
             self.repository.change(task_id,lambda s:{'job_read_attempts':dict(list({
@@ -1049,11 +1041,10 @@ class CareerHarness:
                 raise ValueError('Choose one to eight unique imported jobs.')
             for identifier in identifiers:self.require_link(state,'jobs',identifier)
             versions={a:rt.workspace.get_application(a).version for a in identifiers}
-            if self.api_first():
-                from .qualification import record
-                qualifications=[record(self.repository,task_id,self.job_summary(a,detail=True)) for a in identifiers]
-                if any(not q['qualified'] for q in qualifications):
-                    return {'error':'Verify requested constraints before paid batch scoring.','error_code':'qualification_needed','qualifications':qualifications}
+            from .qualification import record_many
+            qualifications=record_many(self.repository,task_id,[self.job_summary(a,detail=True) for a in identifiers])
+            if any(not q['qualified'] for q in qualifications):
+                return {'error':'Verify requested constraints before paid batch scoring.','error_code':'qualification_needed','qualifications':qualifications}
             _,text=self.candidate()
             if not text:raise ValueError('Attach a resume in this chat before comparing fit.')
             asyncio.run(self.analysis.analyze_many(identifiers,resume_text=text,candidate_facts=self.fit_facts()))
@@ -1063,11 +1054,10 @@ class CareerHarness:
             return {'jobs':[self.job_summary(a,detail=True)for a in identifiers],
                     'no_new_evidence':all(rt.workspace.get_application(a).version==versions[a] for a in identifiers)}
         if name=='score_job':
-            if self.api_first():
-                from .qualification import record
-                qualification=record(self.repository,task_id,self.job_summary(args['application_id'],detail=True))
-                if not qualification['qualified']:
-                    return {'error':'Verify requested constraints before paid scoring.','error_code':'qualification_needed','qualification':qualification}
+            from .qualification import record
+            qualification=record(self.repository,task_id,self.job_summary(args['application_id'],detail=True))
+            if not qualification['qualified']:
+                return {'error':'Verify requested constraints before paid scoring.','error_code':'qualification_needed','qualification':qualification}
             saved,text = self.candidate()
             if not text:raise ValueError('Attach a resume in this chat before comparing fit.')
             app = rt.workspace.get_application(args['application_id'])

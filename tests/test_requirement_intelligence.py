@@ -74,6 +74,7 @@ def extracted_analysis() -> JobAnalysis:
                 source_text=ELIGIBILITY_SOURCE,
                 atomic_text="authorized to work in Australia",
                 category="other",
+                verification_mode="user_confirmation",
             ),
             requirement(
                 requirement_id="temp-python-preferred",
@@ -134,7 +135,7 @@ def test_normalization_generates_stable_group_and_requirement_ids():
     )
 
 
-def test_normalization_forces_eligibility_to_user_confirmation():
+def test_normalization_preserves_model_eligibility_verification_mode():
     normalized = normalize_job_analysis(extracted_analysis(), JOB_DESCRIPTION)
     eligibility = next(
         item for item in normalized.requirements
@@ -145,7 +146,7 @@ def test_normalization_forces_eligibility_to_user_confirmation():
     assert eligibility.verification_mode == VerificationMode.USER_CONFIRMATION
 
 
-def test_normalization_extracts_only_explicit_minimum_years():
+def test_normalization_preserves_model_extracted_minimum_years():
     source = "Requires at least five years of engineering leadership experience."
     analysis = JobAnalysis(
         title="Engineering Manager",
@@ -159,6 +160,7 @@ def test_normalization_extracts_only_explicit_minimum_years():
                 atomic_text="at least five years of engineering leadership experience",
                 category="experience",
                 verification_mode="years_experience",
+                minimum_years=5,
             )
         ],
         responsibilities=[],

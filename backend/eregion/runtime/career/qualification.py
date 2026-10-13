@@ -1,9 +1,27 @@
-"""Conservative, source-bound search qualification; unknown is never a quota match."""
+"""Persist model-owned search judgments; validate identity, citations and freshness."""
 import hashlib
 import json
 import re
 from .alerts import job_key
-from .search_policy import constraints, recommendation_warning, LEVELS
+from .search_policy import LEVELS
+from eregion.domain.search_qualification import POLICY, judge
+from eregion.domain.jev_fit.resolve import locate
+
+FIELDS=('role','location','seniority','vacancy')
+MAX_BATCH_CHARS=48000
+
+
+def user_request(state):
+    # Preserve the original request and subsequent human corrections, not model plans.
+    texts=[state.get('goal','')]
+    texts.extend(m['text'] for m in state.get('messages',[]) if m.get('role')=='user')
+    return '\n\n'.join(dict.fromkeys(t for t in texts if t))
+
+
+def request_hash(state):
+    from eregion.domain.model import model_settings_fingerprint
+    return hashlib.sha256(json.dumps([user_request(state),state.get('chat_revision',0),
+        POLICY,model_settings_fingerprint()],sort_keys=True).encode()).hexdigest()
 
 
 def request_fields(state):
@@ -26,57 +44,96 @@ def body_hash(job):
 
 
 def assess(state,job):
-    requested=request_fields(state)
-    checks={}
-    def add(field,status,quote,reason):
-        checks[field]={'status':status,'quote':quote or '', 'reason':reason}
-    if requested['role']:
-        normalize=lambda t:' '.join(re.findall(r'[a-z0-9]+',(t or '').casefold()))
-        phrase=normalize(requested['role'])
-        add('role','met' if phrase and re.search(r'\b'+re.escape(phrase)+r'\b',normalize(job.get('title'))) else 'unknown',job.get('title'),
-            'The requested occupational phrase must be evidenced by the posting title; scattered keywords do not establish the same role.')
-    if requested['location']:
-        norm=lambda s:' '.join((s or '').casefold().split())
-        matched=bool(re.search(r'(?<!\w)'+re.escape(norm(requested['location']))+r'(?!\w)',norm(job.get('location'))))
-        quote=job.get('location')
-        if not matched and norm(quote) in {'','remote','united states','united states (remote)','us remote'}:
-            for m in re.finditer(r'(?im)^\s*(?:location\s*:|(?:this|the)\s+(?:role|position|job)\s+is\s+(?:based|located)\s+in)\s*([^\n.!?]{1,200})',job.get('description','')):
-                if re.search(r'(?<!\w)'+re.escape(norm(requested['location']))+r'(?!\w)',norm(m[1])):
-                    matched=True;quote=m[0].strip();break
-        add('location','met' if matched else 'unknown',quote,
-            'The requested place must be evidenced by this posting; US-remote does not prove the requested city.')
-    policy=constraints(state)
-    if policy:
-        try:warning=recommendation_warning({**policy,'strict':False},job.get('title',''),job.get('description',''))
-        except ValueError:warning={'actual':None}
-        from .posting_text import qualification_lines
-        evidence=qualification_lines(job.get('description',''))
-        add('seniority','met' if not warning else 'unmet' if warning.get('actual') else 'unknown',
-            job.get('title'),warning.get('message','Requested seniority is not established.') if warning else 'Opening level is supported; explicit higher minimum overrides the title.')
-        checks['seniority']['source_excerpts']=evidence
-        from .search_policy import opening_level
-        decisive=next((e['quote'] for e in evidence if opening_level(e['quote'])==opening_level(job.get('description',''))
-                       and opening_level(e['quote']) is not None),None)
-        if decisive:checks['seniority']['quote']=decisive
+    """Read-only view: snapshots and guards never dispatch a model or infer eligibility."""
+    saved=state.get('candidate_qualifications',{}).get(job_key(job['url']))
+    if (saved and saved.get('request_hash')==request_hash(state)
+            and saved.get('body_hash')==body_hash(job)):
+        return saved
+    return result(state,job,{f:{'status':'unknown','quote':'','reason':'Semantic assessment required.',
+                               'evidence':[]} for f in FIELDS},method='not_assessed')
+
+
+def result(state,job,checks,*,method='model_with_verified_quotes'):
     unresolved=[k for k,v in checks.items() if v['status']=='unknown']
+    qualified=all(c['status'] in {'met','not_requested'} for c in checks.values())
     return {'url':job['url'],'revision':state.get('chat_revision',0),'body_hash':body_hash(job),
+            'request_hash':request_hash(state),
             **({'application_id':job['application_id']} if job.get('application_id') else {}),
-            'requested':requested,'checks':checks,'qualified':all(c['status']=='met' for c in checks.values()),
-            'status':'qualified' if all(c['status']=='met' for c in checks.values()) else 'needs_evidence',
-            'review':{'method':'complete_saved_jd_scan','unresolved':unresolved,
-                      'next':'Only new source evidence for these fields can resolve them; rereading the same body or source entry-level filter cannot.' if unresolved else 'No unresolved search constraints.'},
+            'requested':request_fields(state),'checks':checks,'qualified':qualified,
+            'status':'qualified' if qualified else 'needs_evidence',
+            'review':{'method':method,'unresolved':unresolved,
+                      'next':'Reuse this assessment for unchanged inputs. New source evidence or user corrections can resolve unknowns.'},
             'interpretation':'Search constraints only; scoring must still check personal eligibility.'}
 
 
 def record(repository,task_id,job):
-    result=assess(repository.get(task_id),job)
-    repository.change(task_id,lambda s:{'candidate_qualifications':dict(list({
-        **s.get('candidate_qualifications',{}),job_key(job['url']):result}.items())[-100:])})
-    return result
+    return record_many(repository,task_id,[job])[0]
+
+
+def verified_checks(decision,request,job):
+    checks={}
+    for field in FIELDS:
+        item=getattr(decision,field)
+        citations=[]
+        valid=not item.request_quote if item.status=='not_requested' else locate(item.request_quote,request) is not None
+        if field=='vacancy' and item.status=='not_requested':valid=False
+        for quote in item.evidence:
+            original=job.get(quote.source) or ''
+            span=locate(quote.quote,original)
+            if span is None:valid=False;continue
+            citations.append({'source':quote.source,'quote':original[span[0]:span[1]],
+                              'start':span[0],'end':span[1]})
+        if item.status in {'met','unmet'} and not citations:valid=False
+        checks[field]={'status':item.status if valid else 'unknown','quote':'\n'.join(c['quote'] for c in citations),
+            'request_quote':item.request_quote,'reason':item.reason if valid else 'Model citation was missing or not found in this posting/request.',
+            'evidence':citations,'citation_valid':valid}
+    return checks
+
+
+def record_many(repository,task_id,jobs):
+    """Batched semantic IO under the caller's owner, budget and cancellation guard."""
+    from eregion.runtime.core.engine import LoopStop
+    from eregion.runtime.provider_usage import usage_scope, TaskProviderBudgetExceeded
+    state=repository.get(task_id);fingerprint=request_hash(state);request=user_request(state)
+    def check():
+        current=repository.get(task_id)
+        if (request_hash(current)!=fingerprint or current.get('pause_requested')
+                or current.get('status') in {'cancelled','completed'}):raise LoopStop('steered')
+    pending=[j for j in jobs if assess(state,j)['review']['method']=='not_assessed']
+    groups=[];part=[];size=len(request)
+    for job in pending:
+        n=len(json.dumps({k:job.get(k) for k in ('title','location','description')},ensure_ascii=False))
+        if part and (len(part)>=4 or size+n>MAX_BATCH_CHARS):groups.append(part);part=[];size=len(request)
+        part.append(job);size+=n
+    if part:groups.append(part)
+    for group in groups:
+        check()
+        postings=[{'posting_id':str(i),**{k:j.get(k) or '' for k in ('title','location','description')}} for i,j in enumerate(group)]
+        error=None;decisions={}
+        try:
+            if len(json.dumps(postings,ensure_ascii=False))+len(request)>MAX_BATCH_CHARS:
+                raise ValueError('Qualification input too large; complete text was not truncated.')
+            with usage_scope(provider_guard=check):response=judge(request,postings)
+            ids=[d.posting_id for d in response.decisions]
+            if len(ids)!=len(group) or set(ids)!={str(i) for i in range(len(group))}:
+                raise ValueError('Qualification response identities do not match the supplied batch.')
+            decisions={d.posting_id:d for d in response.decisions}
+        except (TaskProviderBudgetExceeded,LoopStop):raise
+        except Exception as exc:error=type(exc).__name__
+        check()
+        outputs={}
+        for i,job in enumerate(group):
+            checks=verified_checks(decisions[str(i)],request,job) if error is None else {
+                f:{'status':'unknown','quote':'','reason':'Semantic assessment unavailable: '+error,'evidence':[]} for f in FIELDS}
+            outputs[job_key(job['url'])]=result(state,job,checks,method='model_unavailable' if error else 'model_with_verified_quotes')
+        repository.change(task_id,lambda s:{'candidate_qualifications':dict(list({
+            **s.get('candidate_qualifications',{}),**outputs}.items())[-100:])})
+    current=repository.get(task_id)
+    return [assess(current,j) for j in jobs]
 
 
 def deferred(state):
     bodies={job_key(j['url']):j for j in state.get('retrieved_jobs',{}).values() if j.get('url')}
     return {key for key,row in state.get('candidate_qualifications',{}).items()
-            if row.get('revision')==state.get('chat_revision',0) and not row['qualified']
+            if row.get('request_hash')==request_hash(state) and not row['qualified']
             and (key not in bodies or row['body_hash']==body_hash(bodies[key]))}

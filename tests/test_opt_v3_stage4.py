@@ -81,7 +81,7 @@ def test_replay_measurements(replay, frozen_web, career, monkeypatch, mode, case
     assert result.acceptance['qualified_count'] == {'r1':1, 'r2':0, 'r3':0, 'correct':2, 'directory-positive':2, 'directory-negative':0}[case]
     if case == 'r1':
         associate = next(j for j in result.state['recommendations'] if j['title'] == 'Associate Data Analyst')
-        assert 'Level unverified' in associate['caveats']
+        assert not associate.get('seniority_warning')
     assert result.summary['provider_usage']['calls'] == 0
     if os.getenv('JOB_AGENT_OPT_SNAPSHOT_REFS') == '1':
         assert not any(r['protected_overflow'] for r in rows)
@@ -145,7 +145,8 @@ def test_crash_resume(career, monkeypatch, boundary, when):
     assert reads == [URL]
     assert len(c.runtime.workspace.list_applications()) == 1
     assert result['completed_steps'] == ['read_job','import_job','score_job']
-    assert 'opening_level' in result and 'qualification_evidence' in result
+    assert 'opening_level' not in result
+    assert result['qualification']['review']['method']=='model_with_verified_quotes'
     assert result['location'] == 'Remote'
     assert not repo.get(c.state['task_id']).get('recommendations')
 
@@ -269,7 +270,10 @@ def test_real_blocked_and_rejected_source_guards(career, monkeypatch):
     c.repository.change(c.state['task_id'],search_source_health={})
     monkeypatch.setattr(c.harness.discovery,'job',lambda url: {'url':url,'title':'Analyst',
         'description':'Apply to our talent network for future opportunities.'})
-    with pytest.raises(PostingRejected): execute(c,'verify_and_score',url=URL)
+    execute(c,'read_job',url=URL)
+    execute(c,'dismiss_candidate',url=URL,quote='Apply to our talent network for future opportunities.',
+            reason='The model identifies a talent pool instead of a current vacancy.')
+    with pytest.raises(PostingRejected):execute(c,'verify_and_score',url=URL)
     state = c.repository.get(c.state['task_id'])
     assert state['candidate_rejections'] and not state['jobs']
 

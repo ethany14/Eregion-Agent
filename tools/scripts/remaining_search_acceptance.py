@@ -84,13 +84,24 @@ def evaluate_search(summary, applicant):
     require(bool([g for g in usage.get('groups', []) if g.get('purpose') == 'agent']), 'missing_main_usage')
     require(main_input <= INPUT_LIMIT, 'main_input_budget')
     require(usage.get('input_tokens', INPUT_LIMIT + 1) <= INPUT_LIMIT, 'total_input_budget')
+    if summary.get('qualification_method')=='model':
+        audit=summary.get('audit_usage') or {}
+        require(audit.get('usage_complete') is True and not audit.get('pending')
+                and not audit.get('unknown_usage_calls') and audit.get('calls',7)<=6
+                and audit.get('input_tokens',200001)<=200000
+                and not summary.get('semantic_review_error'),'semantic_audit_incomplete')
     final = summary.get('final') or ''
     reply_scores = reply_job_scores(final)
     require('Send continue' not in final, 'budget_continuation')
     recommendations = {job_key(j['url']): j for j in summary.get('recommendations', []) if j.get('url')}
     seen, qualified, checked = set(), [], []
     for job in summary.get('verified_jobs', []):
-        tests = constraints(applicant, job)
+        if summary.get('qualification_method')=='model':
+            from evals.search_semantic_audit import contract_checks
+            tests=contract_checks(job,summary.get('semantic_review') or {},summary.get('user_request',''))
+        else:
+            # Historical report compatibility only; new live runs use blind model review.
+            tests = constraints(applicant, job)
         score = job.get('match_score')
         tests['scored'] = type(score) in (int, float) and math.isfinite(score) and 0 <= score <= 100
         tests['retrieved'] = job.get('retrieved') is True

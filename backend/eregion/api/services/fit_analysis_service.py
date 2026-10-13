@@ -145,25 +145,15 @@ class FitAnalysisService:
             FIT_ANALYSIS_VERSION, PROMPT_VERSION, SCHEMA_VERSION,
             RESUME_PROMPT, JOB_PROMPT, MATCH_PROMPT, self._namespace(),
             *[schema.model_json_schema() for schema in (ResumeAnalysis, JobAnalysis, SkillAssessment)],
-            # Switching local/extract, or changing the local catalogue builder, must recompute.
+            # Model extraction changes invalidate the cached interpretation.
             self.catalogue_identity(),
         ]
         return hashlib.sha256(json.dumps(content, sort_keys=True).encode()).hexdigest()
 
     @staticmethod
-    def catalogue_mode():
-        return 'extract' if os.getenv('JOB_AGENT_MAIN_CATALOG', 'local').strip().lower() == 'extract' else 'local'
-
-    @classmethod
-    def catalogue_identity(cls):
-        mode = cls.catalogue_mode()
-        if mode == 'extract':
-            return [mode]
-        from pathlib import Path
-        from eregion.domain import requirement_catalog
-        from eregion.domain.jev_fit import core
-        sources = [hashlib.sha256(Path(m.__file__).read_bytes()).hexdigest() for m in (requirement_catalog, core)]
-        return [mode, requirement_catalog.LOCAL_PRODUCER, *sources]
+    def catalogue_identity():
+        from eregion.domain.job_extraction import extraction_signature
+        return ['model-extracted', extraction_signature()]
 
     def uses_jev(self):
         from eregion.domain.jev_fit.settings import enabled
@@ -184,21 +174,6 @@ class FitAnalysisService:
         )
 
     @staticmethod
-    def _default_catalogue(body):
-        """Local deterministic catalogue unless JOB_AGENT_MAIN_CATALOG=extract.
-
-        Returns None (free extraction) when the text has no recognisable requirement.
-        """
-        if FitAnalysisService.catalogue_mode() == 'extract':
-            return None
-        from eregion.domain.requirement_catalog import FrozenRequirementCatalog
-        catalogue = FrozenRequirementCatalog.from_local_units(body)
-        # Only personal conditions (or nothing) recognised: the posting states no skill
-        # requirements in a recognisable form, so let the model extract implied ones.
-        skills = [r for r in json.loads(catalogue.payload_json)['requirements'] if r['category'] != 'eligibility']
-        return catalogue if skills else None
-
-    @staticmethod
     def _validate_catalogue_input(catalogue, body, *, jev_route):
         if catalogue is None:
             return None
@@ -215,12 +190,6 @@ class FitAnalysisService:
         # Trusted internal input only. Validate before cache lookup or any provider.
         jev_route = self.uses_jev()
         fixed_job = self._validate_catalogue_input(fixed_job_catalog,job_description,jev_route=jev_route)
-        if not jev_route and fixed_job_catalog is None:
-            # Default main route (A1): score against a deterministic local catalogue so
-            # the requirement list, and therefore the score, is the same every run.
-            fixed_job_catalog = self._default_catalogue(job_description)
-            if fixed_job_catalog is not None:
-                fixed_job = fixed_job_catalog.validate_for(job_description)
         if jev_route:
             config=self._jev_settings()
             from eregion.domain.jev_fit.settings import digest

@@ -16,7 +16,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from .core import POLICY, expected_score, score
-from eregion.domain.partial_support import PARTIAL_POLICY, partial_overlap
+from eregion.domain.partial_support import PARTIAL_POLICY
 
 
 class UnknownDecision(BaseModel):
@@ -178,14 +178,8 @@ def resolve_unknowns(raw, evidence, *, model, invoke=None, store=None):
             text = evidence[span[0]:span[1]]
             citation = {'source_id': 'main_model_quote', 'exact_text': text, 'spans': [list(span)],
                         'sha256': hashlib.sha256(text.encode()).hexdigest()}
-            if status == 'partial' and not partial_overlap(match['text'], text):
-                status = 'missing'
-                match['partial_relevance_guard'] = {'status':'rejected',
-                    'reason':'Exact quote has no requirement content term or listed synonym.'}
         match.update(status=status, level=decision.level, weight=1 if decision.level == 'preferred' else 2,
-                     reason=('Partial support rejected: exact quote has no requirement content term or listed synonym. '
-                             if match.get('partial_relevance_guard') else '') +
-                            'Resolved by the main model after Jev left it uncertain: ' + decision.reason,
+                     reason='Resolved by the main model after Jev left it uncertain: ' + decision.reason,
                      resolved_by='main_model', citations=[citation] if citation else [],
                      citation_scope='verified_excerpt' if citation else None)
         if unit is not None and unit['classification'] == 'unknown':

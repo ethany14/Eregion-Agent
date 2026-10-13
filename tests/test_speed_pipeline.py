@@ -91,14 +91,18 @@ def test_matching_batches_keep_all_requirements_and_bound_large_jobs(count, expe
     assert sorted(sizes) == sorted(expected)
     assert [m.requirement_id for m in result.matches] == [r.requirement_id for r in job.requirements]
 
-def test_exact_skill_keeps_negation_expertise_and_tool_identity():
-    from eregion.domain.fast_match import exact_skill_quote
-    r = JobRequirement(requirement_id='r', canonical_name='tableau', original_text='Tableau', level='required')
-    def evidence(text): return [ResumeEvidence(evidence_id='e', source_section='Skills', exact_text=text)]
-    assert exact_skill_quote(r, evidence('Used Tableau.')) == 'Used Tableau.'
-    for text in ('Used Power BI.', 'No Tableau experience.', 'Learning Tableau.'):
-        assert exact_skill_quote(r, evidence(text)) is None
-    assert exact_skill_quote(r.model_copy(update={'atomic_text':'Advanced Tableau administration'}), evidence('Used Tableau.')) is None
+def test_exact_tool_name_still_requires_a_model_decision():
+    from eregion.domain.fast_match import assess_skills
+    r=JobRequirement(requirement_id='r',canonical_name='tableau',original_text='Tableau',level='required')
+    resume=ResumeAnalysis(summary='',skills=[],education=[],evidence=[
+        ResumeEvidence(evidence_id='e',source_section='Skills',exact_text='Used Tableau.')])
+    job=JobAnalysis(title='Role',summary='',responsibilities=[],requirements=[r]);calls=[]
+    def analyze(*args):
+        calls.append(args)
+        return SkillAssessment(matches=[SkillEvidence(requirement_id='r',job_skill='tableau',
+            requirement_level='required',match_status='unknown',resume_evidence=[],confidence=0)],explanation='',recommendations=[])
+    result=assess_skills(resume,job,analyze,FastDecisions())
+    assert len(calls)==1 and result.matches[0].match_status=='unknown'
 
 def test_sentence_references_round_trip_exactly():
     from eregion.domain.job_extraction import numbered_sentences, ReferencedJobExtraction

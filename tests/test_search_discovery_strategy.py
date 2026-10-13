@@ -4,7 +4,7 @@ from eregion.runtime.career.search_filters import filter_cards
 from eregion.runtime.career.qualification import assess
 from eregion.runtime.career.posting_text import scope
 from eregion.runtime.career.linkedin_source import LinkedInMcpSource
-from eregion.runtime.career.search_policy import opening_level
+from fake_search_qualification import opening_level
 from scripts.remaining_search_acceptance import constraints as acceptance_constraints
 from test_career_flow import career,execute
 from test_integrated_p3 import ask
@@ -22,14 +22,13 @@ def test_variants_preserve_role_and_do_not_expand_other_requests():
     assert variants(state,{**args,'query':'data analyst at Example'})==['data analyst at Example']
 
 
-def test_cards_exclude_only_explicit_alternative_occupations():
+def test_cards_are_ordered_but_never_semantically_rejected_by_script():
     titles=['Investment Analyst','Data Scientist','Senior Data Analyst','Data Analyst',
             'Analyst','Data…','Data Driven Marketing Analyst','Junior Data Analyst']
     jobs=[{'url':str(i),'title':t,'location':'New York, NY'}for i,t in enumerate(titles)]
     kept,info=filter_cards(jobs,{'goal':GOAL})
-    assert {j['title']for j in kept}=={'Data Analyst','Analyst','Data…','Junior Data Analyst'}
-    assert info['excluded_count']==4
-    assert all(x.get('quote') or x.get('actual') for x in info['excluded'])
+    assert {j['title']for j in kept}==set(titles)
+    assert info['excluded_count']==0 and not info['excluded']
     # Matching title but broad remote location stays unknown, never presumed NYC.
     remote={'url':'https://example.com/jobs/1','title':'Junior Data Analyst','location':'United States (Remote)'}
     assert filter_cards([remote],{'goal':GOAL})[0]==[remote]
@@ -56,7 +55,7 @@ def test_explicit_bounded_years_with_requirement_prefix(prefix):
 def test_unknown_location_uses_only_explicit_opening_evidence():
     job={'url':'https://example.com/jobs/1','title':'Junior Data Analyst','location':'United States (Remote)'}
     q=assess({'goal':GOAL},{**job,'description':'This role is based in New York.'})
-    assert q['qualified'] and q['checks']['location']['quote']=='This role is based in New York'
+    assert not q['qualified'] and q['review']['method']=='not_assessed'
     assert acceptance_constraints('analyst',{**job,'description':'This role is based in New York.'})['location']
     assert not acceptance_constraints('analyst',{**job,'description':'Our company has offices in New York.'})['location']
     assert not assess({'goal':GOAL},{**job,'description':'Our company has offices in New York.'})['qualified']
@@ -96,7 +95,8 @@ def test_opening_header_recovers_metadata_with_bound_source_offsets():
         assert raw[item['start']:item['end']]==item['quote']
     source=LinkedInMcpSource(lambda *a,**kw:result({**DETAIL,'sections':{'job_posting':raw}}))
     detail=source.details('4475055219')
-    assert assess({'goal':GOAL},{**detail,'title':detail['title']})['qualified']
+    assert detail['location']=='New York, NY'
+    assert assess({'goal':GOAL},{**detail,'title':detail['title']})['review']['method']=='not_assessed'
     assert not header('Example\nAbout the job\nOur office is in New York, NY\n'+raw)
     wrong=LinkedInMcpSource(lambda *a,**kw:result({**DETAIL,'url':'https://www.linkedin.com/jobs/view/9999999/',
                                                'sections':{'job_posting':raw}})).details('4475055219')
@@ -169,14 +169,13 @@ def test_query_plan_stops_on_auth_failure(career,monkeypatch):
     finally:manager.stop()
 
 
-def test_list_mismatch_cannot_bypass_filter_via_direct_detail(career,monkeypatch):
+def test_card_title_does_not_block_model_from_reading_actual_posting(career,monkeypatch):
     c=career;fake,manager=setup(c,monkeypatch,{'get_job_details':result(DETAIL)})
     try:
         ask(c,GOAL)
         c.repository.change(c.state['task_id'],search_candidates={DETAIL['url']:{'url':DETAIL['url'],'title':'Investment Analyst'}})
-        with pytest.raises(ValueError,match='card explicitly conflicts'):
-            execute(c,'read_job',url=DETAIL['url'])
-        assert not fake.calls
+        execute(c,'read_job',url=DETAIL['url'])
+        assert len(fake.calls)==1
     finally:manager.stop()
 
 

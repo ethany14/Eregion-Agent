@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 import pytest
-from eregion.domain.jev_fit.core import job_units,boilerplate
+from eregion.domain.jev_fit.core import job_units
 
 
 def source(identifier):
@@ -25,10 +25,9 @@ def test_real_caseguard_flat_certification_does_not_inherit_benefits_or_company_
     cert=next(u for u in units if 'Relevant AWS certifications' in u['text'])
     assert len(cert['text'])<=220
     assert 'Benefits' not in cert['text'] and 'About CaseGuard' not in cert['text']
-    assert not boilerplate(cert)
     benefit=next(u for u in units if 'Competitive Salary' in u['text'])
     company=next(u for u in units if 'CaseGuard is a software company' in u['text'])
-    assert boilerplate(benefit) and boilerplate(company)
+    assert benefit['section'] != cert['section'] and company['section'] != cert['section']
     assert all(text[u['start']:u['end']]==u['text'] for u in units)
 
 

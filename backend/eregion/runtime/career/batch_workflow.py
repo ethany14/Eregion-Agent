@@ -3,7 +3,7 @@ from eregion.runtime.tasks.loop import function, TEXT
 from eregion.runtime.core.engine import LoopStop
 from eregion.runtime.provider_usage import usage_scope, TaskProviderBudgetExceeded
 from .alerts import job_key
-from .qualification import record
+from .qualification import record_many
 
 TOOL=function('verify_and_score_jobs',
     'Process 1-20 observed posting URLs together: read/reuse, qualify against the user request, import qualified jobs, '
@@ -20,7 +20,7 @@ def run(harness,task_id,args,call_id):
               for j in initial.get(kind,{}).values() if j.get('url')}
     if any(key not in observed for key in identities):raise ValueError('Use URLs from observed search results or saved retrieved postings.')
     key=harness.key(initial,'verify_and_score_jobs',{'urls':sorted(identities)})
-    journal=dict(initial.get('batch_verifications',{}).get(key,{}));items=[];apps=[];changed=False
+    journal=dict(initial.get('batch_verifications',{}).get(key,{}));items=[];apps=[];changed=False;sequence=0
     def check():
         s=repo.get(task_id)
         if s['chat_revision']!=revision or s.get('pause_requested') or s['status'] in {'cancelled','completed'}:
@@ -29,11 +29,14 @@ def run(harness,task_id,args,call_id):
         check();journal.update(kwargs,items=list(items))
         repo.change(task_id,lambda s:{'batch_verifications':{**s.get('batch_verifications',{}),key:dict(journal)}})
     def invoke(name,arguments):
+        nonlocal sequence
+        sequence+=1
         check();save(pending=name)
-        value=harness.execute(task_id,name,arguments,call_id=f'{call_id}:{name}:{len(items)}')
+        value=harness.execute(task_id,name,arguments,call_id=f'{call_id}:{name}:{sequence}')
         check();return value
     try:
         with usage_scope(provider_guard=check):
+            ready=[];ready_items=[]
             for url in urls:
                 check();state=repo.get(task_id)
                 job=next((j for j in state.get('retrieved_jobs',{}).values() if j.get('url') and job_key(j['url'])==job_key(url)),None)
@@ -41,22 +44,33 @@ def run(harness,task_id,args,call_id):
                     new_read=job is None
                     job=job or invoke('read_job',{'url':url})
                     if job.get('error'):items.append({'url':url,'status':'read_failed','error':job['error']});continue
+                    from .candidate_health import validate_and_record
+                    validate_and_record(repo,task_id,job)
                     if new_read:changed=True
-                    check();qualification=record(repo,task_id,job)
-                    previous=state.get('candidate_qualifications',{}).get(job_key(url),{})
-                    if any(previous.get(k)!=qualification.get(k) for k in
-                           ('revision','body_hash','requested','checks','qualified')):changed=True
-                    item={'url':url,'title':job.get('title'),'qualification':qualification}
-                    if not qualification['qualified']:
-                        items.append({**item,'status':'needs_evidence'});save(pending=None);continue
-                    imported=invoke('import_job',{'url':url})
-                    if imported.get('error'):items.append({**item,'status':'import_failed','error':imported['error']});continue
-                    apps.append(imported['application_id'])
-                    if apps[-1] not in initial.get('jobs',[]):changed=True
-                    items.append({**item,'application_id':apps[-1],'status':'imported'})
+                    ready.append(job)
+                    item={'url':url,'title':job.get('title'),'status':'read'}
+                    items.append(item);ready_items.append(item)
                     save(pending=None)
                 except (ValueError,LookupError) as exc:
                     items.append({'url':url,'status':'source_error','error':str(exc)[:400]});save(pending=None)
+            check();save(pending='qualify_jobs')
+            qualifications=record_many(repo,task_id,ready)
+            for job,qualification,item in zip(ready,qualifications,ready_items):
+                check();url=job['url']
+                previous=initial.get('candidate_qualifications',{}).get(job_key(url),{})
+                if any(previous.get(k)!=qualification.get(k) for k in
+                       ('request_hash','body_hash','checks','qualified')):changed=True
+                item.update(qualification=qualification,status='needs_evidence')
+                if not qualification['qualified']:save(pending=None);continue
+                try:
+                    imported=invoke('import_job',{'url':url})
+                    if imported.get('error'):item.update(status='import_failed',error=imported['error']);continue
+                    apps.append(imported['application_id'])
+                    if apps[-1] not in initial.get('jobs',[]):changed=True
+                    item.update(application_id=apps[-1],status='imported')
+                    save(pending=None)
+                except (ValueError,LookupError) as exc:
+                    item.update(status='import_failed',error=str(exc)[:400]);save(pending=None)
             scored=[]
             for start in range(0,len(apps),8):
                 result=invoke('score_jobs',{'application_ids':apps[start:start+8]})

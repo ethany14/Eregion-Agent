@@ -28,7 +28,8 @@ def prepare(c,monkeypatch,jobs):
 ])
 def test_unknown_or_mismatch_never_qualifies(change,field,status):
     result=assess({'goal':GOAL},posting(1,**change))
-    assert not result['qualified'] and result['checks'][field]['status']==status
+    assert not result['qualified'] and result['checks'][field]['status']=='unknown'
+    assert result['review']['method']=='not_assessed'  # No scripted semantic verdict, including for familiar phrases.
 
 def test_batch_only_scores_qualified_and_reuses_persisted_results(career,monkeypatch):
     c=career;jobs=[posting(1),posting(2),posting(3,location='US Remote')]
@@ -62,6 +63,15 @@ def test_recommendation_rechecks_current_request(career,monkeypatch):
     result=execute(c,'recommend_job',application_id=identifier,reason='Good Python fit',caveats='')
     assert result['error_code']=='qualification_needed'
     assert not c.repository.get(c.state['task_id']).get('recommendations')
+
+
+def test_verified_redirect_keeps_the_batch_item_bound_to_its_source(career,monkeypatch):
+    c=career;source=posting('redirect');prepare(c,monkeypatch,[source])
+    resolved=posting('canonical')
+    monkeypatch.setattr(c.harness.discovery,'job',lambda _:deepcopy(resolved))
+    result=execute(c,'verify_and_score_jobs',urls=[source['url']])
+    assert result['qualified_count']==1 and len(result['jobs'])==1
+    assert result['jobs'][0]['url']==resolved['url']
 
 def test_batch_preflights_all_urls_before_io(career,monkeypatch):
     jobs=[posting(1)];reads=prepare(career,monkeypatch,jobs)
@@ -133,7 +143,7 @@ def test_deferred_survives_body_eviction_but_not_new_evidence():
 
 @pytest.mark.parametrize('apostrophe',["'",'\u2019'])
 def test_possessive_experience_range_is_same_requirement(apostrophe):
-    from eregion.runtime.career.search_policy import opening_level
+    from fake_search_qualification import opening_level
     from scripts.remaining_search_acceptance import constraints
     assert opening_level(f"1 - 2 years{apostrophe} Data Analysis experience")=='junior'
     assert constraints('analyst',posting(1,title='Data Analyst',
@@ -153,7 +163,7 @@ def test_batch_context_root_does_not_page_through_known_verdicts():
         read=archive.read(ref,offset)
         assert read['no_new_evidence'] and read['content']=='' and len(read['candidates'])==8
     source=archive.read(ref,path=['candidates','0','qualification','checks','location'])
-    assert 'US Remote' in source['content']
+    assert 'Semantic assessment required.' in source['content']
     assert archive.read(ref,historical=True)['content']
 
 

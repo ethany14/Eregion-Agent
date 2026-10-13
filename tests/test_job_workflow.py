@@ -66,9 +66,10 @@ def fake_analyze(schema, system_message, human_message):
             category="skill", verification_mode="resume_evidence", level="required")],
             responsibilities=[])
     if schema is SkillAssessment:
-        return SkillAssessment(matches=[SkillEvidence(requirement_id="none",
-            job_skill="python", requirement_level="required", match_status="matched",
-            resume_evidence=["Built Python APIs."], confidence=0.9)],
+        job = JobAnalysis.model_validate_json(human_message.split('\n\nJob analysis:\n')[1])
+        return SkillAssessment(matches=[SkillEvidence(requirement_id=r.requirement_id,
+            job_skill=r.canonical_name, requirement_level=r.level, match_status="matched",
+            resume_evidence=["Built Python APIs."], confidence=0.9) for r in job.requirements],
             explanation="Grounded match.", recommendations=[])
     raise AssertionError(f"Unexpected schema {schema}")
 

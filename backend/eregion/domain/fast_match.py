@@ -3,7 +3,7 @@ from eregion.runtime.fast_decisions import accepted, DecisionBatch, record_routi
 from eregion.domain.prompts import MATCH_PROMPT
 from eregion.domain.schemas import SkillAssessment, SkillEvidence
 
-MATCH_ROUTING_VERSION = 'adaptive-compact-v8-batch-retry-predicate-identity-partial'
+MATCH_ROUTING_VERSION = 'adaptive-compact-v9-model-owned-semantics'
 
 
 def matching_batches(resume, requirements, *, max_requirements=24, target_chars=40_000):
@@ -37,17 +37,7 @@ def assess_skills(resume, job, analyze, service):
     evidence = {f'e{i}': item.exact_text for i, item in enumerate(resume.evidence)}
     requirements = job.requirements
     for i, requirement in enumerate(requirements):
-        if requirement.verification_mode == 'user_confirmation':
-            decided[requirement.requirement_id] = SkillEvidence(
-                requirement_id=requirement.requirement_id, job_skill=requirement.canonical_name,
-                requirement_level=requirement.level, match_status='needs_confirmation',
-                resume_evidence=[], confidence=1, match_reason='Requires confirmation from the candidate.')
-        elif (quote := exact_skill_quote(requirement, resume.evidence)) is not None:
-            decided[requirement.requirement_id] = SkillEvidence(requirement_id=requirement.requirement_id,
-                job_skill=requirement.canonical_name, requirement_level=requirement.level,
-                match_status='matched', resume_evidence=[quote], confidence=1,
-                match_reason='The exact tool name occurs in one affirmative evidence quote.')
-        elif (requirement.category == 'skill'
+        if (requirement.category == 'skill'
               and requirement.verification_mode == 'resume_evidence'
               and requirement.minimum_years is None and 0 < len(evidence) <= 80):
             questions[f'r{i}'] = {'type': 'choice', 'instructions': {
@@ -169,22 +159,3 @@ def assess_skills(resume, job, analyze, service):
                    'The score uses the existing required/preferred weighting.')
     return SkillAssessment(matches=matches, explanation=explanation,
                            recommendations=list(dict.fromkeys(recommendations)))
-
-
-def exact_skill_quote(requirement, evidence):
-    """Only bare tool possession; advanced/compound/negated claims stay with models."""
-    import re
-    name = requirement.canonical_name.replace('_', ' ').strip()
-    if (requirement.category != 'skill' or requirement.verification_mode != 'resume_evidence'
-            or requirement.minimum_years is not None or not 1 <= len(name.split()) <= 3
-            or re.search(r'\b(experience|years?|advanced|expert|proficient)\b', name, re.I)):
-        return None
-    atom = re.sub(r'^(knowledge of|experience with|familiarity with|proficiency in)\s+', '',
-                  requirement.atomic_text.strip(), flags=re.I).strip(' .,:;')
-    if atom.casefold() != name.casefold():
-        return None
-    pattern = re.compile(r'(?<![\w+#])' + re.escape(name) + r'(?![\w+#])', re.I)
-    found = [e.exact_text for e in evidence if pattern.search(e.exact_text)]
-    if len(found) != 1 or re.search(r'\b(no|not|never|without|lack|lacking|learning|learn|planned|plan|exposure)\b', found[0], re.I):
-        return None
-    return found[0]

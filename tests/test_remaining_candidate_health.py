@@ -1,4 +1,4 @@
-"""The actual rejected talent-network body must not become new evidence per tool."""
+"""A model's source-bound dismissal survives views; the harness does not infer it."""
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -24,8 +24,11 @@ def rejected_page(c):
         'observation_id':'first','controls':[]}
     calls=[]
     c.harness._browsing=SimpleNamespace(inspect=lambda _:page,call=lambda *a,**k:calls.append((a,k)) or dict(page),close=lambda:None)
+    execute(c,'read_job',url=page['url'])
+    execute(c,'dismiss_candidate',url=page['url'],quote=actual['description'][:300],
+            reason='Model determined this is a talent network, not a current vacancy.')
     with pytest.raises(PostingRejected) as caught:execute(c,'read_job',url=page['url'])
-    assert caught.value.code=='not_current_vacancy'
+    assert caught.value.code=='model_source_decision'
     return page,calls,caught.value
 
 
@@ -70,7 +73,7 @@ def test_rejection_progress_is_shared_across_open_read_import(career):
         host.after_action({'name':name,'args':args,'id':str(uuid4())},outcome,turn)
         fingerprints.append(c.repository.get(c.state['task_id'])['history'][-1]['outcome_fingerprint'])
     state=c.repository.get(c.state['task_id'])
-    assert len(set(fingerprints))==1 and state['progress_guard']['count']==2
+    assert len(set(fingerprints))==1 and state['progress_guard']['count']==3
     assert len(calls)==1
 
 
@@ -86,8 +89,8 @@ def test_real_source_changes_or_new_user_turn_can_recheck_but_views_cannot(caree
         assert caught.value.repeated and len(calls)==1
     elif change=='new_turn':
         assert active_rejections(c.repository.get(c.state['task_id']))==[]
-        with pytest.raises(PostingRejected) as caught:execute(c,'read_job',url=page['url'])
-        assert not caught.value.repeated and len(calls)==2
+        assert execute(c,'read_job',url=page['url'])['description']
+        assert len(calls)==2  # A new turn needs a fresh model decision, never regex rejection.
     else:
         assert execute(c,'read_job',url=page['url'])['description'].endswith('DA-123.')
         assert not active_rejections(c.repository.get(c.state['task_id']))
@@ -111,6 +114,9 @@ def test_http_rejection_without_hash_allows_one_observation_not_infinite_progres
     job={**actual,'title':'Junior Data Analyst','company':'','location':'',
         'description':'Junior Data Analyst\n'+actual['description']}
     c.harness.discovery.job=lambda _:job
+    execute(c,'read_job',url=job['url'])
+    execute(c,'dismiss_candidate',url=job['url'],quote=actual['description'][:300],
+            reason='Model determined this is a talent network, not a current vacancy.')
     with pytest.raises(PostingRejected) as first:execute(c,'read_job',url=job['url'])
     record=active_rejections(c.repository.get(c.state['task_id']))[0]
     assert record['page_evidence_hash'] is None
@@ -125,7 +131,7 @@ def test_http_rejection_without_hash_allows_one_observation_not_infinite_progres
     assert probe.value.repeated and len(calls)==1
     assert active_rejections(c.repository.get(c.state['task_id']))[0]['page_evidence_hash']=='first-real-observation'
     host.after_action({'name':'read_job','args':{'url':job['url']},'id':str(uuid4())},probe.value.outcome(),turn)
-    assert c.repository.get(c.state['task_id'])['progress_guard']['count']==1
+    assert c.repository.get(c.state['task_id'])['progress_guard']['count']==2
     for name in ('browser_open','read_job','import_job'):
         with pytest.raises(PostingRejected) as repeat:execute(c,name,url=job['url'])
         assert repeat.value.repeated

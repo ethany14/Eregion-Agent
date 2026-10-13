@@ -22,6 +22,7 @@ changing configuration so active services use the new settings consistently.
 | `LLM_EXTRACTION_MODEL_ID` | Main model | Optional extraction/matching model. |
 | `LLM_AGENT_REASONING` | Unset | Reasoning override for agent/fast-purpose clients that use this setting. |
 | `LLM_EXTRACTION_REASONING` | Unset | Reasoning override for the extraction-purpose client. |
+| `LLM_REASONING_SEARCH_QUALIFICATION` | Extraction reasoning, otherwise `low` | Reasoning for batched semantic job qualification. Uses `LLM_EXTRACTION_MODEL_ID`, falling back to the main model. |
 
 The reasoning settings accept `none`, `minimal`, `low`, `medium`, or `high`.
 Only set them when the provider supports the corresponding request parameter.
@@ -89,8 +90,9 @@ requirements: each requirement weighs P(requirement) × (2 − P(preferred)) ×
 The result is always one number. Jev is deterministic for identical input, so
 repeated scoring returns the same or nearly the same value, and a `certainty`
 (0–100%) in the explanation shows how decisive the underlying answers were.
-Benefits, salary, company and EEO/legal text are classified locally and never scored;
-work-arrangement and eligibility sentences are kept as personal conditions.
+Jev decides which source spans are candidate requirements, which are optional,
+and which are context. Local code preserves source offsets and combines model
+probabilities; keyword lists and heading names do not override those decisions.
 Jev provider failures remain failures, with no silent fallback.
 Optionally, `TYPESAFE_FIT_RESOLVE_UNKNOWNS=true` sends requirements Jev was not
 decisive about to the main model (one structured request per job, verbatim-quote
@@ -344,7 +346,7 @@ It accepts one posting URL, including an observed candidate or a saved retrieved
 body indexed by that URL, plus the existing read/import optional fields. It calls
 the existing `read_job`, `import_job` (including posting qualification) and
 `score_job` handlers. It never recommends or applies; the model separately decides
-`recommend_job` using the score, qualification evidence and `opening_level`.
+`recommend_job` using the score and source-bound model qualification evidence.
 
 Task state records step intent, completed steps and failures. Restart reuses saved
 bodies, workspace source/snapshot identity and existing analysis caches. Failures
@@ -421,6 +423,16 @@ Default research uses public company-board APIs and an explicitly configured Lin
 
 Configure the existing MCP manager using an absolute MCP_CONFIG_PATH in the **backend process environment or project .env** (process values, including an explicitly empty value, take precedence). Copy `docs/examples/linkedin-mcp.json` and adjust executable/profile paths. Install pinned mcp-server-linkedin==4.27.0 in an isolated environment. Log in interactively once using its --login mode with the same --user-data-dir; never use a daily browser profile as that directory. Windows automatic session import may fail even when Chrome is logged in. The --chrome-path option can use an installed Chrome binary; it still uses the isolated profile. Normal server startup uses --no-auto-import, so it never imports another account silently.
 
-Only read-only search/detail tools are used by the career source. The existing manager owns startup/shutdown; the same AgentLoop owns decisions. Per-task MCP budget is 26 calls, each at most 120 seconds, counted before dispatch and persisted across restarts. Authentication/rate-limit/uncertain-timeout stops prevent automatic paid/browser retries for that source. Successful same-turn searches and JD reads are reused. New user requests refresh evidence without resetting the task-wide call budget. Restart a stopped source only after resolving its session issue; starting a new task gives a new task budget.
+Only read-only search/detail tools are used by the career source. The existing manager owns startup/shutdown; the same AgentLoop owns decisions. Per-task MCP budget is 26 calls for smaller searches and 50 for requests of at least 10 jobs, each at most 120 seconds, counted before dispatch and persisted across restarts. Authentication/rate-limit/uncertain-timeout stops prevent automatic paid/browser retries for that source. Successful same-turn searches and JD reads are reused. New user requests refresh evidence without resetting the task-wide call budget. Restart a stopped source only after resolving its session issue; starting a new task gives a new task budget.
 
 Search cards retain title and, when the observed layout is unambiguous, company/location. Missing fields stay unknown. Cards and provider filters do not establish eligibility; complete-JD validation and scoring remain required. Directory and MCP discovery currently run sequentially under one execution owner; concurrent source fetching is not enabled.
+
+## Model-owned job qualification and matching
+
+Search qualification interprets the original user request and captured posting text using a structured model response for role, location, seniority and current vacancy. It processes up to four postings per call, within a 48,000-character input bound, under the same execution owner's provider budget and cancellation guard. Missing evidence, invalid source quotations or unavailable model output remain unknown. The harness does not supply a fallback semantic verdict. Unchanged request/body/model signatures reuse the saved decision; a changed request or source invalidates it.
+
+Jev still classifies requirements and scores personal fit when enabled. Headings, benefits and other source spans reach the model; regex labels do not override its requirement/preference decisions. The main-model scoring route also extracts its requirement catalogue using a model; the obsolete `JOB_AGENT_MAIN_CATALOG` flag has no effect. Source identity, quotation validation, deduplication and score arithmetic remain deterministic. Invalid support or an absent model assessment produces unknown rather than a fabricated negative match.
+
+Qualification defaults to low reasoning on the extraction model (or main model when no extraction model is configured). `LLM_EXTRACTION_MODEL_ID`, `LLM_EXTRACTION_REASONING` and the explicit `LLM_REASONING_SEARCH_QUALIFICATION` override control this purpose. Model calls are metered separately from MCP and Treg source calls. The live batch test runs a separate blind semantic audit, capped at six provider attempts and 200,000 input tokens, after the execution budget. This audit receives original posting evidence rather than production labels; it is a second model pass, not human ground truth.
+
+See [the model-owned search handoff](diagnostics/model-owned-search-handoff-20261013.md) for completed checks and the still-pending 10–15-job live acceptance.

@@ -20,8 +20,8 @@ RULE += ('For multi-job requests prefer verify_and_score_jobs with 8-20 observed
          'it exposes strengths, gaps and known ineligibility. Read a precise match_report field only if a necessary '
          'fact is absent. You can issue decisions for multiple independent scored jobs in one response.\n')
 RULE += ('Large entry-level searches expand equivalent role queries automatically, preserving location and provider level filters. '
-         'Do not repeat that search with presentation-only changes. Card exclusions are not unknown qualifications. '
-         'The qualification review already scans the complete saved JD and gives exact requirement lines. '
+         'Do not repeat that search with presentation-only changes. Card ordering is advisory, not a qualification. '
+         'The qualification model already reviews the complete saved JD and gives verified source quotes. '
          'If it remains unknown, only new source evidence for the unresolved field helps; rereading the same JD does not. '
          'When sources and actionable candidates are exhausted, finish honestly with saved qualified recommendations and the shortfall.\n')
 FALLBACK = 'Use read_job, import_job, then score_job individually; inspect saved progress first.'
@@ -78,11 +78,13 @@ def run(harness, task_id, args, call_id):
         elif saved and 'read_job' not in completed:
             completed.append('read_job')
             save(pending_step=None, retrieved_job=saved)
-        if saved and harness.api_first():
+        if saved:
+            from .candidate_health import validate_and_record
+            validate_and_record(repo,task_id,saved)
             from .qualification import record as qualify
             qualification=qualify(repo,task_id,saved)
             issues=[c['reason'] for c in qualification['checks'].values() if c['status']!='met']
-            if issues:
+            if not qualification['qualified']:
                 from .posting_brief import with_brief
                 detail={'error':'Verify requested constraints before spending on fit scoring.',
                         'error_code':'qualification_needed','issues':issues,
@@ -106,9 +108,9 @@ def run(harness, task_id, args, call_id):
         result = step(current, {'application_id': imported['application_id']})
         if result.get('error'):
             return {**result, 'completed_steps': completed, 'failed_step': current}
-        from .search_policy import opening_level
+        from .qualification import assess
         result = {**result, 'completed_steps': completed,
-                  'opening_level': opening_level(result.get('description', ''))}
+                  'qualification':assess(repo.get(task_id),harness.job_summary(imported['application_id'],detail=True))}
         if (saved and imported['application_id'] in state.get('jobs', [])
                 and initial_analyses == repo.get(task_id).get('analyses', {})
                 and all(result.get(k) == before_score.get(k) for k in before_score if k != 'result_at')):

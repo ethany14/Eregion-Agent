@@ -43,6 +43,9 @@ def test_default_route_ten_to_fifteen(career, monkeypatch):
     assert config.servers[0].tool_allowlist == allowed
     manager = McpToolManager(config=config, registry=ToolRegistry())
     c = career
+    from eregion.runtime.career import qualification
+    from eregion.domain.search_qualification import judge
+    monkeypatch.setattr(qualification,'judge',judge)  # Explicit live opt-in replaces the fixture's scripted IO.
     c.runtime.mcp_manager = manager
     c.repository.change(c.state['task_id'], status='cancelled', pause_requested=True)
     c.applications.repository.save_candidate(
@@ -58,6 +61,7 @@ def test_default_route_ten_to_fifteen(career, monkeypatch):
         'head':subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
         'goal':GOAL, 'flags':FLAGS, 'minimum_qualified':10, 'target':15,
         'mcp_call_limit':50, 'deadline_seconds':900, 'synthetic_candidate':True,
+        'audit_budget':{'provider_attempts':6,'input_tokens':200000},
         'cost_usd':None, 'cost_note':'Provider billing unavailable; attempt and token caps enforced.'
     }, indent=2), encoding='utf-8')
     try:
@@ -65,7 +69,7 @@ def test_default_route_ten_to_fifteen(career, monkeypatch):
         assert 'mcp__linkedin__search_jobs' in manager.public_tool_names
         task = service.start(GOAL, str(uuid4()))
         try:
-            settle_live(service, task['run_id'], output, 'analyst', timeout=900)
+            settle_live(service, task['run_id'], output, 'analyst', timeout=900,semantic_review=True)
         except AssertionError:
             if not (output/'acceptance.json').exists():
                 raise

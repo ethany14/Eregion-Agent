@@ -292,6 +292,19 @@ class ScriptedModel:
 @pytest.fixture
 def replay(offline_guard, career, frozen_web, monkeypatch, request):
     c = career
+    # Replay the historical agent's over-inclusive judgment explicitly. These
+    # tests measure workflow/cost and preserve its failing acceptance outcome;
+    # they do not claim that these scripted labels are correct model semantics.
+    from eregion.runtime.career import qualification
+    from eregion.domain.search_qualification import SearchQualification, judge
+    def historical_judge(text, postings):
+        return SearchQualification.model_validate({'decisions':[
+            {'posting_id':j['posting_id'],**{field:{'status':'met','request_quote':text,
+                'reason':'Frozen historical model decision, intentionally over-inclusive.',
+                'evidence':[{'source':source,'quote':(j.get(source) or j['description'])[:1000]}]}
+                for field,source in [('role','title'),('location','location'),('seniority','description'),('vacancy','description')]}}
+            for j in postings]})
+    monkeypatch.setattr(qualification,'judge',judge if LIVE_MODEL else historical_judge)
     monkeypatch.setenv('TYPESAFE_ENABLED', 'false')
     monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG', 'local')
     c.repository.change(c.state['task_id'], status='cancelled', pause_requested=True)
@@ -299,7 +312,7 @@ def replay(offline_guard, career, frozen_web, monkeypatch, request):
         {'first_name': 'Synthetic', 'last_name': 'analyst', 'email': 'analyst@example.com'},
         resume=render_letter_pdf(APPLICANTS['analyst']), name='synthetic.pdf', extracted=True)
     scoring_calls = []
-    c.harness.analysis._fit_service = FitAnalysisService(main_handler(scoring_calls),
+    c.harness.analysis._fit_service = FitAnalysisService(main_handler(scoring_calls,allow_extraction=True),
         jev_enabled=False, cache_size=0, cache_namespace=lambda: 'b6-offline-scoring-v1')
     discovery = FrozenDiscovery(frozen_web, blocked_unknown=(
         request.node.name == 'test_b6_frozen_web_with_configured_model' and LIVE_MODEL))
@@ -368,8 +381,7 @@ def test_b6_r1_unverified_associate_cannot_supply_second_qualified_job(replay):
     assert result.state['status'] == 'completed', result.state['history']
     assert len(result.state['recommendations']) == 2
     associate = next(j for j in result.state['recommendations'] if j['title'] == 'Associate Data Analyst')
-    assert 'Level unverified' in associate['seniority_warning']['message']
-    assert associate['caveats'].startswith('Level unverified')
+    assert not associate.get('seniority_warning')  # No runtime regex override.
     assert result.acceptance['qualified_count'] == 1
     assert result.acceptance['failures'] == ['fewer_than_two_verified_scored_qualifying_recommendations']
     checked = {j['title']: j['checks'] for j in result.acceptance['jobs']}
@@ -377,8 +389,8 @@ def test_b6_r1_unverified_associate_cannot_supply_second_qualified_job(replay):
     assert checked['Associate Data Analyst']['seniority'] is False
     assert result.scoring_calls and result.summary['provider_usage']['calls'] == 0
     assert result.model.calls == 20
-    assert any(h['result'].get('rejection_code') == 'not_current_vacancy'
-               for h in result.state['history'])
+    assert not any(h['result'].get('rejection_code') == 'not_current_vacancy'
+                   for h in result.state['history'])  # No keyword-based vacancy decision on read.
     assert [s['tool'] for s in result.model.emitted] == [
         'browser_open', 'search_jobs', 'read_job', 'browser_open', 'browser_read',
         'read_job', 'import_job', 'score_job', 'recommend_job', 'browser_read',
@@ -398,7 +410,7 @@ def test_b6_r2_seen_public_searches_trigger_board_guidance_and_early_stop(replay
     assert not result.state.get('recommendations') and not result.state['jobs']
     assert searches[-1]['arguments']['limit'] == 2
     assert all(h['result']['no_new_evidence'] for h in searches[1:])
-    assert result.state['candidate_rejections']
+    assert not result.state['candidate_rejections']  # Read alone makes no semantic rejection.
 
 
 def test_b6_r3_recorded_boards_use_role_terms_not_a_shared_word(replay, frozen_web):

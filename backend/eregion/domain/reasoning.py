@@ -18,6 +18,7 @@ SCHEMA_PURPOSES = {
     'ResumeExtraction': 'extraction', 'ReferencedJobExtraction': 'extraction',
     'ResumeAnalysis': 'extraction', 'JobAnalysis': 'extraction',
     'UnknownResolution': 'jev_fit_resolver',
+    'SearchQualification': 'search_qualification',
 }
 
 

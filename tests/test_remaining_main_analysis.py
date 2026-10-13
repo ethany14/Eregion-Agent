@@ -11,12 +11,12 @@ from eregion.domain.job_extraction import extract_job, numbered_sentences, JobEx
 
 @pytest.mark.parametrize('text',['','   ','We are an equal opportunity employer.',
     'Benefits: Health insurance and paid time off.','Requirements:','Senior Backend Engineer'])
-def test_empty_background_heading_or_title_is_never_assigned_as_qualification(monkeypatch,text):
+def test_only_empty_input_skips_model_all_other_text_is_classified_by_model(monkeypatch,text):
     calls=[]
     monkeypatch.setattr('eregion.domain.model.invoke_structured',lambda *a: calls.append(a) or ReferencedJobExtraction(
         title=None,summary='',statements=[],responsibility_sentence_ids=[]))
     result=extract_job(object(),text)
-    assert not calls and not result.requirements
+    assert bool(calls)==bool(text.strip()) and not result.requirements
 
 
 def test_main_source_map_uses_actual_scoped_units_and_keeps_conditions(monkeypatch):
@@ -30,7 +30,7 @@ def test_main_source_map_uses_actual_scoped_units_and_keeps_conditions(monkeypat
     source=calls[0]['source_sentences']
     assert any(s=='You have communication skills;' for s in source.values())
     assert any('execute gap analysis' in s for s in source.values())
-    assert not any('Health insurance' in s for s in source.values())
+    assert any('Health insurance' in s for s in source.values())
     assert any('authorized to work in the U.S.' in s for s in source.values())
     assert any('Relocation is not offered.' in s for s in source.values())
     assert all(s in text for s in source.values())

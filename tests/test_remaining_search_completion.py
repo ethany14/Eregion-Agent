@@ -151,7 +151,8 @@ def test_scored_qualification_quote_and_unresolved_recommendation_decision_reach
     job=execute(c,'import_job',url=URL)
     execute(c,'score_job',application_id=job['application_id'])
     state=c.repository.get(c.state['task_id'])
-    assert state['scored_job_evidence'][job['application_id']]['qualification_evidence'][0]['quote'].startswith('0-2 years')
+    evidence=state['scored_job_evidence'][job['application_id']]['qualification_evidence']
+    assert any(e['field']=='seniority' and '0-2 years' in e['quote'] for e in evidence)
     host=host_for(c);turn=host.observe()
     messages,_=prepare_request(turn.prompt,turn.tools,ConversationWindow(),turn.snapshot,ContextArchive(),max_chars=48000)
     snapshot=json.loads(next(m.content for m in reversed(messages) if isinstance(m,HumanMessage)))

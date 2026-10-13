@@ -74,7 +74,7 @@ IDs, grouping IDs and the legacy original_text copy are assigned by the applicat
 
 def extraction_signature():
     from pathlib import Path
-    # Changes to shared segmentation/boilerplate or local constraint handling
+    # Changes to shared segmentation or source normalization
     # invalidate main-model results even when provider prompts are unchanged.
     implementation = [hashlib.sha256(path.read_bytes()).hexdigest() for path in
         (Path(__file__), Path(__file__).parent/'jev_fit'/'core.py', Path(__file__).parent/'batch_retry.py',
@@ -106,32 +106,6 @@ def numbered_sentences(text):
     return {f's{i}': unit['text'] for i, unit in enumerate(job_units(text))}
 
 
-def context_only(unit):
-    from eregion.domain.jev_fit.core import boilerplate
-    text = unit['text'].strip()
-    heading = text.rstrip(':').strip().casefold() == (unit.get('section') or '').strip().casefold()
-    # Only a compact role-name line, not a qualification mentioning the role.
-    title = (len(text.split()) <= 12 and re.fullmatch(
-        r'(?:(?:junior|senior|staff|principal|lead|entry[- ]level|associate|backend|frontend|full[- ]stack|'
-        r'software|data|python|product|ux|ui|business|marketing|sales|cloud|devops|security|machine learning)\s+)*'
-        r'(?:engineer|developer|analyst|designer|manager|scientist|architect)[.!]?', text, re.I))
-    return bool(heading or title or boilerplate(unit))
-
-def context_sentence_ids(text, sentences):
-    """Sentences inside benefits/salary/company/EEO sections or with legal boilerplate."""
-    from eregion.domain.jev_fit.core import boilerplate, job_units
-    units, found, cursor = job_units(text), set(), 0
-    for key, sentence in sentences.items():
-        position = text.find(sentence, cursor)
-        if position < 0:
-            continue
-        cursor = position + len(sentence)
-        section = next((u.get('section') for u in reversed(units) if u['start'] <= position), None)
-        if context_only({'text': sentence, 'section': section}):
-            found.add(key)
-    return found
-
-
 REFERENCE_JOB_PROMPT = JOB_EXTRACTION_PROMPT.replace(
     'Return one statement per source statement, copying its complete source_text verbatim ONCE.',
     'The source is a numbered sentence map. Return each source sentence_id instead of copying its text. Return responsibility_sentence_ids for responsibilities. Use only the supplied IDs.')
@@ -149,16 +123,11 @@ def extract_job(model, text):
     from eregion.domain.model import invoke_structured
     from eregion.domain.batch_retry import retry_batch
     sentences = numbered_sentences(text)
-    context = context_sentence_ids(text, sentences)
-    # Heading/role context remains visible; boilerplate never becomes a target,
-    # including when every source unit is background. No count-based truncation.
-    ids = [key for key in sentences if key not in context]
+    # Every source span reaches the model, including headings, benefits and
+    # company text. The model decides which spans contain candidate requirements.
+    ids = list(sentences)
     if not ids:
         return JobAnalysis(title=None, summary='', requirements=[], responsibilities=[])
-    from eregion.domain.jev_fit.core import job_units, boilerplate
-    units = job_units(text)
-    sentences = {key: value for (key, value), unit in zip(sentences.items(), units)
-                 if not boilerplate(unit)}
     groups = [ids[i:i + 8] for i in range(0, len(ids), 8)] if len(ids) > 12 else [ids]
     def extract(targets):
         payload = {'source_sentences': sentences, 'extract_sentence_ids': targets}

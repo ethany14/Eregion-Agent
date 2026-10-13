@@ -239,7 +239,8 @@ def create_model(
     """Create the configured chat model with environment values taking priority."""
     environment = os.environ if environ is None else environ
     settings = {**dotenv_values(env_path), **environment}
-    key = {'fast': 'LLM_FAST_MODEL_ID', 'extraction': 'LLM_EXTRACTION_MODEL_ID'}.get(purpose)
+    key = {'fast': 'LLM_FAST_MODEL_ID', 'extraction': 'LLM_EXTRACTION_MODEL_ID',
+           'search_qualification': 'LLM_EXTRACTION_MODEL_ID'}.get(purpose)
     model_id = (optional_setting(settings, key) if key else None) or optional_setting(settings, "LLM_MODEL_ID")
     if not model_id:
         raise ValueError("Set LLM_MODEL_ID in the environment or project's .env file.")
@@ -273,8 +274,11 @@ def create_model(
         if retries < 0:
             raise ValueError("LLM_MAX_RETRIES must be a non-negative integer.")
         options["max_retries"] = retries
-    reasoning_key = 'LLM_EXTRACTION_REASONING' if purpose == 'extraction' else 'LLM_AGENT_REASONING' if purpose in {'agent', 'fast'} else None
+    reasoning_key = 'LLM_EXTRACTION_REASONING' if purpose in {'extraction', 'search_qualification'} else 'LLM_AGENT_REASONING' if purpose in {'agent', 'fast'} else None
     reasoning = optional_setting(settings, reasoning_key) if reasoning_key else None
+    # Bounded reading task; explicit user configuration always takes precedence.
+    if purpose == 'search_qualification' and reasoning is None:
+        reasoning = 'low'
     legacy_reasoning = reasoning
     reasoning = resolve(settings, purpose, reasoning)
     if reasoning:
