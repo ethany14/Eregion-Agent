@@ -1,7 +1,7 @@
-from job_agent.domain import calculate_score_breakdown
-from custom_agent.handlers import JobAgentStepHandler
-from custom_agent.state import AgentState, Step
-from job_agent.schemas import (
+from eregion.domain.domain import calculate_score_breakdown
+from eregion.domain.workflow.handlers import JobAgentStepHandler
+from eregion.domain.workflow.state import AgentState, Step
+from eregion.domain.schemas import (
     JobAnalysis,
     JobRequirement,
     ResumeAnalysis,

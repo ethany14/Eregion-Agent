@@ -5,7 +5,7 @@ from threading import Event, Barrier
 import httpx
 import pytest
 
-from agent_runtime.fast_decisions import FastDecisions
+from eregion.runtime.fast_decisions import FastDecisions
 
 QUESTIONS = {'q':{'type':'choice', 'criteria':{'yes':'Supported', 'no':'Unsupported'}}}
 

@@ -6,9 +6,9 @@ import os
 
 import pytest
 
-from agent_runtime.career.discovery import JobDiscovery
-from job_agent.jev_fit.service import JevFitService
-from job_agent.jev_fit.settings import Settings
+from eregion.runtime.career.discovery import JobDiscovery
+from eregion.domain.jev_fit.service import JevFitService
+from eregion.domain.jev_fit.settings import Settings
 from scripts.e2e_repair_evaluation import APPLICANTS
 
 pytestmark=pytest.mark.skipif(os.getenv('JOB_AGENT_LIVE_REMAINING')!='1',reason='Explicit paid Jev check')

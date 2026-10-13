@@ -1,0 +1,258 @@
+{
+  "historical_attempts": [
+    {
+      "call_id": "6ac478bd-9713-4b12-9a83-995702e971cc",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 6309,
+      "output_tokens": 130,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 1.766
+    },
+    {
+      "call_id": "69cf2d0c-e753-4d49-a035-2c84d30d9608",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 6892,
+      "output_tokens": 264,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 2.999
+    },
+    {
+      "call_id": "58deaf80-c80d-4648-912d-2f3c26193d59",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 11362,
+      "output_tokens": 221,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 3.733
+    },
+    {
+      "call_id": "139a0601-f8e3-46d3-afee-2b1678f7fcbb",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 11626,
+      "output_tokens": 377,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 3.648
+    },
+    {
+      "call_id": "760bf4be-d622-4090-8e49-d0cb36220952",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 11606,
+      "output_tokens": 269,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 4.603
+    },
+    {
+      "call_id": "b3d5732a-ac3e-4150-a6d2-cb08203624d7",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 11327,
+      "output_tokens": 359,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 4.47
+    },
+    {
+      "call_id": "e33aeafa-9a6c-42c6-b350-c30ed8bd0a73",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 11555,
+      "output_tokens": 262,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 3.561
+    },
+    {
+      "call_id": "a0335c76-fc6b-4f84-96b0-51230d671c26",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 12519,
+      "output_tokens": 392,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 4.842
+    },
+    {
+      "call_id": "2c237e6a-2c5b-421d-9ac2-1a9c9a63ed49",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 12396,
+      "output_tokens": 231,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 3.781
+    },
+    {
+      "call_id": "f43acf89-3569-41f8-950f-c8718df18837",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 12382,
+      "output_tokens": 453,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 4.606
+    },
+    {
+      "call_id": "f3842197-3204-4172-9cf1-660b0e60fa22",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 12434,
+      "output_tokens": 270,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 2.659
+    },
+    {
+      "call_id": "41c650ec-78e1-435d-93c7-a8f4d35f6508",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 12442,
+      "output_tokens": 302,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 3.258
+    },
+    {
+      "call_id": "c8cab723-8777-4046-ae92-d49ad30e7d24",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 12414,
+      "output_tokens": 632,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 6.994
+    },
+    {
+      "call_id": "5f209026-b74c-4d4e-80dd-858e21669b52",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 13511,
+      "output_tokens": 430,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 3.091
+    },
+    {
+      "call_id": "113d1317-46e8-4bcb-9be1-4e6903107440",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 13420,
+      "output_tokens": 103,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 1.523
+    },
+    {
+      "call_id": "98b46459-c40a-4e59-8ce6-a2b689da07fb",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 13620,
+      "output_tokens": 617,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 5.668
+    },
+    {
+      "call_id": "940b5833-6050-444a-a22a-a187afe5ab44",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 13261,
+      "output_tokens": 408,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 4.248
+    },
+    {
+      "call_id": "13f0a077-f068-4f2b-8e0b-5df21e2753e0",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 13385,
+      "output_tokens": 582,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 4.955
+    },
+    {
+      "call_id": "807dff69-41d7-4695-b5a8-d8eed33afda1",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 13302,
+      "output_tokens": 366,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 2.377
+    },
+    {
+      "call_id": "cd90c459-5e81-4d21-8bec-a3ad009e4879",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 13222,
+      "output_tokens": 615,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 4.616
+    },
+    {
+      "call_id": "4e647f94-a599-4dbf-b26d-621577fcbfac",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 13254,
+      "output_tokens": 580,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 5.96
+    },
+    {
+      "call_id": "f983c102-0131-49bd-8d2e-68fef056b9c1",
+      "status": "completed",
+      "source": "provider",
+      "purpose": "agent",
+      "input_tokens": 12426,
+      "output_tokens": 754,
+      "reserved_input_tokens": null,
+      "error_type": null,
+      "duration_seconds": 6.065
+    }
+  ],
+  "model_config": {
+    "model_present": true,
+    "credential_present": true,
+    "base_url_present": true,
+    "max_retries": "default",
+    "timeout": "120"
+  },
+  "transport": {
+    "inference_requests": 0,
+    "tcp": "passed",
+    "tls": "passed"
+  }
+}

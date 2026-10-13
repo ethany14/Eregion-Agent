@@ -1,0 +1,16 @@
+{
+  "lane": "L1-B0",
+  "node": "tests/test_b6_offline_replay.py::test_b6_frozen_web_with_configured_model",
+  "flags": {
+    "JOB_AGENT_ANALYSIS_WARMUP": "0",
+    "JOB_AGENT_TREG_ENABLED": "0",
+    "JOB_AGENT_TREG_CRAWL4AI_SCRAPE_ENABLED": "0",
+    "JOB_AGENT_JOB_API_FIRST": "0",
+    "JOB_AGENT_OPT_HISTORY_POLICY": "current",
+    "JOB_AGENT_OPT_VERIFY_AND_SCORE": "0",
+    "JOB_AGENT_B6_REPLAY_LIVE_MODEL": "1",
+    "JOB_AGENT_TASK_MAX_INPUT_TOKENS": "400000",
+    "JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS": "60"
+  },
+  "snapshot": "57c63ab4b9812ddcb0d9bc8e9f3760d1539f8a45"
+}

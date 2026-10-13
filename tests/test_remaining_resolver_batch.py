@@ -8,7 +8,7 @@ import httpx
 import pytest
 from copy import deepcopy
 
-from job_agent.jev_fit.resolve import DecisionStore, UnknownDecision, UnknownResolution, resolve_unknowns_many
+from eregion.domain.jev_fit.resolve import DecisionStore, UnknownDecision, UnknownResolution, resolve_unknowns_many
 from test_e2e_followups import EVIDENCE, raw_with_unknowns
 from test_career_flow import career
 from remaining_batch_contract import resolver_coverage
@@ -126,15 +126,15 @@ def test_offline_eight_job_live_contract_checks_primary_aliases_and_evidence(tmp
 
 
 def test_production_score_jobs_colliding_ids_one_resolver_call_and_restart_cache(career,tmp_path,monkeypatch):
-    from api.db import create_database
-    from api.services.fit_analysis_service import FitAnalysisService
-    from agent_runtime.auto_apply.loop import ApplicationLoop
-    from agent_runtime.auto_apply.repository import ApplyRepository
-    from agent_runtime.career.harness import CareerHarness
-    from agent_runtime.career.repository import TaskRepository
-    from agent_runtime.evidence.repository import CareerEvidenceRepository
-    from agent_runtime.workspace.repository import JobWorkspaceRepository
-    from job_agent.jev_fit.settings import Settings
+    from eregion.api.db import create_database
+    from eregion.api.services.fit_analysis_service import FitAnalysisService
+    from eregion.runtime.auto_apply.loop import ApplicationLoop
+    from eregion.runtime.auto_apply.repository import ApplyRepository
+    from eregion.runtime.career.harness import CareerHarness
+    from eregion.runtime.career.repository import TaskRepository
+    from eregion.runtime.evidence.repository import CareerEvidenceRepository
+    from eregion.runtime.workspace.repository import JobWorkspaceRepository
+    from eregion.domain.jev_fit.settings import Settings
     from test_auto_apply import FakeBrowser
     from test_jev_fit_production import JevEndpoint, NoMainModel
 
@@ -150,8 +150,8 @@ def test_production_score_jobs_colliding_ids_one_resolver_call_and_restart_cache
             status='matched' if text=='Python' else 'missing',
             evidence_quote='Built Python APIs.' if text=='Python' else None,
             reason='Exact Python evidence; no supplied Rust evidence.') for rid,text in rows])
-    monkeypatch.setattr('job_agent.model.invoke_structured',invoke)
-    monkeypatch.setattr('job_agent.model.shared_model',lambda **_:object())
+    monkeypatch.setattr('eregion.domain.model.invoke_structured',invoke)
+    monkeypatch.setattr('eregion.domain.model.shared_model',lambda **_:object())
     config=replace(Settings(key='test-only',cache_path=tmp_path/'production-decisions.sqlite3'),resolve_unknowns=True)
     captures=[]
     def fit():
@@ -210,9 +210,9 @@ def test_production_score_jobs_colliding_ids_one_resolver_call_and_restart_cache
 
 def test_offline_eight_job_production_uses_the_exact_live_acceptance_contract(career,tmp_path,monkeypatch):
     """Same workload, entrance, restart and assertions; provider IO is synthetic."""
-    from api.services import fit_analysis_service as fit_module
-    from job_agent.jev_fit.settings import Settings
-    from agent_runtime.provider_usage import provider_call, usage_scope
+    from eregion.api.services import fit_analysis_service as fit_module
+    from eregion.domain.jev_fit.settings import Settings
+    from eregion.runtime.provider_usage import provider_call, usage_scope
     from test_jev_fit_production import JevEndpoint, NoMainModel
     from test_remaining_live_batch import test_eight_job_production_cold_resolver_and_persistent_warm as run
     real_fit=fit_module.FitAnalysisService
@@ -229,7 +229,7 @@ def test_offline_eight_job_production_uses_the_exact_live_acceptance_contract(ca
     monkeypatch.setattr(fit_module,'FitAnalysisService',lambda **kwargs:real_fit(
         NoMainModel(),**kwargs,jev_transport=httpx.MockTransport(transport)))
     monkeypatch.setattr(Settings,'load',lambda **kwargs:Settings(key='test-only',**kwargs))
-    monkeypatch.setattr('job_agent.model.shared_model',lambda **kwargs:object())
+    monkeypatch.setattr('eregion.domain.model.shared_model',lambda **kwargs:object())
     def invoke(model,schema,system,human):
         rows=re.findall(r'^- (\S+) \[(\w+)\]:',human,re.M)
         # All original job prefixes must survive through alias metadata even
@@ -241,7 +241,7 @@ def test_offline_eight_job_production_uses_the_exact_live_acceptance_contract(ca
                 return UnknownResolution(decisions=[UnknownDecision(requirement_id=rid,
                     is_candidate_requirement=True,level=level,personal_condition=False,
                     status='missing',reason='Synthetic non-supporting verdict.') for rid,level in rows])
-    monkeypatch.setattr('job_agent.model.invoke_structured',invoke)
+    monkeypatch.setattr('eregion.domain.model.invoke_structured',invoke)
     run(career,tmp_path,monkeypatch)
     path=tmp_path/'eight-production-cold-warm.json'
     record=json.loads(path.read_text(encoding='utf-8'))

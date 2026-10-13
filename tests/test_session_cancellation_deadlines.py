@@ -8,7 +8,7 @@ from alembic.config import Config
 from pydantic import BaseModel
 from sqlalchemy import inspect
 
-from agent_runtime import (
+from eregion.runtime import (
     AgentMessage,
     NormalizedToolCall,
     TokenUsage,
@@ -23,7 +23,7 @@ from agent_runtime import (
     ToolRiskLevel,
     ToolSideEffect,
 )
-from agent_runtime.sessions import (
+from eregion.runtime.sessions import (
     FakeClock,
     InvalidSessionTransitionError,
     SessionClaimRepository,
@@ -36,8 +36,8 @@ from agent_runtime.sessions import (
     SessionState,
     SessionStatus,
 )
-from agent_runtime.tools.loop import ToolCallingLoop
-from api.db import create_database
+from eregion.runtime.tools.loop import ToolCallingLoop
+from eregion.api.db import create_database
 from session_paths import session_decision_path  # noqa: F401 (both decision paths)
 
 

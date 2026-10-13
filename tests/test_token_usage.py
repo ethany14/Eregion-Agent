@@ -9,13 +9,13 @@ import pytest
 from langchain_core.messages import AIMessage
 from pydantic import BaseModel
 
-from api.db import create_database, upgrade_database
-from agent_runtime.provider_usage import UsageLedger, ProviderUsageRow, provider_call, usage_scope
-from agent_runtime.loop_context import ConversationWindow
-from agent_runtime.loop_model import ModelRequests, ModelInterrupted
-from agent_runtime.request_context import ContextArchive, READ_CONTEXT, prepare_request
-from agent_runtime.semantics import SemanticDecisions, ClaimDecisions
-from job_agent.model import ProviderCompatibleChatOpenAI, invoke_structured
+from eregion.api.db import create_database, upgrade_database
+from eregion.runtime.provider_usage import UsageLedger, ProviderUsageRow, provider_call, usage_scope
+from eregion.runtime.core.context import ConversationWindow
+from eregion.runtime.core.model import ModelRequests, ModelInterrupted
+from eregion.runtime.request_context import ContextArchive, READ_CONTEXT, prepare_request
+from eregion.runtime.semantics import SemanticDecisions, ClaimDecisions
+from eregion.domain.model import ProviderCompatibleChatOpenAI, invoke_structured
 
 
 @pytest.fixture
@@ -170,7 +170,7 @@ def test_claims_share_posting_once_without_cross_job_evidence_leak():
 
 
 def test_jev_is_counted_once_and_cache_hits_do_not_add_provider_calls(ledger):
-    from agent_runtime.fast_decisions import FastDecisions
+    from eregion.runtime.fast_decisions import FastDecisions
     def handle(request):
         return httpx.Response(200, json={'answers': {'q': {'type': 'choice', 'choice': 'yes', 'confidence': 1,
             'probabilities': {'yes': 1, 'no': 0}}}, 'usage': {'input_tokens': 42, 'output_tokens': 1}})
@@ -187,8 +187,8 @@ def test_jev_is_counted_once_and_cache_hits_do_not_add_provider_calls(ledger):
 
 def test_kernel_reads_archived_result_without_dispatching_a_domain_action(tmp_path):
     from test_shared_agent_loop import Harness, Model, call, settled
-    from agent_runtime.career.repository import TaskRepository
-    from agent_runtime.task_loop import TaskLoop
+    from eregion.runtime.career.repository import TaskRepository
+    from eregion.runtime.tasks.loop import TaskLoop
     from langchain_core.messages import ToolMessage
     db = create_database('sqlite:///' + (tmp_path / 'kernel.db').as_posix(), create_schema_for_tests=True)
     repo, harness = TaskRepository(db.session_factory), Harness()
@@ -214,7 +214,7 @@ def test_kernel_reads_archived_result_without_dispatching_a_domain_action(tmp_pa
 
 
 def test_context_read_pages_are_not_recursively_archived():
-    from agent_runtime.request_context import compact_snapshot
+    from eregion.runtime.request_context import compact_snapshot
     archive = ContextArchive()
     reference = archive.reference({'evidence': 'quoted source ' * 1500})['context_ref']
     page = archive.read(reference)

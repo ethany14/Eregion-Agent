@@ -37,7 +37,7 @@ Gaps added in `tests/test_r6_api_first_sources.py` (`b96d78b`, `ab81067`):
 
 ## Run-1 (`111218a`): FAILED
 
-Evidence: [`run-1/`](../benchmarks/api-first-b6-20261012/run-1/) (`invocation.json` with HEAD and flags, `summary.json`, `transcript.json`, `acceptance.json`, `treg-ledger.json`) plus [`run-1.xml`](../benchmarks/api-first-b6-20261012/run-1.xml) / [`run-1.log`](../benchmarks/api-first-b6-20261012/run-1.log).
+Evidence: [`run-1/`](../benchmarks/api-first-b6-20261012/run-1) (`invocation.json` with HEAD and flags, `summary.json`, `transcript.json`, `acceptance.json`, `treg-ledger.json`) plus [`run-1.xml`](../benchmarks/api-first-b6-20261012/run-1.xml) / [`run-1.log`](../benchmarks/api-first-b6-20261012/run-1.log).
 
 | | |
 |---|---|
@@ -61,7 +61,7 @@ Offline after the fixes: source suites 212 passed / 1 skipped; directory / P3 / 
 
 ## Run-2 (`afa9b1f`, Treg attempts capped at the remaining 3): FAILED
 
-Evidence: [`run-2/`](../benchmarks/api-first-b6-20261012/run-2/), [`run-2.xml`](../benchmarks/api-first-b6-20261012/run-2.xml), [`run-2.log`](../benchmarks/api-first-b6-20261012/run-2.log).
+Evidence: [`run-2/`](../benchmarks/api-first-b6-20261012/run-2), [`run-2.xml`](../benchmarks/api-first-b6-20261012/run-2.xml), [`run-2.log`](../benchmarks/api-first-b6-20261012/run-2.log).
 
 | | |
 |---|---|

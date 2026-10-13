@@ -6,8 +6,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from api.services.fit_analysis_service import FitAnalysisService
-from job_agent.requirement_catalog import FrozenRequirementCatalog
+from eregion.api.services.fit_analysis_service import FitAnalysisService
+from eregion.domain.requirement_catalog import FrozenRequirementCatalog
 from test_remaining_catalog_identity import job, BODY
 from test_jev_fit_production import NoMainModel
 

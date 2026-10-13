@@ -17,21 +17,21 @@ pytestmark=pytest.mark.skipif(os.getenv('JOB_AGENT_LIVE_BATCH')!='1',reason='Exp
 
 
 def test_eight_job_production_cold_resolver_and_persistent_warm(career,tmp_path,monkeypatch):
-    from api.db import create_database
-    from api.services.fit_analysis_service import FitAnalysisService
-    from agent_runtime.auto_apply.loop import ApplicationLoop
-    from agent_runtime.auto_apply.repository import ApplyRepository
-    from agent_runtime.career.harness import CareerHarness
-    from agent_runtime.career.repository import TaskRepository
-    from agent_runtime.evidence.repository import CareerEvidenceRepository
-    from agent_runtime.workspace.repository import JobWorkspaceRepository
-    from agent_runtime.provider_usage import UsageLedger, usage_scope
-    from job_agent.jev_fit.settings import Settings
-    from job_agent.pdf_rendering import render_letter_pdf
+    from eregion.api.db import create_database
+    from eregion.api.services.fit_analysis_service import FitAnalysisService
+    from eregion.runtime.auto_apply.loop import ApplicationLoop
+    from eregion.runtime.auto_apply.repository import ApplyRepository
+    from eregion.runtime.career.harness import CareerHarness
+    from eregion.runtime.career.repository import TaskRepository
+    from eregion.runtime.evidence.repository import CareerEvidenceRepository
+    from eregion.runtime.workspace.repository import JobWorkspaceRepository
+    from eregion.runtime.provider_usage import UsageLedger, usage_scope
+    from eregion.domain.jev_fit.settings import Settings
+    from eregion.domain.pdf_rendering import render_letter_pdf
     from scripts.e2e_repair_evaluation import APPLICANTS
     from test_auto_apply import FakeBrowser
-    import job_agent.model as model
-    import job_agent.jev_fit.resolve as resolver
+    import eregion.domain.model as model
+    import eregion.domain.jev_fit.resolve as resolver
 
     c=career
     c.applications.repository.save_candidate({'first_name':'Synthetic','last_name':'Batch','email':'batch@example.com'},

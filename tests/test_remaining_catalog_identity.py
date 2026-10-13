@@ -2,7 +2,7 @@
 import pytest
 
 from evals.audit_fit_catalog import freeze_catalog, compare_catalog
-from job_agent.schemas import JobAnalysis
+from eregion.domain.schemas import JobAnalysis
 
 BODY='Requires Python. Requires Rust.'
 

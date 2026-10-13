@@ -1,0 +1,16 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+______ test_search_public_board_shapes_and_private_redirect_are_checked _______
+tests\test_career_flow.py:398: in test_search_public_board_shapes_and_private_redirect_are_checked
+    assert len(results['jobs'])==2 and results['errors']==[]
+E   AssertionError: assert (1 == 2)
+E    +  where 1 = len([{'url': 'https://job-boards.greenhouse.io/example/jobs/123', 'title': 'Python Engineer', 'company': 'example', 'location': 'Remote'}])
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:53
+  C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\starlette\testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_career_flow.py::test_search_public_board_shapes_and_private_redirect_are_checked
+1 failed, 1 warning in 4.49s

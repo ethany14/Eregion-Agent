@@ -7,13 +7,13 @@ import pytest
 from fastapi.testclient import TestClient
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
-from agent_runtime.auto_apply.agent import AgentTools, HybridApplicationAgent
-from agent_runtime.auto_apply.browser import BrowserBlocked
-from agent_runtime.auto_apply.contracts import ChatRequest, ReplyQuestion
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.repository import ApplyConflict, ApplyRepository
-from agent_runtime.auto_apply.runner import trace_value
-from api.main import create_app
+from eregion.runtime.auto_apply.agent import AgentTools, HybridApplicationAgent
+from eregion.runtime.auto_apply.browser import BrowserBlocked
+from eregion.runtime.auto_apply.contracts import ChatRequest, ReplyQuestion
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.repository import ApplyConflict, ApplyRepository
+from eregion.runtime.auto_apply.runner import trace_value
+from eregion.api.main import create_app
 from test_auto_apply import FakeBrowser, database, field, request, wait
 from test_auto_apply_agent import ScriptModel, args, state
 

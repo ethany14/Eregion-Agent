@@ -4,11 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from agent_runtime.auto_apply.browser import ApplicationBrowser, BrowserBlocked
-from agent_runtime.auto_apply.contracts import ContinueApplication, ChatRequest
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.repository import ApplyRepository
-from api.db import create_database
+from eregion.runtime.auto_apply.browser import ApplicationBrowser, BrowserBlocked
+from eregion.runtime.auto_apply.contracts import ContinueApplication, ChatRequest
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.repository import ApplyRepository
+from eregion.api.db import create_database
 from test_auto_apply import request, wait
 
 pytestmark = pytest.mark.skipif(os.getenv("JOB_AGENT_BROWSER_TESTS") != "1",
@@ -40,7 +40,7 @@ def test_answering_during_background_work_keeps_focus_and_sends_one_batch(tmp_pa
     from types import SimpleNamespace
     from fastapi.testclient import TestClient
     from playwright.sync_api import sync_playwright, expect
-    from api.main import create_app
+    from eregion.api.main import create_app
     from test_auto_apply import FakeBrowser, field
 
     database = create_database(f"sqlite:///{(tmp_path/'async-ui.sqlite').as_posix()}",create_schema_for_tests=True)
@@ -352,10 +352,10 @@ def test_web_application_flow_with_actual_api_and_offline_employer(tmp_path, mon
     from fastapi.testclient import TestClient
     from playwright.sync_api import sync_playwright, expect
     from types import SimpleNamespace
-    from api.main import create_app
-    from agent_runtime.auto_apply.resume_profile import ResumeFacts
+    from eregion.api.main import create_app
+    from eregion.runtime.auto_apply.resume_profile import ResumeFacts
     from test_auto_apply_personalization import resume_pdf
-    from agent_runtime.auto_apply.agent import HybridApplicationAgent
+    from eregion.runtime.auto_apply.agent import HybridApplicationAgent
     from test_auto_apply_agent import ScriptModel
 
     class ResumeModel:
@@ -365,7 +365,7 @@ def test_web_application_flow_with_actual_api_and_offline_employer(tmp_path, mon
                 {"field":"first_name", "value":"Alex", "quote":"Alex Demo"},
                 {"field":"last_name", "value":"Demo", "quote":"Alex Demo"},
                 {"field":"school", "value":"Massachusetts Institute of Technology", "quote":"Massachusetts Institute of Technology"}])
-    monkeypatch.setattr("job_agent.model.create_model", lambda **kwargs: ResumeModel())
+    monkeypatch.setattr("eregion.domain.model.create_model", lambda **kwargs: ResumeModel())
 
     class ChatModel(ScriptModel):
         def __init__(self):
@@ -478,8 +478,8 @@ def test_readonly_portal_dropdown_and_replaced_dom_nodes():
 
 
 def test_actual_browser_agent_repairs_keyboard_only_field_after_autofill():
-    from agent_runtime.auto_apply.agent import HybridApplicationAgent
-    from agent_runtime.auto_apply.autofill import autofill
+    from eregion.runtime.auto_apply.agent import HybridApplicationAgent
+    from eregion.runtime.auto_apply.autofill import autofill
     from test_auto_apply_agent import ScriptModel, args
 
     browser = FixtureBrowser("https://job-boards.greenhouse.io/example/jobs/123")
@@ -506,7 +506,7 @@ def test_actual_browser_agent_repairs_keyboard_only_field_after_autofill():
 
 def test_paused_browser_keeps_dispatching_background_requests():
     from threading import Event
-    from agent_runtime.auto_apply.worker import BrowserWorker
+    from eregion.runtime.auto_apply.worker import BrowserWorker
 
     received = Event()
     browsers = []

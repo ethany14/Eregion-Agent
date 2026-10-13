@@ -12,20 +12,20 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
-from agent_runtime.sessions.events import SessionEvent, SessionEventType
-from agent_runtime.sessions.repository import SessionRepository
-from agent_runtime.sessions.state import SessionState
-from agent_runtime.workspace.errors import (
+from eregion.runtime.sessions.events import SessionEvent, SessionEventType
+from eregion.runtime.sessions.repository import SessionRepository
+from eregion.runtime.sessions.state import SessionState
+from eregion.runtime.workspace.errors import (
     ArtifactValidationError, InvalidApplicationTransitionError,
     StaleApplicationError, WorkspaceAssociationError,
 )
-from agent_runtime.workspace.identity import normalize_job_url
-from agent_runtime.workspace.repository import JobWorkspaceRepository
-from agent_runtime.workspace.types import ApplicationStatus, ArtifactStatus, ArtifactType
-from api.db import create_database
-from api.main import create_app
-from api.repositories.run_repository import RunRepository
-from api.schemas.runs import CreateRunResponse
+from eregion.runtime.workspace.identity import normalize_job_url
+from eregion.runtime.workspace.repository import JobWorkspaceRepository
+from eregion.runtime.workspace.types import ApplicationStatus, ArtifactStatus, ArtifactType
+from eregion.api.db import create_database
+from eregion.api.main import create_app
+from eregion.api.repositories.run_repository import RunRepository
+from eregion.api.schemas.runs import CreateRunResponse
 
 
 def public_run_result():
@@ -292,7 +292,7 @@ def test_save_workspace_is_idempotent_and_tracks_changed_snapshot(workspace):
 
 
 def test_workspace_analysis_projects_artifacts_and_failure_is_retryable(workspace):
-    from api.services.fit_analysis_service import FitAnalysisResult
+    from eregion.api.services.fit_analysis_service import FitAnalysisResult
     class FakeFitService:
         failed = False
         async def analyze(self, **kwargs):
@@ -388,8 +388,8 @@ def test_workspace_context_excerpt_is_bounded_and_requirement_focused():
 
 def test_overlapping_analysis_is_rejected_before_a_second_model_call(workspace):
     import asyncio
-    from api.services.workspace_service import WorkspaceAnalysisService
-    from api.services.fit_analysis_service import FitAnalysisResult
+    from eregion.api.services.workspace_service import WorkspaceAnalysisService
+    from eregion.api.services.fit_analysis_service import FitAnalysisResult
     _, repository = workspace
     saved = repository.save_workspace(cleaned_job_description="Python")
     async def scenario():
@@ -424,7 +424,7 @@ def test_overlapping_analysis_is_rejected_before_a_second_model_call(workspace):
 
 def test_old_analysis_failure_cannot_overwrite_a_new_analysis_version(workspace):
     import asyncio
-    from api.services.workspace_service import WorkspaceAnalysisService
+    from eregion.api.services.workspace_service import WorkspaceAnalysisService
     _, repository = workspace
     saved = repository.save_workspace(cleaned_job_description="Python")
     class Fit:

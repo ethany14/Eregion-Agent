@@ -5,10 +5,10 @@ from threading import Barrier, Event
 
 import pytest
 
-from custom_agent.state import Step
-from custom_agent.steps import StepOutcome
-from api.services.fit_analysis_service import FitAnalysisService
-from job_agent.schemas import JobAnalysis, ResumeAnalysis, SkillMatch
+from eregion.domain.workflow.state import Step
+from eregion.domain.workflow.steps import StepOutcome
+from eregion.api.services.fit_analysis_service import FitAnalysisService
+from eregion.domain.schemas import JobAnalysis, ResumeAnalysis, SkillMatch
 
 
 @pytest.fixture(autouse=True)
@@ -25,7 +25,7 @@ class AnalysisOnlyHandler:
         # Synthetic transport boundaries: a handler with no model IO must not
         # silently be counted as three paid provider calls.
         if step in {Step.ANALYZE_RESUME,Step.ANALYZE_JOB,Step.MATCH_SKILLS}:
-            from agent_runtime.provider_usage import provider_call
+            from eregion.runtime.provider_usage import provider_call
             with provider_call('offline-handler-fixture'):
                 return self.compute(step,state)
         return self.compute(step,state)
@@ -118,7 +118,7 @@ def test_unchanged_resume_reused_for_new_job_and_exact_repeat_uses_no_model():
 
 
 def test_cache_changes_with_model_namespace_prompts_and_schema(monkeypatch):
-    import api.services.fit_analysis_service as module
+    import eregion.api.services.fit_analysis_service as module
     namespace=['model-a']
     service=FitAnalysisService(AnalysisOnlyHandler(),cache_namespace=lambda:namespace[0])
     def run():return service._analyze_sync(resume_text='Python developer',job_description='Requires Python')
@@ -154,8 +154,8 @@ def test_concurrent_identical_analysis_shares_requests():
 
 
 def test_ungrounded_resume_is_never_cached_or_matched():
-    from custom_agent.handlers import JobAgentStepHandler
-    from job_agent.schemas import ResumeEvidence
+    from eregion.domain.workflow.handlers import JobAgentStepHandler
+    from eregion.domain.schemas import ResumeEvidence
     calls=[]
     def analyze(schema,*_):
         calls.append(schema)
@@ -187,7 +187,7 @@ def test_failed_match_retries_using_validated_extractions():
 
 
 def test_cache_eviction_and_disabled_cache_bound_retention():
-    from api.services.fit_analysis_service import _AnalysisCache
+    from eregion.api.services.fit_analysis_service import _AnalysisCache
     cache=_AnalysisCache(1)
     assert cache.get('a',lambda:'first')==('first',False)
     cache.get('b',lambda:'second')
@@ -198,8 +198,8 @@ def test_cache_eviction_and_disabled_cache_bound_retention():
 
 
 def test_parallel_cached_pipeline_keeps_evidence_and_score_identical_to_serial():
-    from custom_agent.handlers import JobAgentStepHandler
-    from custom_agent.state import AgentState
+    from eregion.domain.workflow.handlers import JobAgentStepHandler
+    from eregion.domain.workflow.state import AgentState
     from test_job_workflow import fake_analyze
     handler=JobAgentStepHandler(analyzer=fake_analyze)
     state=AgentState(run_id='baseline',resume_text='Built Python APIs.',job_description='Requires Python APIs.')

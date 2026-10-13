@@ -5,9 +5,9 @@ import json
 import httpx
 import pytest
 
-from agent_runtime import fast_decisions
-from agent_runtime.auto_apply.agent import ConfiguredToolModel, HybridApplicationAgent
-from agent_runtime.fast_decisions import FastDecisions
+from eregion.runtime import fast_decisions
+from eregion.runtime.auto_apply.agent import ConfiguredToolModel, HybridApplicationAgent
+from eregion.runtime.fast_decisions import FastDecisions
 from test_auto_apply import FakeBrowser, field
 from test_auto_apply_agent import RepairBrowser, ScriptModel, args, state
 

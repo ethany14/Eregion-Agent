@@ -2,11 +2,11 @@
 import json
 from pathlib import Path
 import pytest
-from job_agent.jev_fit.core import job_units,boilerplate
+from eregion.domain.jev_fit.core import job_units,boilerplate
 
 
 def source(identifier):
-    data=json.loads(Path('evals/fit_labels_v1.json').read_text(encoding='utf-8'))
+    data=json.loads(Path('tools/evals/fit_labels_v1.json').read_text(encoding='utf-8'))
     return next(j for j in data['jobs'] if j['job_id']==identifier)
 
 
@@ -54,7 +54,7 @@ def test_semicolon_independent_clauses_split_without_truncating_or_inventing_tex
 
 
 def test_all_24_captured_texts_keep_original_offsets():
-    data=json.loads(Path('evals/fit_labels_v1.json').read_text(encoding='utf-8'))
+    data=json.loads(Path('tools/evals/fit_labels_v1.json').read_text(encoding='utf-8'))
     for job in data['jobs']:
         for form in ('flat','structured'):
             text=job[form]

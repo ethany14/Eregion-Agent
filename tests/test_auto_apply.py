@@ -9,13 +9,13 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from api.db import create_database, upgrade_database
-from api.main import create_app
-from agent_runtime.auto_apply.contracts import (
+from eregion.api.db import create_database, upgrade_database
+from eregion.api.main import create_app
+from eregion.runtime.auto_apply.contracts import (
     Candidate, ContinueApplication, StartApplication, candidate_answer, posting,
 )
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.repository import ApplyConflict, ApplyRepository
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.repository import ApplyConflict, ApplyRepository
 
 
 def request(**changes):

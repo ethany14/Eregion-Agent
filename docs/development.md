@@ -5,18 +5,29 @@
 
 ## Repository map
 
+Open [`JobHunterAgent.code-workspace`](../JobHunterAgent.code-workspace) in a
+compatible editor for ordered runtime, domain, API, UI, tests and documentation
+folders. Generated caches and browser profiles are hidden, not deleted. The
+Project and configuration folder retains access to root configuration and legacy
+reports. See the [runtime directory guide](../backend/eregion/runtime/README.md) for ownership
+boundaries, and the [backend guide](../backend/README.md) for the canonical namespace
+and startup command. Old top-level Python packages are removed.
+
 | Path | Contents |
 | --- | --- |
-| `api/` | FastAPI routes, dependencies, persistence integration, and local web serving |
-| `web_app/` | Browser UI, styles, and client-side state |
-| `chrome_extension/` | Eregion Lens Chrome Side Panel |
-| `agent_runtime/` | Shared loop, career tools, browser workers, context, evidence, materials, and interviews |
-| `job_agent/` | Model adapters, schemas, extraction, matching, source checks, and rendering |
-| `custom_agent/` | Persisted custom resume workflow |
-| `migrations/` | Alembic database migrations |
+| `backend/eregion/api/` | FastAPI routes, dependencies, persistence integration, and local web serving |
+| `frontend/web_app/` | Browser UI, styles, and client-side state |
+| `frontend/chrome_extension/` | Eregion Lens Chrome Side Panel |
+| `backend/eregion/runtime/` | Shared loop, career tools, browser workers, context, evidence, materials, and interviews |
+| `backend/eregion/runtime/core/` | The only autonomous AgentLoop kernel and Host contract |
+| `backend/eregion/runtime/tasks/` | Durable task hosting and user steering |
+| `backend/eregion/runtime/execution/` | Shared worker execution and shutdown ownership |
+| `backend/eregion/runtime/coordination/` | Deterministic child-task scheduling, leases and budgets |
+| `backend/eregion/domain/` | Model adapters, schemas, extraction, matching, source checks, and rendering |
+| `backend/migrations/` | Alembic database migrations |
 | `skills/` | Runtime skill packages with their own metadata and permissions |
 | `tests/` | Unit, integration, frontend, and opt-in Chrome tests |
-| `evals/`, `scripts/` | Evaluation datasets, harnesses, and opt-in live benchmarks |
+| `tools/evals/`, `tools/scripts/` | Evaluation datasets, harnesses, and opt-in live benchmarks |
 | `docs/benchmarks/` | Recorded historical measurements |
 
 `design/` is an ignored local reference directory, not a runtime dependency.
@@ -32,7 +43,7 @@ Run one server process. Automatic reload can interrupt active model requests or
 browser sessions, so stop or finish those tasks before changing the server.
 Apply migrations with the same database URL used by the application.
 
-Use [web_app/AGENTS.md](../web_app/AGENTS.md) for frontend conventions. Keep the
+Use [web_app/AGENTS.md](../frontend/web_app/AGENTS.md) for frontend conventions. Keep the
 web app and extension design tokens aligned, preserve question drafts, and check
 changed states in both themes and at desktop/mobile widths.
 
@@ -79,7 +90,7 @@ and the configured model, and asserts zero final-submit clicks:
 ```powershell
 New-Item -ItemType Directory -Force artifacts/browser-eval/shared-loop
 $env:NORTHSTAR_SMOKE_DIR = (Resolve-Path artifacts/browser-eval/shared-loop).Path
-python scripts/smoke_shared_application_loop.py
+python tools/scripts/smoke_shared_application_loop.py
 ```
 
 `NORTHSTAR_SMOKE_DIR` is the existing script variable despite the current product
@@ -108,7 +119,7 @@ education status, layouts, and recovery points. Do not hard-code one candidate's
 answer or loosen factual verification to make a fixture pass. Preserve the source
 text of extraction regressions, including meaningful layout boundaries.
 
-The [human quality-review guide](../evals/human_quality_review/README.md) describes
+The [human quality-review guide](../tools/evals/human_quality_review/README.md) describes
 the separate, consented real-material review process. Synthetic data must remain
 labeled synthetic.
 
@@ -119,7 +130,7 @@ records readable when changing schemas, and add Alembic migrations for database
 changes. Domain operations should execute external calls outside transactions.
 
 MCP integration uses trusted local stdio server configuration. See
-[`agent_runtime/mcp/config.py`](../agent_runtime/mcp/config.py) and the
+[`backend/eregion/runtime/mcp/config.py`](../backend/eregion/runtime/mcp/config.py) and the
 [example configuration](../examples/mcp/local_test_config.json). Apply tool
 allowlists, bounded results, timeouts, and approval policy; a tool's own metadata
 does not grant it additional permissions.

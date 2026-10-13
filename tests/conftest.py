@@ -14,8 +14,8 @@ import pytest
 REPO_ENV = (Path(__file__).resolve().parent.parent / '.env').resolve()
 LIVE = any(v == '1' for k, v in os.environ.items()
            if k.startswith('JOB_AGENT_LIVE_') or k == 'JOB_AGENT_B6_REPLAY_LIVE_MODEL')
-DOTENV_READERS = ('job_agent.model', 'job_agent.jev_fit.settings', 'agent_runtime.fast_decisions',
-                  'agent_runtime.application_pack.workflow')
+DOTENV_READERS = ('eregion.domain.model', 'eregion.domain.jev_fit.settings', 'eregion.runtime.fast_decisions',
+                  'eregion.runtime.application_pack.workflow')
 FAKE_MODEL = {'LLM_MODEL_ID': 'offline-test-model', 'LLM_API_KEY': 'offline-test-key',
               'LLM_BASE_URL': 'https://offline.invalid/v1'}
 

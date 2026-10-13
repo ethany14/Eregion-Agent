@@ -3,8 +3,8 @@ import os
 
 import pytest
 
-from agent_runtime.career.discovery import JobDiscovery, PageText
-from job_agent.jev_fit.core import JevFit
+from eregion.runtime.career.discovery import JobDiscovery, PageText
+from eregion.domain.jev_fit.core import JevFit
 from test_career_flow import career
 
 TARGET = '''<h2>Requirements</h2><p>Required: Python backend development and PostgreSQL experience.</p>
@@ -80,8 +80,8 @@ def test_agency_instruction_remains_in_ledger_but_cannot_be_candidate_required()
 @pytest.mark.skipif(os.getenv('JOB_AGENT_BROWSER_TESTS')!='1',reason='Offline Chrome opt-in')
 @pytest.mark.parametrize('scoped',[False,True])
 def test_real_chrome_job_only_excludes_other_company_and_footer(tmp_path,scoped):
-    from agent_runtime.auto_apply.browser import ApplicationBrowser
-    from agent_runtime.browser.session import BrowserSession
+    from eregion.runtime.auto_apply.browser import ApplicationBrowser
+    from eregion.runtime.browser.session import BrowserSession
     class Browser(ApplicationBrowser):
         def _guard_request(self,route):
             route.fulfill(content_type='text/html',body=page(scoped=scoped))
@@ -104,11 +104,11 @@ def test_real_chrome_job_only_excludes_other_company_and_footer(tmp_path,scoped)
 @pytest.mark.skipif(not os.getenv('JOB_AGENT_SAVED_INDEED_HTML'),reason='Explicit saved real public-page replay')
 def test_saved_real_indeed_body_and_detail_action_are_consumable(tmp_path):
     from pathlib import Path
-    from agent_runtime.auto_apply.browser import ApplicationBrowser
-    from agent_runtime.browser.session import BrowserSession
-    from agent_runtime.request_context import ContextArchive,prepare_request
-    from agent_runtime.loop_context import ConversationWindow
-    from agent_runtime.career.harness import TOOLS
+    from eregion.runtime.auto_apply.browser import ApplicationBrowser
+    from eregion.runtime.browser.session import BrowserSession
+    from eregion.runtime.request_context import ContextArchive,prepare_request
+    from eregion.runtime.core.context import ConversationWindow
+    from eregion.runtime.career.harness import TOOLS
     from langchain_core.messages import HumanMessage
     source=Path(os.environ['JOB_AGENT_SAVED_INDEED_HTML']).read_text(encoding='utf-8')
     class Browser(ApplicationBrowser):
@@ -135,12 +135,12 @@ def test_saved_real_indeed_body_and_detail_action_are_consumable(tmp_path):
 
 @pytest.mark.skipif(os.getenv('JOB_AGENT_BROWSER_TESTS')!='1',reason='Offline Chrome opt-in')
 def test_split_detail_nested_body_metadata_and_region_survive_filtered_reads(tmp_path):
-    from agent_runtime.auto_apply.browser import ApplicationBrowser
-    from agent_runtime.browser.session import BrowserSession
-    from agent_runtime.request_context import ContextArchive,prepare_request
-    from agent_runtime.loop_context import ConversationWindow
+    from eregion.runtime.auto_apply.browser import ApplicationBrowser
+    from eregion.runtime.browser.session import BrowserSession
+    from eregion.runtime.request_context import ContextArchive,prepare_request
+    from eregion.runtime.core.context import ConversationWindow
     from langchain_core.messages import HumanMessage
-    from agent_runtime.career.harness import TOOLS
+    from eregion.runtime.career.harness import TOOLS
     source='''<main><section aria-label="Search results"><h2>Unrelated Staff Rust Engineer</h2>
     <p>Fusionbox requires ten years of TypeScript experience. Other search results.</p></section>
     <section data-testid="jobsearch-JobComponent" aria-label="Job details">
@@ -194,8 +194,8 @@ def test_split_detail_nested_body_metadata_and_region_survive_filtered_reads(tmp
 
 @pytest.mark.skipif(os.getenv('JOB_AGENT_BROWSER_TESTS')!='1',reason='Offline Chrome opt-in')
 def test_page_source_hash_ignores_region_and_navigation_views_but_tracks_real_changes(tmp_path,career):
-    from agent_runtime.auto_apply.browser import ApplicationBrowser
-    from agent_runtime.browser.session import BrowserSession,SCAN
+    from eregion.runtime.auto_apply.browser import ApplicationBrowser
+    from eregion.runtime.browser.session import BrowserSession,SCAN
     source='''<main><section aria-label="First region"><h1>Senior Backend Engineer</h1>
     <p>Target role requires Python and Kubernetes production services. Build reliable APIs.</p>
     <input aria-label="Search jobs" type="search"><button>Search</button>
@@ -239,8 +239,8 @@ def test_page_source_hash_ignores_region_and_navigation_views_but_tracks_real_ch
 @pytest.mark.skipif(os.getenv('JOB_AGENT_BROWSER_TESTS')!='1',reason='Offline Chrome opt-in')
 @pytest.mark.parametrize('target_mode',['Remote',''])
 def test_location_keeps_work_mode_only_from_the_target_header(tmp_path,target_mode):
-    from agent_runtime.auto_apply.browser import ApplicationBrowser
-    from agent_runtime.browser.session import BrowserSession
+    from eregion.runtime.auto_apply.browser import ApplicationBrowser
+    from eregion.runtime.browser.session import BrowserSession
     from scripts.remaining_search_acceptance import constraints
     source=f'''<main><article><div data-testid="desktop-job-header"><h1>Senior Backend Software Engineer</h1>
     <p>Atlassian</p><p>San Francisco, CA 94104</p><p>{target_mode}</p></div>
@@ -260,10 +260,10 @@ def test_location_keeps_work_mode_only_from_the_target_header(tmp_path,target_mo
 
 @pytest.mark.skipif(os.getenv('JOB_AGENT_BROWSER_TESTS')!='1',reason='Offline Chrome opt-in')
 def test_existing_alert_filtered_views_do_not_reset_real_taskhost_progress(tmp_path,career):
-    from agent_runtime.auto_apply.browser import ApplicationBrowser
-    from agent_runtime.browser.session import BrowserSession,SCAN
-    from agent_runtime.progress import browser_evidence
-    from agent_runtime.telemetry import outcome_fingerprint
+    from eregion.runtime.auto_apply.browser import ApplicationBrowser
+    from eregion.runtime.browser.session import BrowserSession,SCAN
+    from eregion.runtime.progress import browser_evidence
+    from eregion.runtime.telemetry import outcome_fingerprint
     from test_remaining_search_runtime import host_for
     from uuid import uuid4
     source=f'''<main><article><h1>Senior Backend Engineer</h1>

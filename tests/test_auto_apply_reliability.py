@@ -4,9 +4,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from agent_runtime.auto_apply.browser import ApplicationBrowser
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.repository import ApplyRepository
+from eregion.runtime.auto_apply.browser import ApplicationBrowser
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.repository import ApplyRepository
 from test_auto_apply import FakeBrowser, database, request, wait
 
 chrome = pytest.mark.skipif(os.getenv("JOB_AGENT_BROWSER_TESTS") != "1", reason="Offline Chrome opt-in")
@@ -94,7 +94,7 @@ def test_run_continues_by_itself_after_verification_is_cleared(database):
 
 
 def test_a_user_pause_is_not_overridden_by_auto_resume(database):
-    from agent_runtime.auto_apply.contracts import ChatRequest
+    from eregion.runtime.auto_apply.contracts import ChatRequest
     browser = VerificationBrowser("")
     loop = ApplicationLoop(ApplyRepository(database.session_factory), browser_factory=lambda _: browser)
     try:

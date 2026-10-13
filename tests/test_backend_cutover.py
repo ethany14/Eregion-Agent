@@ -7,11 +7,11 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from api.db import create_database
-from api.main import create_app
-from api.repositories.run_repository import RunRepository
-from api.runtime import create_run_service
-from api.schemas.runs import CreateRunRequest
+from eregion.api.db import create_database
+from eregion.api.main import create_app
+from eregion.api.repositories.run_repository import RunRepository
+from eregion.api.runtime import create_run_service
+from eregion.api.schemas.runs import CreateRunRequest
 from runtime_helpers import CompleteFakeHandler, sqlite_url
 
 
@@ -67,7 +67,7 @@ class BlockGraph(importlib.abc.MetaPathFinder):
         if fullname == 'langgraph' or fullname.startswith('langgraph.'):
             raise ModuleNotFoundError('Retired dependency is unavailable', name=fullname)
 sys.meta_path.insert(0, BlockGraph())
-import api.main, api.runtime, main
+import eregion.api.main, eregion.api.runtime, main
 import evals.run_evals, evals.run_ablation, evals.run_stability_evals
 import evals.run_requirement_intelligence_v3
 assert not any(name == 'langgraph' or name.startswith('langgraph.') for name in sys.modules)

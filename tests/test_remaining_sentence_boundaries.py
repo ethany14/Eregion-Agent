@@ -1,6 +1,6 @@
 import pytest
 
-from job_agent.jev_fit.core import job_units
+from eregion.domain.jev_fit.core import job_units
 
 
 @pytest.mark.parametrize('country', ['U.S.', 'U.K.'])
@@ -57,8 +57,8 @@ def test_prior_sentence_predicate_does_not_leak_into_language_fragment(leading,c
 @pytest.mark.parametrize('following',['Sponsorship is not available.','Relocation is not offered.'])
 def test_actual_pdf_to_sentence_units_keeps_independent_conditions_and_original_offsets(tmp_path,country,following):
     import json
-    from api.resume_routes import extract_pdf_text
-    from job_agent.pdf_rendering import render_letter_pdf
+    from eregion.api.resume_routes import extract_pdf_text
+    from eregion.domain.pdf_rendering import render_letter_pdf
     source=f'Requirements: Must be authorized to work in the {country} {following}'
     pdf=render_letter_pdf(source)
     text,pages=extract_pdf_text(pdf)
@@ -77,8 +77,8 @@ def test_actual_pdf_to_sentence_units_keeps_independent_conditions_and_original_
     'Experience with U.S. Python teams is required.',
 ])
 def test_actual_pdf_abbreviations_do_not_create_false_conditions(sentence):
-    from api.resume_routes import extract_pdf_text
-    from job_agent.pdf_rendering import render_letter_pdf
+    from eregion.api.resume_routes import extract_pdf_text
+    from eregion.domain.pdf_rendering import render_letter_pdf
     text,_=extract_pdf_text(render_letter_pdf('Requirements: '+sentence))
     units=job_units(text)
     expected=sentence.split('. Fluency')

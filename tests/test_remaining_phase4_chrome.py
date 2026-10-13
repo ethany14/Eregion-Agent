@@ -4,9 +4,9 @@ from urllib.parse import urlsplit
 
 import pytest
 
-from agent_runtime.auto_apply.browser import ApplicationBrowser
-from agent_runtime.browser.manager import BrowsingManager
-from agent_runtime.browser.handoff import BrowserControlRequest
+from eregion.runtime.auto_apply.browser import ApplicationBrowser
+from eregion.runtime.browser.manager import BrowsingManager
+from eregion.runtime.browser.handoff import BrowserControlRequest
 from test_career_flow import career,execute
 
 pytestmark=pytest.mark.skipif(os.getenv('JOB_AGENT_BROWSER_TESTS')!='1',reason='Local Chrome opt-in')
@@ -50,8 +50,8 @@ def test_user_control_refreshes_actual_blocked_cache_before_agent_read(career,tm
 
 
 def test_actual_failure_challenge_wording_is_blocked_and_recovery_pending_restores_after_control(career,tmp_path):
-    from agent_runtime.career.alerts import job_key
-    from agent_runtime.career.search_recovery import recovery
+    from eregion.runtime.career.alerts import job_key
+    from eregion.runtime.career.search_recovery import recovery
     c=career;task=c.state['task_id']
     class Browser(ApplicationBrowser):
         def __init__(self,url):super().__init__(url,headless=True,purpose='browse')

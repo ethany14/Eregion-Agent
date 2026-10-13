@@ -1,0 +1,55 @@
+{
+  "status": "failed",
+  "failures": [
+    "loop_not_completed_cleanly",
+    "fewer_than_two_verified_scored_qualifying_recommendations"
+  ],
+  "qualified_count": 0,
+  "main_input_tokens": 587860,
+  "total_input_tokens": 630982,
+  "limits": {
+    "main_calls": 60,
+    "main_input_tokens": 1000000,
+    "total_input_tokens": 1000000
+  },
+  "jobs": [
+    {
+      "application_id": "57fd530a-4145-4860-9fb8-a6532c7244a9",
+      "url": "https://www.indeed.com/jobs?l=New+York%2C+NY&q=junior+data+analyst&vjk=2233e7ae15e45957",
+      "title": "Data Analyst",
+      "location": "New York, NY",
+      "score": 43.46,
+      "checks": {
+        "role": true,
+        "seniority": true,
+        "location": true,
+        "scored": true,
+        "retrieved": true,
+        "recommended": true,
+        "reply_url": false,
+        "reply_score": false,
+        "eligible": true,
+        "distinct": true
+      }
+    },
+    {
+      "application_id": "2ada0ea1-7e2f-433c-ab80-9b10e686bbca",
+      "url": "https://job-boards.greenhouse.io/doordashusa/jobs/7990832",
+      "title": "Data Analyst, In-Store",
+      "location": "New York, NY; San Francisco, CA; San Jose, CA; Seattle, WA; Los Angeles, CA; Washington D.C.; Austin, TX; Chicago, IL",
+      "score": 36.51,
+      "checks": {
+        "role": true,
+        "seniority": false,
+        "location": true,
+        "scored": true,
+        "retrieved": true,
+        "recommended": false,
+        "reply_url": false,
+        "reply_score": false,
+        "eligible": true,
+        "distinct": true
+      }
+    }
+  ]
+}

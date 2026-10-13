@@ -1,8 +1,8 @@
 """Closeout regressions (docs/specs/opt-v3-closeout-decisions-validation.md)."""
 import json
 
-from agent_runtime.loop_context import ConversationWindow
-from agent_runtime.request_context import ContextArchive, prepare_request
+from eregion.runtime.core.context import ConversationWindow
+from eregion.runtime.request_context import ContextArchive, prepare_request
 
 
 def _assemble(archive):
@@ -106,13 +106,13 @@ def test_decision_reopens_when_the_user_request_changes(career):
     c = career
     app = _score_p2_style(c)
     execute(c, 'decide_job', application_id=app, decision='exclude', reason='Requires a security clearance the user lacks.')
-    from agent_runtime.career.decisions import pending
+    from eregion.runtime.career.decisions import pending
     assert pending(c.repository.get(c.state['task_id'])) == []
     state = c.repository.get(c.state['task_id'])
     c.repository.change(c.state['task_id'], chat_revision=state['chat_revision'] + 1)  # new user request
     state = c.repository.get(c.state['task_id'])
     assert pending(state) == [app]
-    from agent_runtime.career.decisions import statuses
+    from eregion.runtime.career.decisions import statuses
     assert statuses(state)[app].get('reopened')
 
 
@@ -120,14 +120,14 @@ def test_recommended_job_is_not_pending_and_cannot_be_excluded(career):
     c = career
     app = _score_p2_style(c)
     execute(c, 'recommend_job', application_id=app, reason='Junior evidence: 0-2 years; NYC.', caveats='Limited SQL fit.')
-    from agent_runtime.career.decisions import pending
+    from eregion.runtime.career.decisions import pending
     assert pending(c.repository.get(c.state['task_id'])) == []
     with pytest.raises(ValueError, match='already recommended'):
         execute(c, 'decide_job', application_id=app, decision='exclude', reason='Changed my mind about it.')
 
 
 def test_no_progress_stop_delivers_saved_results_without_a_model_call(career):
-    from agent_runtime.career.decisions import terminal_delivery
+    from eregion.runtime.career.decisions import terminal_delivery
     c = career
     app = _score_p2_style(c)
     lines = terminal_delivery(c.repository.get(c.state['task_id']))

@@ -1,6 +1,6 @@
 """Real Chrome lifecycle/observation regressions; all website IO is intercepted."""
-from agent_runtime.browser.manager import BrowsingManager
-from agent_runtime.auto_apply.browser import _playwright_runtime, BrowserBlocked
+from eregion.runtime.browser.manager import BrowsingManager
+from eregion.runtime.auto_apply.browser import _playwright_runtime, BrowserBlocked
 from test_general_browser import LocalWebBrowser
 
 

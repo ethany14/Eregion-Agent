@@ -5,16 +5,16 @@ from alembic import command
 from alembic.config import Config
 from fastapi.testclient import TestClient
 
-from agent_runtime.assistant.actions import AssistantActionConflictError, AssistantActionService
-from agent_runtime.assistant.projection import AssistantTimelineProjector
-from agent_runtime.assistant.repository import AssistantTimelineRepository
-from agent_runtime.assistant.types import AssistantActivityType, RegisteredAssistantAction
-from agent_runtime.sessions.events import SessionEvent, SessionEventType
-from agent_runtime.sessions.repository import SessionRepository
-from agent_runtime.sessions.state import SessionMessageDraft, SessionState
-from agent_runtime.tools.messages import AgentMessage
-from api.db import create_database, upgrade_database
-from api.main import create_app
+from eregion.runtime.assistant.actions import AssistantActionConflictError, AssistantActionService
+from eregion.runtime.assistant.projection import AssistantTimelineProjector
+from eregion.runtime.assistant.repository import AssistantTimelineRepository
+from eregion.runtime.assistant.types import AssistantActivityType, RegisteredAssistantAction
+from eregion.runtime.sessions.events import SessionEvent, SessionEventType
+from eregion.runtime.sessions.repository import SessionRepository
+from eregion.runtime.sessions.state import SessionMessageDraft, SessionState
+from eregion.runtime.tools.messages import AgentMessage
+from eregion.api.db import create_database, upgrade_database
+from eregion.api.main import create_app
 
 
 def runtime(tmp_path):

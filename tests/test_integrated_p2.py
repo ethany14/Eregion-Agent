@@ -7,7 +7,7 @@ from threading import Barrier
 import httpx
 import pytest
 
-from agent_runtime.career.discovery import BoardResponseCache, JobDiscovery
+from eregion.runtime.career.discovery import BoardResponseCache, JobDiscovery
 
 BOARD = {'jobs': [{'id': f'id-{i}', 'title': f'Data Analyst {i}', 'location': 'New York, NY', 'isListed': True,
                    'jobUrl': f'https://jobs.ashbyhq.com/acme/id-{i}', 'descriptionPlain': 'Requirements: SQL. ' * 50}

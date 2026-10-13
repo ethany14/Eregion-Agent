@@ -1,11 +1,11 @@
 """Session turns are decided by the shared AgentLoop; there is no legacy decision path (M7)."""
 import pytest
 
-from agent_runtime import host_protocol
-from agent_runtime.loop_engine import AgentLoop
-from agent_runtime.sessions import host as session_host
-from agent_runtime.sessions.host import SessionHost
-from agent_runtime.sessions.state import SessionStatus
+from eregion.runtime.core import host_protocol
+from eregion.runtime.core.engine import AgentLoop
+from eregion.runtime.sessions import host as session_host
+from eregion.runtime.sessions.host import SessionHost
+from eregion.runtime.sessions.state import SessionStatus
 from test_session_coordinator import (call, coordinator, response, runtime, user,  # noqa: F401
                                       ApprovalTool, RecordingTool, ScriptedModel)
 
@@ -62,7 +62,7 @@ def test_in_flight_sessions_are_listed(runtime, monkeypatch):
 
 def test_two_concurrent_requests_on_one_session_decide_once(runtime, monkeypatch):
     import threading
-    from agent_runtime.sessions.errors import SessionClaimConflictError
+    from eregion.runtime.sessions.errors import SessionClaimConflictError
     _, sessions, tool_calls = runtime
     entered, release = threading.Event(), threading.Event()
 
@@ -89,7 +89,7 @@ def test_two_concurrent_requests_on_one_session_decide_once(runtime, monkeypatch
 
 
 def test_user_message_during_an_in_flight_model_call_is_rejected(runtime, monkeypatch):
-    from agent_runtime.sessions.errors import InvalidSessionTransitionError
+    from eregion.runtime.sessions.errors import InvalidSessionTransitionError
     _, sessions, tool_calls = runtime
     rejected = []
 

@@ -1,0 +1,57 @@
+{
+  "folders": [
+    {
+      "name": "01 Runtime - single AgentLoop",
+      "path": "backend/eregion/runtime"
+    },
+    {
+      "name": "02 Domain services",
+      "path": "backend/eregion/domain"
+    },
+    {
+      "name": "03 API",
+      "path": "backend/eregion/api"
+    },
+    {
+      "name": "04 Web app",
+      "path": "frontend/web_app"
+    },
+    {
+      "name": "05 Browser extension",
+      "path": "frontend/chrome_extension"
+    },
+    {
+      "name": "06 Tests",
+      "path": "tests"
+    },
+    {
+      "name": "07 Evaluations",
+      "path": "tools/evals"
+    },
+    {
+      "name": "08 Documentation",
+      "path": "docs"
+    },
+    {
+      "name": "09 Project and configuration",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/__pycache__": true,
+      "**/.pytest*": true,
+      "**/.venv": true,
+      "**/.codex-runs": true,
+      "**/.browser-sessions": true,
+      "**/node_modules": true,
+      "**/.release-local": true
+    },
+    "search.exclude": {
+      "**/.codex-runs/**": true,
+      "**/.browser-sessions/**": true,
+      "**/.pytest*/**": true,
+      "**/.venv/**": true
+    }
+  }
+}

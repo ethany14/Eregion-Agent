@@ -6,22 +6,22 @@ from pathlib import Path
 
 import pytest
 
-from api.db import create_database
-from agent_runtime.multi_agent.context import AgentContextPolicy
-from agent_runtime.multi_agent.errors import InvalidPlanError, LeaseConflictError, TaskConflictError
-from agent_runtime.multi_agent.policy import AgentPlanValidator
-from agent_runtime.multi_agent.registry import AgentWorkerRegistry
-from agent_runtime.multi_agent.repository import AgentTaskRepository
-from agent_runtime.multi_agent.scheduler import AgentTaskScheduler
-from agent_runtime.multi_agent.types import (
+from eregion.api.db import create_database
+from eregion.runtime.coordination.context import AgentContextPolicy
+from eregion.runtime.coordination.errors import InvalidPlanError, LeaseConflictError, TaskConflictError
+from eregion.runtime.coordination.policy import AgentPlanValidator
+from eregion.runtime.coordination.registry import AgentWorkerRegistry
+from eregion.runtime.coordination.repository import AgentTaskRepository
+from eregion.runtime.coordination.scheduler import AgentTaskScheduler
+from eregion.runtime.coordination.types import (
     AgentPlan, AgentTaskResult, DependencyType, MultiAgentBudget, OutputArtifact,
     TaskDependencySpec, TaskSpec, TaskStatus,
 )
-from agent_runtime.sessions.clock import FakeClock
-from agent_runtime.sessions.events import SessionEvent, SessionEventType
-from agent_runtime.sessions.repository import SessionRepository
-from agent_runtime.sessions.state import SessionMessageDraft, SessionState
-from agent_runtime.tools.messages import AgentMessage
+from eregion.runtime.sessions.clock import FakeClock
+from eregion.runtime.sessions.events import SessionEvent, SessionEventType
+from eregion.runtime.sessions.repository import SessionRepository
+from eregion.runtime.sessions.state import SessionMessageDraft, SessionState
+from eregion.runtime.tools.messages import AgentMessage
 
 
 class EchoWorker:
@@ -80,7 +80,7 @@ def validate(plan):
 
 @pytest.mark.parametrize("limit,expected_calls", [(0, 0), (1, 1)])
 def test_model_budget_is_reserved_before_calls_and_survives_retry(setup, limit, expected_calls):
-    from agent_runtime.multi_agent.model_usage import invoke_model
+    from eregion.runtime.coordination.model_usage import invoke_model
     _, _, tasks, _, workers, scheduler = setup
     calls = []
     def provider():
@@ -101,7 +101,7 @@ def test_model_budget_is_reserved_before_calls_and_survives_retry(setup, limit, 
 
 def test_parallel_workers_share_one_model_budget(setup):
     from concurrent.futures import ThreadPoolExecutor
-    from agent_runtime.multi_agent.model_usage import invoke_model
+    from eregion.runtime.coordination.model_usage import invoke_model
     _, _, tasks, _, workers, scheduler = setup
     calls = []
     def provider():
@@ -126,9 +126,9 @@ def test_parallel_workers_share_one_model_budget(setup):
 def test_provider_usage_and_retry_cap_are_applied_at_http_boundary(setup, status_code):
     import json
     import httpx
-    from job_agent.model import ProviderCompatibleChatOpenAI, invoke_structured
-    from job_agent.schemas import ResumeAnalysis
-    from agent_runtime.multi_agent.model_usage import invoke_model
+    from eregion.domain.model import ProviderCompatibleChatOpenAI, invoke_structured
+    from eregion.domain.schemas import ResumeAnalysis
+    from eregion.runtime.coordination.model_usage import invoke_model
     _, _, tasks, _, workers, scheduler = setup
     requests = []
     def respond(request):
@@ -376,9 +376,9 @@ def test_root_deadline_bounds_child_deadline(setup):
 def test_template_restricted_api_and_safe_task_response(setup):
     from types import SimpleNamespace
     from fastapi.testclient import TestClient
-    from api.main import create_app
-    from api.session_dependencies import get_session_runtime
-    from agent_runtime.multi_agent.templates import AgentPlanTemplateRegistry
+    from eregion.api.main import create_app
+    from eregion.api.session_dependencies import get_session_runtime
+    from eregion.runtime.coordination.templates import AgentPlanTemplateRegistry
     _, _, tasks, sessions, workers, scheduler = setup
     templates = AgentPlanTemplateRegistry()
     templates.register("safe_echo", lambda session_id, key: AgentPlan(
@@ -463,8 +463,8 @@ def test_budget_exceeded_does_not_publish_artifact(setup):
 def test_child_session_is_not_exposed_by_public_session_api(setup):
     from types import SimpleNamespace
     from fastapi.testclient import TestClient
-    from api.main import create_app
-    from api.session_dependencies import get_session_runtime
+    from eregion.api.main import create_app
+    from eregion.api.session_dependencies import get_session_runtime
     _, _, tasks, sessions, workers, scheduler = setup
     plan = make_plan()
     root = tasks.create_plan(plan, validate(plan))
@@ -567,11 +567,11 @@ def test_duplicate_output_rolls_back_artifacts_and_success_transition(setup):
 
 def test_approval_worker_pauses_and_resumes_with_persisted_tool_binding(tmp_path):
     from pydantic import BaseModel
-    from agent_runtime.executor import ToolExecutor
-    from agent_runtime.policy import ToolPolicy
-    from agent_runtime.registry import ToolRegistry
-    from agent_runtime.repository import ToolCallRepository
-    from agent_runtime.types import ToolCallRequest, ToolExecutionStatus, ToolResult, ToolRiskLevel
+    from eregion.runtime.executor import ToolExecutor
+    from eregion.runtime.policy import ToolPolicy
+    from eregion.runtime.registry import ToolRegistry
+    from eregion.runtime.repository import ToolCallRepository
+    from eregion.runtime.types import ToolCallRequest, ToolExecutionStatus, ToolResult, ToolRiskLevel
     class Input(BaseModel):
         value: str
     class WriteTool:
@@ -640,8 +640,8 @@ def test_approval_worker_pauses_and_resumes_with_persisted_tool_binding(tmp_path
 
 def test_context_rejects_cross_session_memory_and_unlinked_interview_evidence(setup):
     from types import SimpleNamespace
-    from agent_runtime.memory.types import MemoryScope, MemorySensitivity, MemoryStatus
-    from agent_runtime.evidence.types import EvidenceSourceType, EvidenceStatus
+    from eregion.runtime.memory.types import MemoryScope, MemorySensitivity, MemoryStatus
+    from eregion.runtime.evidence.types import EvidenceSourceType, EvidenceStatus
     _, _, tasks, sessions, _, _ = setup
     plan = make_plan()
     plan.tasks[0].input_spec = {"memory_ids": ["other-session-memory"],

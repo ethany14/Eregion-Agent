@@ -11,12 +11,12 @@ from fastapi.testclient import TestClient
 from langchain_core.messages import AIMessage, ToolMessage
 from mcp_types import CallToolResult, TextContent, Tool
 
-from agent_runtime.context.snapshots import ContextSnapshotStatus
-from agent_runtime.errors import UnknownToolError
-from agent_runtime.mcp.config import McpRuntimeConfig, McpStdioServerConfig
-from agent_runtime.mcp.errors import McpStartupError
-from api.main import create_app
-from api.session_dependencies import (
+from eregion.runtime.context.snapshots import ContextSnapshotStatus
+from eregion.runtime.errors import UnknownToolError
+from eregion.runtime.mcp.config import McpRuntimeConfig, McpStdioServerConfig
+from eregion.runtime.mcp.errors import McpStartupError
+from eregion.api.main import create_app
+from eregion.api.session_dependencies import (
     JOB_ASSISTANT_READONLY_TOOLS,
     create_session_runtime,
 )

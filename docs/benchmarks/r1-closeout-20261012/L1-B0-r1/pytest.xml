@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="52.150" timestamp="2026-10-12T04:55:21.124963-04:00" hostname="LAPTOP-MFSRDG1D"><testcase classname="tests.test_b6_offline_replay" name="test_b6_frozen_web_with_configured_model" time="47.358"><failure message="AssertionError: assert 'needs_input' == 'completed'&#10;  &#10;  - completed&#10;  + needs_input">replay = &lt;function replay.&lt;locals&gt;.run at 0x000002439C56C180&gt;
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000024393BC4770&gt;
+
+    @pytest.mark.skipif(not LIVE_MODEL, reason='Opt-in paid model against frozen B6 web; never run by offline validation')
+    def test_b6_frozen_web_with_configured_model(replay, monkeypatch):
+        from agent_runtime.task_loop import TaskModel
+        output = os.getenv('OPT_LIVE_OUTPUT')
+        assert output, 'Paid attempts require an unused OPT_LIVE_OUTPUT directory'
+        target = Path(output)
+        assert not (target / 'result.json').exists(), 'Never overwrite a paid attempt'
+        monkeypatch.setenv('JOB_AGENT_TASK_MAX_INPUT_TOKENS', str(min(400000,
+            int(os.getenv('JOB_AGENT_TASK_MAX_INPUT_TOKENS', '400000')))))
+        monkeypatch.setenv('JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS', str(min(60,
+            int(os.getenv('JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS', '60')))))
+        started = time.monotonic()
+        result = replay('correct', model_factory=TaskModel, timeout=600)
+        if output:
+            from evals.opt_report import wire_summary
+            target = Path(output)
+            target.mkdir(parents=True, exist_ok=True)
+            actions = [a.get('tool') for a in result.state.get('actions', [])]
+            (target / 'result.json').write_text(json.dumps({'status': result.state['status'], 'decisions': result.state['model_calls'],
+                'error': result.summary['error'], 'acceptance': result.acceptance, 'provider_usage': result.summary['provider_usage'],
+                'wire': wire_summary(result.summary['attempt_rows']), 'actions': actions,
+                'seconds': time.monotonic() - started,
+                'blocked_frozen_requests': len(result.discovery.blocked_requests),
+                'attempt_errors': [r.get('error_type') for r in result.summary['attempt_rows'] if r.get('error_type')],
+                'flags': {k: v for k, v in os.environ.items() if k.startswith('JOB_AGENT_OPT_')}}, indent=1, default=str),
+                encoding='utf-8')
+&gt;       assert result.state['status'] == 'completed'
+E       AssertionError: assert 'needs_input' == 'completed'
+E         
+E         - completed
+E         + needs_input
+
+tests\test_b6_offline_replay.py:513: AssertionError</failure></testcase></testsuite></testsuites>

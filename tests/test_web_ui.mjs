@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 // Exercise the active chat polling function with responses arriving out of order.
-const source = fs.readFileSync(new URL('../web_app/apply.js', import.meta.url), 'utf8');
+const source = fs.readFileSync(new URL('../frontend/web_app/apply.js', import.meta.url), 'utf8');
 const start = source.indexOf('async function refresh('), end = source.indexOf('const PAGE_VIEWS=', start);
 assert.ok(start >= 0 && end > start);
 const refreshSource = source.slice(start, end);

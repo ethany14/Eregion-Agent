@@ -51,14 +51,14 @@ For example, use headless Chrome with two application workers:
 # Windows PowerShell
 $env:JOB_AGENT_HIDDEN_BROWSER = "headless"
 $env:JOB_AGENT_APPLY_WORKERS = "2"
-python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
+python -m uvicorn eregion.api.main:app --host 127.0.0.1 --port 8000
 ```
 
 ```sh
 # macOS / Linux
 export JOB_AGENT_HIDDEN_BROWSER=headless
 export JOB_AGENT_APPLY_WORKERS=2
-python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
+python -m uvicorn eregion.api.main:app --host 127.0.0.1 --port 8000
 ```
 
 Lower concurrency if the provider rate-limits calls or the machine cannot support
@@ -158,7 +158,7 @@ Stop the backend, back up local data, and update from the repository root:
 git pull --ff-only
 python -m pip install -r requirements.txt
 python -m alembic upgrade head
-python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
+python -m uvicorn eregion.api.main:app --host 127.0.0.1 --port 8000
 ```
 
 Use the same `JOB_AGENT_DATABASE_URL` for migrations and the server. Refresh the
@@ -264,7 +264,7 @@ Trimming limits and request content are unchanged.
 ## Verified company board discovery
 
 `search_jobs` accepts `use_directory: true` plus the existing `query`, `location`
-and `limit`. It selects fresh entries from `agent_runtime/career/board_directory.json`
+and `limit`. It selects fresh entries from `backend/eregion/runtime/career/board_directory.json`
 by role family and observed location, then uses the existing board parser and
 role/location/seniority checks. Do not combine `use_directory` with explicit
 `boards`. Explicit tokens remain available and are labelled unverified. The tool
@@ -297,9 +297,9 @@ errors sets `refresh_required` until a successful/empty API observation clears i
 Refresh (dry-run by default, read-only public GETs, sequential and rate-limited):
 
 ```text
-python scripts/verify_board_directory.py
-python scripts/verify_board_directory.py --write
-python scripts/verify_board_directory.py --health exported-source-health.json
+python tools/scripts/verify_board_directory.py
+python tools/scripts/verify_board_directory.py --write
+python tools/scripts/verify_board_directory.py --health exported-source-health.json
 ```
 
 The optional health file contains only the exported `search_source_health` object;
@@ -361,7 +361,7 @@ Your own Treg account and key. Nothing is hosted, proxied or billed by the proje
 | `TREG_TOKEN` | empty | Your Treg key. Sent only as `X-Treg-Token` to `https://treg.to/call/...`; never logged, shown or returned by tools |
 | `TREG_ORG` | empty | Team slug, only for identity tokens (`X-Treg-Org`) |
 | `JOB_AGENT_TREG_ENABLED` | `0` | Allows Treg calls. A configured key alone never spends |
-| `JOB_AGENT_JOB_API_FIRST` | `0` | API-first job search over existing company boards; independent of Treg |
+| `JOB_AGENT_JOB_API_FIRST` | `1` | API-first job search over existing company boards; independent of Treg |
 | `JOB_AGENT_TREG_SEARCH_PROVIDER` | empty | `anyapi` or `crawl4ai`. Empty refuses paid LinkedIn search. The model cannot change it |
 | `JOB_AGENT_TREG_CRAWL4AI_SCRAPE_ENABLED` | `0` | Separately allows `crawl4ai.web.scrape` for page text |
 | `JOB_AGENT_TREG_TASK_MAX_COST_USD` | `0.10` | Cumulative per task (persisted; new turns or restarts do not reset it) |
@@ -407,7 +407,20 @@ for evidence and pending networked validation.
 
 The [R1 adoption decisions](diagnostics/r1-adoption-decisions-20261012.md) retain
 these disabled defaults and `current` history. The real-search gate is still
-failed; none of these experiments has been enabled by the R1 closeout. A provider
+failed; the user-approved gate amendment allows migration while moving business
+acceptance to the API-first configuration in R6/R9. No experiment is enabled by
+this policy change. A provider
 budget stop now includes saved results in its reply, while retaining `needs_input`
 and an explicit incomplete status. This does not relax search acceptance or
 increase any budget. See the [R2 gate](diagnostics/r1-closeout-and-r2-gate-20261012.md).
+
+
+## Default job sources
+
+Default research uses public company-board APIs and an explicitly configured LinkedIn MCP server (`server_id: linkedin`). No paid search key is required. Without that server, company boards remain usable and LinkedIn is reported unavailable. A LinkedIn-only request never silently searches other boards. Treg is disabled by default; users may separately enable it with their own key. Set JOB_AGENT_JOB_API_FIRST=0 explicitly only to retain the legacy browser route. Existing explicit environment values take precedence over defaults.
+
+Configure the existing MCP manager using an absolute MCP_CONFIG_PATH in the **backend process environment or project .env** (process values, including an explicitly empty value, take precedence). Copy `docs/examples/linkedin-mcp.json` and adjust executable/profile paths. Install pinned mcp-server-linkedin==4.27.0 in an isolated environment. Log in interactively once using its --login mode with the same --user-data-dir; never use a daily browser profile as that directory. Windows automatic session import may fail even when Chrome is logged in. The --chrome-path option can use an installed Chrome binary; it still uses the isolated profile. Normal server startup uses --no-auto-import, so it never imports another account silently.
+
+Only read-only search/detail tools are used by the career source. The existing manager owns startup/shutdown; the same AgentLoop owns decisions. Per-task MCP budget is 26 calls, each at most 120 seconds, counted before dispatch and persisted across restarts. Authentication/rate-limit/uncertain-timeout stops prevent automatic paid/browser retries for that source. Successful same-turn searches and JD reads are reused. New user requests refresh evidence without resetting the task-wide call budget. Restart a stopped source only after resolving its session issue; starting a new task gives a new task budget.
+
+Search cards retain title and, when the observed layout is unambiguous, company/location. Missing fields stay unknown. Cards and provider filters do not establish eligibility; complete-JD validation and scoring remain required. Directory and MCP discovery currently run sequentially under one execution owner; concurrent source fetching is not enabled.

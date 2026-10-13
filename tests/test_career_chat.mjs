@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {careerRoute,renderCareerResults} from '../web_app/career-chat.js';
+import {careerRoute,renderCareerResults} from '../frontend/web_app/career-chat.js';
 
 test('Jev uncertainty renders a range, unresolved count and unmet conditions without a false zero',()=>{
   const el=(tag,text='',className='')=>({tag,text,className,children:[],append(...n){this.children.push(...n);},replaceChildren(){this.children=[];}});

@@ -8,7 +8,7 @@ from alembic.config import Config
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import inspect, select
 
-from agent_runtime import (
+from eregion.runtime import (
     AgentMessage,
     NormalizedToolCall,
     TokenUsage,
@@ -24,7 +24,7 @@ from agent_runtime import (
     ToolRiskLevel,
     ToolSideEffect,
 )
-from agent_runtime.sessions import (
+from eregion.runtime.sessions import (
     FakeClock,
     RecoveryAction,
     SessionClaimConflictError,
@@ -39,9 +39,9 @@ from agent_runtime.sessions import (
     SessionState,
     SessionStatus,
 )
-from agent_runtime.sessions.models import AgentSessionRow
-from agent_runtime.tools.loop import ToolCallingLoop
-from api.db import create_database
+from eregion.runtime.sessions.models import AgentSessionRow
+from eregion.runtime.tools.loop import ToolCallingLoop
+from eregion.api.db import create_database
 from session_paths import session_decision_path  # noqa: F401 (both decision paths)
 
 
@@ -196,7 +196,7 @@ def test_recovery_refuses_to_steal_active_session_claim(tmp_path):
 )
 def test_recovery_planner_decision_table(status, lease_offset, risk, effect, idempotent, expected):
     from datetime import timedelta
-    from agent_runtime import ToolCallRequest, ToolCallRecord
+    from eregion.runtime import ToolCallRequest, ToolCallRecord
 
     now = datetime(2026, 1, 1, tzinfo=UTC)
     state = SessionState(
@@ -283,7 +283,7 @@ def _persist_pending_tool(sessions, service, session_id, assistant, normalized_i
 
 def test_expired_safe_read_retries_but_uncertain_call_becomes_outcome_unknown(tmp_path):
     from datetime import timedelta
-    from agent_runtime.security import arguments_hash
+    from eregion.runtime.security import arguments_hash
 
     clock = FakeClock(datetime(2026, 1, 1, tzinfo=UTC))
     call = NormalizedToolCall(tool_call_id="n", tool_name="read", arguments={"text": "x"})
@@ -324,8 +324,8 @@ def test_expired_safe_read_retries_but_uncertain_call_becomes_outcome_unknown(tm
 
 def test_repository_marks_expired_uncertain_execution_outcome_unknown(tmp_path):
     from datetime import timedelta
-    from agent_runtime import ToolCallRequest
-    from agent_runtime.security import arguments_hash
+    from eregion.runtime import ToolCallRequest
+    from eregion.runtime.security import arguments_hash
 
     clock = FakeClock(datetime(2026, 1, 1, tzinfo=UTC))
     db, _, calls, _, _, _ = make_runtime(tmp_path, clock=clock)

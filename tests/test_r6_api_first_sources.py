@@ -5,11 +5,39 @@ timeouts and network errors, unknown cost, idempotent retry, disabled API, caps
 (tests/test_treg.py, tests/test_integrated_p3.py, tests/test_board_directory.py).
 """
 import pytest
+import json
+from pathlib import Path
 
-from agent_runtime.career.treg_jobs import normalize_search
+from eregion.runtime.career.treg_jobs import normalize_search
 from test_career_flow import career, execute  # noqa: F401
 from test_integrated_p3 import CRAWL_ROWS, JD, Discovery, ask, install_treg, ok, treg_env
 from test_remaining_search_completion import prepare
+
+
+@pytest.mark.parametrize('job_id', ['4475055219', '4472375348'])
+def test_saved_real_linkedin_scrapes_use_api_without_http_fallback(career, monkeypatch, job_id):
+    sample = json.loads((Path(__file__).parent / 'fixtures' / f'treg-linkedin-{job_id}.json').read_text(encoding='utf-8'))
+    treg_env(monkeypatch, JOB_AGENT_TREG_CRAWL4AI_SCRAPE_ENABLED='1')
+    c = career; prepare(c)
+    target = sample['target']
+    c.repository.change(c.state['task_id'], search_candidates={'saved': target})
+    seen = install_treg(c, lambda r: ok(sample['body']))
+    c.harness.discovery = Discovery()
+    execute(c, 'read_job', url=target['url'])
+    assert ('job', target['url']) not in c.harness.discovery.calls
+    state = c.repository.get(c.state['task_id'])
+    assert state['retrieved_jobs']
+    assert state['treg_scrape_verdicts'][-1]['status'] == 'complete_jd'
+    # Changed chat revisions / equivalent tracking URLs must not buy the same JD again.
+    c.repository.change(c.state['task_id'], chat_revision=state['chat_revision']+1)
+    repeated = execute(c, 'read_job', url=target['url'].rstrip('/')+'/?trk=repeat')
+    assert repeated['cached'] and repeated['no_new_evidence'] and len(seen)==1
+    assert repeated['description']
+    # A new real user turn may revalidate freshness instead of reusing a stale session result.
+    ask(c, 'Please check this posting again now')
+    execute(c, 'read_job', url=target['url'])
+    assert len(seen)==2
+
 
 
 def test_crawl4ai_partial_and_blocked_coverage_is_reported_not_hidden():
@@ -118,8 +146,8 @@ def test_one_invalid_board_url_does_not_fail_the_search(career, monkeypatch):
 
 def test_directory_dedupe_drops_an_invalid_board_url_instead_of_raising(monkeypatch):
     # The exact failure replayed from run-1 page 3: JobDiscovery.search_directory raised in job_key.
-    from agent_runtime.career import board_directory
-    from agent_runtime.career.discovery import JobDiscovery
+    from eregion.runtime.career import board_directory
+    from eregion.runtime.career.discovery import JobDiscovery
     discovery = JobDiscovery()
     monkeypatch.setattr(board_directory, 'select_boards', lambda q, l: ([{'platform': 'greenhouse', 'company': 'acme'}], []))
     monkeypatch.setattr(discovery, 'search', lambda *a, **k: {'jobs': [

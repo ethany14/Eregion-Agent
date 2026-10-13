@@ -5,16 +5,16 @@ import pytest
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 
-from api.db import create_database, upgrade_database
-from agent_runtime.evidence.errors import (
+from eregion.api.db import create_database, upgrade_database
+from eregion.runtime.evidence.errors import (
     EvidenceProvenanceError, InvalidEvidenceTransitionError, StaleEvidenceError,
 )
-from agent_runtime.evidence.models import CareerEvidenceRow, CareerEvidenceVersionRow
-from agent_runtime.evidence.models import EvidenceApplicationLinkRow
-from agent_runtime.evidence.repository import CareerEvidenceRepository
-from agent_runtime.evidence.retrieval import CareerEvidenceRetriever
-from agent_runtime.evidence.types import EvidenceStatus
-from job_agent.schemas import ResumeAnalysis, ResumeEvidence
+from eregion.runtime.evidence.models import CareerEvidenceRow, CareerEvidenceVersionRow
+from eregion.runtime.evidence.models import EvidenceApplicationLinkRow
+from eregion.runtime.evidence.repository import CareerEvidenceRepository
+from eregion.runtime.evidence.retrieval import CareerEvidenceRetriever
+from eregion.runtime.evidence.types import EvidenceStatus
+from eregion.domain.schemas import ResumeAnalysis, ResumeEvidence
 
 
 @pytest.fixture
@@ -98,7 +98,7 @@ def test_no_claim_strengthening_or_invented_metric(repo):
     ("location", "New York"), ("start_date", "1990"), ("end_date", "2030"),
 ])
 def test_resume_import_rejects_invented_source_metadata(repo, field, value):
-    from job_agent.schemas import ResumeSourceEntry
+    from eregion.domain.schemas import ResumeSourceEntry
     entry = ResumeSourceEntry(source_entry_id="source", entry_type="experience",
         heading="Developer", organization="Acme", evidence_ids=["exp"])
     analysis = ResumeAnalysis(summary="", skills=[], education=[], source_entries=[
@@ -111,7 +111,7 @@ def test_resume_import_rejects_invented_source_metadata(repo, field, value):
 
 
 def test_resume_import_preserves_grounded_source_metadata(repo):
-    from job_agent.schemas import ResumeSourceEntry
+    from eregion.domain.schemas import ResumeSourceEntry
     source = "Developer at Acme, Boston, 2020 - 2022\nBuilt Python APIs."
     analysis = ResumeAnalysis(summary="", skills=[], education=[], source_entries=[
         ResumeSourceEntry(source_entry_id="source", entry_type="experience", heading="Developer",
@@ -162,10 +162,10 @@ def test_foreign_keys_and_migration_on_populated_database(tmp_path):
 
 
 def test_context_snapshot_records_only_selected_evidence(tmp_path):
-    from agent_runtime.context.projection import SessionContextProjector
-    from agent_runtime.context.repository import ContextSnapshotRepository
-    from agent_runtime.sessions import SessionEvent, SessionEventType, SessionMessageDraft, SessionRepository, SessionState, SessionStatus
-    from agent_runtime.tools.messages import AgentMessage
+    from eregion.runtime.context.projection import SessionContextProjector
+    from eregion.runtime.context.repository import ContextSnapshotRepository
+    from eregion.runtime.sessions import SessionEvent, SessionEventType, SessionMessageDraft, SessionRepository, SessionState, SessionStatus
+    from eregion.runtime.tools.messages import AgentMessage
 
     db = create_database(f"sqlite:///{tmp_path / 'context.db'}", create_schema_for_tests=True)
     try:
@@ -194,7 +194,7 @@ def test_context_snapshot_records_only_selected_evidence(tmp_path):
         assert unrelated.current.claim_text not in projected.messages[0].content
         rebuilt = projector.rebuild(state, projected.snapshot.snapshot_id)
         assert rebuilt.messages == projected.messages
-        from agent_runtime.context.snapshots import ContextSnapshotUnavailableError
+        from eregion.runtime.context.snapshots import ContextSnapshotUnavailableError
         current = repo.get(matching.evidence_id)
         repo.archive(matching.evidence_id, current.version)
         with pytest.raises(ContextSnapshotUnavailableError):
@@ -204,8 +204,8 @@ def test_context_snapshot_records_only_selected_evidence(tmp_path):
 
 
 def test_application_link_requires_confirmation_and_preserves_evidence(tmp_path):
-    from agent_runtime.workspace.repository import JobWorkspaceRepository
-    from agent_runtime.workspace.models import ApplicationRow
+    from eregion.runtime.workspace.repository import JobWorkspaceRepository
+    from eregion.runtime.workspace.models import ApplicationRow
 
     db = create_database(f"sqlite:///{tmp_path / 'links.db'}", create_schema_for_tests=True)
     try:
@@ -283,7 +283,7 @@ def test_upgrade_from_populated_0014_database_preserves_runs(tmp_path):
     from alembic import command
     from alembic.config import Config
     from pathlib import Path
-    from api.models import Run
+    from eregion.api.models import Run
 
     url = f"sqlite:///{(tmp_path / 'legacy.db').as_posix()}"
     config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))

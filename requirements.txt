@@ -1,4 +1,5 @@
 langchain-core
+-e .
 langchain-openai
 pydantic
 python-dotenv

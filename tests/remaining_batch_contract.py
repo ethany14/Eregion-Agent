@@ -1,7 +1,7 @@
 """Shared offline/live cold-resolver acceptance; aliases are evidence, not calls."""
 from collections import Counter
 
-from job_agent.jev_fit.resolve import locate
+from eregion.domain.jev_fit.resolve import locate
 
 
 def resolver_coverage(raws, outputs, requests, evidence):

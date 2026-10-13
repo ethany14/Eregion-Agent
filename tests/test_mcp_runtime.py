@@ -14,36 +14,36 @@ import pytest
 from mcp_types import CallToolResult, TextContent, Tool, ToolAnnotations
 from pydantic import BaseModel
 
-from agent_runtime.errors import UnknownToolError
-from agent_runtime.mcp import (
+from eregion.runtime.errors import UnknownToolError
+from eregion.runtime.mcp import (
     McpRuntimeConfig,
     McpStdioServerConfig,
     McpToolManager,
     load_mcp_runtime_config,
     normalize_mcp_result,
 )
-from agent_runtime.mcp.client import StdioMcpClient
-from agent_runtime.mcp.errors import (
+from eregion.runtime.mcp.client import StdioMcpClient
+from eregion.runtime.mcp.errors import (
     McpConfigurationError,
     McpCallTimeoutError,
     McpDisconnectedError,
     McpStartupError,
     McpToolCollisionError,
 )
-from agent_runtime.policy import ToolPolicy
-from agent_runtime.registry import ToolRegistry
-from agent_runtime.repository import ToolCallRepository
-from agent_runtime.types import (
+from eregion.runtime.policy import ToolPolicy
+from eregion.runtime.registry import ToolRegistry
+from eregion.runtime.repository import ToolCallRepository
+from eregion.runtime.types import (
     ToolCallRequest,
     ToolContext,
     ToolExecutionStatus,
     ToolResult,
     ToolRiskLevel,
 )
-from agent_runtime.tools.serialization import tool_message_envelope
-from agent_runtime.mcp.types import McpToolProvenance
-from api.db import create_database
-from api.session_routes import _public_tool_calls
+from eregion.runtime.tools.serialization import tool_message_envelope
+from eregion.runtime.mcp.types import McpToolProvenance
+from eregion.api.db import create_database
+from eregion.api.session_routes import _public_tool_calls
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -136,7 +136,7 @@ def persistent_executor(tmp_path, registry):
         create_schema_for_tests=True,
     )
     repository = ToolCallRepository(database.session_factory)
-    from agent_runtime.executor import ToolExecutor
+    from eregion.runtime.executor import ToolExecutor
 
     return ToolExecutor(registry, policy=ToolPolicy(), repository=repository), repository
 
@@ -280,7 +280,7 @@ def test_discovery_preserves_schema_metadata_and_calls_original_name():
     assert schema["name"] == "mcp__local-test__echo_text"
     assert schema["input_schema"] == client.tools[0].input_schema
 
-    from agent_runtime.executor import ToolExecutor
+    from eregion.runtime.executor import ToolExecutor
 
     record = ToolExecutor(registry).execute(
         ToolCallRequest(tool_name=tool.name, arguments={"text": "hello"}),
@@ -568,7 +568,7 @@ def test_local_stdio_server_end_to_end_persists_both_tools(tmp_path):
 
 
 def test_timed_out_stdio_connection_is_not_reused():
-    from agent_runtime.mcp.client import StdioMcpClient
+    from eregion.runtime.mcp.client import StdioMcpClient
 
     client = StdioMcpClient(McpStdioServerConfig(
         server_id="timeout-test",
@@ -593,7 +593,7 @@ def test_timed_out_stdio_connection_is_not_reused():
 
 
 def test_stdio_call_uses_owned_thread_boundary_from_running_event_loop():
-    from agent_runtime.mcp.client import StdioMcpClient
+    from eregion.runtime.mcp.client import StdioMcpClient
 
     client = StdioMcpClient(McpStdioServerConfig(
         server_id="async-boundary",
@@ -624,7 +624,7 @@ def test_stdio_call_uses_owned_thread_boundary_from_running_event_loop():
 
 
 def test_one_stdio_connection_supports_two_concurrent_session_calls():
-    from agent_runtime.mcp.client import StdioMcpClient
+    from eregion.runtime.mcp.client import StdioMcpClient
 
     client = StdioMcpClient(McpStdioServerConfig(
         server_id="concurrent-stdio",

@@ -4,10 +4,10 @@ import os
 
 import pytest
 
-from agent_runtime.auto_apply.browser import ApplicationBrowser
-from agent_runtime.auto_apply.contracts import ContinueApplication, ChatRequest
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.repository import ApplyRepository, DuplicateApplication
+from eregion.runtime.auto_apply.browser import ApplicationBrowser
+from eregion.runtime.auto_apply.contracts import ContinueApplication, ChatRequest
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.repository import ApplyRepository, DuplicateApplication
 from test_auto_apply import database, request, wait
 
 pytestmark=pytest.mark.skipif(os.getenv('JOB_AGENT_BROWSER_TESTS')!='1',reason='Opt-in offline real Chrome')
@@ -39,7 +39,7 @@ def test_review_remember_submit_second_job_and_restart(database,tmp_path,ambiguo
             else:route.abort()
     repo=ApplyRepository(database.session_factory)
     repo.save_candidate(request().profile.model_dump())
-    from agent_runtime.auto_apply.agent import HybridApplicationAgent
+    from eregion.runtime.auto_apply.agent import HybridApplicationAgent
     from langchain_core.messages import AIMessage,HumanMessage
     from uuid import uuid4
     class BindingModel:

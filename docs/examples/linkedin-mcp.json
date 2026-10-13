@@ -1,0 +1,28 @@
+{
+  "servers": [
+    {
+      "server_id": "linkedin",
+      "required": false,
+      "command": "uvx",
+      "args": [
+        "mcp-server-linkedin==4.27.0",
+        "--transport",
+        "stdio",
+        "--no-auto-import"
+      ],
+      "tool_allowlist": [
+        "search_jobs",
+        "get_job_details",
+        "close_session"
+      ],
+      "read_only_tools": [
+        "search_jobs",
+        "get_job_details",
+        "close_session"
+      ],
+      "startup_timeout_seconds": 120,
+      "call_timeout_seconds": 120,
+      "max_result_bytes": 2000000
+    }
+  ]
+}

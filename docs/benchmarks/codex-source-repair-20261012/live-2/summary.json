@@ -1,0 +1,3504 @@
+{
+  "status": "needs_input",
+  "calls": 49,
+  "seconds": 438.54,
+  "jobs": 2,
+  "materials": 0,
+  "applications": 0,
+  "error": "provider_budget",
+  "tools": [
+    "read_context",
+    "search_jobs",
+    "read_context",
+    "read_context",
+    "read_context",
+    "read_context",
+    "read_job",
+    "read_context",
+    "read_context",
+    "read_job",
+    "read_context",
+    "read_context",
+    "search_jobs",
+    "read_job",
+    "read_context",
+    "read_context",
+    "read_context",
+    "import_job",
+    "score_job",
+    "search_jobs",
+    "recommend_job",
+    "read_job",
+    "read_context",
+    "import_job"
+  ],
+  "final": "I stopped at the provider budget limit. Saved work is preserved; the requested work is not complete.\n\nSaved so far:\n- Recommended: Graduate Data Analyst — adMarketplace — https://www.linkedin.com/jobs/view/4469763828/ — score 80.72",
+  "usage": {
+    "calls": 60,
+    "completed": 60,
+    "failed": 0,
+    "pending": 0,
+    "discarded": 0,
+    "retries": 0,
+    "input_tokens": 627632,
+    "output_tokens": 44537,
+    "unknown_usage_calls": 0,
+    "groups": [
+      {
+        "purpose": "agent",
+        "model": "muse-spark-1.3-contributor",
+        "calls": 49,
+        "input_tokens": 564634,
+        "output_tokens": 36555,
+        "unknown_usage_calls": 0,
+        "cached_input_tokens": 252193,
+        "reasoning_tokens": 29077,
+        "cache_hit_ratio": 0.4466486254812852,
+        "reasoning_share": 0.7954315415127889
+      },
+      {
+        "purpose": "jev:fit:extract_requirements",
+        "model": "jev-1.13.0",
+        "calls": 3,
+        "input_tokens": 46393,
+        "output_tokens": 6024,
+        "unknown_usage_calls": 0,
+        "cache_hit_ratio": null,
+        "reasoning_share": null
+      },
+      {
+        "purpose": "jev:fit:refine_extraction_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 2,
+        "input_tokens": 8350,
+        "output_tokens": 1014,
+        "unknown_usage_calls": 0,
+        "cache_hit_ratio": null,
+        "reasoning_share": null
+      },
+      {
+        "purpose": "jev:fit:condition_category_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 2,
+        "input_tokens": 2066,
+        "output_tokens": 266,
+        "unknown_usage_calls": 0,
+        "cache_hit_ratio": null,
+        "reasoning_share": null
+      },
+      {
+        "purpose": "jev:fit:support_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 2942,
+        "output_tokens": 462,
+        "unknown_usage_calls": 0,
+        "cache_hit_ratio": null,
+        "reasoning_share": null
+      },
+      {
+        "purpose": "jev:fit:focused_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 646,
+        "output_tokens": 38,
+        "unknown_usage_calls": 0,
+        "cache_hit_ratio": null,
+        "reasoning_share": null
+      },
+      {
+        "purpose": "jev:fit:clarify_full_support_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 1081,
+        "output_tokens": 72,
+        "unknown_usage_calls": 0,
+        "cache_hit_ratio": null,
+        "reasoning_share": null
+      },
+      {
+        "purpose": "jev:fit:verify_citations_yes_no",
+        "model": "jev-1.13.0",
+        "calls": 1,
+        "input_tokens": 1520,
+        "output_tokens": 106,
+        "unknown_usage_calls": 0,
+        "cache_hit_ratio": null,
+        "reasoning_share": null
+      }
+    ],
+    "budget_input_tokens": 627632,
+    "cached_input_tokens": 252193,
+    "reasoning_tokens": 29077,
+    "cache_hit_ratio": 0.40181666964080864,
+    "reasoning_share": 0.6528728922019894,
+    "usage_complete": true,
+    "provider_attempts": 60
+  },
+  "recommendations": [
+    {
+      "application_id": "7a40aa3b-6282-4c8f-a81f-980e9d0b7cc3",
+      "title": "Graduate Data Analyst",
+      "company": "adMarketplace",
+      "location": "New York, NY",
+      "url": "https://www.linkedin.com/jobs/view/4469763828/",
+      "match_score": 80.72,
+      "reason": "Entry-level Graduate Data Analyst in New York, NY matching junior request; scored 80.72 with 7 matched requirements (degree, SQL, Python/R, visualization, modern stack exposure).",
+      "caveats": "LinkedIn posting lists Entry level, New York NY; work-mode/remote policy not confirmed in excerpt – confirm on posting. 6 requirements unresolved in scoring (soft skills/statistics) – review match report."
+    }
+  ],
+  "schedules": 0,
+  "verified_jobs": [
+    {
+      "application_id": "7a40aa3b-6282-4c8f-a81f-980e9d0b7cc3",
+      "title": "Graduate Data Analyst",
+      "company": "adMarketplace",
+      "url": "https://www.linkedin.com/jobs/view/4469763828/",
+      "location": "New York, NY",
+      "status": "materials_ready",
+      "match_score": 80.72,
+      "result_at": "2026-10-13T00:20:23.263485+00:00",
+      "status_label": "Materials ready",
+      "qualification_evidence": [
+        {
+          "quote": "For over 25 years, we’ve connected brands with consumers at the moment they express commercial intent beyond legacy search engines.",
+          "start": 4701,
+          "end": 4832
+        }
+      ],
+      "requirement_counts": {
+        "matched": 7,
+        "partial": 0,
+        "missing": 0,
+        "needs_confirmation": 0,
+        "unknown": 6,
+        "confirmed_condition": 0
+      },
+      "gaps": [],
+      "match_overview": {
+        "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 54%). Personal conditions are reported separately.",
+        "score_range": [
+          80.72,
+          80.72
+        ],
+        "analysis_status": "completed",
+        "analysis_status_label": "Completed",
+        "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+        "matched": [
+          {
+            "requirement": "Bachelor's or master's degree-or equivalent experience-in a quantitative or analytical field.",
+            "display_name": "Bachelor's or master's degree-or equivalent experience-in a quantitative or analytical field.",
+            "status_label": "Matched",
+            "level": "required"
+          },
+          {
+            "requirement": "Experience working with data through coursework, internships, research, projects, or professional work.",
+            "display_name": "Experience working with data through coursework, internships, research, projects, or professional work.",
+            "status_label": "Matched",
+            "level": "required"
+          },
+          {
+            "requirement": "Basic SQL knowledge or demonstrated ability to learn technical tools quickly.",
+            "display_name": "Basic SQL knowledge or demonstrated ability to learn technical tools quickly.",
+            "status_label": "Matched",
+            "level": "required"
+          },
+          {
+            "requirement": "Python or R.",
+            "display_name": "Python or R.",
+            "status_label": "Matched",
+            "level": "required"
+          },
+          {
+            "requirement": "SQL beyond introductory coursework.",
+            "display_name": "SQL beyond introductory coursework.",
+            "status_label": "Matched",
+            "level": "required"
+          },
+          {
+            "requirement": "Data visualization experience.",
+            "display_name": "Data visualization experience.",
+            "status_label": "Matched",
+            "level": "required"
+          },
+          {
+            "requirement": "Exposure to Databricks, Snowflake, dbt, Sigma, Tableau, or similar tools.",
+            "display_name": "Exposure to Databricks, Snowflake, dbt, Sigma, Tableau, or similar tools.",
+            "status_label": "Matched",
+            "level": "required"
+          }
+        ],
+        "partial": [],
+        "missing": [],
+        "needs_confirmation": [],
+        "unknown": [
+          {
+            "requirement": "Strong quantitative reasoning and problem-solving skills.",
+            "display_name": "Strong quantitative reasoning and problem-solving skills.",
+            "status_label": "Unresolved",
+            "level": "required"
+          },
+          {
+            "requirement": "Clear communication and willingness to ask questions and challenge assumptions.",
+            "display_name": "Clear communication and willingness to ask questions and challenge assumptions.",
+            "status_label": "Unresolved",
+            "level": "required"
+          },
+          {
+            "requirement": "Motivation to learn unfamiliar tools, techniques, and domains.",
+            "display_name": "Motivation to learn unfamiliar tools, techniques, and domains.",
+            "status_label": "Unresolved",
+            "level": "required"
+          },
+          {
+            "requirement": "Statistics or experimental-design experience.",
+            "display_name": "Statistics or experimental-design experience.",
+            "status_label": "Unresolved",
+            "level": "required"
+          },
+          {
+            "requirement": "Experience working with real-world datasets.",
+            "display_name": "Experience working with real-world datasets.",
+            "status_label": "Unresolved",
+            "level": "required"
+          },
+          {
+            "requirement": "Entry level",
+            "display_name": "Entry level",
+            "status_label": "Unresolved",
+            "level": "required"
+          }
+        ],
+        "confirmed_condition": []
+      },
+      "score_range": [
+        80.72,
+        80.72
+      ],
+      "analysis_status": "completed",
+      "analysis_status_label": "Completed",
+      "score_algorithm": "jev-only",
+      "score_valid_until": 1791937221.604224,
+      "description": "[Skip to main content](#main-content)\n\n### Graduate Data Analyst\n\n[adMarketplace](https://www.linkedin.com/company/admarketplace?trk=public_jobs_sub-nav-cta-optional-url \"adMarketplace\") New York, NY \n\n## Join or sign in to find your next job\n\nJoin to apply for the **Graduate Data Analyst** role at **adMarketplace** \n\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs_apply-link-offsite_contextual-sign-in-modal_join-link) \n\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \n\n# Graduate Data Analyst\n\n#### New York, NY \n\n 2 weeks ago\n\nOver 200 applicants \n\n[See who adMarketplace has hired for this role](https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww%2Elinkedin%2Ecom%2Fsearch%2Fresults%2Fpeople%2F%3FfacetCurrentCompany%3D771333%26title%3DData%2BAnalyst&emailAddress=&fromSignIn=&trk=public_jobs_see-who-was-hired_people-search-link_face-pile-cta)\n\n## Join or sign in to find your next job\n\nJoin to apply for the **Graduate Data Analyst** role at **adMarketplace** \n\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs_apply-link-offsite_contextual-sign-in-modal_join-link) \n\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \n\n[Save](https://www.linkedin.com/login?emailAddress=&fromSignIn=&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs) \n\n-   [Report this job](/uas/login?fromSignIn=true&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs_ellipsis-menu-semaphore-sign-in-redirect&guestReportContentType=JOB&_f=guest-reporting)\n\n### Use AI to assess how you fit\n\nGet AI-powered advice on this job and more exclusive features.\n\n## Sign in to access AI-powered advices\n\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&trk=public_jobs_ai_button_cta_contextual-sign-in-modal_join-link) \n\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \n\n## Sign in to evaluate your skills\n\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&trk=public_jobs_ai_button_cta_contextual-sign-in-modal_join-link) \n\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \n\n## Sign in to tailor your resume\n\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&trk=public_jobs_ai_button_cta_contextual-sign-in-modal_join-link) \n\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \n\n## adMarketplace provided pay range\n\nThis range is provided by adMarketplace. Your actual pay will be based on your skills and experience — talk with your recruiter to learn more. \n\n### Base pay range\n\n$100,000.00/yr - $120,000.00/yr \n\n### Additional compensation types\n\nAnnual Bonus and RSUs \n\nDirect message the job poster from adMarketplace\n\n[Allison Rosa](https://www.linkedin.com/in/allison-rosa)\n\n### Allison Rosa\n\n#### Technical Recruiter\n\n**Who We Are**\n\nadMarketplace is the largest global marketplace for Native Search advertising. For over 25 years, we’ve connected brands with consumers at the moment they express commercial intent beyond legacy search engines.\n\nToday, our Native Search solutions are exclusively integrated across next-generation platforms where discovery happens, including web browsers, Buy Now Pay Later apps, and AI chat surfaces. Powered by vector search technology, our platform delivers relevant text and product ads that match consumers with the brands, products, and offers they’re actively seeking.\n\nOur award-winning culture is grounded in the principles of Curiosity, Collaboration, Creative Conflict, Commitment, and Competitiveness – our 5Cs. These values drive us to turn complexity into clarity and create measurable value for consumers, advertisers, and publishers alike.\n\n**The Role**\n\nadMarketplace is looking for a curious, analytical, and highly motivated Graduate Data Analyst to join our Measurement & Insights organization.\n\nThis is an early-career development role designed for someone who wants to build a career at the intersection of data, technology, product, and digital advertising. You'll begin with well-scoped analytical problems and progressively take ownership of more ambiguous work.\n\nYou'll work alongside Analytics Engineers, Data Scientists, Marketing Scientists, Product Managers, Engineers, and commercial teams to solve real problems using real marketplace data.\n\nAs your skills and interests develop, we'll help you build toward one of several career paths:\n\n-   Analytics Engineering - building trusted datasets, metrics, and self-service analytics.\n-   Data Science & Product Analytics - experimentation, causal analysis, product insights, and marketplace science.\n-   Marketing Science - advertising measurement, incrementality, experimentation, and client-facing insights.\n\nYou aren't expected to know which path is right for you on day one. Part of the job is figuring that out.\n\n**What You'll Do**\n\n-   Learn Our Business & Data - Develop a strong understanding of adMarketplace, our marketplace, core datasets, metrics, and Enterprise Data Model.\n-   Analyze Real Business Questions - Use SQL to investigate product and marketplace performance, identify drivers, analyze trends, and communicate findings.\n-   Build Trusted Analytics - Help develop reusable datasets, QA metrics, document definitions, and turn recurring analyses into scalable analytics.\n-   Learn Experimentation & Data Science - Support experiments, analyze A/B tests, and gain exposure to statistics, causal inference, Python/R, and marketplace science.\n-   Learn Marketing Science - Support advertising-effectiveness and incrementality studies, including experimental QA and client-facing analyses.\n-   Build Reusable Solutions - Look for opportunities to automate recurring work and use modern analytical and AI tools to make the team more effective.\n\n**What We're Looking For**\n\nWe care more about your analytical potential and ability to learn than having years of experience.\n\nYou might be a recent graduate, completing your degree, or at the very beginning of your career.\n\nWe're looking for:\n\n-   Bachelor's or master's degree-or equivalent experience-in a quantitative or analytical field.\n-   Experience working with data through coursework, internships, research, projects, or professional work.\n-   Basic SQL knowledge or demonstrated ability to learn technical tools quickly.\n-   Strong quantitative reasoning and problem-solving skills.\n-   Curiosity about how products and businesses work, not just the data they generate.\n-   Clear communication and willingness to ask questions and challenge assumptions.\n-   Motivation to learn unfamiliar tools, techniques, and domains.\n\n**Nice to Have - But Definitely Not Required**\n\n-   Python or R.\n-   SQL beyond introductory coursework.\n-   Statistics or experimental-design experience.\n-   Data visualization experience.\n-   Exposure to Databricks, Snowflake, dbt, Sigma, Tableau, or similar tools.\n-   Experience working with real-world datasets.\n-   Interest in advertising, marketplaces, search, or digital products.\n\nWe do not expect graduate candidates to arrive knowing all of these technologies. That's part of what you'll learn here.\n\n**Join Us**\n\nadMarketplace has been named as one of the best places to work in New York City by Built In and Crain’s- the latter of which have recognized us the past three years straight! AMP is currently experiencing triple digit growth, and it’s never been a better time to join our team!\n\nWe offer a robust continuing education program, management training, regular company-wide lunch and learns, and well-defined career paths to ensure all our employees have an opportunity to grow.\n\nAt adMarketplace, we play to win, but we learn from our setbacks. Our commitment to a collaborative environment means no one succeeds alone, and no one fails alone either.\n\nWe know you’ve come to expect comprehensive healthcare, wellness programs, paid time off, commuter benefits, and 401k matching from any company, so it’s a good thing we offer all of that and so much more. adMarketplace offers Summer Fridays, catered lunches, a fully stocked kitchen, ZogSports teams, happy hours and corporate retreats to encourage a strong work/life balance.\n\nNo Third Party Recruiters. We do not accept unsolicited agency resumes and we are not responsible for any fees related to unsolicited resumes.\n\n\\*This range represents the low and high end of the base salary someone in this role may earn as an employee of adMarketplace in the New York office. Salaries will vary based on various factors including but not limited to professional and academic experience; training; associated responsibilities; and other business and organizational needs. The range listed is just one component of our total compensation package for employees. Salary decisions are dependent on the circumstances of each hire.\n\n-   ### Seniority level\n\n     Entry level\n-   ### Employment type\n\n     Full-time\n-   ### Industries\n\n     Advertising Services\n\nReferrals increase your chances of interviewing at adMarketplace by 2x\n\n[See who you know](https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww%2Elinkedin%2Ecom%2Fsearch%2Fresults%2Fpeople%2F%3FfacetCurrentCompany%3D771333&emailAddress=&fromSignIn=&trk=public_jobs_find-a-referral-cta) \n\n## Featured Benefits\n\n### Inferred from the description for this job\n\n-   Medical insurance\n\n-   Vision insurance\n\n-   Dental insurance\n\n-   401(k)\n\n-   Paid maternity leave\n\n-   Paid paternity leave\n\n-   Commuter benefits\n\nGet notified about new Data Analyst jobs in **New York, NY**. \n\n[Sign in to create job alert](https://www.linkedin.com/login?emailAddress=&fromSignIn=&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs_job-alert-guest-redirect-cta) \n",
+      "match_report": {
+        "algorithm": "jev-only",
+        "analysis_status": "completed",
+        "confirmation_requirements": [],
+        "decision_details": {
+          "decisions": [
+            {
+              "citation_scope": "full_evaluated_source",
+              "citation_verification": null,
+              "citations": [
+                {
+                  "sha256": "ce99fe4ed9c890e67921d593778822b23a9896ac8e62c329fa1d3aa8e15c1569",
+                  "spans": [
+                    [
+                      0,
+                      395
+                    ]
+                  ]
+                }
+              ],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.89,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.96,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j69",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": "full_evaluated_source",
+              "citation_verification": {
+                "noul": 0.84,
+                "type": "noul"
+              },
+              "citations": [
+                {
+                  "sha256": "ce99fe4ed9c890e67921d593778822b23a9896ac8e62c329fa1d3aa8e15c1569",
+                  "spans": [
+                    [
+                      0,
+                      395
+                    ]
+                  ]
+                }
+              ],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.96,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.98,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j70",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": "verified_excerpt",
+              "citation_verification": {
+                "noul": 0.87,
+                "type": "noul"
+              },
+              "citations": [
+                {
+                  "sha256": "8142a55fbbb113f4f08a21c3c60b91697d23912fd22155a2c06bf6d278126f7a",
+                  "spans": [
+                    [
+                      311,
+                      395
+                    ]
+                  ]
+                },
+                {
+                  "sha256": "e2a34593235634cb0be09b17589da2f354ad4464c3cedc01f3d4334c5234a593",
+                  "spans": [
+                    [
+                      22,
+                      238
+                    ]
+                  ]
+                }
+              ],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.07,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.95,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.97,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j71",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": {
+                "noul": 0.18,
+                "type": "noul"
+              },
+              "focused": {
+                "f": {
+                  "noul": 0.13,
+                  "type": "noul"
+                },
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.03,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.46,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.91,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j72",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.65,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.05,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.16,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j74",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.68,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.06,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.21,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j75",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": "verified_excerpt",
+              "citation_verification": {
+                "noul": 0.94,
+                "type": "noul"
+              },
+              "citations": [
+                {
+                  "sha256": "8142a55fbbb113f4f08a21c3c60b91697d23912fd22155a2c06bf6d278126f7a",
+                  "spans": [
+                    [
+                      311,
+                      395
+                    ]
+                  ]
+                },
+                {
+                  "sha256": "e2a34593235634cb0be09b17589da2f354ad4464c3cedc01f3d4334c5234a593",
+                  "spans": [
+                    [
+                      22,
+                      238
+                    ]
+                  ]
+                }
+              ],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.97,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.98,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j77",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": "full_evaluated_source",
+              "citation_verification": {
+                "noul": 0.41,
+                "type": "noul"
+              },
+              "citations": [
+                {
+                  "sha256": "ce99fe4ed9c890e67921d593778822b23a9896ac8e62c329fa1d3aa8e15c1569",
+                  "spans": [
+                    [
+                      0,
+                      395
+                    ]
+                  ]
+                }
+              ],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.03,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.87,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.94,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j78",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": {
+                "noul": 0.68,
+                "type": "noul"
+              },
+              "focused": {
+                "f": {
+                  "noul": 0.07,
+                  "type": "noul"
+                },
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.03,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.78,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.95,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j79",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": "full_evaluated_source",
+              "citation_verification": {
+                "noul": 0.75,
+                "type": "noul"
+              },
+              "citations": [
+                {
+                  "sha256": "ce99fe4ed9c890e67921d593778822b23a9896ac8e62c329fa1d3aa8e15c1569",
+                  "spans": [
+                    [
+                      0,
+                      395
+                    ]
+                  ]
+                }
+              ],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.03,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.96,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.97,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j80",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": "full_evaluated_source",
+              "citation_verification": {
+                "noul": 0.44,
+                "type": "noul"
+              },
+              "citations": [
+                {
+                  "sha256": "ce99fe4ed9c890e67921d593778822b23a9896ac8e62c329fa1d3aa8e15c1569",
+                  "spans": [
+                    [
+                      0,
+                      395
+                    ]
+                  ]
+                }
+              ],
+              "clarified_full_support": null,
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.9,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.96,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j81",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": {
+                "noul": 0.23,
+                "type": "noul"
+              },
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.04,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.42,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.77,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j82",
+              "resolved_by": "jev"
+            },
+            {
+              "citation_scope": null,
+              "citation_verification": null,
+              "citations": [],
+              "clarified_full_support": {
+                "noul": 0.22,
+                "type": "noul"
+              },
+              "focused": {
+                "f": null,
+                "r": null
+              },
+              "initial": {
+                "c": {
+                  "noul": 0.06,
+                  "type": "noul"
+                },
+                "f": {
+                  "noul": 0.45,
+                  "type": "noul"
+                },
+                "r": {
+                  "noul": 0.81,
+                  "type": "noul"
+                }
+              },
+              "requirement_id": "j100",
+              "resolved_by": "jev"
+            }
+          ],
+          "extraction": [
+            {
+              "classification": "context",
+              "end": 37,
+              "id": "j0",
+              "start": 0
+            },
+            {
+              "classification": "context",
+              "end": 64,
+              "id": "j1",
+              "start": 39
+            },
+            {
+              "classification": "context",
+              "end": 199,
+              "id": "j2",
+              "start": 66
+            },
+            {
+              "classification": "context",
+              "end": 242,
+              "id": "j3",
+              "start": 202
+            },
+            {
+              "classification": "context",
+              "end": 317,
+              "id": "j4",
+              "start": 244
+            },
+            {
+              "classification": "context",
+              "end": 599,
+              "id": "j5",
+              "start": 320
+            },
+            {
+              "classification": "context",
+              "end": 919,
+              "id": "j6",
+              "start": 602
+            },
+            {
+              "classification": "context",
+              "end": 945,
+              "id": "j7",
+              "start": 922
+            },
+            {
+              "classification": "context",
+              "end": 964,
+              "id": "j8",
+              "start": 947
+            },
+            {
+              "classification": "context",
+              "end": 979,
+              "id": "j9",
+              "start": 968
+            },
+            {
+              "classification": "context",
+              "end": 1000,
+              "id": "j10",
+              "start": 981
+            },
+            {
+              "classification": "context",
+              "end": 1314,
+              "id": "j11",
+              "start": 1003
+            },
+            {
+              "classification": "context",
+              "end": 1356,
+              "id": "j12",
+              "start": 1316
+            },
+            {
+              "classification": "context",
+              "end": 1431,
+              "id": "j13",
+              "start": 1358
+            },
+            {
+              "classification": "context",
+              "end": 1713,
+              "id": "j14",
+              "start": 1434
+            },
+            {
+              "classification": "context",
+              "end": 2033,
+              "id": "j15",
+              "start": 1716
+            },
+            {
+              "classification": "context",
+              "end": 2230,
+              "id": "j16",
+              "start": 2036
+            },
+            {
+              "classification": "context",
+              "end": 2499,
+              "id": "j17",
+              "start": 2233
+            },
+            {
+              "classification": "context",
+              "end": 2533,
+              "id": "j18",
+              "start": 2501
+            },
+            {
+              "classification": "context",
+              "end": 2597,
+              "id": "j19",
+              "start": 2535
+            },
+            {
+              "classification": "context",
+              "end": 2638,
+              "id": "j20",
+              "start": 2599
+            },
+            {
+              "classification": "context",
+              "end": 2800,
+              "id": "j21",
+              "start": 2640
+            },
+            {
+              "classification": "context",
+              "end": 3120,
+              "id": "j22",
+              "start": 2803
+            },
+            {
+              "classification": "context",
+              "end": 3157,
+              "id": "j23",
+              "start": 3123
+            },
+            {
+              "classification": "context",
+              "end": 3319,
+              "id": "j24",
+              "start": 3159
+            },
+            {
+              "classification": "context",
+              "end": 3639,
+              "id": "j25",
+              "start": 3322
+            },
+            {
+              "classification": "context",
+              "end": 3674,
+              "id": "j26",
+              "start": 3642
+            },
+            {
+              "classification": "context",
+              "end": 3836,
+              "id": "j27",
+              "start": 3676
+            },
+            {
+              "classification": "context",
+              "end": 4156,
+              "id": "j28",
+              "start": 3839
+            },
+            {
+              "classification": "context",
+              "end": 4194,
+              "id": "j29",
+              "start": 4159
+            },
+            {
+              "classification": "context",
+              "end": 4236,
+              "id": "j30",
+              "start": 4196
+            },
+            {
+              "classification": "context",
+              "end": 4338,
+              "id": "j31",
+              "start": 4237
+            },
+            {
+              "classification": "context",
+              "end": 4359,
+              "id": "j32",
+              "start": 4341
+            },
+            {
+              "classification": "context",
+              "end": 4392,
+              "id": "j33",
+              "start": 4361
+            },
+            {
+              "classification": "context",
+              "end": 4428,
+              "id": "j34",
+              "start": 4395
+            },
+            {
+              "classification": "context",
+              "end": 4451,
+              "id": "j35",
+              "start": 4430
+            },
+            {
+              "classification": "context",
+              "end": 4502,
+              "id": "j36",
+              "start": 4454
+            },
+            {
+              "classification": "context",
+              "end": 4560,
+              "id": "j37",
+              "start": 4504
+            },
+            {
+              "classification": "context",
+              "end": 4578,
+              "id": "j38",
+              "start": 4562
+            },
+            {
+              "classification": "context",
+              "end": 4604,
+              "id": "j39",
+              "start": 4580
+            },
+            {
+              "classification": "context",
+              "end": 4620,
+              "id": "j40",
+              "start": 4606
+            },
+            {
+              "classification": "context",
+              "end": 4700,
+              "id": "j41",
+              "start": 4622
+            },
+            {
+              "classification": "context",
+              "end": 4832,
+              "id": "j42",
+              "start": 4701
+            },
+            {
+              "classification": "context",
+              "end": 5023,
+              "id": "j43",
+              "start": 4834
+            },
+            {
+              "classification": "context",
+              "end": 5197,
+              "id": "j44",
+              "start": 5024
+            },
+            {
+              "classification": "context",
+              "end": 5345,
+              "id": "j45",
+              "start": 5199
+            },
+            {
+              "classification": "context",
+              "end": 5477,
+              "id": "j46",
+              "start": 5346
+            },
+            {
+              "classification": "context",
+              "end": 5491,
+              "id": "j47",
+              "start": 5479
+            },
+            {
+              "classification": "context",
+              "end": 5636,
+              "id": "j48",
+              "start": 5493
+            },
+            {
+              "classification": "context",
+              "end": 5802,
+              "id": "j49",
+              "start": 5638
+            },
+            {
+              "classification": "context",
+              "end": 5909,
+              "id": "j50",
+              "start": 5803
+            },
+            {
+              "classification": "context",
+              "end": 6094,
+              "id": "j51",
+              "start": 5911
+            },
+            {
+              "classification": "context",
+              "end": 6190,
+              "id": "j52",
+              "start": 6096
+            },
+            {
+              "classification": "context",
+              "end": 6283,
+              "id": "j53",
+              "start": 6192
+            },
+            {
+              "classification": "context",
+              "end": 6399,
+              "id": "j54",
+              "start": 6284
+            },
+            {
+              "classification": "context",
+              "end": 6509,
+              "id": "j55",
+              "start": 6400
+            },
+            {
+              "classification": "context",
+              "end": 6578,
+              "id": "j56",
+              "start": 6511
+            },
+            {
+              "classification": "context",
+              "end": 6616,
+              "id": "j57",
+              "start": 6579
+            },
+            {
+              "classification": "context",
+              "end": 6636,
+              "id": "j58",
+              "start": 6618
+            },
+            {
+              "classification": "context",
+              "end": 6786,
+              "id": "j59",
+              "start": 6638
+            },
+            {
+              "classification": "context",
+              "end": 6944,
+              "id": "j60",
+              "start": 6787
+            },
+            {
+              "classification": "context",
+              "end": 7093,
+              "id": "j61",
+              "start": 6945
+            },
+            {
+              "classification": "context",
+              "end": 7262,
+              "id": "j62",
+              "start": 7094
+            },
+            {
+              "classification": "context",
+              "end": 7408,
+              "id": "j63",
+              "start": 7263
+            },
+            {
+              "classification": "context",
+              "end": 7561,
+              "id": "j64",
+              "start": 7409
+            },
+            {
+              "classification": "context",
+              "end": 7589,
+              "id": "j65",
+              "start": 7563
+            },
+            {
+              "classification": "context",
+              "end": 7689,
+              "id": "j66",
+              "start": 7591
+            },
+            {
+              "classification": "context",
+              "end": 7787,
+              "id": "j67",
+              "start": 7691
+            },
+            {
+              "classification": "context",
+              "end": 7807,
+              "id": "j68",
+              "start": 7789
+            },
+            {
+              "classification": "required",
+              "end": 7906,
+              "id": "j69",
+              "start": 7809
+            },
+            {
+              "classification": "required",
+              "end": 8014,
+              "id": "j70",
+              "start": 7907
+            },
+            {
+              "classification": "required",
+              "end": 8096,
+              "id": "j71",
+              "start": 8015
+            },
+            {
+              "classification": "required",
+              "end": 8158,
+              "id": "j72",
+              "start": 8097
+            },
+            {
+              "classification": "context",
+              "end": 8245,
+              "id": "j73",
+              "start": 8159
+            },
+            {
+              "classification": "required",
+              "end": 8329,
+              "id": "j74",
+              "start": 8246
+            },
+            {
+              "classification": "required",
+              "end": 8396,
+              "id": "j75",
+              "start": 8330
+            },
+            {
+              "classification": "context",
+              "end": 8444,
+              "id": "j76",
+              "start": 8398
+            },
+            {
+              "classification": "unknown",
+              "end": 8462,
+              "id": "j77",
+              "start": 8446
+            },
+            {
+              "classification": "unknown",
+              "end": 8502,
+              "id": "j78",
+              "start": 8463
+            },
+            {
+              "classification": "unknown",
+              "end": 8552,
+              "id": "j79",
+              "start": 8503
+            },
+            {
+              "classification": "unknown",
+              "end": 8587,
+              "id": "j80",
+              "start": 8553
+            },
+            {
+              "classification": "unknown",
+              "end": 8665,
+              "id": "j81",
+              "start": 8588
+            },
+            {
+              "classification": "unknown",
+              "end": 8714,
+              "id": "j82",
+              "start": 8666
+            },
+            {
+              "classification": "context",
+              "end": 8786,
+              "id": "j83",
+              "start": 8715
+            },
+            {
+              "classification": "context",
+              "end": 8869,
+              "id": "j84",
+              "start": 8788
+            },
+            {
+              "classification": "context",
+              "end": 8908,
+              "id": "j85",
+              "start": 8870
+            },
+            {
+              "classification": "context",
+              "end": 8921,
+              "id": "j86",
+              "start": 8910
+            },
+            {
+              "classification": "context",
+              "end": 9097,
+              "id": "j87",
+              "start": 8923
+            },
+            {
+              "classification": "context",
+              "end": 9200,
+              "id": "j88",
+              "start": 9098
+            },
+            {
+              "classification": "context",
+              "end": 9396,
+              "id": "j89",
+              "start": 9202
+            },
+            {
+              "classification": "context",
+              "end": 9463,
+              "id": "j90",
+              "start": 9398
+            },
+            {
+              "classification": "context",
+              "end": 9569,
+              "id": "j91",
+              "start": 9464
+            },
+            {
+              "classification": "context",
+              "end": 9947,
+              "id": "j92",
+              "start": 9571
+            },
+            {
+              "classification": "context",
+              "end": 9975,
+              "id": "j93",
+              "start": 9949
+            },
+            {
+              "classification": "context",
+              "end": 10091,
+              "id": "j94",
+              "start": 9976
+            },
+            {
+              "classification": "context",
+              "end": 10242,
+              "id": "j95",
+              "start": 10093
+            },
+            {
+              "classification": "context",
+              "end": 10437,
+              "id": "j96",
+              "start": 10243
+            },
+            {
+              "classification": "context",
+              "end": 10525,
+              "id": "j97",
+              "start": 10438
+            },
+            {
+              "classification": "context",
+              "end": 10591,
+              "id": "j98",
+              "start": 10526
+            },
+            {
+              "classification": "context",
+              "end": 10616,
+              "id": "j99",
+              "start": 10593
+            },
+            {
+              "classification": "unknown",
+              "end": 10634,
+              "id": "j100",
+              "start": 10623
+            },
+            {
+              "classification": "context",
+              "end": 10658,
+              "id": "j101",
+              "start": 10635
+            },
+            {
+              "classification": "context",
+              "end": 10674,
+              "id": "j102",
+              "start": 10665
+            },
+            {
+              "classification": "context",
+              "end": 10693,
+              "id": "j103",
+              "start": 10675
+            },
+            {
+              "classification": "context",
+              "end": 10720,
+              "id": "j104",
+              "start": 10700
+            },
+            {
+              "classification": "context",
+              "end": 10792,
+              "id": "j105",
+              "start": 10722
+            },
+            {
+              "classification": "context",
+              "end": 11020,
+              "id": "j106",
+              "start": 10794
+            },
+            {
+              "classification": "context",
+              "end": 11043,
+              "id": "j107",
+              "start": 11023
+            },
+            {
+              "classification": "context",
+              "end": 11091,
+              "id": "j108",
+              "start": 11045
+            },
+            {
+              "classification": "context",
+              "end": 11114,
+              "id": "j109",
+              "start": 11093
+            },
+            {
+              "classification": "context",
+              "end": 11136,
+              "id": "j110",
+              "start": 11116
+            },
+            {
+              "classification": "context",
+              "end": 11158,
+              "id": "j111",
+              "start": 11138
+            },
+            {
+              "classification": "context",
+              "end": 11170,
+              "id": "j112",
+              "start": 11160
+            },
+            {
+              "classification": "context",
+              "end": 11196,
+              "id": "j113",
+              "start": 11172
+            },
+            {
+              "classification": "context",
+              "end": 11222,
+              "id": "j114",
+              "start": 11198
+            },
+            {
+              "classification": "context",
+              "end": 11245,
+              "id": "j115",
+              "start": 11224
+            },
+            {
+              "classification": "context",
+              "end": 11308,
+              "id": "j116",
+              "start": 11247
+            },
+            {
+              "classification": "context",
+              "end": 11557,
+              "id": "j117",
+              "start": 11311
+            }
+          ],
+          "jd_sha256": "ce24c6189a9a288f8771836afed1f1be9aa17708103fc8b1eee7e029081ec797",
+          "model": "jev-1.13.0",
+          "resume_sha256": "ce99fe4ed9c890e67921d593778822b23a9896ac8e62c329fa1d3aa8e15c1569"
+        },
+        "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 54%). Personal conditions are reported separately.",
+        "matches": [
+          {
+            "condition_satisfied": null,
+            "confidence": 0.89,
+            "job_skill": "Bachelor's or master's degree-or equivalent experience-in a quantitative or analytical field.",
+            "match_reason": "Independent yes/no evidence decisions, combined deterministically.",
+            "match_status": "matched",
+            "requirement_id": "j69",
+            "requirement_level": "required",
+            "resume_evidence": [
+              "SYNTHETIC APPLICANT A\nEXPERIENCE\nData Analyst - Fictional Analytics Company, New York, NY (Jul 2024 - Present)\n Built Python data pipelines and SQL queries in PostgreSQL.\n Built Tableau dashboards and performed A/B testing with pandas.\nEDUCATION\nB.S. in Statistics, Fictional University (Sep 2020 - May 2024)\nSKILLS\nPython, SQL, Tableau, pandas. No Go, Kubernetes, PyTorch or Figma experience."
+            ],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.96,
+            "job_skill": "Experience working with data through coursework, internships, research, projects, or professional work.",
+            "match_reason": "Independent yes/no evidence decisions, combined deterministically.",
+            "match_status": "matched",
+            "requirement_id": "j70",
+            "requirement_level": "required",
+            "resume_evidence": [
+              "SYNTHETIC APPLICANT A\nEXPERIENCE\nData Analyst - Fictional Analytics Company, New York, NY (Jul 2024 - Present)\n Built Python data pipelines and SQL queries in PostgreSQL.\n Built Tableau dashboards and performed A/B testing with pandas.\nEDUCATION\nB.S. in Statistics, Fictional University (Sep 2020 - May 2024)\nSKILLS\nPython, SQL, Tableau, pandas. No Go, Kubernetes, PyTorch or Figma experience."
+            ],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.9299999999999999,
+            "job_skill": "Basic SQL knowledge or demonstrated ability to learn technical tools quickly.",
+            "match_reason": "Independent yes/no evidence decisions, combined deterministically.",
+            "match_status": "matched",
+            "requirement_id": "j71",
+            "requirement_level": "required",
+            "resume_evidence": [
+              "SKILLS\nPython, SQL, Tableau, pandas. No Go, Kubernetes, PyTorch or Figma experience.",
+              "EXPERIENCE\nData Analyst - Fictional Analytics Company, New York, NY (Jul 2024 - Present)\n Built Python data pipelines and SQL queries in PostgreSQL.\n Built Tableau dashboards and performed A/B testing with pandas.\n"
+            ],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.54,
+            "job_skill": "Strong quantitative reasoning and problem-solving skills.",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j72",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.65,
+            "job_skill": "Clear communication and willingness to ask questions and challenge assumptions.",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j74",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.68,
+            "job_skill": "Motivation to learn unfamiliar tools, techniques, and domains.",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j75",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.96,
+            "job_skill": "Python or R.",
+            "match_reason": "JD classification needs review; source span retained.",
+            "match_status": "matched",
+            "requirement_id": "j77",
+            "requirement_level": "required",
+            "resume_evidence": [
+              "SKILLS\nPython, SQL, Tableau, pandas. No Go, Kubernetes, PyTorch or Figma experience.",
+              "EXPERIENCE\nData Analyst - Fictional Analytics Company, New York, NY (Jul 2024 - Present)\n Built Python data pipelines and SQL queries in PostgreSQL.\n Built Tableau dashboards and performed A/B testing with pandas.\n"
+            ],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.87,
+            "job_skill": "SQL beyond introductory coursework.",
+            "match_reason": "JD classification needs review; source span retained.",
+            "match_status": "matched",
+            "requirement_id": "j78",
+            "requirement_level": "required",
+            "resume_evidence": [
+              "SYNTHETIC APPLICANT A\nEXPERIENCE\nData Analyst - Fictional Analytics Company, New York, NY (Jul 2024 - Present)\n Built Python data pipelines and SQL queries in PostgreSQL.\n Built Tableau dashboards and performed A/B testing with pandas.\nEDUCATION\nB.S. in Statistics, Fictional University (Sep 2020 - May 2024)\nSKILLS\nPython, SQL, Tableau, pandas. No Go, Kubernetes, PyTorch or Figma experience."
+            ],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.78,
+            "job_skill": "Statistics or experimental-design experience.",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j79",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.96,
+            "job_skill": "Data visualization experience.",
+            "match_reason": "JD classification needs review; source span retained.",
+            "match_status": "matched",
+            "requirement_id": "j80",
+            "requirement_level": "required",
+            "resume_evidence": [
+              "SYNTHETIC APPLICANT A\nEXPERIENCE\nData Analyst - Fictional Analytics Company, New York, NY (Jul 2024 - Present)\n Built Python data pipelines and SQL queries in PostgreSQL.\n Built Tableau dashboards and performed A/B testing with pandas.\nEDUCATION\nB.S. in Statistics, Fictional University (Sep 2020 - May 2024)\nSKILLS\nPython, SQL, Tableau, pandas. No Go, Kubernetes, PyTorch or Figma experience."
+            ],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.9,
+            "job_skill": "Exposure to Databricks, Snowflake, dbt, Sigma, Tableau, or similar tools.",
+            "match_reason": "JD classification needs review; source span retained.",
+            "match_status": "matched",
+            "requirement_id": "j81",
+            "requirement_level": "required",
+            "resume_evidence": [
+              "SYNTHETIC APPLICANT A\nEXPERIENCE\nData Analyst - Fictional Analytics Company, New York, NY (Jul 2024 - Present)\n Built Python data pipelines and SQL queries in PostgreSQL.\n Built Tableau dashboards and performed A/B testing with pandas.\nEDUCATION\nB.S. in Statistics, Fictional University (Sep 2020 - May 2024)\nSKILLS\nPython, SQL, Tableau, pandas. No Go, Kubernetes, PyTorch or Figma experience."
+            ],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.5800000000000001,
+            "job_skill": "Experience working with real-world datasets.",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j82",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          },
+          {
+            "condition_satisfied": null,
+            "confidence": 0.55,
+            "job_skill": "Entry level",
+            "match_reason": "Jev was not decisive about this requirement; it counts by its probability of being met.",
+            "match_status": "unknown",
+            "requirement_id": "j100",
+            "requirement_level": "required",
+            "resume_evidence": [],
+            "supported_years": null
+          }
+        ],
+        "missing_preferred_requirements": [],
+        "missing_required_requirements": [],
+        "overall_score": 80.72,
+        "recommendations": [
+          "Review unresolved requirements and personal conditions before applying."
+        ],
+        "score_breakdown": {
+          "overall_score": 80.72,
+          "preferred_score": null,
+          "required_score": 80.72
+        },
+        "score_range": [
+          80.72,
+          80.72
+        ],
+        "valid_until": 1791937221.604224
+      },
+      "retrieved": true,
+      "disqualified": false
+    },
+    {
+      "application_id": "3f2e2b52-9984-47e2-aaa7-7bc910d20277",
+      "title": "Associate Data Analyst",
+      "company": "Research Foundation of The City University of New York",
+      "url": "https://www.linkedin.com/jobs/view/4475055219/",
+      "location": "New York, NY",
+      "status": "analyzing",
+      "match_score": null,
+      "result_at": "2026-10-13T00:21:11.791447+00:00",
+      "status_label": "analyzing",
+      "description": "[Skip to main content](#main-content)\n\n### Associate Data Analyst\n\n[Research Foundation of The City University of New York](https://www.linkedin.com/company/research-foundation-of-cuny?trk=public_jobs_sub-nav-cta-optional-url \"Research Foundation of The City University of New York\") New York, NY \n\n## Join or sign in to find your next job\n\nJoin to apply for the **Associate Data Analyst** role at **Research Foundation of The City University of New York** \n\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fassociate-data-analyst-at-research-foundation-of-the-city-university-of-new-york-4475055219&trk=public_jobs_apply-link-offsite_contextual-sign-in-modal_join-link) \n\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \n\n# Associate Data Analyst\n\n#### [Research Foundation of The City University of New York](https://www.linkedin.com/company/research-foundation-of-cuny?trk=public_jobs_topcard-org-name) New York, NY \n\n 1 week ago\n\nOver 200 applicants \n\n[See who Research Foundation of The City University of New York has hired for this role](https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww%2Elinkedin%2Ecom%2Fsearch%2Fresults%2Fpeople%2F%3FfacetCurrentCompany%3D50169%26title%3DData%2BAnalyst&emailAddress=&fromSignIn=&trk=public_jobs_see-who-was-hired_people-search-link_face-pile-cta)\n\n## Join or sign in to find your next job\n\nJoin to apply for the **Associate Data Analyst** role at **Research Foundation of The City University of New York** \n\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fassociate-data-analyst-at-research-foundation-of-the-city-university-of-new-york-4475055219&trk=public_jobs_apply-link-offsite_contextual-sign-in-modal_join-link) \n\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \n\n## Join or sign in to save this job\n\nJoin to save **Associate Data Analyst** at **Research Foundation of The City University of New York** \n\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fassociate-data-analyst-at-research-foundation-of-the-city-university-of-new-york-4475055219&trk=public_jobs_topcard-save_contextual-sign-in-modal_join-link) \n\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \n\n-   [Report this job](/uas/login?fromSignIn=true&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fassociate-data-analyst-at-research-foundation-of-the-city-university-of-new-york-4475055219&trk=public_jobs_ellipsis-menu-semaphore-sign-in-redirect&guestReportContentType=JOB&_f=guest-reporting)\n\nThank you for considering a career with the Research Foundation of The City University of New York (RFCUNY).The team at RFCUNY is made up of dedicated, talented professionals committed to providing the services that allow CUNY researchers, faculty, and staff to focus on their intellectual curiosity and scientific discoveries.We are pleased that you are interested in exploring opportunities to join RFCUNY.Primary Location:The CITY COLLEGE of NEW YORK**Bargaining Unit**NoThe City University of New York's (CUNY) Building Performance Laboratory (CUNY BPL), in partnership with the City of New York, is seeking qualified energy management professionals to join the Department of Citywide Administrative Services (DCAS) Division of Energy Management (DEM). DEM serves as the central hub for energy management across City government operations. It is responsible for developing the City’s annual Heat, Light, and Power Budget; managing the City's electricity, natural gas, and steam accounts; assisting agency partners in identifying and pursuing energy-saving opportunities; overseeing energy efficiency and clean power generation projects across the City’s portfolio; and implementing best practices in operations and maintenance. DEM is specifically tasked with leading the City's efforts to reduce emissions from City government operations by 40% by 2025 and 50% by 2030 from the baseline.CUNY BPL seeks to hire an Associate Data Analyst to support property and energy data management for the DEM’s Data Analytics & Reporting Team (DART). The Associate Data Analyst will support data collection from City agencies and other sources while maintaining property data in a Salesforce environment and energy data in a SQL database. This role also supports the compliance process required by Local Law 84 of 2009.This is a hybrid position working on-site 3 days a week at 1 Centre St, New York, NY 10007. NYC residency may be required for continued employment. Immigration sponsorship is not available.**Responsibilities**Under this assignment, the person’s responsibilities may include the following:\n\n-   Support the annual Local Law 84 building energy benchmarking process for City buildings.\n-   Collect and clean property data to ensure accuracy and integrity.\n-   Identify and resolve data discrepancies proactively.\n-   Collaborate with cross-functional teams to understand data needs and respond to internal and external stakeholders.\n-   Analyze problems, propose potential solutions, and implement the most effective solution.\n-   Structure large property and energy data sets to extract usable information.\n-   Work with agency and external teams to support data analysis, reporting, and measurement for all agency-led initiatives.\n-   Prepare property- or energy-related data and input into Salesforce or SQL data front-end, in response to agency communications via emails or extracted from external sources.\n-   Work on formalizing various data maintenance policies.\n-   Collect and analyze datasets to generate actionable insights.\n-   Demonstrate the ability to work effectively both independently and as part of a team.\n-   Collaborate with various departments using strong interpersonal skills.\n-   Undertake additional responsibilities as needed.\n\n**Qualifications**The ideal candidate will bring the following skills and experience to this position:\n\n-   A bachelor’s degree is required.\n-   A minimum of 1 year data management experience is preferred.\n-   Strong, verifiable experience in data analysis, data visualization, and reporting.\n-   Flexibility to handle multiple responsibilities and deadlines simultaneously.\n-   Self-motivated and able to work independently as well as part of a team.\n-   Strong, verifiable understanding of data management best practices.\n-   Strong analytical skills with ability to collect, organize, analyze, and disseminate significant amounts of information with attention to detail and accuracy.\n-   Thoughtful and curious with a data-driven approach to solving business problems.\n-   Commitment to delivering measurable results and a proven ability to manage projects to successful completion.\n-   Advanced knowledge of Microsoft 365 stack including MS Excel and MS PowerPoint.\n-   Basic knowledge of Python, R, or SQL are a plus.\n-   Familiarity with issues pertaining to energy efficiency in existing buildings.\n\n**Pay Range**Minimum - Maximum: $70,000 per year**RFCUNY Benefits**RFCUNY Employee Benefits and Accruals**Equal Employment Opportunity Statement**The Research Foundation of the City University of New York is an Equal Opportunity/Affirmative Action/Americans with Disabilities Act/E-Verify Employer. It is the policy of the Research Foundation of CUNY to provide equal employment opportunities free of discrimination based on race, color, age, religion, sex, pregnancy, childbirth, national origin, disability, marital status, veteran status, sexual orientation, gender identity, genetic information, marital status, domestic violence victim status, arrest record, criminal conviction history, or any other protected characteristic under applicable law. \n\n-   ### Seniority level\n\n     Entry level\n-   ### Employment type\n\n     Full-time\n-   ### Industries\n\n     Education Administration Programs\n\nReferrals increase your chances of interviewing at Research Foundation of The City University of New York by 2x\n\n[See who you know](https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww%2Elinkedin%2Ecom%2Fsearch%2Fresults%2Fpeople%2F%3FfacetCurrentCompany%3D50169&emailAddress=&fromSignIn=&trk=public_jobs_find-a-referral-cta) \n\nGet notified when a new job is posted. \n\n Set alert \n\n## Sign in to set job alerts for “Data Analyst” roles.\n\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&trk=public_jobs_contextual-sign-in-modal_join-link) \n\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \n",
+      "match_report": null,
+      "retrieved": true,
+      "disqualified": false
+    }
+  ],
+  "tool_evidence": [
+    {
+      "tool": "read_context",
+      "arguments": {
+        "ref": "ctx-183b094fa0383ddbc6815fc9"
+      },
+      "result": {
+        "ref": "ctx-183b094fa0383ddbc6815fc9",
+        "offset": 6000,
+        "chars": 12025,
+        "content": "ta, technology, product, and digital advertising. You'll begin with well-scoped analytical problems and progressively take ownership of more ambiguous work.\\n\\nYou'll work alongside Analytics Engineers, Data Scientists, Marketing Scientists, Product Managers, Engineers, and commercial teams to solve real problems using real marketplace data.\\n\\nAs your skills and interests develop, we'll help you build toward one of several career paths:\\n\\n-   Analytics Engineering - building trusted datasets, metrics, and self-service analytics.\\n-   Data Science & Product Analytics - experimentation, causal analysis, product insights, and marketplace science.\\n-   Marketing Science - advertising measurement, incrementality, experimentation, and client-facing insights.\\n\\nYou aren't expected to know which path is right for you on day one. Part of the job is figuring that out.\\n\\n**What You'll Do**\\n\\n-   Learn Our Business & Data - Develop a strong understanding of adMarketplace, our marketplace, core datasets, metrics, and Enterprise Data Model.\\n-   Analyze Real Business Questions - Use SQL to investigate product and marketplace performance, identify drivers, analyze trends, and communicate findings.\\n-   Build Trusted Analytics - Help develop reusable datasets, QA metrics, document definitions, and turn recurring analyses into scalable analytics.\\n-   Learn Experimentation & Data Science - Support experiments, analyze A/B tests, and gain exposure to statistics, causal inference, Python/R, and marketplace science.\\n-   Learn Marketing Science - Support advertising-effectiveness and incrementality studies, including experimental QA and client-facing analyses.\\n-   Build Reusable Solutions - Look for opportunities to automate recurring work and use modern analytical and AI tools to make the team more effective.\\n\\n**What We're Looking For**\\n\\nWe care more about your analytical potential and ability to learn than having years of experience.\\n\\nYou might be a recent graduate, completing your degree, or at the very beginning of your career.\\n\\nWe're looking for:\\n\\n-   Bachelor's or master's degree-or equivalent experience-in a quantitative or analytical field.\\n-   Experience working with data through coursework, internships, research, projects, or professional work.\\n-   Basic SQL knowledge or demonstrated ability to learn technical tools quickly.\\n-   Strong quantitative reasoning and problem-solving skills.\\n-   Curiosity about how products and businesses work, not just the data they generate.\\n-   Clear communication and willingness to ask questions and challenge assumptions.\\n-   Motivation to learn unfamiliar tools, techniques, and domains.\\n\\n**Nice to Have - But Definitely Not Required**\\n\\n-   Python or R.\\n-   SQL beyond introductory coursework.\\n-   Statistics or experimental-design experience.\\n-   Data visualization experience.\\n-   Exposure to Databricks, Snowflake, dbt, Sigma, Tableau, or similar tools.\\n-   Experience working with real-world data",
+        "next_offset": 9000,
+        "read_progress": {
+          "historical_access": false,
+          "recent_ranges": [
+            [
+              0,
+              3000
+            ],
+            [
+              3000,
+              6000
+            ],
+            [
+              6000,
+              9000
+            ]
+          ],
+          "ref": "ctx-183b094fa0383ddbc6815fc9",
+          "path": [],
+          "ranges": [
+            [
+              0,
+              9000
+            ]
+          ],
+          "chars": 12025,
+          "reads": 3,
+          "next_unread_offset": 9000
+        },
+        "available_paths": [
+          {
+            "path": [
+              "url"
+            ],
+            "chars": 48,
+            "type": "str"
+          },
+          {
+            "path": [
+              "title"
+            ],
+            "chars": 23,
+            "type": "str"
+          },
+          {
+            "path": [
+              "company"
+            ],
+            "chars": 15,
+            "type": "str"
+          },
+          {
+            "path": [
+              "location"
+            ],
+            "chars": 14,
+            "type": "str"
+          },
+          {
+            "path": [
+              "description"
+            ],
+            "chars": 11752,
+            "type": "str"
+          },
+          {
+            "path": [
+              "source"
+            ],
+            "chars": 26,
+            "type": "str"
+          },
+          {
+            "path": [
+              "content_hash"
+            ],
+            "chars": 66,
+            "type": "str"
+          }
+        ],
+        "requested_offset": 0,
+        "already_read": true,
+        "complete": false,
+        "progress_feedback": "The requested range was already read; returned the next unread range. Use reread=true only when you need the exact earlier text again. Full source content remains available."
+      }
+    },
+    {
+      "tool": "search_jobs",
+      "arguments": {
+        "location": "New York, NY",
+        "query": "junior data analyst",
+        "use_directory": true
+      },
+      "result": {
+        "jobs": [
+          {
+            "url": "https://www.brex.com/careers/8463702002?gh_jid=8463702002",
+            "title": "Data Analyst II",
+            "company": "brex",
+            "location": "New York, New York, United States"
+          }
+        ],
+        "errors": [],
+        "sources_checked": [
+          {
+            "platform": "greenhouse",
+            "company": "brex",
+            "display_name": "brex",
+            "source_url": "https://job-boards.greenhouse.io/brex",
+            "verified_at": "2026-10-12",
+            "verified_by": "public_api_get",
+            "job_count_at_verification": 277,
+            "source": "ats:greenhouse:brex"
+          },
+          {
+            "platform": "greenhouse",
+            "company": "carta",
+            "display_name": "carta",
+            "source_url": "https://job-boards.greenhouse.io/carta",
+            "verified_at": "2026-10-12",
+            "verified_by": "public_api_get",
+            "job_count_at_verification": 72,
+            "source": "ats:greenhouse:carta"
+          },
+          {
+            "platform": "greenhouse",
+            "company": "databricks",
+            "display_name": "databricks",
+            "source_url": "https://job-boards.greenhouse.io/databricks",
+            "verified_at": "2026-10-12",
+            "verified_by": "public_api_get",
+            "job_count_at_verification": 890,
+            "source": "ats:greenhouse:databricks"
+          },
+          {
+            "platform": "greenhouse",
+            "company": "faire",
+            "display_name": "faire",
+            "source_url": "https://job-boards.greenhouse.io/faire",
+            "verified_at": "2026-10-12",
+            "verified_by": "public_api_get",
+            "job_count_at_verification": 81,
+            "source": "ats:greenhouse:faire"
+          },
+          {
+            "platform": "greenhouse",
+            "company": "flexport",
+            "display_name": "flexport",
+            "source_url": "https://job-boards.greenhouse.io/flexport",
+            "verified_at": "2026-10-12",
+            "verified_by": "public_api_get",
+            "job_count_at_verification": 202,
+            "source": "ats:greenhouse:flexport"
+          }
+        ],
+        "skipped_sources": [],
+        "board_outcomes": [
+          {
+            "source": "ats:greenhouse:brex",
+            "status": "success",
+            "count": 1
+          },
+          {
+            "source": "ats:greenhouse:carta",
+            "status": "empty",
+            "count": 0
+          },
+          {
+            "source": "ats:greenhouse:databricks",
+            "status": "empty",
+            "count": 0
+          },
+          {
+            "source": "ats:greenhouse:faire",
+            "status": "empty",
+            "count": 0
+          },
+          {
+            "source": "ats:greenhouse:flexport",
+            "status": "empty",
+            "count": 0
+          }
+        ],
+        "stale_boards": [],
+        "directory": true,
+        "directory_searched": [
+          "ats:greenhouse:brex",
+          "ats:greenhouse:carta",
+          "ats:greenhouse:databricks",
+          "ats:greenhouse:faire",
+          "ats:greenhouse:flexport"
+        ],
+        "directory_remaining": 10,
+        "directory_matching": 30,
+        "note": "Directory links require read, qualification, import, score and recommendation. Stale boards are excluded; coverage is not exhaustive."
+      }
+    },
+    {
+      "tool": "read_context",
+      "arguments": {
+        "ref": "ctx-183b094fa0383ddbc6815fc9"
+      },
+      "result": {
+        "ref": "ctx-183b094fa0383ddbc6815fc9",
+        "offset": 9000,
+        "chars": 12025,
+        "content": "sets.\\n-   Interest in advertising, marketplaces, search, or digital products.\\n\\nWe do not expect graduate candidates to arrive knowing all of these technologies. That's part of what you'll learn here.\\n\\n**Join Us**\\n\\nadMarketplace has been named as one of the best places to work in New York City by Built In and Crain’s- the latter of which have recognized us the past three years straight! AMP is currently experiencing triple digit growth, and it’s never been a better time to join our team!\\n\\nWe offer a robust continuing education program, management training, regular company-wide lunch and learns, and well-defined career paths to ensure all our employees have an opportunity to grow.\\n\\nAt adMarketplace, we play to win, but we learn from our setbacks. Our commitment to a collaborative environment means no one succeeds alone, and no one fails alone either.\\n\\nWe know you’ve come to expect comprehensive healthcare, wellness programs, paid time off, commuter benefits, and 401k matching from any company, so it’s a good thing we offer all of that and so much more. adMarketplace offers Summer Fridays, catered lunches, a fully stocked kitchen, ZogSports teams, happy hours and corporate retreats to encourage a strong work/life balance.\\n\\nNo Third Party Recruiters. We do not accept unsolicited agency resumes and we are not responsible for any fees related to unsolicited resumes.\\n\\n\\\\*This range represents the low and high end of the base salary someone in this role may earn as an employee of adMarketplace in the New York office. Salaries will vary based on various factors including but not limited to professional and academic experience; training; associated responsibilities; and other business and organizational needs. The range listed is just one component of our total compensation package for employees. Salary decisions are dependent on the circumstances of each hire.\\n\\n-   ### Seniority level\\n\\n     Entry level\\n-   ### Employment type\\n\\n     Full-time\\n-   ### Industries\\n\\n     Advertising Services\\n\\nReferrals increase your chances of interviewing at adMarketplace by 2x\\n\\n[See who you know](https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww%2Elinkedin%2Ecom%2Fsearch%2Fresults%2Fpeople%2F%3FfacetCurrentCompany%3D771333&emailAddress=&fromSignIn=&trk=public_jobs_find-a-referral-cta) \\n\\n## Featured Benefits\\n\\n### Inferred from the description for this job\\n\\n-   Medical insurance\\n\\n-   Vision insurance\\n\\n-   Dental insurance\\n\\n-   401(k)\\n\\n-   Paid maternity leave\\n\\n-   Paid paternity leave\\n\\n-   Commuter benefits\\n\\nGet notified about new Data Analyst jobs in **New York, NY**. \\n\\n[Sign in to create job alert](https://www.linkedin.com/login?emailAddress=&fromSignIn=&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs_job-alert-guest-redirect-cta) \\n\",\"source\":\"treg:crawl4ai.web.scrape\",\"content_hash\":\"ce24c6189a9a288f8771836afed1f1be9aa177081",
+        "next_offset": 12000,
+        "read_progress": {
+          "historical_access": false,
+          "recent_ranges": [
+            [
+              0,
+              3000
+            ],
+            [
+              3000,
+              6000
+            ],
+            [
+              6000,
+              9000
+            ],
+            [
+              9000,
+              12000
+            ]
+          ],
+          "ref": "ctx-183b094fa0383ddbc6815fc9",
+          "path": [],
+          "ranges": [
+            [
+              0,
+              12000
+            ]
+          ],
+          "chars": 12025,
+          "reads": 4,
+          "next_unread_offset": 12000
+        },
+        "available_paths": [
+          {
+            "path": [
+              "url"
+            ],
+            "chars": 48,
+            "type": "str"
+          },
+          {
+            "path": [
+              "title"
+            ],
+            "chars": 23,
+            "type": "str"
+          },
+          {
+            "path": [
+              "company"
+            ],
+            "chars": 15,
+            "type": "str"
+          },
+          {
+            "path": [
+              "location"
+            ],
+            "chars": 14,
+            "type": "str"
+          },
+          {
+            "path": [
+              "description"
+            ],
+            "chars": 11752,
+            "type": "str"
+          },
+          {
+            "path": [
+              "source"
+            ],
+            "chars": 26,
+            "type": "str"
+          },
+          {
+            "path": [
+              "content_hash"
+            ],
+            "chars": 66,
+            "type": "str"
+          }
+        ],
+        "requested_offset": 0,
+        "already_read": true,
+        "complete": false,
+        "progress_feedback": "The requested range was already read; returned the next unread range. Use reread=true only when you need the exact earlier text again. Full source content remains available."
+      }
+    },
+    {
+      "tool": "read_context",
+      "arguments": {
+        "ref": "ctx-2ef01fad49c810eafc794d20"
+      },
+      "result": {
+        "ref": "ctx-2ef01fad49c810eafc794d20",
+        "offset": 0,
+        "chars": 2167,
+        "content": "{\"jobs\":[{\"url\":\"https://www.brex.com/careers/8463702002?gh_jid=8463702002\",\"title\":\"Data Analyst II\",\"company\":\"brex\",\"location\":\"New York, New York, United States\"}],\"errors\":[],\"sources_checked\":[{\"platform\":\"greenhouse\",\"company\":\"brex\",\"display_name\":\"brex\",\"source_url\":\"https://job-boards.greenhouse.io/brex\",\"verified_at\":\"2026-10-12\",\"verified_by\":\"public_api_get\",\"job_count_at_verification\":277,\"source\":\"ats:greenhouse:brex\"},{\"platform\":\"greenhouse\",\"company\":\"carta\",\"display_name\":\"carta\",\"source_url\":\"https://job-boards.greenhouse.io/carta\",\"verified_at\":\"2026-10-12\",\"verified_by\":\"public_api_get\",\"job_count_at_verification\":72,\"source\":\"ats:greenhouse:carta\"},{\"platform\":\"greenhouse\",\"company\":\"databricks\",\"display_name\":\"databricks\",\"source_url\":\"https://job-boards.greenhouse.io/databricks\",\"verified_at\":\"2026-10-12\",\"verified_by\":\"public_api_get\",\"job_count_at_verification\":890,\"source\":\"ats:greenhouse:databricks\"},{\"platform\":\"greenhouse\",\"company\":\"faire\",\"display_name\":\"faire\",\"source_url\":\"https://job-boards.greenhouse.io/faire\",\"verified_at\":\"2026-10-12\",\"verified_by\":\"public_api_get\",\"job_count_at_verification\":81,\"source\":\"ats:greenhouse:faire\"},{\"platform\":\"greenhouse\",\"company\":\"flexport\",\"display_name\":\"flexport\",\"source_url\":\"https://job-boards.greenhouse.io/flexport\",\"verified_at\":\"2026-10-12\",\"verified_by\":\"public_api_get\",\"job_count_at_verification\":202,\"source\":\"ats:greenhouse:flexport\"}],\"skipped_sources\":[],\"board_outcomes\":[{\"source\":\"ats:greenhouse:brex\",\"status\":\"success\",\"count\":1},{\"source\":\"ats:greenhouse:carta\",\"status\":\"empty\",\"count\":0},{\"source\":\"ats:greenhouse:databricks\",\"status\":\"empty\",\"count\":0},{\"source\":\"ats:greenhouse:faire\",\"status\":\"empty\",\"count\":0},{\"source\":\"ats:greenhouse:flexport\",\"status\":\"empty\",\"count\":0}],\"stale_boards\":[],\"directory\":true,\"directory_searched\":[\"ats:greenhouse:brex\",\"ats:greenhouse:carta\",\"ats:greenhouse:databricks\",\"ats:greenhouse:faire\",\"ats:greenhouse:flexport\"],\"directory_remaining\":10,\"directory_matching\":30,\"note\":\"Directory links require read, qualification, import, score and recommendation. Stale boards are excluded; coverage is not exhaustive.\"}",
+        "next_offset": null,
+        "read_progress": {
+          "historical_access": false,
+          "recent_ranges": [
+            [
+              0,
+              2167
+            ]
+          ],
+          "ref": "ctx-2ef01fad49c810eafc794d20",
+          "path": [],
+          "ranges": [
+            [
+              0,
+              2167
+            ]
+          ],
+          "chars": 2167,
+          "reads": 1,
+          "next_unread_offset": null
+        },
+        "available_paths": [
+          {
+            "path": [
+              "jobs"
+            ],
+            "chars": 159,
+            "type": "list"
+          },
+          {
+            "path": [
+              "errors"
+            ],
+            "chars": 2,
+            "type": "list"
+          },
+          {
+            "path": [
+              "sources_checked"
+            ],
+            "chars": 1242,
+            "type": "list"
+          },
+          {
+            "path": [
+              "skipped_sources"
+            ],
+            "chars": 2,
+            "type": "list"
+          },
+          {
+            "path": [
+              "board_outcomes"
+            ],
+            "chars": 315,
+            "type": "list"
+          },
+          {
+            "path": [
+              "stale_boards"
+            ],
+            "chars": 2,
+            "type": "list"
+          },
+          {
+            "path": [
+              "directory"
+            ],
+            "chars": 4,
+            "type": "bool"
+          },
+          {
+            "path": [
+              "directory_searched"
+            ],
+            "chars": 123,
+            "type": "list"
+          },
+          {
+            "path": [
+              "directory_remaining"
+            ],
+            "chars": 2,
+            "type": "int"
+          },
+          {
+            "path": [
+              "directory_matching"
+            ],
+            "chars": 2,
+            "type": "int"
+          },
+          {
+            "path": [
+              "note"
+            ],
+            "chars": 135,
+            "type": "str"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "read_context",
+      "arguments": {
+        "path": [],
+        "ref": "ctx-183b094fa0383ddbc6815fc9",
+        "reread": true
+      },
+      "result": {
+        "ref": "ctx-183b094fa0383ddbc6815fc9",
+        "offset": 0,
+        "chars": 12025,
+        "content": "{\"url\":\"https://www.linkedin.com/jobs/view/4469763828/\",\"title\":\"Graduate Data Analyst\",\"company\":\"adMarketplace\",\"location\":\"New York, NY\",\"description\":\"[Skip to main content](#main-content)\\n\\n### Graduate Data Analyst\\n\\n[adMarketplace](https://www.linkedin.com/company/admarketplace?trk=public_jobs_sub-nav-cta-optional-url \\\"adMarketplace\\\") New York, NY \\n\\n## Join or sign in to find your next job\\n\\nJoin to apply for the **Graduate Data Analyst** role at **adMarketplace** \\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs_apply-link-offsite_contextual-sign-in-modal_join-link) \\n\\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \\n\\n# Graduate Data Analyst\\n\\n#### New York, NY \\n\\n 2 weeks ago\\n\\nOver 200 applicants \\n\\n[See who adMarketplace has hired for this role](https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww%2Elinkedin%2Ecom%2Fsearch%2Fresults%2Fpeople%2F%3FfacetCurrentCompany%3D771333%26title%3DData%2BAnalyst&emailAddress=&fromSignIn=&trk=public_jobs_see-who-was-hired_people-search-link_face-pile-cta)\\n\\n## Join or sign in to find your next job\\n\\nJoin to apply for the **Graduate Data Analyst** role at **adMarketplace** \\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs_apply-link-offsite_contextual-sign-in-modal_join-link) \\n\\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \\n\\n[Save](https://www.linkedin.com/login?emailAddress=&fromSignIn=&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs) \\n\\n-   [Report this job](/uas/login?fromSignIn=true&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs_ellipsis-menu-semaphore-sign-in-redirect&guestReportContentType=JOB&_f=guest-reporting)\\n\\n### Use AI to assess how you fit\\n\\nGet AI-powered advice on this job and more exclusive features.\\n\\n## Sign in to access AI-powered advices\\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&trk=public_jobs_ai_button_cta_contextual-sign-in-modal_join-link) ",
+        "next_offset": 3000,
+        "read_progress": {
+          "historical_access": false,
+          "recent_ranges": [
+            [
+              3000,
+              6000
+            ],
+            [
+              6000,
+              9000
+            ],
+            [
+              9000,
+              12000
+            ],
+            [
+              0,
+              3000
+            ]
+          ],
+          "ref": "ctx-183b094fa0383ddbc6815fc9",
+          "path": [],
+          "ranges": [
+            [
+              0,
+              12000
+            ]
+          ],
+          "chars": 12025,
+          "reads": 5,
+          "next_unread_offset": 12000
+        },
+        "available_paths": [
+          {
+            "path": [
+              "url"
+            ],
+            "chars": 48,
+            "type": "str"
+          },
+          {
+            "path": [
+              "title"
+            ],
+            "chars": 23,
+            "type": "str"
+          },
+          {
+            "path": [
+              "company"
+            ],
+            "chars": 15,
+            "type": "str"
+          },
+          {
+            "path": [
+              "location"
+            ],
+            "chars": 14,
+            "type": "str"
+          },
+          {
+            "path": [
+              "description"
+            ],
+            "chars": 11752,
+            "type": "str"
+          },
+          {
+            "path": [
+              "source"
+            ],
+            "chars": 26,
+            "type": "str"
+          },
+          {
+            "path": [
+              "content_hash"
+            ],
+            "chars": 66,
+            "type": "str"
+          }
+        ],
+        "requested_offset": 0,
+        "already_read": true,
+        "complete": false,
+        "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation.",
+        "no_new_evidence": true
+      }
+    },
+    {
+      "tool": "read_context",
+      "arguments": {
+        "ref": "ctx-2ef01fad49c810eafc794d20"
+      },
+      "result": {
+        "ref": "ctx-2ef01fad49c810eafc794d20",
+        "offset": 0,
+        "chars": 2167,
+        "content": "{\"jobs\":[{\"url\":\"https://www.brex.com/careers/8463702002?gh_jid=8463702002\",\"title\":\"Data Analyst II\",\"company\":\"brex\",\"location\":\"New York, New York, United States\"}],\"errors\":[],\"sources_checked\":[{\"platform\":\"greenhouse\",\"company\":\"brex\",\"display_name\":\"brex\",\"source_url\":\"https://job-boards.greenhouse.io/brex\",\"verified_at\":\"2026-10-12\",\"verified_by\":\"public_api_get\",\"job_count_at_verification\":277,\"source\":\"ats:greenhouse:brex\"},{\"platform\":\"greenhouse\",\"company\":\"carta\",\"display_name\":\"carta\",\"source_url\":\"https://job-boards.greenhouse.io/carta\",\"verified_at\":\"2026-10-12\",\"verified_by\":\"public_api_get\",\"job_count_at_verification\":72,\"source\":\"ats:greenhouse:carta\"},{\"platform\":\"greenhouse\",\"company\":\"databricks\",\"display_name\":\"databricks\",\"source_url\":\"https://job-boards.greenhouse.io/databricks\",\"verified_at\":\"2026-10-12\",\"verified_by\":\"public_api_get\",\"job_count_at_verification\":890,\"source\":\"ats:greenhouse:databricks\"},{\"platform\":\"greenhouse\",\"company\":\"faire\",\"display_name\":\"faire\",\"source_url\":\"https://job-boards.greenhouse.io/faire\",\"verified_at\":\"2026-10-12\",\"verified_by\":\"public_api_get\",\"job_count_at_verification\":81,\"source\":\"ats:greenhouse:faire\"},{\"platform\":\"greenhouse\",\"company\":\"flexport\",\"display_name\":\"flexport\",\"source_url\":\"https://job-boards.greenhouse.io/flexport\",\"verified_at\":\"2026-10-12\",\"verified_by\":\"public_api_get\",\"job_count_at_verification\":202,\"source\":\"ats:greenhouse:flexport\"}],\"skipped_sources\":[],\"board_outcomes\":[{\"source\":\"ats:greenhouse:brex\",\"status\":\"success\",\"count\":1},{\"source\":\"ats:greenhouse:carta\",\"status\":\"empty\",\"count\":0},{\"source\":\"ats:greenhouse:databricks\",\"status\":\"empty\",\"count\":0},{\"source\":\"ats:greenhouse:faire\",\"status\":\"empty\",\"count\":0},{\"source\":\"ats:greenhouse:flexport\",\"status\":\"empty\",\"count\":0}],\"stale_boards\":[],\"directory\":true,\"directory_searched\":[\"ats:greenhouse:brex\",\"ats:greenhouse:carta\",\"ats:greenhouse:databricks\",\"ats:greenhouse:faire\",\"ats:greenhouse:flexport\"],\"directory_remaining\":10,\"directory_matching\":30,\"note\":\"Directory links require read, qualification, import, score and recommendation. Stale boards are excluded; coverage is not exhaustive.\"}",
+        "next_offset": null,
+        "read_progress": {
+          "historical_access": false,
+          "recent_ranges": [
+            [
+              0,
+              2167
+            ]
+          ],
+          "ref": "ctx-2ef01fad49c810eafc794d20",
+          "path": [],
+          "ranges": [
+            [
+              0,
+              2167
+            ]
+          ],
+          "chars": 2167,
+          "reads": 2,
+          "next_unread_offset": null
+        },
+        "available_paths": [
+          {
+            "path": [
+              "jobs"
+            ],
+            "chars": 159,
+            "type": "list"
+          },
+          {
+            "path": [
+              "errors"
+            ],
+            "chars": 2,
+            "type": "list"
+          },
+          {
+            "path": [
+              "sources_checked"
+            ],
+            "chars": 1242,
+            "type": "list"
+          },
+          {
+            "path": [
+              "skipped_sources"
+            ],
+            "chars": 2,
+            "type": "list"
+          },
+          {
+            "path": [
+              "board_outcomes"
+            ],
+            "chars": 315,
+            "type": "list"
+          },
+          {
+            "path": [
+              "stale_boards"
+            ],
+            "chars": 2,
+            "type": "list"
+          },
+          {
+            "path": [
+              "directory"
+            ],
+            "chars": 4,
+            "type": "bool"
+          },
+          {
+            "path": [
+              "directory_searched"
+            ],
+            "chars": 123,
+            "type": "list"
+          },
+          {
+            "path": [
+              "directory_remaining"
+            ],
+            "chars": 2,
+            "type": "int"
+          },
+          {
+            "path": [
+              "directory_matching"
+            ],
+            "chars": 2,
+            "type": "int"
+          },
+          {
+            "path": [
+              "note"
+            ],
+            "chars": 135,
+            "type": "str"
+          }
+        ],
+        "requested_offset": 0,
+        "already_read": true,
+        "restored_after_eviction": true,
+        "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation.",
+        "no_new_evidence": true
+      }
+    },
+    {
+      "tool": "read_job",
+      "arguments": {
+        "url": "https://www.linkedin.com/jobs/view/4475055219/"
+      },
+      "result": {
+        "context_ref": "ctx-80473fd6b4264d561a8a92e9",
+        "chars": 10185,
+        "read_with": "read_context",
+        "available_keys": [
+          "url",
+          "title",
+          "company",
+          "location",
+          "description",
+          "source",
+          "content_hash"
+        ],
+        "url": "https://www.linkedin.com/jobs/view/4475055219/",
+        "title": "Associate Data Analyst"
+      }
+    },
+    {
+      "tool": "read_context",
+      "arguments": {
+        "ref": "ctx-80473fd6b4264d561a8a92e9"
+      },
+      "result": {
+        "ref": "ctx-80473fd6b4264d561a8a92e9",
+        "offset": 6000,
+        "chars": 10185,
+        "content": "r City buildings.\\n-   Collect and clean property data to ensure accuracy and integrity.\\n-   Identify and resolve data discrepancies proactively.\\n-   Collaborate with cross-functional teams to understand data needs and respond to internal and external stakeholders.\\n-   Analyze problems, propose potential solutions, and implement the most effective solution.\\n-   Structure large property and energy data sets to extract usable information.\\n-   Work with agency and external teams to support data analysis, reporting, and measurement for all agency-led initiatives.\\n-   Prepare property- or energy-related data and input into Salesforce or SQL data front-end, in response to agency communications via emails or extracted from external sources.\\n-   Work on formalizing various data maintenance policies.\\n-   Collect and analyze datasets to generate actionable insights.\\n-   Demonstrate the ability to work effectively both independently and as part of a team.\\n-   Collaborate with various departments using strong interpersonal skills.\\n-   Undertake additional responsibilities as needed.\\n\\n**Qualifications**The ideal candidate will bring the following skills and experience to this position:\\n\\n-   A bachelor’s degree is required.\\n-   A minimum of 1 year data management experience is preferred.\\n-   Strong, verifiable experience in data analysis, data visualization, and reporting.\\n-   Flexibility to handle multiple responsibilities and deadlines simultaneously.\\n-   Self-motivated and able to work independently as well as part of a team.\\n-   Strong, verifiable understanding of data management best practices.\\n-   Strong analytical skills with ability to collect, organize, analyze, and disseminate significant amounts of information with attention to detail and accuracy.\\n-   Thoughtful and curious with a data-driven approach to solving business problems.\\n-   Commitment to delivering measurable results and a proven ability to manage projects to successful completion.\\n-   Advanced knowledge of Microsoft 365 stack including MS Excel and MS PowerPoint.\\n-   Basic knowledge of Python, R, or SQL are a plus.\\n-   Familiarity with issues pertaining to energy efficiency in existing buildings.\\n\\n**Pay Range**Minimum - Maximum: $70,000 per year**RFCUNY Benefits**RFCUNY Employee Benefits and Accruals**Equal Employment Opportunity Statement**The Research Foundation of the City University of New York is an Equal Opportunity/Affirmative Action/Americans with Disabilities Act/E-Verify Employer. It is the policy of the Research Foundation of CUNY to provide equal employment opportunities free of discrimination based on race, color, age, religion, sex, pregnancy, childbirth, national origin, disability, marital status, veteran status, sexual orientation, gender identity, genetic information, marital status, domestic violence victim status, arrest record, criminal conviction history, or any other protected characteristic under applicable law. \\n\\n-   ### Seniority l",
+        "next_offset": 9000,
+        "read_progress": {
+          "historical_access": false,
+          "recent_ranges": [
+            [
+              0,
+              3000
+            ],
+            [
+              3000,
+              6000
+            ],
+            [
+              6000,
+              9000
+            ]
+          ],
+          "ref": "ctx-80473fd6b4264d561a8a92e9",
+          "path": [],
+          "ranges": [
+            [
+              0,
+              9000
+            ]
+          ],
+          "chars": 10185,
+          "reads": 3,
+          "next_unread_offset": 9000
+        },
+        "available_paths": [
+          {
+            "path": [
+              "url"
+            ],
+            "chars": 48,
+            "type": "str"
+          },
+          {
+            "path": [
+              "title"
+            ],
+            "chars": 24,
+            "type": "str"
+          },
+          {
+            "path": [
+              "company"
+            ],
+            "chars": 56,
+            "type": "str"
+          },
+          {
+            "path": [
+              "location"
+            ],
+            "chars": 14,
+            "type": "str"
+          },
+          {
+            "path": [
+              "description"
+            ],
+            "chars": 9870,
+            "type": "str"
+          },
+          {
+            "path": [
+              "source"
+            ],
+            "chars": 26,
+            "type": "str"
+          },
+          {
+            "path": [
+              "content_hash"
+            ],
+            "chars": 66,
+            "type": "str"
+          }
+        ],
+        "requested_offset": 0,
+        "already_read": true,
+        "complete": false,
+        "progress_feedback": "The requested range was already read; returned the next unread range. Use reread=true only when you need the exact earlier text again. Full source content remains available."
+      }
+    },
+    {
+      "tool": "read_context",
+      "arguments": {
+        "ref": "ctx-80473fd6b4264d561a8a92e9"
+      },
+      "result": {
+        "ref": "ctx-80473fd6b4264d561a8a92e9",
+        "offset": 9000,
+        "chars": 10185,
+        "content": "evel\\n\\n     Entry level\\n-   ### Employment type\\n\\n     Full-time\\n-   ### Industries\\n\\n     Education Administration Programs\\n\\nReferrals increase your chances of interviewing at Research Foundation of The City University of New York by 2x\\n\\n[See who you know](https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww%2Elinkedin%2Ecom%2Fsearch%2Fresults%2Fpeople%2F%3FfacetCurrentCompany%3D50169&emailAddress=&fromSignIn=&trk=public_jobs_find-a-referral-cta) \\n\\nGet notified when a new job is posted. \\n\\n Set alert \\n\\n## Sign in to set job alerts for “Data Analyst” roles.\\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&trk=public_jobs_contextual-sign-in-modal_join-link) \\n\\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \\n\",\"source\":\"treg:crawl4ai.web.scrape\",\"content_hash\":\"b2b9b28c3a9eafd6959796681f89443a61e8bfcada99ad6cabaab21031ae923b\"}",
+        "next_offset": null,
+        "read_progress": {
+          "historical_access": false,
+          "recent_ranges": [
+            [
+              0,
+              3000
+            ],
+            [
+              3000,
+              6000
+            ],
+            [
+              6000,
+              9000
+            ],
+            [
+              9000,
+              10185
+            ]
+          ],
+          "ref": "ctx-80473fd6b4264d561a8a92e9",
+          "path": [],
+          "ranges": [
+            [
+              0,
+              10185
+            ]
+          ],
+          "chars": 10185,
+          "reads": 4,
+          "next_unread_offset": null
+        },
+        "available_paths": [
+          {
+            "path": [
+              "url"
+            ],
+            "chars": 48,
+            "type": "str"
+          },
+          {
+            "path": [
+              "title"
+            ],
+            "chars": 24,
+            "type": "str"
+          },
+          {
+            "path": [
+              "company"
+            ],
+            "chars": 56,
+            "type": "str"
+          },
+          {
+            "path": [
+              "location"
+            ],
+            "chars": 14,
+            "type": "str"
+          },
+          {
+            "path": [
+              "description"
+            ],
+            "chars": 9870,
+            "type": "str"
+          },
+          {
+            "path": [
+              "source"
+            ],
+            "chars": 26,
+            "type": "str"
+          },
+          {
+            "path": [
+              "content_hash"
+            ],
+            "chars": 66,
+            "type": "str"
+          }
+        ],
+        "requested_offset": 0,
+        "already_read": true,
+        "complete": false,
+        "progress_feedback": "The requested range was already read; returned the next unread range. Use reread=true only when you need the exact earlier text again. Full source content remains available."
+      }
+    },
+    {
+      "tool": "read_job",
+      "arguments": {
+        "url": "https://www.linkedin.com/jobs/view/4478546272/"
+      },
+      "result": {
+        "context_ref": "ctx-b4a088d3b02243f37e66d1f5",
+        "chars": 8578,
+        "read_with": "read_context",
+        "available_keys": [
+          "url",
+          "title",
+          "company",
+          "location",
+          "description",
+          "source",
+          "content_hash"
+        ],
+        "url": "https://www.linkedin.com/jobs/view/4478546272/",
+        "title": "Renewable Energy Analyst (Entry-Level)"
+      }
+    },
+    {
+      "tool": "read_context",
+      "arguments": {
+        "ref": "ctx-b4a088d3b02243f37e66d1f5"
+      },
+      "result": {
+        "ref": "ctx-b4a088d3b02243f37e66d1f5",
+        "offset": 0,
+        "chars": 8578,
+        "content": "{\"url\":\"https://www.linkedin.com/jobs/view/4478546272/\",\"title\":\"Renewable Energy Analyst (Entry-Level)\",\"company\":\"Renewable Careers\",\"location\":\"Jersey City, NJ\",\"description\":\"[Skip to main content](#main-content)\\n\\n### Renewable Energy Analyst (Entry-Level)\\n\\n[Renewable Careers](https://uk.linkedin.com/company/renewable-careers?trk=public_jobs_sub-nav-cta-optional-url \\\"Renewable Careers\\\") Jersey City, NJ \\n\\n# Renewable Energy Analyst (Entry-Level)\\n\\n#### Jersey City, NJ \\n\\n 9 hours ago\\n\\nOver 200 applicants \\n\\n[See who Renewable Careers has hired for this role](https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww%2Elinkedin%2Ecom%2Fsearch%2Fresults%2Fpeople%2F%3FfacetCurrentCompany%3D80009076%26title%3DEnergy%2BAnalyst&emailAddress=&fromSignIn=&trk=public_jobs_see-who-was-hired_people-search-link_face-pile-cta)\\n\\n## Join or sign in to save this job\\n\\nJoin to save **Renewable Energy Analyst (Entry-Level)** at **Renewable Careers** \\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Frenewable-energy-analyst-entry-level-at-renewable-careers-4478546272&trk=public_jobs_topcard-save_contextual-sign-in-modal_join-link) \\n\\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \\n\\n-   [Report this job](/uas/login?fromSignIn=true&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Frenewable-energy-analyst-entry-level-at-renewable-careers-4478546272&trk=public_jobs_ellipsis-menu-semaphore-sign-in-redirect&guestReportContentType=JOB&_f=guest-reporting)\\n\\n### Use AI to assess how you fit\\n\\nGet AI-powered advice on this job and more exclusive features.\\n\\n## Sign in to access AI-powered advices\\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&trk=public_jobs_ai_button_cta_contextual-sign-in-modal_join-link) \\n\\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \\n\\n## Sign in to evaluate your skills\\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&trk=public_jobs_ai_button_cta_contextual-sign-in-modal_join-link) \\n\\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=lin",
+        "next_offset": 3000,
+        "read_progress": {
+          "historical_access": false,
+          "recent_ranges": [
+            [
+              0,
+              3000
+            ]
+          ],
+          "ref": "ctx-b4a088d3b02243f37e66d1f5",
+          "path": [],
+          "ranges": [
+            [
+              0,
+              3000
+            ]
+          ],
+          "chars": 8578,
+          "reads": 1,
+          "next_unread_offset": 3000
+        },
+        "available_paths": [
+          {
+            "path": [
+              "url"
+            ],
+            "chars": 48,
+            "type": "str"
+          },
+          {
+            "path": [
+              "title"
+            ],
+            "chars": 40,
+            "type": "str"
+          },
+          {
+            "path": [
+              "company"
+            ],
+            "chars": 19,
+            "type": "str"
+          },
+          {
+            "path": [
+              "location"
+            ],
+            "chars": 17,
+            "type": "str"
+          },
+          {
+            "path": [
+              "description"
+            ],
+            "chars": 8281,
+            "type": "str"
+          },
+          {
+            "path": [
+              "source"
+            ],
+            "chars": 26,
+            "type": "str"
+          },
+          {
+            "path": [
+              "content_hash"
+            ],
+            "chars": 66,
+            "type": "str"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "read_context",
+      "arguments": {
+        "ref": "ctx-183b094fa0383ddbc6815fc9"
+      },
+      "result": {
+        "ref": "ctx-183b094fa0383ddbc6815fc9",
+        "offset": 12000,
+        "chars": 12025,
+        "content": "03fc8b1eee7e029081ec797\"}",
+        "next_offset": null,
+        "read_progress": {
+          "historical_access": false,
+          "recent_ranges": [
+            [
+              3000,
+              6000
+            ],
+            [
+              6000,
+              9000
+            ],
+            [
+              9000,
+              12000
+            ],
+            [
+              0,
+              3000
+            ],
+            [
+              12000,
+              12025
+            ]
+          ],
+          "ref": "ctx-183b094fa0383ddbc6815fc9",
+          "path": [],
+          "ranges": [
+            [
+              0,
+              12025
+            ]
+          ],
+          "chars": 12025,
+          "reads": 6,
+          "next_unread_offset": null
+        },
+        "available_paths": [
+          {
+            "path": [
+              "url"
+            ],
+            "chars": 48,
+            "type": "str"
+          },
+          {
+            "path": [
+              "title"
+            ],
+            "chars": 23,
+            "type": "str"
+          },
+          {
+            "path": [
+              "company"
+            ],
+            "chars": 15,
+            "type": "str"
+          },
+          {
+            "path": [
+              "location"
+            ],
+            "chars": 14,
+            "type": "str"
+          },
+          {
+            "path": [
+              "description"
+            ],
+            "chars": 11752,
+            "type": "str"
+          },
+          {
+            "path": [
+              "source"
+            ],
+            "chars": 26,
+            "type": "str"
+          },
+          {
+            "path": [
+              "content_hash"
+            ],
+            "chars": 66,
+            "type": "str"
+          }
+        ],
+        "requested_offset": 0,
+        "already_read": true,
+        "complete": false,
+        "progress_feedback": "The requested range was already read; returned the next unread range. Use reread=true only when you need the exact earlier text again. Full source content remains available."
+      }
+    },
+    {
+      "tool": "search_jobs",
+      "arguments": {
+        "limit": 20,
+        "location": "New York, NY",
+        "query": "junior data analyst",
+        "use_directory": true
+      },
+      "result": {
+        "jobs": [
+          {
+            "url": "https://app.careerpuck.com/job-board/lyft/job/8802198002?gh_jid=8802198002",
+            "title": "Data Analyst Intern (Summer 2027)",
+            "company": "lyft",
+            "location": "New York, NY",
+            "seniority_warning": {
+              "requested": "junior",
+              "actual": "intern",
+              "message": "Requested junior; this result is intern. Verify the level before recommending it."
+            }
+          }
+        ],
+        "errors": [],
+        "sources_checked": [
+          {
+            "platform": "greenhouse",
+            "company": "gemini",
+            "display_name": "gemini",
+            "source_url": "https://job-boards.greenhouse.io/gemini",
+            "verified_at": "2026-10-12",
+            "verified_by": "public_api_get",
+            "job_count_at_verification": 35,
+            "source": "ats:greenhouse:gemini"
+          },
+          {
+            "platform": "greenhouse",
+            "company": "justworks",
+            "display_name": "justworks",
+            "source_url": "https://job-boards.greenhouse.io/justworks",
+            "verified_at": "2026-10-12",
+            "verified_by": "public_api_get",
+            "job_count_at_verification": 90,
+            "source": "ats:greenhouse:justworks"
+          },
+          {
+            "platform": "greenhouse",
+            "company": "lyft",
+            "display_name": "lyft",
+            "source_url": "https://job-boards.greenhouse.io/lyft",
+            "verified_at": "2026-10-12",
+            "verified_by": "public_api_get",
+            "job_count_at_verification": 187,
+            "source": "ats:greenhouse:lyft"
+          },
+          {
+            "platform": "greenhouse",
+            "company": "oscar",
+            "display_name": "oscar",
+            "source_url": "https://job-boards.greenhouse.io/oscar",
+            "verified_at": "2026-10-12",
+            "verified_by": "public_api_get",
+            "job_count_at_verification": 239,
+            "source": "ats:greenhouse:oscar"
+          },
+          {
+            "platform": "greenhouse",
+            "company": "ripple",
+            "display_name": "ripple",
+            "source_url": "https://job-boards.greenhouse.io/ripple",
+            "verified_at": "2026-10-12",
+            "verified_by": "public_api_get",
+            "job_count_at_verification": 120,
+            "source": "ats:greenhouse:ripple"
+          }
+        ],
+        "skipped_sources": [],
+        "board_outcomes": [
+          {
+            "source": "ats:greenhouse:gemini",
+            "status": "empty",
+            "count": 0
+          },
+          {
+            "source": "ats:greenhouse:justworks",
+            "status": "empty",
+            "count": 0
+          },
+          {
+            "source": "ats:greenhouse:lyft",
+            "status": "success",
+            "count": 1
+          },
+          {
+            "source": "ats:greenhouse:oscar",
+            "status": "empty",
+            "count": 0
+          },
+          {
+            "source": "ats:greenhouse:ripple",
+            "status": "empty",
+            "count": 0
+          }
+        ],
+        "stale_boards": [],
+        "directory": true,
+        "directory_searched": [
+          "ats:greenhouse:gemini",
+          "ats:greenhouse:justworks",
+          "ats:greenhouse:lyft",
+          "ats:greenhouse:oscar",
+          "ats:greenhouse:ripple"
+        ],
+        "directory_remaining": 5,
+        "directory_matching": 30,
+        "note": "Directory links require read, qualification, import, score and recommendation. Stale boards are excluded; coverage is not exhaustive."
+      }
+    },
+    {
+      "tool": "read_job",
+      "arguments": {
+        "url": "https://www.linkedin.com/jobs/view/4422239532/"
+      },
+      "result": {
+        "context_ref": "ctx-8e1d5e29fbdd5920f99375ec",
+        "chars": 12276,
+        "read_with": "read_context",
+        "available_keys": [
+          "url",
+          "title",
+          "company",
+          "location",
+          "description",
+          "source",
+          "content_hash"
+        ],
+        "url": "https://www.linkedin.com/jobs/view/4422239532/",
+        "title": "Data Analyst (FGP) - Radiology *On-Site in Manhattan*"
+      }
+    },
+    {
+      "tool": "read_context",
+      "arguments": {
+        "ref": "ctx-8e1d5e29fbdd5920f99375ec"
+      },
+      "result": {
+        "ref": "ctx-8e1d5e29fbdd5920f99375ec",
+        "offset": 0,
+        "chars": 12276,
+        "content": "{\"url\":\"https://www.linkedin.com/jobs/view/4422239532/\",\"title\":\"Data Analyst (FGP) - Radiology *On-Site in Manhattan*\",\"company\":\"NYU Langone Health\",\"location\":\"New York, NY\",\"description\":\"[Skip to main content](#main-content)\\n\\n### Data Analyst (FGP) - Radiology \\\\*On-Site in Manhattan\\\\*\\n\\n[NYU Langone Health](https://www.linkedin.com/company/nyulangonehealth?trk=public_jobs_sub-nav-cta-optional-url \\\"NYU Langone Health\\\") New York, NY \\n\\n## Join or sign in to find your next job\\n\\nJoin to apply for the **Data Analyst (FGP) - Radiology \\\\*On-Site in Manhattan\\\\*** role at **NYU Langone Health** \\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fdata-analyst-fgp-radiology-on-site-in-manhattan-at-nyu-langone-health-4422239532&trk=public_jobs_apply-link-offsite_contextual-sign-in-modal_join-link) \\n\\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \\n\\n# Data Analyst (FGP) - Radiology \\\\*On-Site in Manhattan\\\\*\\n\\n#### New York, NY \\n\\n 2 weeks ago\\n\\nOver 200 applicants \\n\\n[See who NYU Langone Health has hired for this role](https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww%2Elinkedin%2Ecom%2Fsearch%2Fresults%2Fpeople%2F%3FfacetCurrentCompany%3D6104%26title%3DData%2BAnalyst&emailAddress=&fromSignIn=&trk=public_jobs_see-who-was-hired_people-search-link_face-pile-cta)\\n\\n## Join or sign in to find your next job\\n\\nJoin to apply for the **Data Analyst (FGP) - Radiology \\\\*On-Site in Manhattan\\\\*** role at **NYU Langone Health** \\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fdata-analyst-fgp-radiology-on-site-in-manhattan-at-nyu-langone-health-4422239532&trk=public_jobs_apply-link-offsite_contextual-sign-in-modal_join-link) \\n\\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \\n\\n[Save](https://www.linkedin.com/login?emailAddress=&fromSignIn=&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fdata-analyst-fgp-radiology-on-site-in-manhattan-at-nyu-langone-health-4422239532&trk=public_jobs) \\n\\n-   [Report this job](/uas/login?fromSignIn=true&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fdata-analyst-fgp-radiology-on-site-in-manhattan-at-nyu-langone-health-4422239532&trk=public_jobs_ellipsis-menu-semaphore-sign-in-redirect&guestReportContentType=JO",
+        "next_offset": 3000,
+        "read_progress": {
+          "historical_access": false,
+          "recent_ranges": [
+            [
+              0,
+              3000
+            ]
+          ],
+          "ref": "ctx-8e1d5e29fbdd5920f99375ec",
+          "path": [],
+          "ranges": [
+            [
+              0,
+              3000
+            ]
+          ],
+          "chars": 12276,
+          "reads": 1,
+          "next_unread_offset": 3000
+        },
+        "available_paths": [
+          {
+            "path": [
+              "url"
+            ],
+            "chars": 48,
+            "type": "str"
+          },
+          {
+            "path": [
+              "title"
+            ],
+            "chars": 55,
+            "type": "str"
+          },
+          {
+            "path": [
+              "company"
+            ],
+            "chars": 20,
+            "type": "str"
+          },
+          {
+            "path": [
+              "location"
+            ],
+            "chars": 14,
+            "type": "str"
+          },
+          {
+            "path": [
+              "description"
+            ],
+            "chars": 11966,
+            "type": "str"
+          },
+          {
+            "path": [
+              "source"
+            ],
+            "chars": 26,
+            "type": "str"
+          },
+          {
+            "path": [
+              "content_hash"
+            ],
+            "chars": 66,
+            "type": "str"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "read_context",
+      "arguments": {
+        "ref": "ctx-183b094fa0383ddbc6815fc9",
+        "path": [
+          "description"
+        ]
+      },
+      "result": {
+        "ref": "ctx-183b094fa0383ddbc6815fc9",
+        "path": [
+          "description"
+        ],
+        "offset": 0,
+        "chars": 11752,
+        "content": "\"[Skip to main content](#main-content)\\n\\n### Graduate Data Analyst\\n\\n[adMarketplace](https://www.linkedin.com/company/admarketplace?trk=public_jobs_sub-nav-cta-optional-url \\\"adMarketplace\\\") New York, NY \\n\\n## Join or sign in to find your next job\\n\\nJoin to apply for the **Graduate Data Analyst** role at **adMarketplace** \\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs_apply-link-offsite_contextual-sign-in-modal_join-link) \\n\\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \\n\\n# Graduate Data Analyst\\n\\n#### New York, NY \\n\\n 2 weeks ago\\n\\nOver 200 applicants \\n\\n[See who adMarketplace has hired for this role](https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww%2Elinkedin%2Ecom%2Fsearch%2Fresults%2Fpeople%2F%3FfacetCurrentCompany%3D771333%26title%3DData%2BAnalyst&emailAddress=&fromSignIn=&trk=public_jobs_see-who-was-hired_people-search-link_face-pile-cta)\\n\\n## Join or sign in to find your next job\\n\\nJoin to apply for the **Graduate Data Analyst** role at **adMarketplace** \\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs_apply-link-offsite_contextual-sign-in-modal_join-link) \\n\\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \\n\\n[Save](https://www.linkedin.com/login?emailAddress=&fromSignIn=&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs) \\n\\n-   [Report this job](/uas/login?fromSignIn=true&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs_ellipsis-menu-semaphore-sign-in-redirect&guestReportContentType=JOB&_f=guest-reporting)\\n\\n### Use AI to assess how you fit\\n\\nGet AI-powered advice on this job and more exclusive features.\\n\\n## Sign in to access AI-powered advices\\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&trk=public_jobs_ai_button_cta_contextual-sign-in-modal_join-link) \\n\\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [",
+        "next_offset": 3000,
+        "read_progress": {
+          "historical_access": false,
+          "recent_ranges": [
+            [
+              0,
+              3000
+            ]
+          ],
+          "ref": "ctx-183b094fa0383ddbc6815fc9",
+          "path": [
+            "description"
+          ],
+          "ranges": [
+            [
+              0,
+              3000
+            ]
+          ],
+          "chars": 11752,
+          "reads": 1,
+          "next_unread_offset": 3000
+        },
+        "no_new_evidence": true,
+        "already_read_parent": true,
+        "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation."
+      }
+    },
+    {
+      "tool": "read_context",
+      "arguments": {
+        "ref": "ctx-183b094fa0383ddbc6815fc9",
+        "reread": false
+      },
+      "result": {
+        "ref": "ctx-183b094fa0383ddbc6815fc9",
+        "offset": 0,
+        "chars": 12025,
+        "content": "{\"url\":\"https://www.linkedin.com/jobs/view/4469763828/\",\"title\":\"Graduate Data Analyst\",\"company\":\"adMarketplace\",\"location\":\"New York, NY\",\"description\":\"[Skip to main content](#main-content)\\n\\n### Graduate Data Analyst\\n\\n[adMarketplace](https://www.linkedin.com/company/admarketplace?trk=public_jobs_sub-nav-cta-optional-url \\\"adMarketplace\\\") New York, NY \\n\\n## Join or sign in to find your next job\\n\\nJoin to apply for the **Graduate Data Analyst** role at **adMarketplace** \\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs_apply-link-offsite_contextual-sign-in-modal_join-link) \\n\\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \\n\\n# Graduate Data Analyst\\n\\n#### New York, NY \\n\\n 2 weeks ago\\n\\nOver 200 applicants \\n\\n[See who adMarketplace has hired for this role](https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww%2Elinkedin%2Ecom%2Fsearch%2Fresults%2Fpeople%2F%3FfacetCurrentCompany%3D771333%26title%3DData%2BAnalyst&emailAddress=&fromSignIn=&trk=public_jobs_see-who-was-hired_people-search-link_face-pile-cta)\\n\\n## Join or sign in to find your next job\\n\\nJoin to apply for the **Graduate Data Analyst** role at **adMarketplace** \\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs_apply-link-offsite_contextual-sign-in-modal_join-link) \\n\\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \\n\\n[Save](https://www.linkedin.com/login?emailAddress=&fromSignIn=&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs) \\n\\n-   [Report this job](/uas/login?fromSignIn=true&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fgraduate-data-analyst-at-admarketplace-4469763828&trk=public_jobs_ellipsis-menu-semaphore-sign-in-redirect&guestReportContentType=JOB&_f=guest-reporting)\\n\\n### Use AI to assess how you fit\\n\\nGet AI-powered advice on this job and more exclusive features.\\n\\n## Sign in to access AI-powered advices\\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&trk=public_jobs_ai_button_cta_contextual-sign-in-modal_join-link) ",
+        "next_offset": 3000,
+        "read_progress": {
+          "historical_access": false,
+          "recent_ranges": [
+            [
+              3000,
+              6000
+            ],
+            [
+              6000,
+              9000
+            ],
+            [
+              9000,
+              12000
+            ],
+            [
+              12000,
+              12025
+            ],
+            [
+              0,
+              3000
+            ]
+          ],
+          "ref": "ctx-183b094fa0383ddbc6815fc9",
+          "path": [],
+          "ranges": [
+            [
+              0,
+              12025
+            ]
+          ],
+          "chars": 12025,
+          "reads": 7,
+          "next_unread_offset": null
+        },
+        "available_paths": [
+          {
+            "path": [
+              "url"
+            ],
+            "chars": 48,
+            "type": "str"
+          },
+          {
+            "path": [
+              "title"
+            ],
+            "chars": 23,
+            "type": "str"
+          },
+          {
+            "path": [
+              "company"
+            ],
+            "chars": 15,
+            "type": "str"
+          },
+          {
+            "path": [
+              "location"
+            ],
+            "chars": 14,
+            "type": "str"
+          },
+          {
+            "path": [
+              "description"
+            ],
+            "chars": 11752,
+            "type": "str"
+          },
+          {
+            "path": [
+              "source"
+            ],
+            "chars": 26,
+            "type": "str"
+          },
+          {
+            "path": [
+              "content_hash"
+            ],
+            "chars": 66,
+            "type": "str"
+          }
+        ],
+        "requested_offset": 0,
+        "already_read": true,
+        "restored_after_eviction": true,
+        "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation.",
+        "no_new_evidence": true
+      }
+    },
+    {
+      "tool": "import_job",
+      "arguments": {
+        "company": "adMarketplace",
+        "location": "New York, NY",
+        "title": "Graduate Data Analyst",
+        "url": "https://www.linkedin.com/jobs/view/4469763828/"
+      },
+      "result": {
+        "context_ref": "ctx-89d5578776bec22fea75ff0b",
+        "chars": 12089,
+        "read_with": "read_context",
+        "available_keys": [
+          "application_id",
+          "title",
+          "company",
+          "url",
+          "location",
+          "status",
+          "match_score",
+          "result_at",
+          "status_label",
+          "description",
+          "match_report"
+        ],
+        "url": "https://www.linkedin.com/jobs/view/4469763828/",
+        "title": "Graduate Data Analyst",
+        "application_id": "7a40aa3b-6282-4c8f-a81f-980e9d0b7cc3",
+        "status": "saved",
+        "match_score": null,
+        "result_at": "2026-10-13T00:20:11.072734+00:00"
+      }
+    },
+    {
+      "tool": "score_job",
+      "arguments": {
+        "application_id": "7a40aa3b-6282-4c8f-a81f-980e9d0b7cc3"
+      },
+      "result": {
+        "context_ref": "ctx-992ff03e226b6e3ce7cb11f8",
+        "chars": 35943,
+        "read_with": "read_context",
+        "available_keys": [
+          "application_id",
+          "title",
+          "company",
+          "url",
+          "location",
+          "status",
+          "match_score",
+          "result_at",
+          "status_label",
+          "qualification_evidence",
+          "requirement_counts",
+          "gaps",
+          "match_overview",
+          "score_range",
+          "analysis_status",
+          "analysis_status_label",
+          "score_algorithm",
+          "score_valid_until",
+          "description",
+          "match_report"
+        ],
+        "url": "https://www.linkedin.com/jobs/view/4469763828/",
+        "title": "Graduate Data Analyst",
+        "application_id": "7a40aa3b-6282-4c8f-a81f-980e9d0b7cc3",
+        "status": "materials_ready",
+        "match_score": 80.72,
+        "requirement_counts": {
+          "matched": 7,
+          "partial": 0,
+          "missing": 0,
+          "needs_confirmation": 0,
+          "unknown": 6,
+          "confirmed_condition": 0
+        },
+        "gaps": [],
+        "result_at": "2026-10-13T00:20:23.263485+00:00",
+        "match_overview": {
+          "explanation": "Evidence-based Jev alignment. Each requirement counts by its probability of being met (certainty 54%). Personal conditions are reported separately.",
+          "score_range": [
+            80.72,
+            80.72
+          ],
+          "analysis_status": "completed",
+          "analysis_status_label": "Completed",
+          "detail_hint": "Scoring has finished. Report the observed score or interval and unresolved items; do not repeat scoring merely because uncertainty remains. Full citations remain in match_report.",
+          "matched": [
+            {
+              "requirement": "Bachelor's or master's degree-or equivalent experience-in a quantitative or analytical field.",
+              "display_name": "Bachelor's or master's degree-or equivalent experience-in a quantitative or analytical field.",
+              "status_label": "Matched",
+              "level": "required"
+            },
+            {
+              "requirement": "Experience working with data through coursework, internships, research, projects, or professional work.",
+              "display_name": "Experience working with data through coursework, internships, research, projects, or professional work.",
+              "status_label": "Matched",
+              "level": "required"
+            },
+            {
+              "requirement": "Basic SQL knowledge or demonstrated ability to learn technical tools quickly.",
+              "display_name": "Basic SQL knowledge or demonstrated ability to learn technical tools quickly.",
+              "status_label": "Matched",
+              "level": "required"
+            },
+            {
+              "requirement": "Python or R.",
+              "display_name": "Python or R.",
+              "status_label": "Matched",
+              "level": "required"
+            },
+            {
+              "requirement": "SQL beyond introductory coursework.",
+              "display_name": "SQL beyond introductory coursework.",
+              "status_label": "Matched",
+              "level": "required"
+            },
+            {
+              "requirement": "Data visualization experience.",
+              "display_name": "Data visualization experience.",
+              "status_label": "Matched",
+              "level": "required"
+            },
+            {
+              "requirement": "Exposure to Databricks, Snowflake, dbt, Sigma, Tableau, or similar tools.",
+              "display_name": "Exposure to Databricks, Snowflake, dbt, Sigma, Tableau, or similar tools.",
+              "status_label": "Matched",
+              "level": "required"
+            }
+          ],
+          "partial": [],
+          "missing": [],
+          "needs_confirmation": [],
+          "unknown": [
+            {
+              "requirement": "Strong quantitative reasoning and problem-solving skills.",
+              "display_name": "Strong quantitative reasoning and problem-solving skills.",
+              "status_label": "Unresolved",
+              "level": "required"
+            },
+            {
+              "requirement": "Clear communication and willingness to ask questions and challenge assumptions.",
+              "display_name": "Clear communication and willingness to ask questions and challenge assumptions.",
+              "status_label": "Unresolved",
+              "level": "required"
+            },
+            {
+              "requirement": "Motivation to learn unfamiliar tools, techniques, and domains.",
+              "display_name": "Motivation to learn unfamiliar tools, techniques, and domains.",
+              "status_label": "Unresolved",
+              "level": "required"
+            },
+            {
+              "requirement": "Statistics or experimental-design experience.",
+              "display_name": "Statistics or experimental-design experience.",
+              "status_label": "Unresolved",
+              "level": "required"
+            },
+            {
+              "requirement": "Experience working with real-world datasets.",
+              "display_name": "Experience working with real-world datasets.",
+              "status_label": "Unresolved",
+              "level": "required"
+            },
+            {
+              "requirement": "Entry level",
+              "display_name": "Entry level",
+              "status_label": "Unresolved",
+              "level": "required"
+            }
+          ],
+          "confirmed_condition": []
+        },
+        "qualification_evidence": [
+          {
+            "quote": "For over 25 years, we’ve connected brands with consumers at the moment they express commercial intent beyond legacy search engines.",
+            "start": 4701,
+            "end": 4832
+          }
+        ],
+        "score_range": [
+          80.72,
+          80.72
+        ],
+        "analysis_status": "completed"
+      }
+    },
+    {
+      "tool": "search_jobs",
+      "arguments": {
+        "limit": 20,
+        "location": "New York, NY",
+        "query": "junior data analyst",
+        "use_directory": true
+      },
+      "result": {
+        "error": "Decide the scored jobs before searching for more.",
+        "error_code": "pending_decisions",
+        "no_new_evidence": true,
+        "pending": [
+          {
+            "application_id": "7a40aa3b-6282-4c8f-a81f-980e9d0b7cc3",
+            "title": "Graduate Data Analyst",
+            "company": "adMarketplace",
+            "url": "https://www.linkedin.com/jobs/view/4469763828/",
+            "match_score": 80.72,
+            "qualification_evidence": [
+              {
+                "quote": "For over 25 years, we’ve connected brands with consumers at the moment they express commercial intent beyond legacy search engines.",
+                "start": 4701,
+                "end": 4832
+              }
+            ]
+          }
+        ],
+        "next": "For each pending job call recommend_job (with caveats) or decide_job (exclude with the specific reason, or needs_evidence with what is missing). Then search again for remaining gaps.",
+        "progress_feedback": "Public search returned only links already observed in this request. Do not repeat it with reworded queries. Read an unread observed posting, or call search_jobs with boards (greenhouse/lever/ashby company tokens or a public Workday host/site) for employers that hire this role in the requested location. If alternatives are exhausted, finish with verified results and the limitation."
+      }
+    },
+    {
+      "tool": "recommend_job",
+      "arguments": {
+        "application_id": "7a40aa3b-6282-4c8f-a81f-980e9d0b7cc3",
+        "caveats": "LinkedIn posting lists Entry level, New York NY; work-mode/remote policy not confirmed in excerpt – confirm on posting. 6 requirements unresolved in scoring (soft skills/statistics) – review match report.",
+        "reason": "Entry-level Graduate Data Analyst in New York, NY matching junior request; scored 80.72 with 7 matched requirements (degree, SQL, Python/R, visualization, modern stack exposure)."
+      },
+      "result": {
+        "recommended": true,
+        "recommendation": {
+          "application_id": "7a40aa3b-6282-4c8f-a81f-980e9d0b7cc3",
+          "title": "Graduate Data Analyst",
+          "company": "adMarketplace",
+          "location": "New York, NY",
+          "url": "https://www.linkedin.com/jobs/view/4469763828/",
+          "match_score": 80.72,
+          "reason": "Entry-level Graduate Data Analyst in New York, NY matching junior request; scored 80.72 with 7 matched requirements (degree, SQL, Python/R, visualization, modern stack exposure).",
+          "caveats": "LinkedIn posting lists Entry level, New York NY; work-mode/remote policy not confirmed in excerpt – confirm on posting. 6 requirements unresolved in scoring (soft skills/statistics) – review match report."
+        }
+      }
+    },
+    {
+      "tool": "read_job",
+      "arguments": {
+        "url": "https://www.linkedin.com/jobs/view/4475055219/"
+      },
+      "result": {
+        "context_ref": "ctx-80473fd6b4264d561a8a92e9",
+        "chars": 10185,
+        "read_with": "read_context",
+        "available_keys": [
+          "url",
+          "title",
+          "company",
+          "location",
+          "description",
+          "source",
+          "content_hash"
+        ],
+        "url": "https://www.linkedin.com/jobs/view/4475055219/",
+        "title": "Associate Data Analyst"
+      }
+    },
+    {
+      "tool": "read_context",
+      "arguments": {
+        "ref": "ctx-80473fd6b4264d561a8a92e9"
+      },
+      "result": {
+        "ref": "ctx-80473fd6b4264d561a8a92e9",
+        "offset": 0,
+        "chars": 10185,
+        "content": "{\"url\":\"https://www.linkedin.com/jobs/view/4475055219/\",\"title\":\"Associate Data Analyst\",\"company\":\"Research Foundation of The City University of New York\",\"location\":\"New York, NY\",\"description\":\"[Skip to main content](#main-content)\\n\\n### Associate Data Analyst\\n\\n[Research Foundation of The City University of New York](https://www.linkedin.com/company/research-foundation-of-cuny?trk=public_jobs_sub-nav-cta-optional-url \\\"Research Foundation of The City University of New York\\\") New York, NY \\n\\n## Join or sign in to find your next job\\n\\nJoin to apply for the **Associate Data Analyst** role at **Research Foundation of The City University of New York** \\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fassociate-data-analyst-at-research-foundation-of-the-city-university-of-new-york-4475055219&trk=public_jobs_apply-link-offsite_contextual-sign-in-modal_join-link) \\n\\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \\n\\n# Associate Data Analyst\\n\\n#### [Research Foundation of The City University of New York](https://www.linkedin.com/company/research-foundation-of-cuny?trk=public_jobs_topcard-org-name) New York, NY \\n\\n 1 week ago\\n\\nOver 200 applicants \\n\\n[See who Research Foundation of The City University of New York has hired for this role](https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww%2Elinkedin%2Ecom%2Fsearch%2Fresults%2Fpeople%2F%3FfacetCurrentCompany%3D50169%26title%3DData%2BAnalyst&emailAddress=&fromSignIn=&trk=public_jobs_see-who-was-hired_people-search-link_face-pile-cta)\\n\\n## Join or sign in to find your next job\\n\\nJoin to apply for the **Associate Data Analyst** role at **Research Foundation of The City University of New York** \\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fview%2Fassociate-data-analyst-at-research-foundation-of-the-city-university-of-new-york-4475055219&trk=public_jobs_apply-link-offsite_contextual-sign-in-modal_join-link) \\n\\nBy clicking Continue to join or sign in, you agree to LinkedIn’s [User Agreement](/legal/user-agreement?trk=linkedin-tc_auth-button_user-agreement), [Privacy Policy](/legal/privacy-policy?trk=linkedin-tc_auth-button_privacy-policy), and [Cookie Policy](/legal/cookie-policy?trk=linkedin-tc_auth-button_cookie-policy). \\n\\n## Join or sign in to save this job\\n\\nJoin to save **Associate Data Analyst** at **Research Foundation of The City University of New York** \\n\\nNew to LinkedIn? [Join now](https://www.linkedin.com/signup/cold-join?source=jobs_registration&session_redirect=https%3A%2F%2Fwww.l",
+        "next_offset": 3000,
+        "read_progress": {
+          "historical_access": false,
+          "recent_ranges": [
+            [
+              3000,
+              6000
+            ],
+            [
+              6000,
+              9000
+            ],
+            [
+              9000,
+              10185
+            ],
+            [
+              0,
+              3000
+            ]
+          ],
+          "ref": "ctx-80473fd6b4264d561a8a92e9",
+          "path": [],
+          "ranges": [
+            [
+              0,
+              10185
+            ]
+          ],
+          "chars": 10185,
+          "reads": 5,
+          "next_unread_offset": null
+        },
+        "available_paths": [
+          {
+            "path": [
+              "url"
+            ],
+            "chars": 48,
+            "type": "str"
+          },
+          {
+            "path": [
+              "title"
+            ],
+            "chars": 24,
+            "type": "str"
+          },
+          {
+            "path": [
+              "company"
+            ],
+            "chars": 56,
+            "type": "str"
+          },
+          {
+            "path": [
+              "location"
+            ],
+            "chars": 14,
+            "type": "str"
+          },
+          {
+            "path": [
+              "description"
+            ],
+            "chars": 9870,
+            "type": "str"
+          },
+          {
+            "path": [
+              "source"
+            ],
+            "chars": 26,
+            "type": "str"
+          },
+          {
+            "path": [
+              "content_hash"
+            ],
+            "chars": 66,
+            "type": "str"
+          }
+        ],
+        "requested_offset": 0,
+        "already_read": true,
+        "restored_after_eviction": true,
+        "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation.",
+        "no_new_evidence": true
+      }
+    },
+    {
+      "tool": "import_job",
+      "arguments": {
+        "company": "Research Foundation of The City University of New York",
+        "location": "New York, NY",
+        "title": "Associate Data Analyst",
+        "url": "https://www.linkedin.com/jobs/view/4475055219/"
+      },
+      "result": {
+        "context_ref": "ctx-02afbac78bf765edf5a34b77",
+        "chars": 10249,
+        "read_with": "read_context",
+        "available_keys": [
+          "application_id",
+          "title",
+          "company",
+          "url",
+          "location",
+          "status",
+          "match_score",
+          "result_at",
+          "status_label",
+          "description",
+          "match_report"
+        ],
+        "url": "https://www.linkedin.com/jobs/view/4475055219/",
+        "title": "Associate Data Analyst",
+        "application_id": "3f2e2b52-9984-47e2-aaa7-7bc910d20277",
+        "status": "saved",
+        "match_score": null,
+        "result_at": "2026-10-13T00:21:11.791447+00:00"
+      }
+    }
+  ]
+}

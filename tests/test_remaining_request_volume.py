@@ -7,10 +7,10 @@ from uuid import uuid4
 
 import pytest
 
-from agent_runtime.career.candidate_health import validate_and_record
-from agent_runtime.career.posting_qualification import PostingRejected
-from agent_runtime.loop_context import ConversationWindow
-from agent_runtime.request_context import ContextArchive, encoded, prepare_request
+from eregion.runtime.career.candidate_health import validate_and_record
+from eregion.runtime.career.posting_qualification import PostingRejected
+from eregion.runtime.core.context import ConversationWindow
+from eregion.runtime.request_context import ContextArchive, encoded, prepare_request
 from test_career_flow import career
 from test_remaining_candidate_health import rejected_page
 
@@ -90,8 +90,8 @@ def test_real_last_request_with_actual_rejection_and_synthetic_growth(count,tmp_
 
 
 def test_compacted_older_rejections_still_block_production_preflight_after_new_harness(career):
-    from agent_runtime.career.alerts import job_key
-    from agent_runtime.career.harness import CareerHarness
+    from eregion.runtime.career.alerts import job_key
+    from eregion.runtime.career.harness import CareerHarness
     c=career;page,calls,_=rejected_page(c)
     excluded=records(58)
     excluded[0]=next(iter(c.repository.get(c.state['task_id'])['candidate_rejections'].values()))

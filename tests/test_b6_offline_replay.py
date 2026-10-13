@@ -19,12 +19,12 @@ import httpx
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
-from agent_runtime.career.alerts import job_key
-from agent_runtime.career.discovery import JobDiscovery
-from agent_runtime.career.service import CareerService
-from agent_runtime.provider_usage import UsageLedger, summarize
-from api.services.fit_analysis_service import FitAnalysisService
-from job_agent.pdf_rendering import render_letter_pdf
+from eregion.runtime.career.alerts import job_key
+from eregion.runtime.career.discovery import JobDiscovery
+from eregion.runtime.career.service import CareerService
+from eregion.runtime.provider_usage import UsageLedger, summarize
+from eregion.api.services.fit_analysis_service import FitAnalysisService
+from eregion.domain.pdf_rendering import render_letter_pdf
 from scripts.e2e_repair_evaluation import APPLICANTS
 from scripts.remaining_search_acceptance import evaluate_search
 from test_career_flow import career
@@ -71,11 +71,11 @@ def offline_guard(monkeypatch, request):
         monkeypatch.setattr(socket.socket, 'connect_ex', forbidden)
         monkeypatch.setattr(httpx.HTTPTransport, 'handle_request', forbidden)
         monkeypatch.setattr(httpx.AsyncHTTPTransport, 'handle_async_request', forbidden)
-        import job_agent.model
-        import agent_runtime.provider_usage
-        monkeypatch.setattr(job_agent.model, 'create_model', forbidden)
-        monkeypatch.setattr(job_agent.model, 'shared_model', forbidden)
-        monkeypatch.setattr(agent_runtime.provider_usage, 'provider_call', forbidden)
+        import eregion.domain.model
+        import eregion.runtime.provider_usage
+        monkeypatch.setattr(eregion.domain.model, 'create_model', forbidden)
+        monkeypatch.setattr(eregion.domain.model, 'shared_model', forbidden)
+        monkeypatch.setattr(eregion.runtime.provider_usage, 'provider_call', forbidden)
     yield attempts
     assert attempts == [], f'A caught IO failure must still fail the replay: {attempts}'
 
@@ -96,7 +96,7 @@ HTTP response comes from MockTransport; unknown requests cannot fall through.
 
     def fail(self, message, *, missing=False):
         if missing and self.blocked_unknown:
-            from agent_runtime.career.source_health import SourceBlocked
+            from eregion.runtime.career.source_health import SourceBlocked
             self.blocked_requests.append(message)
             raise SourceBlocked('Frozen source unavailable: no recorded response')
         self.unexpected.append(message)
@@ -210,7 +210,7 @@ class FrozenBrowser:
 
 
 def test_live_fixture_missing_source_is_blocked_without_network():
-    from agent_runtime.career.source_health import SourceBlocked
+    from eregion.runtime.career.source_health import SourceBlocked
     discovery = FrozenDiscovery({'responses': {}, 'searches': {}, 'jobs': {},
                                  'browser_pages': {}}, blocked_unknown=True)
     with pytest.raises(SourceBlocked):
@@ -327,7 +327,7 @@ def replay(offline_guard, career, frozen_web, monkeypatch, request):
             attempt_rows = []
             if model is None:  # paid lane: keep per-attempt rows for the live report
                 from sqlalchemy import select
-                from agent_runtime.provider_usage import ProviderUsageRow
+                from eregion.runtime.provider_usage import ProviderUsageRow
                 with service.repository.sessions() as db:
                     attempt_rows = [json.loads(r.details_json) for r in db.scalars(
                         select(ProviderUsageRow).where(ProviderUsageRow.task_id == task_id))]
@@ -486,7 +486,7 @@ def test_b6_recorded_blocked_and_aggregator_outcomes(offline_guard, frozen_web):
 
 @pytest.mark.skipif(not LIVE_MODEL, reason='Opt-in paid model against frozen B6 web; never run by offline validation')
 def test_b6_frozen_web_with_configured_model(replay, monkeypatch):
-    from agent_runtime.task_loop import TaskModel
+    from eregion.runtime.tasks.loop import TaskModel
     output = os.getenv('OPT_LIVE_OUTPUT')
     assert output, 'Paid attempts require an unused OPT_LIVE_OUTPUT directory'
     target = Path(output)

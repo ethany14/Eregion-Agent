@@ -4,8 +4,8 @@ import json
 
 import pytest
 
-from agent_runtime.auto_apply.resume_profile import ResumeFacts,extract_profile,extract_chat_profile,header_city_region
-from job_agent.pdf_rendering import render_letter_pdf
+from eregion.runtime.auto_apply.resume_profile import ResumeFacts,extract_profile,extract_chat_profile,header_city_region
+from eregion.domain.pdf_rendering import render_letter_pdf
 
 
 @pytest.mark.parametrize('header,city,expected',[

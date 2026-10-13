@@ -1,0 +1,18 @@
+usage: main.py [-h] --thread-id THREAD_ID [--database-url DATABASE_URL]
+               [-o OUTPUT]
+               resume job
+
+Compare a resume with a job description using the job agent.
+
+positional arguments:
+  resume                Path to a UTF-8 resume text file.
+  job                   Path to a UTF-8 job-description text file.
+
+options:
+  -h, --help            show this help message and exit
+  --thread-id THREAD_ID
+                        Unique persistent run ID, for example application-001.
+  --database-url DATABASE_URL
+                        Override the application database URL.
+  -o, --output OUTPUT   Write the JSON result to this file instead of standard
+                        output.

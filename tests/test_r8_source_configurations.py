@@ -14,7 +14,7 @@ import json
 
 import pytest
 
-from agent_runtime.career.linkedin_source import BUSINESS_TOOLS
+from eregion.runtime.career.linkedin_source import BUSINESS_TOOLS
 from test_career_flow import career, execute  # noqa: F401
 from test_integrated_p3 import CRAWL_ROWS, Discovery, install_treg, ok
 from test_linkedin_mcp_t0 import FakeLinkedIn
@@ -53,7 +53,7 @@ def _mcp_file(tmp_path):
 @pytest.mark.parametrize('name,env,mcp', [('none', NONE, False), ('treg_only', TREG, False),
                                           ('linkedin_mcp_only', NONE, True), ('both', TREG, True)])
 def test_runtime_starts_for_each_combination_through_the_real_mcp_path(tmp_path, monkeypatch, name, env, mcp):
-    from api.session_dependencies import create_session_runtime
+    from eregion.api.session_dependencies import create_session_runtime
     for key, value in env.items():
         monkeypatch.setenv(key, value)
     if mcp:

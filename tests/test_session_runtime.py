@@ -9,15 +9,15 @@ from pydantic import ValidationError
 from sqlalchemy import inspect, select
 from sqlalchemy.exc import IntegrityError
 
-from agent_runtime.models import ToolCallRow
-from agent_runtime import (
+from eregion.runtime.models import ToolCallRow
+from eregion.runtime import (
     ToolCallRepository,
     ToolCallRequest,
     ToolContext,
     ToolExecutor,
     ToolRegistry,
 )
-from agent_runtime.sessions import (
+from eregion.runtime.sessions import (
     MessageConflictError,
     SessionEvent,
     SessionEventType,
@@ -29,11 +29,11 @@ from agent_runtime.sessions import (
     SessionTerminalError,
     StaleSessionError,
 )
-from agent_runtime.sessions.models import AgentSessionRow
-from agent_runtime.tools.messages import AgentMessage
-from agent_runtime.tools import SqlAlchemyRunReader, register_builtin_job_agent_tools
-from api.db import create_database
-from api.models import Run
+from eregion.runtime.sessions.models import AgentSessionRow
+from eregion.runtime.tools.messages import AgentMessage
+from eregion.runtime.tools import SqlAlchemyRunReader, register_domain_tools
+from eregion.api.db import create_database
+from eregion.api.models import Run
 from session_paths import session_decision_path  # noqa: F401 (both decision paths)
 
 
@@ -288,7 +288,7 @@ def test_session_delete_cascades_messages_and_events_but_not_runs_or_tools(sessi
 def test_existing_tool_runtime_persists_session_scope_without_foreign_key(session_runtime):
     database, repository = session_runtime
     state = create_session(repository, session_id="tool-scope")
-    registry = register_builtin_job_agent_tools(
+    registry = register_domain_tools(
         ToolRegistry(), SqlAlchemyRunReader(database.session_factory)
     )
     executor = ToolExecutor(

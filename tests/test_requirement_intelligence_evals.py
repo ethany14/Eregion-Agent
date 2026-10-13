@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 
 from evals.run_requirement_intelligence_v3 import evaluate_outputs, semantic_key
-from job_agent.domain import calculate_score_breakdown
-from job_agent.schemas import (
+from eregion.domain.domain import calculate_score_breakdown
+from eregion.domain.schemas import (
     JobAnalysis,
     JobRequirement,
     SkillEvidence,
@@ -13,7 +13,7 @@ from job_agent.schemas import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CASES_PATH = ROOT / "evals" / "requirement_intelligence_v3_cases.json"
+CASES_PATH = ROOT / "tools/evals" / "requirement_intelligence_v3_cases.json"
 
 
 def make_requirement(

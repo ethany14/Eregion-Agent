@@ -6,16 +6,16 @@ from unittest.mock import patch
 
 import pytest
 
-from job_agent.schemas import ResumeAnalysis, ResumeEvidence, ResumeSourceEntry, TailoredResume
-from job_agent.domain import normalize_resume_analysis
-from job_agent.resume_sources import complete_source_evidence
-from job_agent.compact_match import match_payload
-from job_agent.quality import ensure_foundational_resume_sections
-from agent_runtime.auto_apply.agent import AgentTools
-from agent_runtime.auto_apply.runner import ApplicationHost
-from agent_runtime.loop_engine import LoopStop
-from agent_runtime.progress import browser_evidence
-from agent_runtime.application_pack.selection import current_materials, latest_materials
+from eregion.domain.schemas import ResumeAnalysis, ResumeEvidence, ResumeSourceEntry, TailoredResume
+from eregion.domain.domain import normalize_resume_analysis
+from eregion.domain.resume_sources import complete_source_evidence
+from eregion.domain.compact_match import match_payload
+from eregion.domain.quality import ensure_foundational_resume_sections
+from eregion.runtime.auto_apply.agent import AgentTools
+from eregion.runtime.auto_apply.runner import ApplicationHost
+from eregion.runtime.core.engine import LoopStop
+from eregion.runtime.progress import browser_evidence
+from eregion.runtime.application_pack.selection import current_materials, latest_materials
 from test_career_flow import career, prepare, execute, approve
 from test_mock_interview import setup
 from test_auto_apply import database
@@ -151,12 +151,12 @@ def test_interview_retry_diagnostics_are_not_new_evidence(setup):
 
 
 def test_job_batches_preserve_context_and_complete_sentence_ownership():
-    from job_agent.job_extraction import extract_job, ReferencedJobExtraction
+    from eregion.domain.job_extraction import extract_job, ReferencedJobExtraction
     seen=[]
     def invoke(model,schema,prompt,text):
         data=json.loads(text);seen.append(data)
         return ReferencedJobExtraction(title='Engineer',summary='',statements=[],responsibility_sentence_ids=[])
-    with patch('job_agent.model.invoke_structured',invoke):
+    with patch('eregion.domain.model.invoke_structured',invoke):
         extract_job(object(),'\n'.join(f'Line {i}: qualification.' for i in range(27)))
     assert len(seen)==4
     assert all(len(row['source_sentences'])==27 for row in seen)
@@ -165,8 +165,8 @@ def test_job_batches_preserve_context_and_complete_sentence_ownership():
 
 
 def test_large_tool_result_keeps_full_controls_and_recovery_feedback():
-    from agent_runtime.request_context import ContextArchive
-    from agent_runtime.loop_context import trace_value
+    from eregion.runtime.request_context import ContextArchive
+    from eregion.runtime.core.context import trace_value
     archive=ContextArchive()
     original={'observation_id':'live-token','text':'Long public page. '*1800,
               'controls':[{'ref':str(i),'label':f'Job {i}','href':f'https://example.com/jobs/{i}'} for i in range(90)],
@@ -183,8 +183,8 @@ def test_large_tool_result_keeps_full_controls_and_recovery_feedback():
 
 
 def test_active_tool_context_survives_archive_pruning():
-    from agent_runtime.request_context import ContextArchive,prepare_request
-    from agent_runtime.loop_context import ConversationWindow
+    from eregion.runtime.request_context import ContextArchive,prepare_request
+    from eregion.runtime.core.context import ConversationWindow
     archive=ContextArchive()
     original={'details':'a'*15000}
     result=archive.tool_result(original)
@@ -196,8 +196,8 @@ def test_active_tool_context_survives_archive_pruning():
 
 
 def test_ordered_interview_outline_does_not_count_as_invented_metrics():
-    from agent_runtime.mock_interview.policy import validate_evaluation
-    from agent_runtime.mock_interview.types import MockAnswerEvaluation,MockInterviewQuestion
+    from eregion.runtime.mock_interview.policy import validate_evaluation
+    from eregion.runtime.mock_interview.types import MockAnswerEvaluation,MockInterviewQuestion
     q=MockInterviewQuestion(question_id='q',plan_item_id='p',question_text='Describe your work.',
                            question_type='role_fit',competency='role_fit',reason_for_asking='Practice.')
     result=MockAnswerEvaluation(evaluation_id='e',answer_id='a',overall_score=3,relevance_score=3,
@@ -211,8 +211,8 @@ def test_ordered_interview_outline_does_not_count_as_invented_metrics():
 
 def test_same_tool_provider_failure_has_bounded_retries(database):
     from test_task_loop import Harness,ToolModel,settled
-    from agent_runtime.task_loop import TaskLoop
-    from agent_runtime.career.repository import TaskRepository
+    from eregion.runtime.tasks.loop import TaskLoop
+    from eregion.runtime.career.repository import TaskRepository
     harness=Harness()
     def failed(*args,**kwargs):
         harness.lookups+=1
@@ -234,14 +234,14 @@ def test_same_tool_provider_failure_has_bounded_retries(database):
 
 
 def test_application_handoff_preserves_long_user_message():
-    from agent_runtime.career.harness import CareerHarness
+    from eregion.runtime.career.harness import CareerHarness
     message='x'*3950+' I do not consent to future retention.'
     assert CareerHarness.application_instruction({'messages':[{'role':'user','text':message}]})==message
 
 
 def test_legacy_excerpts_and_references_are_not_presented_as_complete_evidence():
-    from agent_runtime.request_context import ContextArchive, prepare_request
-    from agent_runtime.loop_context import ConversationWindow
+    from eregion.runtime.request_context import ContextArchive, prepare_request
+    from eregion.runtime.core.context import ConversationWindow
     old={'excerpt':'{"controls": [', 'truncated':True}
     archive=ContextArchive({'ctx-old':json.dumps(old)})
     assert archive.read('ctx-old')['error_code']=='incomplete_context'
@@ -260,8 +260,8 @@ def test_legacy_excerpts_and_references_are_not_presented_as_complete_evidence()
 
 
 def test_history_and_replay_share_one_complete_reference():
-    from agent_runtime.request_context import ContextArchive, prepare_request
-    from agent_runtime.loop_context import ConversationWindow
+    from eregion.runtime.request_context import ContextArchive, prepare_request
+    from eregion.runtime.core.context import ConversationWindow
     archive=ContextArchive()
     original={'observation_id':'fresh','text':'x'*16000,'controls':[{'ref':str(i),'label':str(i)} for i in range(80)]}
     value=archive.tool_result(original)
@@ -333,8 +333,8 @@ def test_education_headers_render_once_and_keep_qualification():
 
 
 def test_history_envelopes_never_rearchive_context_pages():
-    from agent_runtime.request_context import ContextArchive,prepare_request
-    from agent_runtime.loop_context import ConversationWindow
+    from eregion.runtime.request_context import ContextArchive,prepare_request
+    from eregion.runtime.core.context import ConversationWindow
     archive=ContextArchive()
     ref=archive.reference({'controls':[{'label':'Engineer'}]*120})['context_ref']
     page=archive.read(ref)
@@ -350,8 +350,8 @@ def test_history_envelopes_never_rearchive_context_pages():
 
 def test_persisted_budget_is_not_reset_on_worker_restart(database):
     from test_task_loop import Harness,ToolModel,settled
-    from agent_runtime.task_loop import TaskLoop
-    from agent_runtime.career.repository import TaskRepository
+    from eregion.runtime.tasks.loop import TaskLoop
+    from eregion.runtime.career.repository import TaskRepository
     repository=TaskRepository(database.session_factory)
     state,_=repository.create('Continue existing work.','restart-exhausted-budget')
     repository.change(state['task_id'],model_budget=2,model_calls=2,budget_base=0,status='running')
@@ -387,7 +387,7 @@ def test_older_success_requires_current_explicit_selection_before_upload(career)
 
 
 def test_restored_skill_lists_pass_the_shared_structural_validator():
-    from job_agent.quality import validate_resume_structure
+    from eregion.domain.quality import validate_resume_structure
     source = ResumeSourceEntry(source_entry_id='skills', entry_type='skills', heading='Tools', evidence_ids=['e'])
     text = 'Python, SQL; Tableau and Excel. AWS Certified Cloud Practitioner, earned August 2025. No Kubernetes experience.'
     result = ensure_foundational_resume_sections(TailoredResume(sections=[]), [source], {'e': text})
@@ -400,14 +400,14 @@ def test_restored_skill_lists_pass_the_shared_structural_validator():
 
 
 def test_pdf_pages_balance_entries_without_shrinking_or_dropping_content():
-    from job_agent.pdf_rendering import _balanced_page_breaks
+    from eregion.domain.pdf_rendering import _balanced_page_breaks
     assert _balanced_page_breaks([210, 180, 190, 110, 130], 700) == {2}
     assert _balanced_page_breaks([210, 180], 700) == set()
     assert _balanced_page_breaks([800, 180], 700) == set()
 
 
 def test_automatic_selection_only_uses_the_current_explicit_per_document_choice():
-    from agent_runtime.application_pack.selection import reviewed_selections
+    from eregion.runtime.application_pack.selection import reviewed_selections
     def item(identifier, status, version=2):
         return SimpleNamespace(artifact_type='tailored_resume',source_question=None,
             pack_item_id=identifier,status=SimpleNamespace(value=status),artifact_id='artifact',
@@ -437,9 +437,9 @@ def test_complete_real_source_sections_survive_restoration_and_pdf():
     from pathlib import Path
     from io import BytesIO
     from pypdf import PdfReader
-    from job_agent.domain import normalize_resume_analysis
-    from job_agent.quality import normalize_generated_resume_metadata, clean_tailored_resume, validate_resume_structure
-    from job_agent.pdf_rendering import render_tailored_resume_pdf
+    from eregion.domain.domain import normalize_resume_analysis
+    from eregion.domain.quality import normalize_generated_resume_metadata, clean_tailored_resume, validate_resume_structure
+    from eregion.domain.pdf_rendering import render_tailored_resume_pdf
     import re
     for name, expected_name in [('avery','AVERY LIN'),('riley','RILEY NG')]:
         text=(Path(__file__).parent/'fixtures/resume_source_regressions'/f'{name}.txt').read_text(encoding='utf-8')
@@ -471,9 +471,9 @@ def test_real_snapshot_education_case_does_not_duplicate_degrees():
     from pathlib import Path
     from datetime import datetime, UTC
     from uuid import uuid4
-    from agent_runtime.application_pack.types import GenerationEvidenceSnapshot, EvidenceSnapshotItem
-    from agent_runtime.application_pack.workflow import resume_analysis_from_snapshot
-    from job_agent.domain import normalize_resume_analysis
+    from eregion.runtime.application_pack.types import GenerationEvidenceSnapshot, EvidenceSnapshotItem
+    from eregion.runtime.application_pack.workflow import resume_analysis_from_snapshot
+    from eregion.domain.domain import normalize_resume_analysis
     original=(Path(__file__).parent/'fixtures/resume_source_regressions/avery.txt').read_text(encoding='utf-8')
     raw=ResumeAnalysis.model_validate_json((Path(__file__).parent/'fixtures/resume_source_regressions/avery-analysis.json').read_text())
     analysis=normalize_resume_analysis(complete_source_evidence(raw,original))
@@ -499,7 +499,7 @@ def test_real_snapshot_education_case_does_not_duplicate_degrees():
 def test_real_pdf_line_wraps_preserve_owned_facts_units_and_limitations():
     from pathlib import Path
     import textwrap
-    from job_agent.domain import normalize_resume_analysis
+    from eregion.domain.domain import normalize_resume_analysis
     for name in ['avery','riley']:
         base=Path(__file__).parent/'fixtures/resume_source_regressions'
         text=(base/f'{name}.txt').read_text(encoding='utf-8')
@@ -522,12 +522,12 @@ def test_real_pdf_line_wraps_preserve_owned_facts_units_and_limitations():
 
 def test_real_skill_snapshot_selection_restoration_keeps_only_complete_section():
     from pathlib import Path
-    from agent_runtime.application_pack.types import EvidenceSnapshotItem
-    from agent_runtime.application_pack.policy import EvidenceSelectionPolicy
-    from agent_runtime.application_pack.workflow import resume_analysis_from_snapshot
-    from agent_runtime.evidence.types import EvidenceCategory, EvidenceSourceType, EvidenceStatus
-    from job_agent.schemas import JobAnalysis
-    from job_agent.quality import affirmative_skill_clauses, validate_resume_structure
+    from eregion.runtime.application_pack.types import EvidenceSnapshotItem
+    from eregion.runtime.application_pack.policy import EvidenceSelectionPolicy
+    from eregion.runtime.application_pack.workflow import resume_analysis_from_snapshot
+    from eregion.runtime.evidence.types import EvidenceCategory, EvidenceSourceType, EvidenceStatus
+    from eregion.domain.schemas import JobAnalysis
+    from eregion.domain.quality import affirmative_skill_clauses, validate_resume_structure
     raw=json.loads((Path(__file__).parent/'fixtures/resume_source_regressions/riley-fragment-snapshot.json').read_text())
     items=[EvidenceSnapshotItem.model_validate(i) for i in raw['items']]
     rows=[]
@@ -560,9 +560,9 @@ def test_real_skill_snapshot_selection_restoration_keeps_only_complete_section()
 
 
 def test_claim_verifier_passes_cited_ownership_and_specific_feedback():
-    from agent_runtime.application_pack.verifier import ArtifactVerifier
-    from agent_runtime.application_pack.types import EvidenceSnapshotItem
-    from agent_runtime.semantics import SupportedClaims, ClaimDecision
+    from eregion.runtime.application_pack.verifier import ArtifactVerifier
+    from eregion.runtime.application_pack.types import EvidenceSnapshotItem
+    from eregion.runtime.semantics import SupportedClaims, ClaimDecision
     captured=[]
     evidence=EvidenceSnapshotItem(evidence_id='e',evidence_version_id='v',content_hash='a'*64,
         source_type='resume',selection_reason='application_link',associated_requirement_ids=[],
@@ -572,7 +572,7 @@ def test_claim_verifier_passes_cited_ownership_and_specific_feedback():
     def judge(items):
         captured.extend(items)
         return SupportedClaims([ClaimDecision(claim_id=i['claim_id'],supported=False,reason='The cited unit is minutes, not milliseconds.') for i in items])
-    from job_agent.schemas import SupportedClaim
+    from eregion.domain.schemas import SupportedClaim
     content=TailoredResume(professional_summary=[SupportedClaim(
         text='At Example Org I reduced processing to 22 milliseconds.',
         evidence_ids=['v'],source_entry_id='source')],experience_bullets=[],highlighted_skills=[]).model_dump(mode='json')
@@ -584,7 +584,7 @@ def test_claim_verifier_passes_cited_ownership_and_specific_feedback():
 
 
 def test_large_domain_result_keeps_identity_and_outcome_on_replay():
-    from agent_runtime.request_context import ContextArchive, compact_snapshot
+    from eregion.runtime.request_context import ContextArchive, compact_snapshot
     archive=ContextArchive()
     result={'application_id':'job-one','status':'matched','match_score':91.3,
         'requirement_counts':{'matched':28,'partial':4,'missing':3},'gaps':['Kubernetes'],
@@ -610,7 +610,7 @@ def test_import_uses_observed_posting_instead_of_task_instruction(career):
         execute(c,'import_job',url='https://jobs.lever.co/example/unread',message_id=message['id'])
     messages=[*c.state['messages'],{'id':'pasted-jd','role':'user','text':'Please analyze this JD:\n'+body+'\nThank you.'}]
     c.repository.change(c.state['task_id'],messages=messages)
-    with patch('agent_runtime.semantics.SemanticDecisions.pasted_job_text',return_value=True):
+    with patch('eregion.runtime.semantics.SemanticDecisions.pasted_job_text',return_value=True):
         pasted=execute(c,'import_job',url='https://jobs.lever.co/example/pasted',message_id='pasted-jd',job_text=body)
     assert pasted['description']==body
     with pytest.raises(ValueError,match='literal'):
@@ -623,25 +623,25 @@ def test_job_quote_cannot_override_observed_web_even_when_verbatim(career):
     body='Data Workflow Engineer at Harbor Research Systems. Required: Python and SQL. Build data pipelines, validate structured records and collaborate with analysts. Location: Toronto.'
     c.repository.change(c.state['task_id'],messages=[{'id':'task','role':'user','text':goal}],
         retrieved_jobs={url:{'url':url,'description':body,'source':'rendered_browser'}})
-    with patch('agent_runtime.semantics.SemanticDecisions.pasted_job_text',side_effect=AssertionError('No extra classification needed for a captured page')):
+    with patch('eregion.runtime.semantics.SemanticDecisions.pasted_job_text',side_effect=AssertionError('No extra classification needed for a captured page')):
         result=execute(c,'import_job',url=url,message_id='task',job_text=goal)
     assert result['description']==body
     c.repository.change(c.state['task_id'],retrieved_jobs={})
-    with patch('agent_runtime.semantics.SemanticDecisions.pasted_job_text',return_value=False) as judge:
+    with patch('eregion.runtime.semantics.SemanticDecisions.pasted_job_text',return_value=False) as judge:
         for _ in range(2):
             with pytest.raises(ValueError,match='not identifiable'):
                 execute(c,'import_job',url=url,message_id='task',job_text=goal)
         assert judge.call_count==1  # Failed provenance is cached for the same immutable quote.
     short='招聘数据工程师，需掌握 Python、SQL。'
     c.repository.change(c.state['task_id'],messages=[{'id':'short','role':'user','text':'分析这个职位：'+short}])
-    with patch('agent_runtime.semantics.SemanticDecisions.pasted_job_text',return_value=True):
+    with patch('eregion.runtime.semantics.SemanticDecisions.pasted_job_text',return_value=True):
         result=execute(c,'import_job',url='https://harbor.qa.example.com/short',message_id='short',job_text=short)
     assert result['description']==short
 
 
 def test_archive_read_progress_survives_restart_and_context_eviction():
-    from agent_runtime.request_context import ContextArchive, prepare_request
-    from agent_runtime.loop_context import ConversationWindow
+    from eregion.runtime.request_context import ContextArchive, prepare_request
+    from eregion.runtime.core.context import ConversationWindow
     archive=ContextArchive();ref=archive.reference({'report':'whole source '*3000,'score':83.7})['context_ref']
     first=archive.read(ref);assert first['read_progress']['next_unread_offset']==3000
     archive.read(ref,3000)
@@ -671,8 +671,8 @@ def test_job_summary_never_presents_an_old_snapshot_score_as_current(career):
 
 
 def test_score_overview_is_actionable_without_repeated_citation_pages():
-    from agent_runtime.career.harness import CareerHarness
-    from agent_runtime.request_context import ContextArchive
+    from eregion.runtime.career.harness import CareerHarness
+    from eregion.runtime.request_context import ContextArchive
     report={'explanation':'3 matched; 1 requires confirmation.','matches':[
         {'job_skill':skill,'match_status':status,'requirement_level':'required','resume_evidence':['complete evidence '*500]}
         for skill,status in [('Python','matched'),('SQL','matched'),('API','partial'),('sponsorship','needs_confirmation')]]}
@@ -709,7 +709,7 @@ def test_explicit_selection_cannot_silently_change_after_other_api_approval(care
 
 
 def test_material_statuses_stay_actionable_when_full_content_is_archived():
-    from agent_runtime.request_context import ContextArchive
+    from eregion.runtime.request_context import ContextArchive
     overview=[{'pack_item_id':'resume','artifact_type':'tailored_resume','status':'awaiting_review','version':4}]
     result={'pack_id':'p','status':'awaiting_review','material_overview':overview,'items':[{'text':'full resume '*3000}]}
     archived=ContextArchive().tool_result(result)
@@ -718,7 +718,7 @@ def test_material_statuses_stay_actionable_when_full_content_is_archived():
 
 
 def test_reading_old_resource_preserves_evidence_but_marks_status_historical_after_restart():
-    from agent_runtime.request_context import ContextArchive
+    from eregion.runtime.request_context import ContextArchive
     archive=ContextArchive()
     old={'run_id':'r','status':'running','version':4,'pending_fields':['major'],'fields':[{'value':'full'}]*1000}
     ref=archive.tool_result(old)['context_ref']
@@ -734,7 +734,7 @@ def test_reading_old_resource_preserves_evidence_but_marks_status_historical_aft
 
 
 def test_chat_education_correction_keeps_owned_siblings_and_literal_facts():
-    from agent_runtime.auto_apply.resume_profile import extract_chat_profile, ResumeFacts, ResumeEducation, ResumeEducationFact
+    from eregion.runtime.auto_apply.resume_profile import extract_chat_profile, ResumeFacts, ResumeEducation, ResumeEducationFact
     current={'education':[{'id':'masters','school':'Northern University','degree':'Master','field_of_study':''},
         {'id':'bachelors','school':'Western College','degree':'Bachelor','field_of_study':'Math'}]}
     text='My NU master major is Data Science. Graduation June 2025.'
@@ -742,7 +742,7 @@ def test_chat_education_correction_keeps_owned_siblings_and_literal_facts():
         ResumeEducationFact(field='field_of_study',value='Data Science',quote='My NU master major is Data Science.'),
         ResumeEducationFact(field='end_date',value='June 2025',quote='Graduation June 2025.'),
         ResumeEducationFact(field='start_date',value='2024',quote='Not in the user message')])])
-    with patch('agent_runtime.auto_apply.resume_profile.extract_facts',return_value=facts):
+    with patch('eregion.runtime.auto_apply.resume_profile.extract_facts',return_value=facts):
         parsed=extract_chat_profile(text,current_profile=current,model_factory=lambda:object())
     records=parsed['profile']['education']
     assert len(records)==2 and records[0]['field_of_study']=='Data Science'
@@ -752,7 +752,7 @@ def test_chat_education_correction_keeps_owned_siblings_and_literal_facts():
 
 def test_same_chat_profile_message_is_applied_once_and_does_not_undo_later_changes(career):
     c=career;message=next(m for m in c.state['messages'] if m['role']=='user')
-    with patch('agent_runtime.auto_apply.resume_profile.extract_chat_profile',return_value={'profile':{'city':'Toronto'},'message':None}) as parse:
+    with patch('eregion.runtime.auto_apply.resume_profile.extract_chat_profile',return_value={'profile':{'city':'Toronto'},'message':None}) as parse:
         execute(c,'remember_profile',message_id=message['id'])
         saved=c.harness.applications.repository.saved_candidate()
         c.harness.applications.repository.save_candidate({**saved['profile'],'city':'Vancouver'})
@@ -761,7 +761,7 @@ def test_same_chat_profile_message_is_applied_once_and_does_not_undo_later_chang
 
 
 def test_approved_older_files_remain_selectable_after_another_approval(career):
-    from agent_runtime.application_pack.selection import current_materials,reviewed_selections,latest_materials
+    from eregion.runtime.application_pack.selection import current_materials,reviewed_selections,latest_materials
     c=career;job,first=prepare(c);approve(c,first)
     aid=job['application_id'];rt=c.runtime
     old=next(i for i in rt.packs.items(first['pack_id']) if i.artifact_type=='tailored_resume')
@@ -780,7 +780,7 @@ def test_approved_older_files_remain_selectable_after_another_approval(career):
 
 def test_failed_profile_extraction_can_retry_same_message(career):
     c=career;message=next(m for m in c.state['messages'] if m['role']=='user')
-    with patch('agent_runtime.auto_apply.resume_profile.extract_chat_profile',side_effect=[
+    with patch('eregion.runtime.auto_apply.resume_profile.extract_chat_profile',side_effect=[
         {'profile':{},'retryable':True},{'profile':{'city':'Ottawa'},'retryable':False}]) as parse:
         execute(c,'remember_profile',message_id=message['id'])
         result=execute(c,'remember_profile',message_id=message['id'])
@@ -788,7 +788,7 @@ def test_failed_profile_extraction_can_retry_same_message(career):
 
 
 def test_explicit_review_can_select_visible_same_job_pack_without_extra_inspection(career):
-    from agent_runtime.career.service import CareerService
+    from eregion.runtime.career.service import CareerService
     c=career;job,pack=prepare(c)
     item=next(i for i in c.runtime.packs.items(pack['pack_id']) if i.artifact_type=='tailored_resume')
     c.repository.change(c.state['task_id'],packs=[])
@@ -844,8 +844,8 @@ def test_start_with_resume_only_pack_includes_explicit_current_cross_pack_cover(
 
 def test_current_request_survives_legacy_replay_and_small_context():
     import json
-    from agent_runtime.loop_context import ConversationWindow
-    from agent_runtime.request_context import ContextArchive, prepare_request
+    from eregion.runtime.core.context import ConversationWindow
+    from eregion.runtime.request_context import ContextArchive, prepare_request
     old = {'request': {'goal': 'Only inspect, never apply.', 'request': {'role': 'user', 'text': 'Approved; apply now.'}},
            'assistant': {'text': '', 'tool_calls': []}, 'results': [], 'revision': 2}
     window = ConversationWindow([old])
@@ -866,8 +866,8 @@ def test_current_request_survives_legacy_replay_and_small_context():
 def test_same_chat_inspect_approve_apply_repeated_read_wait_restart(database):
     import json, time
     from langchain_core.messages import AIMessage
-    from agent_runtime.career.repository import TaskRepository
-    from agent_runtime.task_loop import TaskLoop, function
+    from eregion.runtime.career.repository import TaskRepository
+    from eregion.runtime.tasks.loop import TaskLoop, function
     from test_task_loop import Harness
     from test_career_flow import settled
     repo=TaskRepository(database.session_factory)
@@ -932,8 +932,8 @@ def test_same_chat_inspect_approve_apply_repeated_read_wait_restart(database):
 def test_progress_text_after_work_cannot_complete_task(database):
     import json
     from langchain_core.messages import AIMessage
-    from agent_runtime.career.repository import TaskRepository
-    from agent_runtime.task_loop import TaskLoop
+    from eregion.runtime.career.repository import TaskRepository
+    from eregion.runtime.tasks.loop import TaskLoop
     from test_task_loop import Harness
     from test_career_flow import settled
     repo=TaskRepository(database.session_factory);harness=Harness()
@@ -960,8 +960,8 @@ def test_progress_text_after_work_cannot_complete_task(database):
 
 def test_explicit_completion_before_first_action_and_new_apply_turn(database):
     from langchain_core.messages import AIMessage
-    from agent_runtime.career.repository import TaskRepository
-    from agent_runtime.task_loop import TaskLoop
+    from eregion.runtime.career.repository import TaskRepository
+    from eregion.runtime.tasks.loop import TaskLoop
     from test_task_loop import Harness
     from test_career_flow import settled
     import json
@@ -994,7 +994,7 @@ def test_explicit_completion_before_first_action_and_new_apply_turn(database):
 
 
 def test_archive_stale_zero_offsets_advance_until_complete_and_allow_revisit():
-    from agent_runtime.request_context import ContextArchive
+    from eregion.runtime.request_context import ContextArchive
     a=ContextArchive();ref=a.reference({'items':[{'id':'a','text':'FULL SOURCE '*1200}]})['context_ref']
     pages=[]
     for _ in range(8):
@@ -1011,7 +1011,7 @@ def test_archive_stale_zero_offsets_advance_until_complete_and_allow_revisit():
 
 
 def test_material_document_text_refs_bypass_metadata_without_truncation():
-    from agent_runtime.request_context import ContextArchive
+    from eregion.runtime.request_context import ContextArchive
     a=ContextArchive();text='complete source document '*1600
     result={'pack_id':'pack','status':'awaiting_review','items':[{'text':text,'metadata':'audit '*2000}],
             'material_overview':[{'pack_item_id':'item','artifact_type':'tailored_resume','status':'awaiting_review','version':5}]}
@@ -1022,8 +1022,8 @@ def test_material_document_text_refs_bypass_metadata_without_truncation():
 
 
 def test_reread_visible_original_is_not_new_progress_and_survives_restart():
-    from agent_runtime.request_context import ContextArchive, prepare_request, encoded
-    from agent_runtime.loop_context import ConversationWindow
+    from eregion.runtime.request_context import ContextArchive, prepare_request, encoded
+    from eregion.runtime.core.context import ConversationWindow
     a=ContextArchive();source='A complete evidence sentence with its unit and owner. '*85
     ref=a.reference(source)['context_ref'];first=a.read(ref);a.read(ref,first['next_offset'])
     saved=json.loads(json.dumps([a.values,a.reads,a.resources]));a=ContextArchive(*saved)
@@ -1040,7 +1040,7 @@ def test_reread_visible_original_is_not_new_progress_and_survives_restart():
 
 def test_same_material_revision_projection_and_out_of_order_item_versions():
     import copy
-    from agent_runtime.request_context import ContextArchive
+    from eregion.runtime.request_context import ContextArchive
     a=ContextArchive()
     item={'pack_item_id':'resume','version':5,'status':'awaiting_review','verification':{'passed':True},'document_text_path':['items','0','text']}
     full={'pack_id':'pack','status':'awaiting_review','material_overview':[item], 'items':[{'text':'Full original '*800}]}
@@ -1060,8 +1060,8 @@ def test_same_material_revision_projection_and_out_of_order_item_versions():
 
 
 def test_recent_original_ranges_remain_available_under_conversation_pressure():
-    from agent_runtime.request_context import ContextArchive,prepare_request
-    from agent_runtime.loop_context import ConversationWindow
+    from eregion.runtime.request_context import ContextArchive,prepare_request
+    from eregion.runtime.core.context import ConversationWindow
     a=ContextArchive();text='CURRENT ORIGINAL '*280;ref=a.reference(text)['context_ref']
     v=a.read(ref);a.read(ref,v['next_offset'])
     latest={'role':'user','text':'Compare exact current original.'}
@@ -1090,7 +1090,7 @@ def test_fresh_material_generation_is_explicit_and_idempotent(career):
 
 
 def test_date_projection_preserves_precision_and_ambiguity():
-    from agent_runtime.auto_apply.education import format_date, combined_bindings
+    from eregion.runtime.auto_apply.education import format_date, combined_bindings
     field={'label':'Start YYYY-MM-DD'}
     for source in ('04/20/2026','20/04/2026','April 20, 2026','2026-04-20'):
         assert format_date(field,source)=='2026-04-20'
@@ -1112,7 +1112,7 @@ def test_date_projection_preserves_precision_and_ambiguity():
 
 
 def test_legacy_fast_category_guess_is_not_reused_as_leaf_answer():
-    from agent_runtime.auto_apply.decisions import active_decision, signature
+    from eregion.runtime.auto_apply.decisions import active_decision, signature
     from test_auto_apply import field
     f=field('How did you hear about us?','select')
     state={'profile':{},'answers':{f['key']:'LinkedIn'}}
@@ -1145,8 +1145,8 @@ def test_review_projection_exposes_actual_controls_without_long_letter(career):
 
 
 def test_dependent_choice_reuses_only_its_exact_confirmed_path_goal():
-    from agent_runtime.auto_apply.agent import AgentTools
-    from agent_runtime.auto_apply.browser import BrowserBlocked
+    from eregion.runtime.auto_apply.agent import AgentTools
+    from eregion.runtime.auto_apply.browser import BrowserBlocked
     from test_auto_apply import FakeBrowser, field
     browser=FakeBrowser('');f=field('child','select','Which source?')
     f['options']=[{'label':'Portal X','value':'x'}];browser.fields=[f]
@@ -1166,8 +1166,8 @@ def test_dependent_choice_reuses_only_its_exact_confirmed_path_goal():
 
 def test_fast_generic_category_proposal_keeps_leaf_unresolved():
     from types import SimpleNamespace
-    from agent_runtime.auto_apply.agent import AgentTools
-    from agent_runtime.auto_apply.fast_options import fill_options
+    from eregion.runtime.auto_apply.agent import AgentTools
+    from eregion.runtime.auto_apply.fast_options import fill_options
     from test_auto_apply import FakeBrowser, field
     class Browser(FakeBrowser):
         def explore_option(self,key,label):
@@ -1217,15 +1217,15 @@ def test_duplicate_application_reply_never_dispatches_again_after_review(career)
 
 
 def test_application_affordances_hide_filled_autofill_and_unrelated_answer_refs():
-    from agent_runtime.auto_apply.agent import AgentTools
-    from agent_runtime.auto_apply.runner import ApplicationHost
+    from eregion.runtime.auto_apply.agent import AgentTools
+    from eregion.runtime.auto_apply.runner import ApplicationHost
     from test_auto_apply import FakeBrowser,field
     browser=FakeBrowser('');browser.fields=[field('First name'),field('new-policy','select','Can you follow written access rules?')]
     browser.fields[0]['value']='Avery'
     state={'profile':{'first_name':'Avery'},'answers':{'old-policy':'Yes'}}
     session=AgentTools(browser,state,autofill=lambda:{},active=lambda:True)
     host=ApplicationHost(session,None,active=lambda:True,reserve=lambda kind:True,report=lambda *args:None,
-        decisions=__import__('agent_runtime.fast_decisions',fromlist=['FastDecisions']).FastDecisions())
+        decisions=__import__('eregion.runtime.fast_decisions',fromlist=['FastDecisions']).FastDecisions())
     turn=host.observe()
     assert not turn.snapshot['autofill_available']
     assert 'autofill' not in {t['function']['name'] for t in turn.tools}
@@ -1257,8 +1257,8 @@ def test_parent_tools_follow_live_browser_and_delivery_state(career):
 
 def test_actual_application_summary_survives_prepared_request_and_targeted_read(career):
     from types import SimpleNamespace
-    from agent_runtime.request_context import ContextArchive,prepare_request
-    from agent_runtime.loop_context import ConversationWindow
+    from eregion.runtime.request_context import ContextArchive,prepare_request
+    from eregion.runtime.core.context import ConversationWindow
     controls=[{'key':str(n),'label':'Observed '+str(n),'value':'2027-05','kind':'text',
         'constraints':{'description':'DOM metadata '*600}} for n in range(24)]
     controls.append({'key':'letter','label':'Cover letter','kind':'textarea','value':'Full original letter '*400})
@@ -1282,8 +1282,8 @@ def test_actual_application_summary_survives_prepared_request_and_targeted_read(
 
 
 def test_superseded_evidence_does_not_replay_as_current_but_explicit_audit_survives_restart():
-    from agent_runtime.request_context import ContextArchive,prepare_request
-    from agent_runtime.loop_context import ConversationWindow
+    from eregion.runtime.request_context import ContextArchive,prepare_request
+    from eregion.runtime.core.context import ConversationWindow
     a=ContextArchive()
     old={'run_id':'app','version':4,'status':'needs_input','pending_fields':['Old question'],
         'review_fields':[{'label':'Source','value':'Social Media'}],'text':'OLD ORIGINAL '*800}

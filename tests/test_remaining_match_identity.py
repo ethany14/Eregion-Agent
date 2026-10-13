@@ -1,9 +1,9 @@
 """Offline assessment identity isolation through production normalization."""
 import pytest
 
-from job_agent.domain import normalize_job_analysis,normalize_skill_match
-from job_agent.job_extraction import JobExtraction
-from job_agent.schemas import ResumeAnalysis,ResumeEvidence,SkillAssessment,SkillEvidence
+from eregion.domain.domain import normalize_job_analysis,normalize_skill_match
+from eregion.domain.job_extraction import JobExtraction
+from eregion.domain.schemas import ResumeAnalysis,ResumeEvidence,SkillAssessment,SkillEvidence
 
 
 def inputs(duration=False):
@@ -56,8 +56,8 @@ def test_internal_legacy_no_id_requires_unique_one_to_one_name():
 
 @pytest.mark.parametrize('chunked',[False,True])
 def test_production_main_and_chunked_matching_refuse_incomplete_identity_coverage(chunked):
-    from custom_agent.handlers import JobAgentStepHandler
-    from custom_agent.state import AgentState,Step
+    from eregion.domain.workflow.handlers import JobAgentStepHandler
+    from eregion.domain.workflow.state import AgentState,Step
     job,resume,quote=inputs()
     class OfflineAnalyzer:
         chunked_matching=chunked

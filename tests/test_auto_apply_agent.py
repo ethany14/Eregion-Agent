@@ -5,12 +5,12 @@ from threading import Event
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
-from agent_runtime.auto_apply.agent import AgentTools, HybridApplicationAgent
-from agent_runtime.auto_apply.autofill import autofill
-from agent_runtime.auto_apply.browser import BrowserBlocked
-from agent_runtime.auto_apply.contracts import ContinueApplication
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.repository import ApplyRepository
+from eregion.runtime.auto_apply.agent import AgentTools, HybridApplicationAgent
+from eregion.runtime.auto_apply.autofill import autofill
+from eregion.runtime.auto_apply.browser import BrowserBlocked
+from eregion.runtime.auto_apply.contracts import ContinueApplication
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.repository import ApplyRepository
 from test_auto_apply import FakeBrowser, database, field, request, wait
 
 
@@ -168,8 +168,8 @@ def test_images_are_only_sent_after_enabled_field_inspection():
 
 
 def test_later_batch_success_preserves_earlier_visual_recovery():
-    from agent_runtime.auto_apply.runner import ApplicationHost
-    from agent_runtime.loop_engine import Turn
+    from eregion.runtime.auto_apply.runner import ApplicationHost
+    from eregion.runtime.core.engine import Turn
     browser = RepairBrowser()
     browser.page = object()
     session = AgentTools(browser, state(visual_fallback=True), autofill=lambda:{}, active=lambda:True)

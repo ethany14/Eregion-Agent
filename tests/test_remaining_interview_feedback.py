@@ -7,9 +7,9 @@ from uuid import uuid4
 
 import pytest
 
-from agent_runtime.career.service import CareerService
-from agent_runtime.mock_interview.model import SharedMockInterviewModel
-from agent_runtime.provider_usage import UsageLedger, current_scope, usage_scope
+from eregion.runtime.career.service import CareerService
+from eregion.runtime.mock_interview.model import SharedMockInterviewModel
+from eregion.runtime.provider_usage import UsageLedger, current_scope, usage_scope
 from test_career_flow import career, execute, ToolModel
 
 
@@ -37,7 +37,7 @@ def test_live_feedback_observer_stops_on_durable_failure_without_abandoning_othe
 
 def test_wrapped_httpx_connection_failure_is_unavailable_without_exposing_provider_body():
     import httpx
-    from agent_runtime.mock_interview.controller import evaluation_failure
+    from eregion.runtime.mock_interview.controller import evaluation_failure
     cause=httpx.ConnectError('Synthetic private endpoint and credential must stay hidden')
     adapter=RuntimeError('Provider adapter failure');adapter.__cause__=cause
     failure=evaluation_failure(adapter)
@@ -47,7 +47,7 @@ def test_wrapped_httpx_connection_failure_is_unavailable_without_exposing_provid
 
 @pytest.mark.parametrize('purpose',['agent','fast'])
 def test_feedback_routes_requested_model_and_preserves_ledger_scope(monkeypatch,purpose):
-    import agent_runtime.mock_interview.model as module
+    import eregion.runtime.mock_interview.model as module
     calls=[]
     monkeypatch.setattr(module,'create_model',lambda **kwargs:kwargs)
     def invoke(model,schema,policy,context):
@@ -66,7 +66,7 @@ def test_feedback_routes_requested_model_and_preserves_ledger_scope(monkeypatch,
 
 
 def test_default_feedback_uses_configured_fast_model_with_main_fallback(tmp_path):
-    from job_agent.model import create_model
+    from eregion.domain.model import create_model
     path=tmp_path/'empty.env';path.write_text('',encoding='utf-8')
     for setting,expected in [({'LLM_FAST_MODEL_ID':'synthetic-fast'},'synthetic-fast'),({},'synthetic-main')]:
         options=create_model(env_path=path,environ={'LLM_MODEL_ID':'synthetic-main',**setting},
@@ -168,7 +168,7 @@ def test_real_main_chat_feedback_latency(career,tmp_path,lane,limit):
 
 
 def test_interview_reasoning_falls_back_when_provider_rejects_it(monkeypatch):
-    import agent_runtime.mock_interview.model as module
+    import eregion.runtime.mock_interview.model as module
     monkeypatch.delenv('LLM_INTERVIEW_REASONING',raising=False)
     monkeypatch.setattr(module,'create_model',lambda **kwargs:kwargs)
     seen=[]

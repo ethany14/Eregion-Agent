@@ -2,11 +2,11 @@
 from threading import Event
 import time
 
-from agent_runtime.auto_apply.agent import AgentTools
-from agent_runtime.auto_apply.contracts import ChatRequest
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.repository import ApplyRepository
-from agent_runtime.auto_apply.resume_profile import extract_chat_profile, ResumeFacts
+from eregion.runtime.auto_apply.agent import AgentTools
+from eregion.runtime.auto_apply.contracts import ChatRequest
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.repository import ApplyRepository
+from eregion.runtime.auto_apply.resume_profile import extract_chat_profile, ResumeFacts
 from test_auto_apply import FakeBrowser, database, request, wait
 
 
@@ -130,7 +130,7 @@ def test_preparation_chat_never_accepts_invented_profile_facts():
 def test_api_startup_recovers_work_without_any_browser_request(database, monkeypatch):
     from fastapi.testclient import TestClient
     from types import SimpleNamespace
-    from api.main import create_app
+    from eregion.api.main import create_app
     repo = ApplyRepository(database.session_factory)
     state, _ = repo.create(request(automation_mode="hybrid"))
     repo.save(state, status="running")
@@ -138,7 +138,7 @@ def test_api_startup_recovers_work_without_any_browser_request(database, monkeyp
         def run(self, browser, state, **callbacks):
             callbacks["autofill"]()
             return {"reason":"ready", "field_keys":[]}
-    monkeypatch.setattr("api.auto_apply_routes.ApplicationLoop", lambda repo: ApplicationLoop(repo, browser_factory=FakeBrowser, agent_factory=Agent))
+    monkeypatch.setattr("eregion.api.auto_apply_routes.ApplicationLoop", lambda repo: ApplicationLoop(repo, browser_factory=FakeBrowser, agent_factory=Agent))
     app = create_app(run_service=object(), session_runtime=SimpleNamespace(database=database))
     with TestClient(app):
         assert wait(app.state.auto_apply, state["run_id"])["status"] == "awaiting_review"

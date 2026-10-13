@@ -2,9 +2,9 @@
 import json
 import pytest
 from test_application_pack import setup, FakePackModel
-from agent_runtime.application_pack.patches import MaterialPatch
-from agent_runtime.application_pack.repository import PackRepository
-from agent_runtime.application_pack.types import ItemStatus, ArtifactVerification, ClaimIssue
+from eregion.runtime.application_pack.patches import MaterialPatch
+from eregion.runtime.application_pack.repository import PackRepository
+from eregion.runtime.application_pack.types import ItemStatus, ArtifactVerification, ClaimIssue
 
 
 class PatchModel(FakePackModel):

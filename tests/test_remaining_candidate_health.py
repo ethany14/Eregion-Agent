@@ -7,10 +7,10 @@ from uuid import uuid4
 import pytest
 from langchain_core.messages import HumanMessage
 
-from agent_runtime.career.candidate_health import active_rejections
-from agent_runtime.career.posting_qualification import PostingRejected
-from agent_runtime.loop_context import ConversationWindow
-from agent_runtime.request_context import ContextArchive,prepare_request
+from eregion.runtime.career.candidate_health import active_rejections
+from eregion.runtime.career.posting_qualification import PostingRejected
+from eregion.runtime.core.context import ConversationWindow
+from eregion.runtime.request_context import ContextArchive,prepare_request
 from test_career_flow import career,execute
 from test_remaining_search_completion import prepare
 from test_remaining_search_runtime import host_for
@@ -30,7 +30,7 @@ def rejected_page(c):
 
 
 def test_actual_rejection_is_shared_across_tools_and_survives_new_harness(career,tmp_path):
-    from agent_runtime.career.harness import CareerHarness
+    from eregion.runtime.career.harness import CareerHarness
     c=career;page,calls,first=rejected_page(c)
     assert len(calls)==1
     state=c.repository.get(c.state['task_id']);record=active_rejections(state)[0]

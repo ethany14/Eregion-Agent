@@ -3,10 +3,10 @@ import json
 
 from sqlalchemy import select
 
-from agent_runtime.provider_usage import (ProviderUsageRow, UsageLedger, adapter_attempt,
+from eregion.runtime.provider_usage import (ProviderUsageRow, UsageLedger, adapter_attempt,
                                           capture_provider_attempts, provider_call, summarize,
                                           usage_scope)
-from api.db import create_database
+from eregion.api.db import create_database
 
 
 def ledger(tmp_path):
@@ -40,7 +40,7 @@ def test_unmetered_adapter_is_one_attempt_with_unknown_usage():
 
 def test_overlapping_provider_calls_are_separate_budgeted_attempts(tmp_path, monkeypatch):
     # Overlap is a second request (e.g. a concurrent worker), never a free child.
-    from agent_runtime.provider_usage import TaskProviderBudgetExceeded
+    from eregion.runtime.provider_usage import TaskProviderBudgetExceeded
     import pytest
     monkeypatch.setenv('JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS', '1')
     db, usage = ledger(tmp_path)

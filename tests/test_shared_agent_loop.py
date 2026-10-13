@@ -10,10 +10,10 @@ from threading import Event
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-from api.db import create_database
-from agent_runtime.career.repository import TaskRepository
-from agent_runtime.task_loop import TaskLoop, function
-from agent_runtime.loop_context import ConversationWindow
+from eregion.api.db import create_database
+from eregion.runtime.career.repository import TaskRepository
+from eregion.runtime.tasks.loop import TaskLoop, function
+from eregion.runtime.core.context import ConversationWindow
 
 
 def call(name, args=None, identifier='call'):

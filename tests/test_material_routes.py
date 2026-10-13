@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
-from api.main import create_app
+from eregion.api.main import create_app
 from test_career_flow import approve, career, prepare  # noqa: F401 - pytest fixture import
 
 

@@ -10,9 +10,9 @@ from unittest.mock import patch
 
 import httpx
 
-from api.services.fit_analysis_service import FitAnalysisService
-from job_agent.jev_fit.service import JevFitError
-from job_agent.jev_fit.settings import Settings
+from eregion.api.services.fit_analysis_service import FitAnalysisService
+from eregion.domain.jev_fit.service import JevFitError
+from eregion.domain.jev_fit.settings import Settings
 
 
 class NoMainModel:
@@ -86,7 +86,7 @@ class JevProductionTests(unittest.TestCase):
         self.assertEqual(cold.skill_match.algorithm, 'jev-only')
         self.assertEqual(cold.main_model_calls, 0)
         self.assertGreater(cold.fast_model_calls, 0)
-        with patch('job_agent.jev_fit.transport.httpx.Client', side_effect=AssertionError('Warm cache opened HTTP')):
+        with patch('eregion.domain.jev_fit.transport.httpx.Client', side_effect=AssertionError('Warm cache opened HTTP')):
             warm = self.analyze()  # New service, same persistent cache.
         self.assertEqual(warm.model_calls, 0)
         self.assertEqual(cold.skill_match.overall_score, warm.skill_match.overall_score)
@@ -164,7 +164,7 @@ class JevProductionTests(unittest.TestCase):
         self.assertEqual(self.endpoint.requests, [])
 
     def test_source_projection_keeps_separate_owners_and_degree_status(self):
-        from job_agent.jev_fit.projection import resume_projection
+        from eregion.domain.jev_fit.projection import resume_projection
         source = ('EXPERIENCE\nEngineer | First Lab | 2022-01 | 2023-02\nBuilt Python tools.\n'
                   'Analyst | Second Lab | 2023-03 | 2024-04\nBuilt SQL reports.\n'
                   'PROJECT\nPublic data study | 2024-01 | 2024-03\nIndependent prototype.\n'
@@ -186,8 +186,8 @@ class JevProductionTests(unittest.TestCase):
         self.assertIn('expected', quotes[degrees[1].evidence_ids[0]])
 
     def test_rejected_budget_does_not_create_a_paid_ledger_entry(self):
-        from agent_runtime.multi_agent.model_usage import model_usage_scope
-        from agent_runtime.provider_usage import usage_scope
+        from eregion.runtime.coordination.model_usage import model_usage_scope
+        from eregion.runtime.provider_usage import usage_scope
         class Reject:
             def reserve_model_call(self, *_, **kwargs): raise RuntimeError('budget exhausted')
         class Ledger:
@@ -198,9 +198,9 @@ class JevProductionTests(unittest.TestCase):
         self.assertEqual(self.endpoint.requests, [])
 
     def test_accounting_context_crosses_worker_and_broker_threads(self):
-        from api.db import create_database
-        from agent_runtime.provider_usage import UsageLedger, usage_scope
-        from agent_runtime.multi_agent.model_usage import model_usage_scope
+        from eregion.api.db import create_database
+        from eregion.runtime.provider_usage import UsageLedger, usage_scope
+        from eregion.runtime.coordination.model_usage import model_usage_scope
         class Meter:
             def __init__(self): self.finished = []
             def reserve_model_call(self, task_id, attempt_id, **kwargs):

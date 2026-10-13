@@ -1,7 +1,7 @@
 """P1: final-request (wire) measurement. Synthetic requests only; no provider calls."""
 import pytest
 
-from agent_runtime import wire_metrics
+from eregion.runtime import wire_metrics
 
 
 @pytest.fixture(autouse=True)
@@ -57,7 +57,7 @@ def test_model_switch_and_restart_do_not_compare_unrelated_requests():
 
 def test_adapter_records_wire_metrics_without_changing_the_request(monkeypatch):
     from langchain_core.messages import HumanMessage, SystemMessage
-    from job_agent.model import ProviderCompatibleChatOpenAI
+    from eregion.domain.model import ProviderCompatibleChatOpenAI
     model = ProviderCompatibleChatOpenAI(model='m', api_key='k', base_url='https://provider.test/v1', max_retries=0)
     sent = []
     def fake(self, messages, stop=None, run_manager=None, **kwargs):
@@ -66,7 +66,7 @@ def test_adapter_records_wire_metrics_without_changing_the_request(monkeypatch):
         sent.append(self._get_request_payload(messages, stop=stop, **kwargs))
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content='ok'))])
     monkeypatch.setattr('langchain_openai.ChatOpenAI._generate', fake)
-    from agent_runtime.provider_usage import capture_provider_attempts
+    from eregion.runtime.provider_usage import capture_provider_attempts
     with capture_provider_attempts() as attempts:
         model._generate([SystemMessage(content='sys'), HumanMessage(content='hi')])
         model._generate([SystemMessage(content='sys'), HumanMessage(content='hi')])

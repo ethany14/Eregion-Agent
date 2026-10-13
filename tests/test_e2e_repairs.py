@@ -7,14 +7,14 @@ from types import SimpleNamespace
 import pytest
 from pypdf import PdfReader
 
-from agent_runtime.auto_apply.autofill import pending_documents
-from agent_runtime.career.alerts import AlertConfig, AlertRepository, next_due, latest_due
-from agent_runtime.career.repository import TaskRepository
-from agent_runtime.task_loop import TaskLoop
-from job_agent.jev_fit.core import job_units
-from job_agent.jev_fit.projection import resume_projection
-from job_agent.pdf_rendering import render_tailored_resume_pdf
-from job_agent.quality import affirmative_skill_clauses, validate_resume_structure
+from eregion.runtime.auto_apply.autofill import pending_documents
+from eregion.runtime.career.alerts import AlertConfig, AlertRepository, next_due, latest_due
+from eregion.runtime.career.repository import TaskRepository
+from eregion.runtime.tasks.loop import TaskLoop
+from eregion.domain.jev_fit.core import job_units
+from eregion.domain.jev_fit.projection import resume_projection
+from eregion.domain.pdf_rendering import render_tailored_resume_pdf
+from eregion.domain.quality import affirmative_skill_clauses, validate_resume_structure
 from test_auto_apply import database, field, wait
 from test_career_flow import career, execute, prepare, ToolModel, settled
 from test_task_loop import Harness
@@ -106,8 +106,8 @@ def test_repeated_reads_stop_before_budget_without_false_completion(database):
 
 
 def test_large_interview_keeps_live_id_and_question_without_context_search():
-    from agent_runtime.request_context import ContextArchive, prepare_request
-    from agent_runtime.loop_context import ConversationWindow
+    from eregion.runtime.request_context import ContextArchive, prepare_request
+    from eregion.runtime.core.context import ConversationWindow
     snapshot={'interviews':[{'mock_interview_id':'interview-id','status':'awaiting_answer',
         'current_question':{'question_id':'q1','question_text':'Your contribution?'},'turns':'x'*16000}]}
     messages,_=prepare_request('system',[],ConversationWindow(),snapshot,ContextArchive(),max_chars=3000)
@@ -118,7 +118,7 @@ def test_large_interview_keeps_live_id_and_question_without_context_search():
 
 
 def test_explicit_end_interview_routes_without_reasoning_model(career):
-    from agent_runtime.career.service import CareerService
+    from eregion.runtime.career.service import CareerService
     c=career;job,_=prepare(c)
     interview=execute(c,'start_interview',application_id=job['application_id'],question_count=3)
     class NoModel:
@@ -175,8 +175,8 @@ def test_digest_threshold_uses_lower_bound_without_fabricating_point_score(datab
 
 
 def test_manual_browser_control_never_auto_resumes_when_verification_clears(database):
-    from agent_runtime.auto_apply.loop import ApplicationLoop, AUTO_RESUME
-    from agent_runtime.auto_apply.repository import ApplyRepository
+    from eregion.runtime.auto_apply.loop import ApplicationLoop, AUTO_RESUME
+    from eregion.runtime.auto_apply.repository import ApplyRepository
     from test_auto_apply import request, FakeBrowser
     repo=ApplyRepository(database.session_factory)
     child,_=repo.create(request())
@@ -193,7 +193,7 @@ def test_manual_browser_control_never_auto_resumes_when_verification_clears(data
 
 
 def test_unknown_dated_source_structure_cannot_pass_material_verification():
-    from job_agent.schemas import ResumeSourceEntry, TailoredResume
+    from eregion.domain.schemas import ResumeSourceEntry, TailoredResume
     source=ResumeSourceEntry(source_entry_id='degraded',entry_type='experience',heading='Experience',evidence_ids=['e'])
     resume=TailoredResume.model_validate({'header':{},'sections':[{'section_type':'experience','title':'Experience',
         'entries':[{'entry_id':'degraded','heading':'Experience','bullets':[{'text':'Built Python APIs.',
@@ -203,7 +203,7 @@ def test_unknown_dated_source_structure_cannot_pass_material_verification():
 
 
 def test_snapshot_does_not_turn_resume_summary_into_employment():
-    from agent_runtime.application_pack.workflow import resume_analysis_from_snapshot
+    from eregion.runtime.application_pack.workflow import resume_analysis_from_snapshot
     items=[SimpleNamespace(category='experience',source_section=section,source_type='resume',employer_or_project=None,
         role=None,start_date=None,end_date=None,claim_text=text,evidence_version_id=str(index))
         for index,(section,text) in enumerate([('Summary','Engineer with Python experience.'),('Resume','Anonymous header')])]
@@ -212,7 +212,7 @@ def test_snapshot_does_not_turn_resume_summary_into_employment():
 
 
 def test_interview_is_not_superseded_by_parent_job_state():
-    from agent_runtime.request_context import ContextArchive
+    from eregion.runtime.request_context import ContextArchive
     archive=ContextArchive()
     archive.record_resource({'application_id':'job','status':'applied','version':8})
     interview={'mock_interview_id':'practice','application_id':'job','status':'awaiting_answer','version':3}
@@ -222,9 +222,9 @@ def test_interview_is_not_superseded_by_parent_job_state():
 
 @pytest.mark.parametrize('applicant',['analyst','backend','student','designer'])
 def test_four_applicants_keep_source_ownership_through_vault_snapshot_and_pdf(database,applicant):
-    from agent_runtime.application_pack.workflow import resume_analysis_from_snapshot
-    from agent_runtime.application_pack.types import EvidenceSnapshotItem
-    from agent_runtime.evidence.repository import CareerEvidenceRepository
+    from eregion.runtime.application_pack.workflow import resume_analysis_from_snapshot
+    from eregion.runtime.application_pack.types import EvidenceSnapshotItem
+    from eregion.runtime.evidence.repository import CareerEvidenceRepository
     from scripts.e2e_repair_evaluation import APPLICANTS
     source=APPLICANTS[applicant]
     projected=resume_projection(source)

@@ -1,0 +1,22 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+______ test_offline_plan_does_not_read_model_configuration_or_claim_pass ______
+tests\test_main_stability_evals.py:29: in test_offline_plan_does_not_read_model_configuration_or_claim_pass
+    data = dataset(); plan = runner.make_plan(data)
+                             ^^^^^^^^^^^^^^^^^^^^^^
+tools\evals\run_main_stability.py:64: in make_plan
+    'implementation_signature': implementation_signature(), 'runtime': runtime,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools\evals\run_main_stability.py:36: in implementation_signature
+    return digest({path: hashlib.sha256((root/path).read_bytes()).hexdigest() for path in paths})
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_local.py:537: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\api\\services\\fit_analysis_service.py'
+=========================== short test summary info ===========================
+FAILED tests/test_main_stability_evals.py::test_offline_plan_does_not_read_model_configuration_or_claim_pass
+1 failed in 2.80s

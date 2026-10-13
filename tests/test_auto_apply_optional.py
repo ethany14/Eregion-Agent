@@ -5,12 +5,12 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
-from agent_runtime.auto_apply.agent import HybridApplicationAgent
-from agent_runtime.auto_apply.browser import ApplicationBrowser
-from agent_runtime.auto_apply.contracts import ContinueApplication
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.repository import ApplyRepository
-from api.main import create_app
+from eregion.runtime.auto_apply.agent import HybridApplicationAgent
+from eregion.runtime.auto_apply.browser import ApplicationBrowser
+from eregion.runtime.auto_apply.contracts import ContinueApplication
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.repository import ApplyRepository
+from eregion.api.main import create_app
 from test_auto_apply import FakeBrowser, database, field, request, wait
 from test_auto_apply_agent import ScriptModel
 

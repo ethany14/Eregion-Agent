@@ -6,14 +6,14 @@ from types import SimpleNamespace
 
 import pytest
 
-from job_agent.job_extraction import extract_job, numbered_sentences, JobExtraction, ReferencedJobExtraction
+from eregion.domain.job_extraction import extract_job, numbered_sentences, JobExtraction, ReferencedJobExtraction
 
 
 @pytest.mark.parametrize('text',['','   ','We are an equal opportunity employer.',
     'Benefits: Health insurance and paid time off.','Requirements:','Senior Backend Engineer'])
 def test_empty_background_heading_or_title_is_never_assigned_as_qualification(monkeypatch,text):
     calls=[]
-    monkeypatch.setattr('job_agent.model.invoke_structured',lambda *a: calls.append(a) or ReferencedJobExtraction(
+    monkeypatch.setattr('eregion.domain.model.invoke_structured',lambda *a: calls.append(a) or ReferencedJobExtraction(
         title=None,summary='',statements=[],responsibility_sentence_ids=[]))
     result=extract_job(object(),text)
     assert not calls and not result.requirements
@@ -25,7 +25,7 @@ def test_main_source_map_uses_actual_scoped_units_and_keeps_conditions(monkeypat
     def invoke(model,schema,prompt,payload):
         calls.append(json.loads(payload))
         return ReferencedJobExtraction(title=None,summary='',statements=[],responsibility_sentence_ids=[])
-    monkeypatch.setattr('job_agent.model.invoke_structured',invoke)
+    monkeypatch.setattr('eregion.domain.model.invoke_structured',invoke)
     extract_job(object(),text)
     source=calls[0]['source_sentences']
     assert any(s=='You have communication skills;' for s in source.values())
@@ -51,7 +51,7 @@ def test_typed_constraints_cannot_silently_collapse(changed):
 
 
 def test_production_normalization_keeps_stronger_duration_and_distinct_predicates():
-    from job_agent.domain import normalize_job_analysis
+    from eregion.domain.domain import normalize_job_analysis
     source='Requires two years of Python experience. Requires five years of Python experience.'
     extracted=JobExtraction(title=None,summary='',responsibilities=[],statements=[
         {'source_text':'Requires two years of Python experience.','requirements':[atom()]},
@@ -86,7 +86,7 @@ def test_only_failed_extraction_batch_retries_once_and_does_not_hide_terminal_fa
         with lock:attempts[targets]+=1;n=attempts[targets]
         if targets[0]=='s8' and n==1:raise TimeoutError('synthetic timeout')
         return ReferencedJobExtraction(title=None,summary='',statements=[],responsibility_sentence_ids=[])
-    monkeypatch.setattr('job_agent.model.invoke_structured',invoke)
+    monkeypatch.setattr('eregion.domain.model.invoke_structured',invoke)
     text='\n'.join(f'- Candidate must demonstrate qualification {i}.' for i in range(25))
     extract_job(object(),text)
     assert sorted(attempts.values())==[1,1,1,2]
@@ -94,8 +94,8 @@ def test_only_failed_extraction_batch_retries_once_and_does_not_hide_terminal_fa
 
 
 def test_only_failed_matching_chunk_retries_instead_of_whole_analysis():
-    from job_agent.fast_match import assess_skills
-    from job_agent.schemas import JobAnalysis,ResumeAnalysis,SkillAssessment,SkillEvidence
+    from eregion.domain.fast_match import assess_skills
+    from eregion.domain.schemas import JobAnalysis,ResumeAnalysis,SkillAssessment,SkillEvidence
     requirements=[{'requirement_id':f'r{i}','requirement_group_id':f'g{i}',
         'original_text':f'Deliver project {i}', 'source_text':f'Deliver project {i}.', **atom(
         atomic_text=f'Deliver project {i}',canonical_name=f'project_{i}',category='responsibility',
@@ -122,31 +122,31 @@ def test_wrapped_timeout_retries_exact_batch_and_validation_errors_do_not(monkey
             try:raise TimeoutError('synthetic')
             except TimeoutError as exc:raise RuntimeError('adapter') from exc
         return ReferencedJobExtraction(title=None,summary='',statements=[],responsibility_sentence_ids=[])
-    monkeypatch.setattr('job_agent.model.invoke_structured',invoke)
+    monkeypatch.setattr('eregion.domain.model.invoke_structured',invoke)
     extract_job(object(),'Must know Python.')
     assert len(calls)==2 and calls[0][3]==calls[1][3]
     calls.clear()
     def invalid(*args):calls.append(args);raise ValueError('invalid schema')
-    monkeypatch.setattr('job_agent.model.invoke_structured',invalid)
+    monkeypatch.setattr('eregion.domain.model.invoke_structured',invalid)
     with pytest.raises(ValueError):extract_job(object(),'Must know Python.')
     assert len(calls)==1
 
 
 def test_terminal_transport_failure_and_retry_attribution_remain_visible(monkeypatch):
-    from agent_runtime.provider_usage import current_scope
+    from eregion.runtime.provider_usage import current_scope
     attempts=[]
     def fail(*_):
         attempts.append(current_scope().get('attempt'))
         raise TimeoutError('synthetic persistent timeout')
-    monkeypatch.setattr('job_agent.model.invoke_structured',fail)
+    monkeypatch.setattr('eregion.domain.model.invoke_structured',fail)
     with pytest.raises(TimeoutError):extract_job(object(),'Must know Python.')
     assert attempts==[1,2]
 
 
 def test_all_real_structured_flat_units_preserve_source_and_no_requirement_cap(monkeypatch):
     from pathlib import Path
-    from job_agent.jev_fit.core import job_units
-    data=json.loads(Path('evals/fit_labels_v1.json').read_text(encoding='utf-8'))
+    from eregion.domain.jev_fit.core import job_units
+    data=json.loads(Path('tools/evals/fit_labels_v1.json').read_text(encoding='utf-8'))
     for job in data['jobs']:
         for form in ('structured','flat'):
             text=job[form]; source=numbered_sentences(text)
@@ -156,6 +156,6 @@ def test_all_real_structured_flat_units_preserve_source_and_no_requirement_cap(m
         p=json.loads(payload)
         return ReferencedJobExtraction(title=None,summary='',statements=[
             {'sentence_id':i,'requirements':[atom(atomic_text=p['source_sentences'][i])]} for i in p['extract_sentence_ids']],responsibility_sentence_ids=[])
-    monkeypatch.setattr('job_agent.model.invoke_structured',invoke)
+    monkeypatch.setattr('eregion.domain.model.invoke_structured',invoke)
     text='\n'.join(f'- Candidate must have qualification {i}.' for i in range(35))
     assert len(extract_job(object(),text).requirements)==35

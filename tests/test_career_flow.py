@@ -13,27 +13,27 @@ import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 from pypdf import PdfReader
 
-from api.db import create_database, upgrade_database
-from api.services.fit_analysis_service import FitAnalysisService
-from custom_agent.handlers import JobAgentStepHandler
-from agent_runtime.task_loop import TaskLoop, function
-from agent_runtime.career.repository import TaskRepository
-from agent_runtime.career.harness import CareerHarness
-from agent_runtime.career.service import CareerService
-from agent_runtime.career.discovery import JobDiscovery
-from agent_runtime.auto_apply.repository import ApplyRepository
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.contracts import ChatRequest
-from agent_runtime.application_pack.repository import PackRepository
-from agent_runtime.application_pack.workflow import ApplicationPackWorkflow
-from agent_runtime.context.repository import ContextSnapshotRepository
-from agent_runtime.evidence.repository import CareerEvidenceRepository
-from agent_runtime.memory.repository import MemoryRepository
-from agent_runtime.mock_interview.controller import MockInterviewController
-from agent_runtime.mock_interview.repository import MockInterviewRepository
-from agent_runtime.sessions.repository import SessionRepository
-from agent_runtime.workspace.repository import JobWorkspaceRepository
-from job_agent.pdf_rendering import render_letter_pdf
+from eregion.api.db import create_database, upgrade_database
+from eregion.api.services.fit_analysis_service import FitAnalysisService
+from eregion.domain.workflow.handlers import JobAgentStepHandler
+from eregion.runtime.tasks.loop import TaskLoop, function
+from eregion.runtime.career.repository import TaskRepository
+from eregion.runtime.career.harness import CareerHarness
+from eregion.runtime.career.service import CareerService
+from eregion.runtime.career.discovery import JobDiscovery
+from eregion.runtime.auto_apply.repository import ApplyRepository
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.contracts import ChatRequest
+from eregion.runtime.application_pack.repository import PackRepository
+from eregion.runtime.application_pack.workflow import ApplicationPackWorkflow
+from eregion.runtime.context.repository import ContextSnapshotRepository
+from eregion.runtime.evidence.repository import CareerEvidenceRepository
+from eregion.runtime.memory.repository import MemoryRepository
+from eregion.runtime.mock_interview.controller import MockInterviewController
+from eregion.runtime.mock_interview.repository import MockInterviewRepository
+from eregion.runtime.sessions.repository import SessionRepository
+from eregion.runtime.workspace.repository import JobWorkspaceRepository
+from eregion.domain.pdf_rendering import render_letter_pdf
 from test_auto_apply import FakeBrowser, wait
 from test_application_pack import FakePackModel
 from test_job_workflow import fake_analyze
@@ -66,6 +66,8 @@ class Discovery:
 
 @pytest.fixture
 def career(tmp_path, monkeypatch):
+    # Historical browser-route fixture; API/MCP tests explicitly opt into the new default route.
+    monkeypatch.setenv('JOB_AGENT_JOB_API_FIRST', '0')
     # This fixture scripts discovery, scoring and writing; screening must be offline too.
     monkeypatch.setenv('TYPESAFE_ENABLED', 'false')
     url=f"sqlite:///{(tmp_path/'career.db').as_posix()}"
@@ -104,7 +106,7 @@ def execute(c,name,**args):return c.harness.execute(c.state['task_id'],name,args
 
 
 def test_scoring_reuses_extractions_across_jobs_and_conversations(career,monkeypatch):
-    from job_agent.schemas import ResumeAnalysis, JobAnalysis, SkillAssessment
+    from eregion.domain.schemas import ResumeAnalysis, JobAnalysis, SkillAssessment
     # Counts model job extraction per posting; the local catalogue default is covered elsewhere.
     monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG','extract')
 
@@ -190,7 +192,7 @@ def test_decision_context_has_material_status_and_full_documents_remain_inspecta
 
 
 def test_saved_job_start_validates_context_before_scheduling_and_fences_retries(career):
-    from agent_runtime.workspace.errors import ApplicationNotFoundError
+    from eregion.runtime.workspace.errors import ApplicationNotFoundError
     c=career
     job=execute(c,'import_job',url='https://jobs.lever.co/example/abc123')
     other=execute(c,'import_job',url='https://jobs.lever.co/example/other')
@@ -214,8 +216,8 @@ def test_saved_job_start_validates_context_before_scheduling_and_fences_retries(
 
 def test_extension_analysis_reuses_chat_resume_without_old_settings_page(career):
     from hashlib import sha256
-    from agent_runtime.resumes.repository import ResumeDocumentRepository
-    from api.resume_routes import _analysis_resume
+    from eregion.runtime.resumes.repository import ResumeDocumentRepository
+    from eregion.api.resume_routes import _analysis_resume
 
     c=career
     c.runtime.resumes=ResumeDocumentRepository(c.runtime.database.session_factory)
@@ -405,7 +407,7 @@ def test_cover_letter_pdf_preserves_text():
 
 
 def test_selected_documents_replace_server_saved_attachments_once(career):
-    from agent_runtime.auto_apply.autofill import autofill,pending_documents
+    from eregion.runtime.auto_apply.autofill import autofill,pending_documents
     from test_auto_apply import field
     c=career;browser=FakeBrowser('');uploads=[]
     browser.fields=[field('resume','file',label='CV'),field('support','file',label='Supporting document')]
@@ -426,8 +428,8 @@ def test_selected_documents_replace_server_saved_attachments_once(career):
 
 
 def test_model_can_identify_unfamiliar_document_control_but_cannot_skip_upload(career):
-    from agent_runtime.auto_apply.agent import AgentTools
-    from agent_runtime.auto_apply.browser import BrowserBlocked
+    from eregion.runtime.auto_apply.agent import AgentTools
+    from eregion.runtime.auto_apply.browser import BrowserBlocked
     from test_auto_apply import field
     c=career;browser=FakeBrowser('');browser.fields=[field('attachment','file',label='Your document')]
     state={'profile':{},'answers':{},'document_refresh':{'resume':True}}
@@ -459,9 +461,9 @@ def test_unreadable_legacy_pdf_does_not_prevent_job_search(career):
 
 @pytest.mark.skipif(os.getenv('JOB_AGENT_LIVE_CAREER_TEST')!='1',reason='Opt-in configured model; synthetic resume and local tool IO only.')
 def test_configured_model_directs_real_career_tools_with_synthetic_sources(career):
-    from agent_runtime.task_loop import TaskModel
-    from agent_runtime.auto_apply.browser import ApplicationBrowser
-    from agent_runtime.browser.manager import BrowsingManager
+    from eregion.runtime.tasks.loop import TaskModel
+    from eregion.runtime.auto_apply.browser import ApplicationBrowser
+    from eregion.runtime.browser.manager import BrowsingManager
     c=career
     # The model may choose general browsing instead of read_job. Both routes
     # must see the same synthetic posting; never navigate to the real fake URL.

@@ -1,10 +1,10 @@
 import pytest
 
-from custom_agent.handlers import JobAgentStepHandler
-from custom_agent.state import AgentState, Step
-from job_agent.domain import normalize_skill_match
-from job_agent.prompts import MATCH_PROMPT
-from job_agent.schemas import (
+from eregion.domain.workflow.handlers import JobAgentStepHandler
+from eregion.domain.workflow.state import AgentState, Step
+from eregion.domain.domain import normalize_skill_match
+from eregion.domain.prompts import MATCH_PROMPT
+from eregion.domain.schemas import (
     JobAnalysis,
     JobRequirement,
     RequirementCategory,

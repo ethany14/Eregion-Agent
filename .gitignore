@@ -1,4 +1,7 @@
 .venv/
+*.egg-info/
+/build/
+/dist/
 .env
 evals/human_quality_review/*.local.json
 __pycache__/

@@ -4,9 +4,9 @@ from collections import Counter
 
 import pytest
 
-from api.services.fit_analysis_service import FitAnalysisService
-from custom_agent.handlers import JobAgentStepHandler
-from job_agent.schemas import JobAnalysis, ResumeAnalysis, SkillAssessment, SkillEvidence
+from eregion.api.services.fit_analysis_service import FitAnalysisService
+from eregion.domain.workflow.handlers import JobAgentStepHandler
+from eregion.domain.schemas import JobAnalysis, ResumeAnalysis, SkillAssessment, SkillEvidence
 
 
 class Attempts:
@@ -20,7 +20,7 @@ class Attempts:
         return 'offline-attempt-contract'
 
     def __call__(self, schema, system, content):
-        from agent_runtime.provider_usage import provider_call
+        from eregion.runtime.provider_usage import provider_call
         if self.metered:
             with provider_call('offline-main') as details:
                 value = self.compute(schema, content)
@@ -76,11 +76,11 @@ def test_actual_provider_records_are_not_double_counted_and_failed_usage_is_unkn
 
 @pytest.mark.parametrize('metered',[False,True])
 def test_shared_analyzer_25_bullets_uses_four_extraction_batches_two_matching_batches(monkeypatch,metered):
-    from custom_agent.handlers import SharedModelAnalyzer
-    from job_agent.job_extraction import ReferencedJobExtraction
-    from job_agent.resume_extraction import ResumeExtraction
-    from job_agent.compact_match import CompactSkillAssessment
-    from agent_runtime.provider_usage import provider_call, current_scope, usage_scope
+    from eregion.domain.workflow.handlers import SharedModelAnalyzer
+    from eregion.domain.job_extraction import ReferencedJobExtraction
+    from eregion.domain.resume_extraction import ResumeExtraction
+    from eregion.domain.compact_match import CompactSkillAssessment
+    from eregion.runtime.provider_usage import provider_call, current_scope, usage_scope
     from contextlib import nullcontext
     from threading import Lock
     calls=[]; lock=Lock()
@@ -100,11 +100,11 @@ def test_shared_analyzer_25_bullets_uses_four_extraction_batches_two_matching_ba
             assert schema is CompactSkillAssessment
             return schema(matches=[{'requirement_id':r['requirement_id'],'status':'missing','evidence_ids':[]}
                 for r in payload['requirements']])
-    monkeypatch.setattr('custom_agent.handlers.invoke_structured',transport)
-    monkeypatch.setattr('job_agent.model.invoke_structured',transport)
-    monkeypatch.setattr('job_agent.model.shared_model',lambda **_:object())
+    monkeypatch.setattr('eregion.domain.workflow.handlers.invoke_structured',transport)
+    monkeypatch.setattr('eregion.domain.model.invoke_structured',transport)
+    monkeypatch.setattr('eregion.domain.model.shared_model',lambda **_:object())
     monkeypatch.setattr(SharedModelAnalyzer,'cache_namespace',lambda self:'offline-shared')
-    from agent_runtime.fast_decisions import FastDecisions
+    from eregion.runtime.fast_decisions import FastDecisions
     service=FitAnalysisService(JobAgentStepHandler(analyzer=SharedModelAnalyzer(),decisions=FastDecisions()),jev_enabled=False)
     with usage_scope(task_id='offline-multibatch'):
         result=service._analyze_sync(resume_text='Candidate',job_description='\n'.join(
@@ -122,7 +122,7 @@ def test_shared_analyzer_25_bullets_uses_four_extraction_batches_two_matching_ba
 
 def test_mixed_fast_main_requests_are_attributed_without_logical_stage_fallback():
     import httpx
-    from agent_runtime.fast_decisions import FastDecisions
+    from eregion.runtime.fast_decisions import FastDecisions
     class MixedHandler(JobAgentStepHandler):
         def _match_skills(self,state):
             result=fast.evaluate({}, {'q':{'type':'choice','instructions':{},'criteria':{'yes':'yes','no':'no'}}},purpose='offline-probe')
@@ -158,7 +158,7 @@ def test_terminal_failure_retains_both_unknown_attempts():
 
 
 def test_attempt_capture_survives_ledger_write_failure_and_preserves_scope():
-    from agent_runtime.provider_usage import usage_scope, current_scope
+    from eregion.runtime.provider_usage import usage_scope, current_scope
     class FailedLedger:
         def start(self,*args):raise OSError('offline ledger write failure')
         def finish(self,*args):raise OSError('offline ledger write failure')

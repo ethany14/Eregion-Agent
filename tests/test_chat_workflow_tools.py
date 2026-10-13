@@ -3,16 +3,16 @@ from types import SimpleNamespace
 import pytest
 
 from test_application_pack import setup
-from agent_runtime.sessions import SessionRepository, SessionState, SessionEvent, SessionEventType, SessionMessageDraft
-from agent_runtime.tools.messages import AgentMessage
-from agent_runtime.tools.workflow_tools import (StartApplicationTask, GetApplicationTask,
+from eregion.runtime.sessions import SessionRepository, SessionState, SessionEvent, SessionEventType, SessionMessageDraft
+from eregion.runtime.tools.messages import AgentMessage
+from eregion.runtime.tools.workflow_tools import (StartApplicationTask, GetApplicationTask,
     StartTaskInput, TaskInput, LOCAL_WORKFLOW_TOOLS)
-from agent_runtime.multi_agent.repository import AgentTaskRepository
-from agent_runtime.registry import ToolRegistry
-from agent_runtime.resumes.repository import ResumeDocumentRepository
-from agent_runtime.types import ToolContext, ToolRiskLevel, ToolSideEffect
-from agent_runtime.policy import ToolPolicy
-from agent_runtime.job_workflow.workers import SourceProvisionWorker, ApplicationSourceReader
+from eregion.runtime.coordination.repository import AgentTaskRepository
+from eregion.runtime.registry import ToolRegistry
+from eregion.runtime.resumes.repository import ResumeDocumentRepository
+from eregion.runtime.types import ToolContext, ToolRiskLevel, ToolSideEffect
+from eregion.runtime.policy import ToolPolicy
+from eregion.runtime.job_workflow.workers import SourceProvisionWorker, ApplicationSourceReader
 
 
 @pytest.fixture
@@ -76,9 +76,9 @@ def test_local_task_capability_does_not_expand_external_or_readonly_permissions(
 
 
 def test_main_executor_persists_a_local_workflow_without_an_extra_approval(chat_runtime):
-    from agent_runtime.executor import ToolExecutor
-    from agent_runtime.repository import ToolCallRepository
-    from agent_runtime.types import ToolCallRequest, ToolExecutionStatus
+    from eregion.runtime.executor import ToolExecutor
+    from eregion.runtime.repository import ToolCallRepository
+    from eregion.runtime.types import ToolCallRequest, ToolExecutionStatus
     rt = chat_runtime
     executor = ToolExecutor(rt.registry, policy=ToolPolicy(automatic_local_tools=LOCAL_WORKFLOW_TOOLS),
         repository=ToolCallRepository(rt.workspace.session_factory))

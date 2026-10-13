@@ -1,0 +1,2283 @@
+ssssssssssss............................................................ [  2%]
+.s...................................................................... [  5%]
+.......................................sssssssssssssssssssssssss........ [  8%]
+....ss.....................................................sssss........ [ 11%]
+...................s...........................s........................ [ 14%]
+...........................sss.....................s...................................ssssssssssssssss.......s..................... [ 20%]
+.....s....sss..s......sssss.................................F.....s..... [ 23%]
+.ssssss................................................................. [ 26%]
+...............F........................................................ [ 29%]
+........................................................................ [ 31%]
+..............................ssssssssssssss............................ [ 34%]
+.......................................................................F [ 37%]
+....F...............................................ss.................. [ 40%]
+.....FFF.FFFFF.F...............ss................................... [ 43%]
+.....................................FFFFF..F........................... [ 46%]
+........................................................................ [ 49%]
+........................................................................ [ 52%]
+...........................................F...............FFFFFFF...... [ 55%]
+......F.F....F.............................F............................ [ 58%]
+........................................................................ [ 61%]
+.............................sss........................................ [ 64%]
+.......ss...........F.FFFFFFFF..........s............ss............sssss [ 67%]
+sssssssss..........................ss................................... [ 70%]
+....ss.................s................................................ [ 73%]
+...........................................................FF........... [ 76%]
+........................................................................ [ 78%]
+........................................................................ [ 81%]
+........................................................................ [ 84%]
+........................................................................ [ 87%]
+..................................s....................................s [ 90%]
+ss.s.................................................................... [ 93%]
+........................................................................ [ 96%]
+........................................................................ [ 99%]
+.........                                                                [100%]
+================================== FAILURES ===================================
+______ test_search_public_board_shapes_and_private_redirect_are_checked _______
+
+    def test_search_public_board_shapes_and_private_redirect_are_checked():
+        requested=[]
+        def serve(request):
+            requested.append(str(request.url))
+            if request.url.host=='boards-api.greenhouse.io':return httpx.Response(200,json={'jobs':[
+                {'absolute_url':'https://job-boards.greenhouse.io/example/jobs/123','title':'Python Engineer','location':{'name':'Remote'}}]})
+            if request.url.host=='eregion.api.lever.co':return httpx.Response(200,json=[
+                {'hostedUrl':'https://jobs.lever.co/example/abc','text':'Python Engineer','categories':{'location':'Remote'}}])
+            return httpx.Response(302,headers={'location':'https://127.0.0.1/private'})
+        discovery=JobDiscovery(transport=httpx.MockTransport(serve),resolver=lambda *a,**k:[(None,None,None,None,('8.8.8.8',443))])
+        results=discovery.search('Python',boards=[{'platform':'greenhouse','company':'example'},{'platform':'lever','company':'example'}])
+>       assert len(results['jobs'])==2 and results['errors']==[]
+E       AssertionError: assert (1 == 2)
+E        +  where 1 = len([{'url': 'https://job-boards.greenhouse.io/example/jobs/123', 'title': 'Python Engineer', 'company': 'example', 'location': 'Remote'}])
+
+tests\test_career_flow.py:398: AssertionError
+_________ test_fit_service_sends_only_jev_unknowns_to_the_main_model __________
+
+tmp_path = WindowsPath('C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiyu/pytest-219/test_fit_service_sends_only_je0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEBB0F2580>
+
+    def test_fit_service_sends_only_jev_unknowns_to_the_main_model(tmp_path, monkeypatch):
+        from dataclasses import replace
+        import httpx
+        from eregion.api.services.fit_analysis_service import FitAnalysisService
+        from eregion.domain.jev_fit.settings import Settings
+        from test_jev_fit_production import JevEndpoint, NoMainModel
+        endpoint = JevEndpoint(); endpoint.unknown = True
+        sent = []
+        def fake_invoke(model, schema, system, human):
+            sent.append(human)
+            ids = [line.split()[1] for line in human.splitlines() if line.startswith('- j')]
+            return UnknownResolution(decisions=[UnknownDecision(requirement_id=i, is_candidate_requirement=True, level='required',
+                personal_condition=False, status='matched', evidence_quote='Built Python tools.', reason='quoted') for i in ids])
+        monkeypatch.setattr('eregion.domain.model.invoke_structured', fake_invoke)
+        monkeypatch.setattr('eregion.domain.model.shared_model', lambda **_: object())
+        config = replace(Settings(key='test-only', cache_path=tmp_path / 'd.sqlite3'), resolve_unknowns=True)
+        service = FitAnalysisService(NoMainModel(), jev_enabled=True, jev_config=config, jev_transport=httpx.MockTransport(endpoint))
+>       result = service._analyze_sync(resume_text='Candidate Example\nEXPERIENCE\nEngineer | Example Lab | 2023-01 | 2026-01\n'
+                                       'Built Python tools.\nSKILLS\nPython, SQL\n', job_description='Engineer\nRequired: Python\n')
+
+tests\test_e2e_followups.py:155: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+______________ test_search_then_details_download_the_board_once _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEBED1B930>
+board_calls = ['https://api.ashbyhq.com/posting-api/job-board/acme', 'https://api.ashbyhq.com/posting-api/job-board/acme', 'https://api.ashbyhq.com/posting-api/job-board/acme', 'https://api.ashbyhq.com/posting-api/job-board/acme']
+
+    def test_search_then_details_download_the_board_once(monkeypatch, board_calls):
+        monkeypatch.setenv('JOB_AGENT_OPT_BOARD_RESPONSE_CACHE', '1')
+        d = discovery(handler_for(board_calls))
+        found = d.search('data analyst', 'New York, NY', boards=[{'platform': 'ashby', 'company': 'acme'}])
+        assert len(found['jobs']) == 3
+        for i in range(3):
+            job = d.job(f'https://jobs.ashbyhq.com/acme/id-{i}')
+            assert job['title'] == f'Data Analyst {i}' and 'SQL' in job['description']
+>       assert board_calls == [API]
+E       AssertionError: assert ['https://api...b-board/acme'] == ['https://api...b-board/acme']
+E         
+E         Left contains 3 more items, first extra item: 'https://api.ashbyhq.com/posting-api/job-board/acme'
+E         Use -v to get more diff
+
+tests\test_integrated_p2.py:45: AssertionError
+___________________ test_only_ashby_board_api_is_cacheable ____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEB76CE9E0>
+
+    def test_only_ashby_board_api_is_cacheable(monkeypatch):
+        monkeypatch.setenv('JOB_AGENT_OPT_BOARD_RESPONSE_CACHE', '1')
+>       assert BoardResponseCache.applies(API)
+E       AssertionError: assert False
+E        +  where False = <function BoardResponseCache.applies at 0x000002BEB580D4E0>('https://api.ashbyhq.com/posting-api/job-board/acme')
+E        +    where <function BoardResponseCache.applies at 0x000002BEB580D4E0> = BoardResponseCache.applies
+
+tests\test_integrated_p2.py:106: AssertionError
+_ JevProductionTests.test_accounting_context_crosses_worker_and_broker_threads _
+
+self = <test_jev_fit_production.JevProductionTests testMethod=test_accounting_context_crosses_worker_and_broker_threads>
+
+    def test_accounting_context_crosses_worker_and_broker_threads(self):
+        from eregion.api.db import create_database
+        from eregion.runtime.provider_usage import UsageLedger, usage_scope
+        from eregion.runtime.coordination.model_usage import model_usage_scope
+        class Meter:
+            def __init__(self): self.finished = []
+            def reserve_model_call(self, task_id, attempt_id, **kwargs):
+                assert (task_id, attempt_id) == ('unique-task', 'attempt')
+                return {'index': len(self.finished)}
+            def finish_model_call(self, task_id, attempt_id, reservation, **usage):
+                self.finished.append(usage)
+        db = create_database('sqlite:///'+(Path(self.temp.name)/'usage.db').as_posix(), create_schema_for_tests=True)
+        meter, ledger = Meter(), UsageLedger(db.session_factory)
+        try:
+            with usage_scope(task_id='unique-task', ledger=ledger), model_usage_scope(meter, 'unique-task', 'attempt'):
+>               result = self.analyze()
+                         ^^^^^^^^^^^^^^
+
+tests\test_jev_fit_production.py:215: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_jev_fit_production.py:77: in analyze
+    return (service or self.service())._analyze_sync(
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+____ JevProductionTests.test_batch_shares_requests_and_reuses_single_cache ____
+
+self = <test_jev_fit_production.JevProductionTests testMethod=test_batch_shares_requests_and_reuses_single_cache>
+
+    def test_batch_shares_requests_and_reuses_single_cache(self):
+        service = self.service()
+        jobs = [{'id': str(i), 'source_version': str(i), 'job_description': self.jd} for i in range(3)]
+>       results = asyncio.run(service.analyze_many(resume_text=self.resume, jobs=jobs))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_jev_fit_production.py:110: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Python313\Lib\asyncio\runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+backend\eregion\api\services\fit_analysis_service.py:292: in analyze_many
+    return await asyncio.to_thread(self._jev_many_sync,resume_text=resume_text,jobs=jobs,candidate_facts=candidate_facts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\threads.py:25: in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\concurrent\futures\thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\api\services\fit_analysis_service.py:282: in _jev_many_sync
+    values=service.analyze_many(resume_text=resume_text,jobs=jobs,candidate_facts=candidate_facts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\service.py:27: in analyze_many
+    broker=Broker(self.config,cache,transport=self.transport,max_requests=self.max_requests)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\transport.py:49: in __init__
+    self.signature, self.max_requests = config.signature(), max_requests
+                                        ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_____ JevProductionTests.test_cache_invalidates_resume_jd_facts_and_model _____
+
+self = <test_jev_fit_production.JevProductionTests testMethod=test_cache_invalidates_resume_jd_facts_and_model>
+
+    def test_cache_invalidates_resume_jd_facts_and_model(self):
+>       self.analyze()
+
+tests\test_jev_fit_production.py:119: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_jev_fit_production.py:77: in analyze
+    return (service or self.service())._analyze_sync(
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+______ JevProductionTests.test_empty_key_fails_without_any_provider_call ______
+
+self = <test_jev_fit_production.JevProductionTests testMethod=test_empty_key_fails_without_any_provider_call>
+
+    def test_empty_key_fails_without_any_provider_call(self):
+        with self.assertRaisesRegex(ValueError, 'API_KEY'):
+>           self.analyze(self.service(config=replace(self.config, key='')))
+
+tests\test_jev_fit_production.py:163: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_jev_fit_production.py:77: in analyze
+    return (service or self.service())._analyze_sync(
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+___ JevProductionTests.test_enabled_routes_only_jev_and_persists_warm_cache ___
+
+self = <test_jev_fit_production.JevProductionTests testMethod=test_enabled_routes_only_jev_and_persists_warm_cache>
+
+    def test_enabled_routes_only_jev_and_persists_warm_cache(self):
+        with patch.dict(os.environ, {'TYPESAFE_ENABLED': 'true'}):
+            service = self.service()
+            service._jev_enabled = None  # Exercise the actual environment switch.
+>           cold = self.analyze(service)
+                   ^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_jev_fit_production.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_jev_fit_production.py:77: in analyze
+    return (service or self.service())._analyze_sync(
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ JevProductionTests.test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache (failure='http') _
+
+self = <test_jev_fit_production.JevProductionTests testMethod=test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache>
+
+    def test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache(self):
+        for failure in ('http', 'malformed', 'version', 'timeout'):
+            with self.subTest(failure=failure):
+                self.endpoint.failure = failure
+                before = len(self.endpoint.requests)
+                with self.assertRaises(JevFitError):
+>                   self.analyze()
+
+tests\test_jev_fit_production.py:156: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_jev_fit_production.py:77: in analyze
+    return (service or self.service())._analyze_sync(
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ JevProductionTests.test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache (failure='malformed') _
+
+self = <test_jev_fit_production.JevProductionTests testMethod=test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache>
+
+    def test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache(self):
+        for failure in ('http', 'malformed', 'version', 'timeout'):
+            with self.subTest(failure=failure):
+                self.endpoint.failure = failure
+                before = len(self.endpoint.requests)
+                with self.assertRaises(JevFitError):
+>                   self.analyze()
+
+tests\test_jev_fit_production.py:156: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_jev_fit_production.py:77: in analyze
+    return (service or self.service())._analyze_sync(
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ JevProductionTests.test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache (failure='version') _
+
+self = <test_jev_fit_production.JevProductionTests testMethod=test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache>
+
+    def test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache(self):
+        for failure in ('http', 'malformed', 'version', 'timeout'):
+            with self.subTest(failure=failure):
+                self.endpoint.failure = failure
+                before = len(self.endpoint.requests)
+                with self.assertRaises(JevFitError):
+>                   self.analyze()
+
+tests\test_jev_fit_production.py:156: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_jev_fit_production.py:77: in analyze
+    return (service or self.service())._analyze_sync(
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ JevProductionTests.test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache (failure='timeout') _
+
+self = <test_jev_fit_production.JevProductionTests testMethod=test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache>
+
+    def test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache(self):
+        for failure in ('http', 'malformed', 'version', 'timeout'):
+            with self.subTest(failure=failure):
+                self.endpoint.failure = failure
+                before = len(self.endpoint.requests)
+                with self.assertRaises(JevFitError):
+>                   self.analyze()
+
+tests\test_jev_fit_production.py:156: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_jev_fit_production.py:77: in analyze
+    return (service or self.service())._analyze_sync(
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ JevProductionTests.test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache _
+
+self = <test_jev_fit_production.JevProductionTests testMethod=test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache>
+
+    def test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache(self):
+        for failure in ('http', 'malformed', 'version', 'timeout'):
+            with self.subTest(failure=failure):
+                self.endpoint.failure = failure
+                before = len(self.endpoint.requests)
+                with self.assertRaises(JevFitError):
+                    self.analyze()
+                self.assertEqual(len(self.endpoint.requests), before+1)
+        self.endpoint.failure = None
+>       self.assertGreater(self.analyze().model_calls, 0)
+                           ^^^^^^^^^^^^^^
+
+tests\test_jev_fit_production.py:159: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_jev_fit_production.py:77: in analyze
+    return (service or self.service())._analyze_sync(
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+---------------------------- Captured stdout call -----------------------------
+uuuu
+_ JevProductionTests.test_presentation_whitespace_reuses_decisions_but_keeps_original_spans _
+
+self = <test_jev_fit_production.JevProductionTests testMethod=test_presentation_whitespace_reuses_decisions_but_keeps_original_spans>
+
+    def test_presentation_whitespace_reuses_decisions_but_keeps_original_spans(self):
+>       first=self.analyze()
+              ^^^^^^^^^^^^^^
+
+tests\test_jev_fit_production.py:128: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_jev_fit_production.py:77: in analyze
+    return (service or self.service())._analyze_sync(
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ JevProductionTests.test_rejected_budget_does_not_create_a_paid_ledger_entry _
+
+self = <test_jev_fit_production.JevProductionTests testMethod=test_rejected_budget_does_not_create_a_paid_ledger_entry>
+
+    def test_rejected_budget_does_not_create_a_paid_ledger_entry(self):
+        from eregion.runtime.coordination.model_usage import model_usage_scope
+        from eregion.runtime.provider_usage import usage_scope
+        class Reject:
+            def reserve_model_call(self, *_, **kwargs): raise RuntimeError('budget exhausted')
+        class Ledger:
+            def start(self, *_): raise AssertionError('No provider call was made')
+        with model_usage_scope(Reject(), 'bounded', 'attempt'), usage_scope(ledger=Ledger()):
+            with self.assertRaisesRegex(RuntimeError, 'budget exhausted'):
+>               self.analyze()
+
+tests\test_jev_fit_production.py:197: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_jev_fit_production.py:77: in analyze
+    return (service or self.service())._analyze_sync(
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ JevProductionTests.test_uncertain_answers_score_by_probability_and_expire_by_config _
+
+self = <test_jev_fit_production.JevProductionTests testMethod=test_uncertain_answers_score_by_probability_and_expire_by_config>
+
+    def test_uncertain_answers_score_by_probability_and_expire_by_config(self):
+        # Uncertain evidence (p=.5) contributes its expected credit
+        # .5 + (1-.5) x .5 x .5 = .625 instead of turning the score into a range.
+        self.endpoint.unknown = True
+        from unittest.mock import patch as patched
+        service = self.service()
+>       result = self.analyze(service)
+                 ^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_jev_fit_production.py:140: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_jev_fit_production.py:77: in analyze
+    return (service or self.service())._analyze_sync(
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+______ test_offline_plan_does_not_read_model_configuration_or_claim_pass ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEC4BF96A0>
+
+    def test_offline_plan_does_not_read_model_configuration_or_claim_pass(monkeypatch):
+        monkeypatch.setattr('eregion.domain.model.dotenv_values', lambda *a: pytest.fail('offline read .env'))
+        monkeypatch.setattr(runner, 'cold_service', lambda: pytest.fail('offline created live service'))
+>       data = dataset(); plan = runner.make_plan(data)
+                                 ^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_main_stability_evals.py:29: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tools\evals\run_main_stability.py:64: in make_plan
+    'implementation_signature': implementation_signature(), 'runtime': runtime,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools\evals\run_main_stability.py:36: in implementation_signature
+    return digest({path: hashlib.sha256((root/path).read_bytes()).hexdigest() for path in paths})
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/api/services/fit_analysis_service.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\api\\services\\fit_analysis_service.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ test_real_six_worker_dispatch_records_all_32_including_failure_and_timeout __
+
+tmp_path = WindowsPath('C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiyu/pytest-219/test_real_six_worker_dispatch_0')
+
+    def test_real_six_worker_dispatch_records_all_32_including_failure_and_timeout(tmp_path):
+>       data=dataset();plan=runner.make_plan(data,suite='stress32',runtime=runtime())
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_main_stability_evals.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tools\evals\run_main_stability.py:64: in make_plan
+    'implementation_signature': implementation_signature(), 'runtime': runtime,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools\evals\run_main_stability.py:36: in implementation_signature
+    return digest({path: hashlib.sha256((root/path).read_bytes()).hexdigest() for path in paths})
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/api/services/fit_analysis_service.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\api\\services\\fit_analysis_service.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ test_four_equivalent_cold_inputs_spread_and_requirement_count_not_truncated _
+
+tmp_path = WindowsPath('C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiyu/pytest-219/test_four_equivalent_cold_inpu0')
+
+    def test_four_equivalent_cold_inputs_spread_and_requirement_count_not_truncated(tmp_path):
+>       data=dataset();plan=runner.make_plan(data,suite='cold4',runtime=runtime())
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_main_stability_evals.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tools\evals\run_main_stability.py:64: in make_plan
+    'implementation_signature': implementation_signature(), 'runtime': runtime,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools\evals\run_main_stability.py:36: in implementation_signature
+    return digest({path: hashlib.sha256((root/path).read_bytes()).hexdigest() for path in paths})
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/api/services/fit_analysis_service.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\api\\services\\fit_analysis_service.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ test_real_fit_service_cold_isolation_and_sqlite_usage_with_offline_provider _
+
+tmp_path = WindowsPath('C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiyu/pytest-219/test_real_fit_service_cold_iso0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEC2959780>
+
+    def test_real_fit_service_cold_isolation_and_sqlite_usage_with_offline_provider(tmp_path,monkeypatch):
+        # Exercises timeout/retry accounting inside job extraction, so pin the free-extraction
+        # route; the default local catalogue performs no job-extraction call.
+        monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG','extract')
+        from eregion.api.db import create_database
+        from eregion.api.services.fit_analysis_service import FitAnalysisService
+        from eregion.domain.workflow.handlers import JobAgentStepHandler
+        from eregion.runtime.fast_decisions import FastDecisions
+        from eregion.runtime.provider_usage import provider_call
+        from eregion.domain.schemas import SkillAssessment
+        from test_speed_pipeline import Analyzer
+        factories=[]
+        class OfflineProvider(Analyzer):
+            chunked_matching=True
+            def __init__(self):super().__init__();self.failed=False
+            def __call__(self,schema,*args):
+                with provider_call('offline-synthetic-provider') as usage:
+                    usage.update(input_tokens=10,output_tokens=5)
+                    if schema is SkillAssessment and not self.failed:
+                        self.failed=True
+                        raise TimeoutError('synthetic timeout retained in ledger')
+                    return super().__call__(schema,*args)
+        def factory():
+            a=OfflineProvider();factories.append(a)
+            return FitAnalysisService(JobAgentStepHandler(analyzer=a,decisions=FastDecisions(),analysis_cache=None),
+                                      cache_size=0,jev_enabled=False)
+        monkeypatch.setattr(runner,'cold_service',factory)
+        data=dataset();signature=factory().cache_signature()
+>       plan=runner.make_plan(data,suite='cold4',runtime={'cache_signature':signature})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_main_stability_evals.py:110: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tools\evals\run_main_stability.py:64: in make_plan
+    'implementation_signature': implementation_signature(), 'runtime': runtime,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools\evals\run_main_stability.py:36: in implementation_signature
+    return digest({path: hashlib.sha256((root/path).read_bytes()).hexdigest() for path in paths})
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/api/services/fit_analysis_service.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\api\\services\\fit_analysis_service.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+___________ test_changed_input_or_threshold_rejects_before_dispatch ___________
+
+tmp_path = WindowsPath('C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiyu/pytest-219/test_changed_input_or_threshol0')
+
+    def test_changed_input_or_threshold_rejects_before_dispatch(tmp_path):
+>       data=dataset();plan=runner.make_plan(data)
+                            ^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_main_stability_evals.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tools\evals\run_main_stability.py:64: in make_plan
+    'implementation_signature': implementation_signature(), 'runtime': runtime,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools\evals\run_main_stability.py:36: in implementation_signature
+    return digest({path: hashlib.sha256((root/path).read_bytes()).hexdigest() for path in paths})
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/api/services/fit_analysis_service.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\api\\services\\fit_analysis_service.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+____________ test_recovered_timeout_and_warm_cache_cannot_be_green ____________
+
+    def test_recovered_timeout_and_warm_cache_cannot_be_green():
+>       data=dataset();plan=runner.make_plan(data,suite='stress32',runtime=runtime())
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_main_stability_evals.py:153: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tools\evals\run_main_stability.py:64: in make_plan
+    'implementation_signature': implementation_signature(), 'runtime': runtime,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools\evals\run_main_stability.py:36: in implementation_signature
+    return digest({path: hashlib.sha256((root/path).read_bytes()).hexdigest() for path in paths})
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/api/services/fit_analysis_service.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\api\\services\\fit_analysis_service.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+______________________ test_jev_and_fast_cache_identity _______________________
+
+    def test_jev_and_fast_cache_identity():
+        from eregion.domain.jev_fit.settings import Settings
+        from eregion.runtime.fast_decisions import FastDecisions
+>       assert Settings('fake', reasoning={'LLM_REASONING_SUPPORT_YES_NO':'low'}).signature() != Settings(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            'fake', reasoning={'LLM_REASONING_SUPPORT_YES_NO':'medium'}).signature()
+
+tests\test_opt_metrics_reasoning.py:122: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+______ test_jev_wire_default_and_validation_retry[extract_requirements] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEB78EE3C0>
+purpose = 'extract_requirements'
+
+    @pytest.mark.parametrize('purpose', ['extract_requirements','refine_extraction_yes_no',
+        'condition_category_yes_no','support_yes_no','focused_yes_no','clarify_full_support_yes_no','verify_citations_yes_no'])
+    def test_jev_wire_default_and_validation_retry(monkeypatch, purpose):
+        from contextvars import copy_context
+        from eregion.domain.jev_fit.settings import Settings
+        from eregion.domain.jev_fit.transport import Broker
+        bodies = []
+        def transport(request):
+            payload = json.loads(request.content); bodies.append(payload)
+            answers = {} if len(bodies) == 2 else {'q':{'type':'noul','noul':.9}}
+            return httpx.Response(200, json={'model':payload['model'],'answers':answers})
+        config = Settings('fake')
+>       broker = Broker(config, None, transport=httpx.MockTransport(transport))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_opt_metrics_reasoning.py:305: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\eregion\domain\jev_fit\transport.py:49: in __init__
+    self.signature, self.max_requests = config.signature(), max_requests
+                                        ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+____ test_jev_wire_default_and_validation_retry[refine_extraction_yes_no] _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEBEAEEC80>
+purpose = 'refine_extraction_yes_no'
+
+    @pytest.mark.parametrize('purpose', ['extract_requirements','refine_extraction_yes_no',
+        'condition_category_yes_no','support_yes_no','focused_yes_no','clarify_full_support_yes_no','verify_citations_yes_no'])
+    def test_jev_wire_default_and_validation_retry(monkeypatch, purpose):
+        from contextvars import copy_context
+        from eregion.domain.jev_fit.settings import Settings
+        from eregion.domain.jev_fit.transport import Broker
+        bodies = []
+        def transport(request):
+            payload = json.loads(request.content); bodies.append(payload)
+            answers = {} if len(bodies) == 2 else {'q':{'type':'noul','noul':.9}}
+            return httpx.Response(200, json={'model':payload['model'],'answers':answers})
+        config = Settings('fake')
+>       broker = Broker(config, None, transport=httpx.MockTransport(transport))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_opt_metrics_reasoning.py:305: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\eregion\domain\jev_fit\transport.py:49: in __init__
+    self.signature, self.max_requests = config.signature(), max_requests
+                                        ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+____ test_jev_wire_default_and_validation_retry[condition_category_yes_no] ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEBEAED0F0>
+purpose = 'condition_category_yes_no'
+
+    @pytest.mark.parametrize('purpose', ['extract_requirements','refine_extraction_yes_no',
+        'condition_category_yes_no','support_yes_no','focused_yes_no','clarify_full_support_yes_no','verify_citations_yes_no'])
+    def test_jev_wire_default_and_validation_retry(monkeypatch, purpose):
+        from contextvars import copy_context
+        from eregion.domain.jev_fit.settings import Settings
+        from eregion.domain.jev_fit.transport import Broker
+        bodies = []
+        def transport(request):
+            payload = json.loads(request.content); bodies.append(payload)
+            answers = {} if len(bodies) == 2 else {'q':{'type':'noul','noul':.9}}
+            return httpx.Response(200, json={'model':payload['model'],'answers':answers})
+        config = Settings('fake')
+>       broker = Broker(config, None, transport=httpx.MockTransport(transport))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_opt_metrics_reasoning.py:305: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\eregion\domain\jev_fit\transport.py:49: in __init__
+    self.signature, self.max_requests = config.signature(), max_requests
+                                        ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_________ test_jev_wire_default_and_validation_retry[support_yes_no] __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEBEAED4E0>
+purpose = 'support_yes_no'
+
+    @pytest.mark.parametrize('purpose', ['extract_requirements','refine_extraction_yes_no',
+        'condition_category_yes_no','support_yes_no','focused_yes_no','clarify_full_support_yes_no','verify_citations_yes_no'])
+    def test_jev_wire_default_and_validation_retry(monkeypatch, purpose):
+        from contextvars import copy_context
+        from eregion.domain.jev_fit.settings import Settings
+        from eregion.domain.jev_fit.transport import Broker
+        bodies = []
+        def transport(request):
+            payload = json.loads(request.content); bodies.append(payload)
+            answers = {} if len(bodies) == 2 else {'q':{'type':'noul','noul':.9}}
+            return httpx.Response(200, json={'model':payload['model'],'answers':answers})
+        config = Settings('fake')
+>       broker = Broker(config, None, transport=httpx.MockTransport(transport))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_opt_metrics_reasoning.py:305: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\eregion\domain\jev_fit\transport.py:49: in __init__
+    self.signature, self.max_requests = config.signature(), max_requests
+                                        ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_________ test_jev_wire_default_and_validation_retry[focused_yes_no] __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEBCAC4AD0>
+purpose = 'focused_yes_no'
+
+    @pytest.mark.parametrize('purpose', ['extract_requirements','refine_extraction_yes_no',
+        'condition_category_yes_no','support_yes_no','focused_yes_no','clarify_full_support_yes_no','verify_citations_yes_no'])
+    def test_jev_wire_default_and_validation_retry(monkeypatch, purpose):
+        from contextvars import copy_context
+        from eregion.domain.jev_fit.settings import Settings
+        from eregion.domain.jev_fit.transport import Broker
+        bodies = []
+        def transport(request):
+            payload = json.loads(request.content); bodies.append(payload)
+            answers = {} if len(bodies) == 2 else {'q':{'type':'noul','noul':.9}}
+            return httpx.Response(200, json={'model':payload['model'],'answers':answers})
+        config = Settings('fake')
+>       broker = Broker(config, None, transport=httpx.MockTransport(transport))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_opt_metrics_reasoning.py:305: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\eregion\domain\jev_fit\transport.py:49: in __init__
+    self.signature, self.max_requests = config.signature(), max_requests
+                                        ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+___ test_jev_wire_default_and_validation_retry[clarify_full_support_yes_no] ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEBCAC7F50>
+purpose = 'clarify_full_support_yes_no'
+
+    @pytest.mark.parametrize('purpose', ['extract_requirements','refine_extraction_yes_no',
+        'condition_category_yes_no','support_yes_no','focused_yes_no','clarify_full_support_yes_no','verify_citations_yes_no'])
+    def test_jev_wire_default_and_validation_retry(monkeypatch, purpose):
+        from contextvars import copy_context
+        from eregion.domain.jev_fit.settings import Settings
+        from eregion.domain.jev_fit.transport import Broker
+        bodies = []
+        def transport(request):
+            payload = json.loads(request.content); bodies.append(payload)
+            answers = {} if len(bodies) == 2 else {'q':{'type':'noul','noul':.9}}
+            return httpx.Response(200, json={'model':payload['model'],'answers':answers})
+        config = Settings('fake')
+>       broker = Broker(config, None, transport=httpx.MockTransport(transport))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_opt_metrics_reasoning.py:305: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\eregion\domain\jev_fit\transport.py:49: in __init__
+    self.signature, self.max_requests = config.signature(), max_requests
+                                        ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_____ test_jev_wire_default_and_validation_retry[verify_citations_yes_no] _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEBCAC5DA0>
+purpose = 'verify_citations_yes_no'
+
+    @pytest.mark.parametrize('purpose', ['extract_requirements','refine_extraction_yes_no',
+        'condition_category_yes_no','support_yes_no','focused_yes_no','clarify_full_support_yes_no','verify_citations_yes_no'])
+    def test_jev_wire_default_and_validation_retry(monkeypatch, purpose):
+        from contextvars import copy_context
+        from eregion.domain.jev_fit.settings import Settings
+        from eregion.domain.jev_fit.transport import Broker
+        bodies = []
+        def transport(request):
+            payload = json.loads(request.content); bodies.append(payload)
+            answers = {} if len(bodies) == 2 else {'q':{'type':'noul','noul':.9}}
+            return httpx.Response(200, json={'model':payload['model'],'answers':answers})
+        config = Settings('fake')
+>       broker = Broker(config, None, transport=httpx.MockTransport(transport))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_opt_metrics_reasoning.py:305: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\eregion\domain\jev_fit\transport.py:49: in __init__
+    self.signature, self.max_requests = config.signature(), max_requests
+                                        ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+________________ test_typesafe_plain_fallback_is_bounded[fit] _________________
+
+lane = 'fit'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEB78ED630>
+
+    @pytest.mark.parametrize('lane',['fast','fit'])
+    def test_typesafe_plain_fallback_is_bounded(lane, monkeypatch):
+        monkeypatch.setenv('JOB_AGENT_REASONING_REJECTION_RETRY', '1')
+        from contextvars import copy_context
+        from eregion.runtime.fast_decisions import FastDecisions
+        from eregion.domain.jev_fit.settings import Settings
+        from eregion.domain.jev_fit.transport import Broker
+        from test_jev_singleflight import QUESTIONS, response as decision_response
+        bodies = []
+        def transport(request):
+            body = json.loads(request.content); bodies.append(body)
+            if len(bodies) == 1:
+                return httpx.Response(400, text='unsupported reasoning_effort')
+            return decision_response() if lane == 'fast' else httpx.Response(200, json={
+                'model':body['model'],'answers':{'q':{'type':'noul','noul':.9}}})
+        with capture_provider_attempts() as rows:
+            if lane == 'fast':
+                service = FastDecisions(api_key='fake', enabled=True, transport=httpx.MockTransport(transport),
+                    reasoning={'LLM_REASONING_FORM_OPTIONS':'low'})
+                assert service.evaluate({}, QUESTIONS, purpose='form_options').status == 'ok'
+            else:
+>               broker = Broker(Settings('fake', reasoning={'LLM_REASONING_SUPPORT_YES_NO':'low'}), None,
+                    transport=httpx.MockTransport(transport))
+
+tests\test_opt_metrics_reasoning.py:399: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\eregion\domain\jev_fit\transport.py:49: in __init__
+    self.signature, self.max_requests = config.signature(), max_requests
+                                        ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_____________ test_jev_broker_keys_track_effective_purpose_level ______________
+
+    def test_jev_broker_keys_track_effective_purpose_level():
+        from types import SimpleNamespace
+        from eregion.domain.jev_fit.settings import Settings
+        from eregion.domain.jev_fit.transport import Broker
+        config = Settings('fake',reasoning={'LLM_REASONING_SUPPORT_YES_NO':'low'})
+>       broker = Broker(config,None)
+                 ^^^^^^^^^^^^^^^^^^^
+
+tests\test_opt_metrics_reasoning.py:439: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\eregion\domain\jev_fit\transport.py:49: in __init__
+    self.signature, self.max_requests = config.signature(), max_requests
+                                        ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+____________ test_jev_escalated_answer_does_not_populate_low_cache ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEBADBD7F0>
+
+    def test_jev_escalated_answer_does_not_populate_low_cache(monkeypatch):
+        from eregion.domain.jev_fit.settings import Settings
+        from eregion.domain.jev_fit.transport import Broker
+        monkeypatch.setenv('JOB_AGENT_REASONING_ESCALATION','1')
+        calls = []
+        class Cache:
+            def __init__(self): self.writes = []
+            def get_many(self, *a): return {}
+            def put_many(self, rows, model): self.writes.extend(rows)
+        cache = Cache()
+        def transport(request):
+            payload=json.loads(request.content); calls.append(payload)
+            return httpx.Response(200,json={'model':payload['model'],'answers':{} if len(calls)==1 else {
+                key:{'type':'noul','noul':.9} for key in payload['questions']}})
+>       broker=Broker(Settings('fake',reasoning={'LLM_REASONING_SUPPORT_YES_NO':'low'}),cache,
+            transport=httpx.MockTransport(transport))
+
+tests\test_opt_metrics_reasoning.py:491: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\eregion\domain\jev_fit\transport.py:49: in __init__
+    self.signature, self.max_requests = config.signature(), max_requests
+                                        ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+______________ test_typesafe_default_rejection_one_attempt[fit] _______________
+
+lane = 'fit'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEB78EF7E0>
+
+    @pytest.mark.parametrize('lane', ['fast','fit'])
+    def test_typesafe_default_rejection_one_attempt(lane, monkeypatch):
+        from eregion.runtime.fast_decisions import FastDecisions
+        from eregion.domain.jev_fit.settings import Settings
+        from eregion.domain.jev_fit.transport import Broker
+        from test_jev_singleflight import QUESTIONS
+        monkeypatch.delenv('JOB_AGENT_REASONING_REJECTION_RETRY', raising=False)
+        bodies = []
+        def transport(request):
+            bodies.append(request.content)
+            return httpx.Response(400, text='unsupported reasoning_effort')
+        with capture_provider_attempts() as rows:
+            if lane == 'fast':
+                service = FastDecisions(api_key='fake', enabled=True, transport=httpx.MockTransport(transport),
+                    reasoning={'LLM_REASONING_FORM_OPTIONS':'low'})
+                assert service.evaluate({}, QUESTIONS, purpose='form_options').status != 'ok'
+            else:
+>               broker = Broker(Settings('fake', reasoning={'LLM_REASONING_SUPPORT_YES_NO':'low'}), None,
+                    transport=httpx.MockTransport(transport))
+
+tests\test_opt_v3_calibration.py:261: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\eregion\domain\jev_fit\transport.py:49: in __init__
+    self.signature, self.max_requests = config.signature(), max_requests
+                                        ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+______ test_default_main_service_scores_a_local_deterministic_catalogue _______
+
+tmp_path = WindowsPath('C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiyu/pytest-219/test_default_main_service_scor0')
+
+    def test_default_main_service_scores_a_local_deterministic_catalogue(tmp_path):
+        """A1 default route: no free-form extraction; the same ordered IDs on every cold run."""
+        from eregion.domain.requirement_catalog import FrozenRequirementCatalog, LOCAL_PRODUCER
+>       jev=inputs(tmp_path)
+            ^^^^^^^^^^^^^^^^
+
+tests\test_remaining_fixed_catalog.py:38: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_remaining_fixed_catalog.py:25: in inputs
+    jev_transport=httpx.MockTransport(JevEndpoint()))._analyze_sync(resume_text=RESUME,job_description=BODY)
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ test_production_matching_step_preserves_an_explicit_frozen_jev_catalogue_four_times _
+
+tmp_path = WindowsPath('C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiyu/pytest-219/test_production_matching_step_0')
+
+    def test_production_matching_step_preserves_an_explicit_frozen_jev_catalogue_four_times(tmp_path):
+>       jev=inputs(tmp_path);calls=[]
+            ^^^^^^^^^^^^^^^^
+
+tests\test_remaining_fixed_catalog.py:69: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_remaining_fixed_catalog.py:25: in inputs
+    jev_transport=httpx.MockTransport(JevEndpoint()))._analyze_sync(resume_text=RESUME,job_description=BODY)
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_________ test_same_id_changed_constraint_is_not_catalogue_agreement __________
+
+tmp_path = WindowsPath('C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiyu/pytest-219/test_same_id_changed_constrain0')
+
+    def test_same_id_changed_constraint_is_not_catalogue_agreement(tmp_path):
+>       jev=inputs(tmp_path)
+            ^^^^^^^^^^^^^^^^
+
+tests\test_remaining_fixed_catalog.py:87: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_remaining_fixed_catalog.py:25: in inputs
+    jev_transport=httpx.MockTransport(JevEndpoint()))._analyze_sync(resume_text=RESUME,job_description=BODY)
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+___ test_main_service_internal_catalogue_binding_four_cold_and_no_jev_call ____
+
+tmp_path = WindowsPath('C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiyu/pytest-219/test_main_service_internal_cat0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEC903CEC0>
+
+    def test_main_service_internal_catalogue_binding_four_cold_and_no_jev_call(tmp_path,monkeypatch):
+>       frozen=catalog(tmp_path);calls=[]
+               ^^^^^^^^^^^^^^^^^
+
+tests\test_remaining_fixed_catalog.py:115: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_remaining_fixed_catalog.py:98: in catalog
+    jev=inputs(tmp_path)
+        ^^^^^^^^^^^^^^^^
+tests\test_remaining_fixed_catalog.py:25: in inputs
+    jev_transport=httpx.MockTransport(JevEndpoint()))._analyze_sync(resume_text=RESUME,job_description=BODY)
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ test_bound_catalogue_persistent_match_cache_and_producer_version_isolation __
+
+tmp_path = WindowsPath('C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiyu/pytest-219/test_bound_catalogue_persisten0')
+
+    def test_bound_catalogue_persistent_match_cache_and_producer_version_isolation(tmp_path):
+        from dataclasses import replace
+        from eregion.api.db import create_database
+        from eregion.runtime.analysis_cache import AnalysisCache
+>       frozen=catalog(tmp_path);calls=[]
+               ^^^^^^^^^^^^^^^^^
+
+tests\test_remaining_fixed_catalog.py:131: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_remaining_fixed_catalog.py:98: in catalog
+    jev=inputs(tmp_path)
+        ^^^^^^^^^^^^^^^^
+tests\test_remaining_fixed_catalog.py:25: in inputs
+    jev_transport=httpx.MockTransport(JevEndpoint()))._analyze_sync(resume_text=RESUME,job_description=BODY)
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+__ test_untrusted_changed_body_payload_ids_or_producer_rejected_before_model __
+
+tmp_path = WindowsPath('C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiyu/pytest-219/test_untrusted_changed_body_pa0')
+
+    def test_untrusted_changed_body_payload_ids_or_producer_rejected_before_model(tmp_path):
+        from dataclasses import replace
+>       frozen=catalog(tmp_path);calls=[]
+               ^^^^^^^^^^^^^^^^^
+
+tests\test_remaining_fixed_catalog.py:147: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_remaining_fixed_catalog.py:98: in catalog
+    jev=inputs(tmp_path)
+        ^^^^^^^^^^^^^^^^
+tests\test_remaining_fixed_catalog.py:25: in inputs
+    jev_transport=httpx.MockTransport(JevEndpoint()))._analyze_sync(resume_text=RESUME,job_description=BODY)
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+___________ test_jev_body_span_and_assessment_identity_are_required ___________
+
+tmp_path = WindowsPath('C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiyu/pytest-219/test_jev_body_span_and_assessm0')
+
+    def test_jev_body_span_and_assessment_identity_are_required(tmp_path):
+>       jev=inputs(tmp_path)
+            ^^^^^^^^^^^^^^^^
+
+tests\test_remaining_fixed_catalog.py:163: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_remaining_fixed_catalog.py:25: in inputs
+    jev_transport=httpx.MockTransport(JevEndpoint()))._analyze_sync(resume_text=RESUME,job_description=BODY)
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+________ test_async_single_and_batch_entry_preserve_supplied_catalogue ________
+
+tmp_path = WindowsPath('C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiyu/pytest-219/test_async_single_and_batch_en0')
+
+    def test_async_single_and_batch_entry_preserve_supplied_catalogue(tmp_path):
+        import asyncio
+>       frozen=catalog(tmp_path);calls=[]
+               ^^^^^^^^^^^^^^^^^
+
+tests\test_remaining_fixed_catalog.py:175: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_remaining_fixed_catalog.py:98: in catalog
+    jev=inputs(tmp_path)
+        ^^^^^^^^^^^^^^^^
+tests\test_remaining_fixed_catalog.py:25: in inputs
+    jev_transport=httpx.MockTransport(JevEndpoint()))._analyze_sync(resume_text=RESUME,job_description=BODY)
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ test_catalogue_replay_rejects_stale_version_and_result_mutation_does_not_change_input _
+
+tmp_path = WindowsPath('C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiyu/pytest-219/test_catalogue_replay_rejects_0')
+
+    def test_catalogue_replay_rejects_stale_version_and_result_mutation_does_not_change_input(tmp_path):
+        from dataclasses import replace
+>       frozen=catalog(tmp_path)
+               ^^^^^^^^^^^^^^^^^
+
+tests\test_remaining_fixed_catalog.py:189: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_remaining_fixed_catalog.py:98: in catalog
+    jev=inputs(tmp_path)
+        ^^^^^^^^^^^^^^^^
+tests\test_remaining_fixed_catalog.py:25: in inputs
+    jev_transport=httpx.MockTransport(JevEndpoint()))._analyze_sync(resume_text=RESUME,job_description=BODY)
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\api\services\fit_analysis_service.py:230: in _analyze_sync
+    key=('jev-fit',config.signature(),identity(config.resolve_unknowns),digest([resume_text,job_description,candidate_facts or {}]))
+                   ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ test_production_score_jobs_colliding_ids_one_resolver_call_and_restart_cache _
+
+career = namespace(runtime=namespace(database=Database(engine=Engine(sqlite:///C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiy...tLab generated PDF document -- digest (opensource)\n\n/Info 5 0 R\n/Root 4 0 R\n/Size 8\n>>\nstartxref\n1104\n%%EOF\n')
+tmp_path = WindowsPath('C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiyu/pytest-219/test_production_score_jobs_col0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEBE483E00>
+
+    def test_production_score_jobs_colliding_ids_one_resolver_call_and_restart_cache(career,tmp_path,monkeypatch):
+        from eregion.api.db import create_database
+        from eregion.api.services.fit_analysis_service import FitAnalysisService
+        from eregion.runtime.auto_apply.loop import ApplicationLoop
+        from eregion.runtime.auto_apply.repository import ApplyRepository
+        from eregion.runtime.career.harness import CareerHarness
+        from eregion.runtime.career.repository import TaskRepository
+        from eregion.runtime.evidence.repository import CareerEvidenceRepository
+        from eregion.runtime.workspace.repository import JobWorkspaceRepository
+        from eregion.domain.jev_fit.settings import Settings
+        from test_auto_apply import FakeBrowser
+        from test_jev_fit_production import JevEndpoint, NoMainModel
+    
+        c=career
+        endpoint=JevEndpoint();endpoint.unknown=True
+        calls=[]
+        def invoke(model,schema,system,human):
+            rows=re.findall(r'^- (\S+) \[required\]: (.+)$',human,re.M)
+            calls.append(rows)
+            assert len(rows)==2 and len({rid.split(':')[1] for rid,_ in rows})==1
+            return UnknownResolution(decisions=[UnknownDecision(requirement_id=rid,
+                is_candidate_requirement=True,level='required',personal_condition=False,
+                status='matched' if text=='Python' else 'missing',
+                evidence_quote='Built Python APIs.' if text=='Python' else None,
+                reason='Exact Python evidence; no supplied Rust evidence.') for rid,text in rows])
+        monkeypatch.setattr('eregion.domain.model.invoke_structured',invoke)
+        monkeypatch.setattr('eregion.domain.model.shared_model',lambda **_:object())
+        config=replace(Settings(key='test-only',cache_path=tmp_path/'production-decisions.sqlite3'),resolve_unknowns=True)
+        captures=[]
+        def fit():
+            service=FitAnalysisService(NoMainModel(),jev_enabled=True,jev_config=config,
+                jev_transport=httpx.MockTransport(endpoint))
+            actual=service.analyze_many
+            async def capture(**kwargs):
+                results=await actual(**kwargs)
+                captures.append({key:{'main_model_calls':value.main_model_calls,
+                    'fast_model_calls':value.fast_model_calls,'score':value.skill_match.overall_score,
+                    'routing':value.decision_routing} for key,value in results.items()})
+                return results
+            service.analyze_many=capture
+            return service
+        c.harness.analysis._fit_service=fit()
+        ids=[]
+        for index,skill in enumerate(('Python','Rust')):
+            saved=c.runtime.workspace.save_workspace(cleaned_job_description=f'{skill} Engineer\nRequired: {skill}\n',
+                source_url=f'https://careers.example.com/jobs/batch-{index}',title=f'{skill} Engineer')
+            identifier=saved.application.application_id
+            ids.append(identifier);c.repository.link(c.state['task_id'],'jobs',identifier)
+>       cold=c.harness.execute(c.state['task_id'],'score_jobs',{'application_ids':ids},call_id=str(uuid4()))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_remaining_resolver_batch.py:176: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend\eregion\runtime\career\harness.py:592: in execute
+    try:return self._execute(task_id,name,args,call_id=call_id)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\runtime\career\harness.py:1005: in _execute
+    asyncio.run(self.analysis.analyze_many(identifiers,resume_text=text,candidate_facts=self.fit_facts()))
+C:\Python313\Lib\asyncio\runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+backend\eregion\api\services\workspace_service.py:163: in analyze_many
+    values=await self._fit_service.analyze_many(resume_text=resume_text,jobs=jobs,candidate_facts=candidate_facts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_remaining_resolver_batch.py:162: in capture
+    results=await actual(**kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\api\services\fit_analysis_service.py:292: in analyze_many
+    return await asyncio.to_thread(self._jev_many_sync,resume_text=resume_text,jobs=jobs,candidate_facts=candidate_facts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\threads.py:25: in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\concurrent\futures\thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\api\services\fit_analysis_service.py:282: in _jev_many_sync
+    values=service.analyze_many(resume_text=resume_text,jobs=jobs,candidate_facts=candidate_facts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\service.py:27: in analyze_many
+    broker=Broker(self.config,cache,transport=self.transport,max_requests=self.max_requests)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\transport.py:49: in __init__
+    self.signature, self.max_requests = config.signature(), max_requests
+                                        ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+---------------------------- Captured stderr setup ----------------------------
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 0001_create_runs, Create persisted API runs table.
+INFO  [alembic.runtime.migration] Running upgrade 0001_create_runs -> 0002_custom_agent, Create custom agent state and event tables.
+INFO  [alembic.runtime.migration] Running upgrade 0002_custom_agent -> 0003_tool_runtime, Create persistent tool-call audit tables.
+INFO  [alembic.runtime.migration] Running upgrade 0003_tool_runtime -> 0004_backend_cutover, Add persisted backend ownership for controlled custom-runtime cutover.
+INFO  [alembic.runtime.migration] Running upgrade 0004_backend_cutover -> 0005_session_runtime, Create versioned session snapshots, messages, and events.
+INFO  [alembic.runtime.migration] Running upgrade 0005_session_runtime -> 0006_session_resumability, Add persisted pending-decision and loop-limit fields to sessions.
+INFO  [alembic.runtime.migration] Running upgrade 0006_session_resumability -> 0007_execution_claims, Add session and tool execution claims.
+INFO  [alembic.runtime.migration] Running upgrade 0007_execution_claims -> 0008_session_cancellation_deadlines, Add session cancellation and deadline state.
+INFO  [alembic.runtime.migration] Running upgrade 0008_session_cancellation_deadlines -> 0009_memory_runtime, Add governed memory items and audit events.
+INFO  [alembic.runtime.migration] Running upgrade 0009_memory_runtime -> 0010_skill_runtime, Add governed Skill registry, versions, and lifecycle events.
+INFO  [alembic.runtime.migration] Running upgrade 0010_skill_runtime -> 0011_context_runtime, Add immutable model-context snapshots and usage audit.
+INFO  [alembic.runtime.migration] Running upgrade 0011_context_runtime -> 0012_context_management, Add the distinct approved Skill lifecycle state.
+INFO  [alembic.runtime.migration] Running upgrade 0012_context_management -> 0013_job_workspace, Create persistent Job Workspace domain.
+INFO  [alembic.runtime.migration] Running upgrade 0013_job_workspace -> 0014_workspace_failure, Add safe Workspace analysis failure state.
+INFO  [alembic.runtime.migration] Running upgrade 0014_workspace_failure -> 0015_career_evidence, Career Evidence Vault tables.
+INFO  [alembic.runtime.migration] Running upgrade 0015_career_evidence -> 0016_interviewer_agent, Application-scoped Interviewer sessions, assessments and immutable turns.
+INFO  [alembic.runtime.migration] Running upgrade 0016_interviewer_agent -> 0017_application_pack, Versioned application packs and evidence snapshots.
+INFO  [alembic.runtime.migration] Running upgrade 0017_application_pack -> 0018_multi_agent_runtime, Persist deterministic multi-agent task graphs and attempts.
+INFO  [alembic.runtime.migration] Running upgrade 0018_multi_agent_runtime -> 0019_multi_agent_job_workflow, Persist explicit Standard versus Multi-Agent ownership.
+INFO  [alembic.runtime.migration] Running upgrade 0019_multi_agent_job_workflow -> 0020_interview_match_cohorts, Keep interview assessments for each projected match report separately.
+INFO  [alembic.runtime.migration] Running upgrade 0020_interview_match_cohorts -> 0021_mock_interview, Persistent mock interviews, immutable turns, plans, reports and audit.
+INFO  [alembic.runtime.migration] Running upgrade 0021_mock_interview -> 0022_feedback_learning, Governed feedback events and reviewable learning candidates.
+INFO  [alembic.runtime.migration] Running upgrade 0022_feedback_learning -> 0023_governed_skill_evolution, Add governed Skill evolution records without changing historical Skill rows.
+INFO  [alembic.runtime.migration] Running upgrade 0023_governed_skill_evolution -> 0024_conversation_first_assistant, Add stable Assistant timeline and registered action requests.
+INFO  [alembic.runtime.migration] Running upgrade 0024_conversation_first_assistant -> 0025_conversation_learning, Add governed conversation experiences and reusable learning patterns.
+INFO  [alembic.runtime.migration] Running upgrade 0025_conversation_learning -> 0026_resume_documents, Add server-side PDF resume documents.
+INFO  [alembic.runtime.migration] Running upgrade 0026_resume_documents -> 0027_session_archive, Add local conversation archive projection.
+INFO  [alembic.runtime.migration] Running upgrade 0027_session_archive -> 0028_review_integrity, Persist analysis sources, regeneration instructions and model budgets.
+INFO  [alembic.runtime.migration] Running upgrade 0028_review_integrity -> 0029_auto_applications, Persist site-specific application attempts and submission uncertainty.
+INFO  [alembic.runtime.migration] Running upgrade 0029_auto_applications -> 0030_application_memory, Confirmed application answers, scoped to the candidate email.
+INFO  [alembic.runtime.migration] Running upgrade 0030_application_memory -> 0031_saved_candidate, Durable local applicant profile and original resume for new applications.
+INFO  [alembic.runtime.migration] Running upgrade 0031_saved_candidate -> 0032_career_tasks, Unified career conversations over reusable job capabilities.
+INFO  [alembic.runtime.migration] Running upgrade 0032_career_tasks -> 0033_career_task_meta, Conversation organisation: custom titles, pins, groups, archive and a 30-day trash.
+INFO  [alembic.runtime.migration] Running upgrade 0033_career_task_meta -> 0034_career_job_alerts, Scheduled autonomous searches and recommendation digests.
+INFO  [alembic.runtime.migration] Running upgrade 0034_career_job_alerts -> 0035_analysis_cache, Persist validated analyses and pack timing summaries.
+INFO  [alembic.runtime.migration] Running upgrade 0035_analysis_cache -> 0036_provider_usage, Durable provider usage without conversation or application version changes.
+INFO  [alembic.runtime.migration] Running upgrade 0036_provider_usage -> 0037_external_tool_operations, Durable spend records for external paid tools (Treg), separate from model usage.
+__ test_offline_eight_job_production_uses_the_exact_live_acceptance_contract __
+
+career = namespace(runtime=namespace(database=Database(engine=Engine(sqlite:///C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiy...tLab generated PDF document -- digest (opensource)\n\n/Info 5 0 R\n/Root 4 0 R\n/Size 8\n>>\nstartxref\n1104\n%%EOF\n')
+tmp_path = WindowsPath('C:/Users/zhiyu/AppData/Local/Temp/pytest-of-zhiyu/pytest-219/test_offline_eight_job_product0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BEC32C9400>
+
+    def test_offline_eight_job_production_uses_the_exact_live_acceptance_contract(career,tmp_path,monkeypatch):
+        """Same workload, entrance, restart and assertions; provider IO is synthetic."""
+        from eregion.api.services import fit_analysis_service as fit_module
+        from eregion.domain.jev_fit.settings import Settings
+        from eregion.runtime.provider_usage import provider_call, usage_scope
+        from test_jev_fit_production import JevEndpoint, NoMainModel
+        from test_remaining_live_batch import test_eight_job_production_cold_resolver_and_persistent_warm as run
+        real_fit=fit_module.FitAnalysisService
+        endpoint=JevEndpoint();endpoint.unknown=True
+        def transport(request):
+            response=endpoint(request)
+            body=response.json();payload=json.loads(request.content)
+            for key,question in payload['questions'].items():
+                args=question['instructions']
+                if args['question'].startswith('Does this span'):
+                    body['answers'][key]['noul']=.01 if any(t in args['span'] for t in
+                        ('Synthetic Data Analyst','Product team')) else .99
+            return httpx.Response(200,json=body)
+        monkeypatch.setattr(fit_module,'FitAnalysisService',lambda **kwargs:real_fit(
+            NoMainModel(),**kwargs,jev_transport=httpx.MockTransport(transport)))
+        monkeypatch.setattr(Settings,'load',lambda **kwargs:Settings(key='test-only',**kwargs))
+        monkeypatch.setattr('eregion.domain.model.shared_model',lambda **kwargs:object())
+        def invoke(model,schema,system,human):
+            rows=re.findall(r'^- (\S+) \[(\w+)\]:',human,re.M)
+            # All original job prefixes must survive through alias metadata even
+            # when only the first job owns primary bullets.
+            assert rows and {rid.split(':')[0] for rid,_ in rows}=={'job0'}
+            with usage_scope(purpose='jev_fit_resolver:UnknownResolution'):
+                with provider_call('synthetic-resolver') as usage:
+                    usage.update(input_tokens=20,output_tokens=10)
+                    return UnknownResolution(decisions=[UnknownDecision(requirement_id=rid,
+                        is_candidate_requirement=True,level=level,personal_condition=False,
+                        status='missing',reason='Synthetic non-supporting verdict.') for rid,level in rows])
+        monkeypatch.setattr('eregion.domain.model.invoke_structured',invoke)
+>       run(career,tmp_path,monkeypatch)
+
+tests\test_remaining_resolver_batch.py:245: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_remaining_live_batch.py:93: in test_eight_job_production_cold_resolver_and_persistent_warm
+    cold=c.harness.execute(c.state['task_id'],'score_jobs',{'application_ids':ids},call_id=str(uuid4()))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\runtime\career\harness.py:592: in execute
+    try:return self._execute(task_id,name,args,call_id=call_id)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\runtime\career\harness.py:1005: in _execute
+    asyncio.run(self.analysis.analyze_many(identifiers,resume_text=text,candidate_facts=self.fit_facts()))
+C:\Python313\Lib\asyncio\runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+backend\eregion\api\services\workspace_service.py:163: in analyze_many
+    values=await self._fit_service.analyze_many(resume_text=resume_text,jobs=jobs,candidate_facts=candidate_facts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_remaining_live_batch.py:64: in capture
+    results=await actual(**kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\api\services\fit_analysis_service.py:292: in analyze_many
+    return await asyncio.to_thread(self._jev_many_sync,resume_text=resume_text,jobs=jobs,candidate_facts=candidate_facts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\asyncio\threads.py:25: in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\concurrent\futures\thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\api\services\fit_analysis_service.py:282: in _jev_many_sync
+    values=service.analyze_many(resume_text=resume_text,jobs=jobs,candidate_facts=candidate_facts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\service.py:27: in analyze_many
+    broker=Broker(self.config,cache,transport=self.transport,max_requests=self.max_requests)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\transport.py:49: in __init__
+    self.signature, self.max_requests = config.signature(), max_requests
+                                        ^^^^^^^^^^^^^^^^^^
+backend\eregion\domain\jev_fit\settings.py:76: in signature
+    code[name] = hashlib.sha256((Path(__file__).resolve().parent.parent / name).read_bytes()).hexdigest()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/job_agent/schemas.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\job_agent\\schemas.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+---------------------------- Captured stderr setup ----------------------------
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 0001_create_runs, Create persisted API runs table.
+INFO  [alembic.runtime.migration] Running upgrade 0001_create_runs -> 0002_custom_agent, Create custom agent state and event tables.
+INFO  [alembic.runtime.migration] Running upgrade 0002_custom_agent -> 0003_tool_runtime, Create persistent tool-call audit tables.
+INFO  [alembic.runtime.migration] Running upgrade 0003_tool_runtime -> 0004_backend_cutover, Add persisted backend ownership for controlled custom-runtime cutover.
+INFO  [alembic.runtime.migration] Running upgrade 0004_backend_cutover -> 0005_session_runtime, Create versioned session snapshots, messages, and events.
+INFO  [alembic.runtime.migration] Running upgrade 0005_session_runtime -> 0006_session_resumability, Add persisted pending-decision and loop-limit fields to sessions.
+INFO  [alembic.runtime.migration] Running upgrade 0006_session_resumability -> 0007_execution_claims, Add session and tool execution claims.
+INFO  [alembic.runtime.migration] Running upgrade 0007_execution_claims -> 0008_session_cancellation_deadlines, Add session cancellation and deadline state.
+INFO  [alembic.runtime.migration] Running upgrade 0008_session_cancellation_deadlines -> 0009_memory_runtime, Add governed memory items and audit events.
+INFO  [alembic.runtime.migration] Running upgrade 0009_memory_runtime -> 0010_skill_runtime, Add governed Skill registry, versions, and lifecycle events.
+INFO  [alembic.runtime.migration] Running upgrade 0010_skill_runtime -> 0011_context_runtime, Add immutable model-context snapshots and usage audit.
+INFO  [alembic.runtime.migration] Running upgrade 0011_context_runtime -> 0012_context_management, Add the distinct approved Skill lifecycle state.
+INFO  [alembic.runtime.migration] Running upgrade 0012_context_management -> 0013_job_workspace, Create persistent Job Workspace domain.
+INFO  [alembic.runtime.migration] Running upgrade 0013_job_workspace -> 0014_workspace_failure, Add safe Workspace analysis failure state.
+INFO  [alembic.runtime.migration] Running upgrade 0014_workspace_failure -> 0015_career_evidence, Career Evidence Vault tables.
+INFO  [alembic.runtime.migration] Running upgrade 0015_career_evidence -> 0016_interviewer_agent, Application-scoped Interviewer sessions, assessments and immutable turns.
+INFO  [alembic.runtime.migration] Running upgrade 0016_interviewer_agent -> 0017_application_pack, Versioned application packs and evidence snapshots.
+INFO  [alembic.runtime.migration] Running upgrade 0017_application_pack -> 0018_multi_agent_runtime, Persist deterministic multi-agent task graphs and attempts.
+INFO  [alembic.runtime.migration] Running upgrade 0018_multi_agent_runtime -> 0019_multi_agent_job_workflow, Persist explicit Standard versus Multi-Agent ownership.
+INFO  [alembic.runtime.migration] Running upgrade 0019_multi_agent_job_workflow -> 0020_interview_match_cohorts, Keep interview assessments for each projected match report separately.
+INFO  [alembic.runtime.migration] Running upgrade 0020_interview_match_cohorts -> 0021_mock_interview, Persistent mock interviews, immutable turns, plans, reports and audit.
+INFO  [alembic.runtime.migration] Running upgrade 0021_mock_interview -> 0022_feedback_learning, Governed feedback events and reviewable learning candidates.
+INFO  [alembic.runtime.migration] Running upgrade 0022_feedback_learning -> 0023_governed_skill_evolution, Add governed Skill evolution records without changing historical Skill rows.
+INFO  [alembic.runtime.migration] Running upgrade 0023_governed_skill_evolution -> 0024_conversation_first_assistant, Add stable Assistant timeline and registered action requests.
+INFO  [alembic.runtime.migration] Running upgrade 0024_conversation_first_assistant -> 0025_conversation_learning, Add governed conversation experiences and reusable learning patterns.
+INFO  [alembic.runtime.migration] Running upgrade 0025_conversation_learning -> 0026_resume_documents, Add server-side PDF resume documents.
+INFO  [alembic.runtime.migration] Running upgrade 0026_resume_documents -> 0027_session_archive, Add local conversation archive projection.
+INFO  [alembic.runtime.migration] Running upgrade 0027_session_archive -> 0028_review_integrity, Persist analysis sources, regeneration instructions and model budgets.
+INFO  [alembic.runtime.migration] Running upgrade 0028_review_integrity -> 0029_auto_applications, Persist site-specific application attempts and submission uncertainty.
+INFO  [alembic.runtime.migration] Running upgrade 0029_auto_applications -> 0030_application_memory, Confirmed application answers, scoped to the candidate email.
+INFO  [alembic.runtime.migration] Running upgrade 0030_application_memory -> 0031_saved_candidate, Durable local applicant profile and original resume for new applications.
+INFO  [alembic.runtime.migration] Running upgrade 0031_saved_candidate -> 0032_career_tasks, Unified career conversations over reusable job capabilities.
+INFO  [alembic.runtime.migration] Running upgrade 0032_career_tasks -> 0033_career_task_meta, Conversation organisation: custom titles, pins, groups, archive and a 30-day trash.
+INFO  [alembic.runtime.migration] Running upgrade 0033_career_task_meta -> 0034_career_job_alerts, Scheduled autonomous searches and recommendation digests.
+INFO  [alembic.runtime.migration] Running upgrade 0034_career_job_alerts -> 0035_analysis_cache, Persist validated analyses and pack timing summaries.
+INFO  [alembic.runtime.migration] Running upgrade 0035_analysis_cache -> 0036_provider_usage, Durable provider usage without conversation or application version changes.
+INFO  [alembic.runtime.migration] Running upgrade 0036_provider_usage -> 0037_external_tool_operations, Durable spend records for external paid tools (Treg), separate from model usage.
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:53
+  C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\starlette\testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_career_flow.py::test_search_public_board_shapes_and_private_redirect_are_checked
+FAILED tests/test_e2e_followups.py::test_fit_service_sends_only_jev_unknowns_to_the_main_model
+FAILED tests/test_integrated_p2.py::test_search_then_details_download_the_board_once
+FAILED tests/test_integrated_p2.py::test_only_ashby_board_api_is_cacheable - ...
+FAILED tests/test_jev_fit_production.py::JevProductionTests::test_accounting_context_crosses_worker_and_broker_threads
+FAILED tests/test_jev_fit_production.py::JevProductionTests::test_batch_shares_requests_and_reuses_single_cache
+FAILED tests/test_jev_fit_production.py::JevProductionTests::test_cache_invalidates_resume_jd_facts_and_model
+FAILED tests/test_jev_fit_production.py::JevProductionTests::test_empty_key_fails_without_any_provider_call
+FAILED tests/test_jev_fit_production.py::JevProductionTests::test_enabled_routes_only_jev_and_persists_warm_cache
+SUBFAILED(failure='http') tests/test_jev_fit_production.py::JevProductionTests::test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache
+SUBFAILED(failure='malformed') tests/test_jev_fit_production.py::JevProductionTests::test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache
+SUBFAILED(failure='version') tests/test_jev_fit_production.py::JevProductionTests::test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache
+SUBFAILED(failure='timeout') tests/test_jev_fit_production.py::JevProductionTests::test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache
+FAILED tests/test_jev_fit_production.py::JevProductionTests::test_failed_malformed_wrong_model_and_timeout_never_fall_back_or_cache
+FAILED tests/test_jev_fit_production.py::JevProductionTests::test_presentation_whitespace_reuses_decisions_but_keeps_original_spans
+FAILED tests/test_jev_fit_production.py::JevProductionTests::test_rejected_budget_does_not_create_a_paid_ledger_entry
+FAILED tests/test_jev_fit_production.py::JevProductionTests::test_uncertain_answers_score_by_probability_and_expire_by_config
+FAILED tests/test_main_stability_evals.py::test_offline_plan_does_not_read_model_configuration_or_claim_pass
+FAILED tests/test_main_stability_evals.py::test_real_six_worker_dispatch_records_all_32_including_failure_and_timeout
+FAILED tests/test_main_stability_evals.py::test_four_equivalent_cold_inputs_spread_and_requirement_count_not_truncated
+FAILED tests/test_main_stability_evals.py::test_real_fit_service_cold_isolation_and_sqlite_usage_with_offline_provider
+FAILED tests/test_main_stability_evals.py::test_changed_input_or_threshold_rejects_before_dispatch
+FAILED tests/test_main_stability_evals.py::test_recovered_timeout_and_warm_cache_cannot_be_green
+FAILED tests/test_opt_metrics_reasoning.py::test_jev_and_fast_cache_identity
+FAILED tests/test_opt_metrics_reasoning.py::test_jev_wire_default_and_validation_retry[extract_requirements]
+FAILED tests/test_opt_metrics_reasoning.py::test_jev_wire_default_and_validation_retry[refine_extraction_yes_no]
+FAILED tests/test_opt_metrics_reasoning.py::test_jev_wire_default_and_validation_retry[condition_category_yes_no]
+FAILED tests/test_opt_metrics_reasoning.py::test_jev_wire_default_and_validation_retry[support_yes_no]
+FAILED tests/test_opt_metrics_reasoning.py::test_jev_wire_default_and_validation_retry[focused_yes_no]
+FAILED tests/test_opt_metrics_reasoning.py::test_jev_wire_default_and_validation_retry[clarify_full_support_yes_no]
+FAILED tests/test_opt_metrics_reasoning.py::test_jev_wire_default_and_validation_retry[verify_citations_yes_no]
+FAILED tests/test_opt_metrics_reasoning.py::test_typesafe_plain_fallback_is_bounded[fit]
+FAILED tests/test_opt_metrics_reasoning.py::test_jev_broker_keys_track_effective_purpose_level
+FAILED tests/test_opt_metrics_reasoning.py::test_jev_escalated_answer_does_not_populate_low_cache
+FAILED tests/test_opt_v3_calibration.py::test_typesafe_default_rejection_one_attempt[fit]
+FAILED tests/test_remaining_fixed_catalog.py::test_default_main_service_scores_a_local_deterministic_catalogue
+FAILED tests/test_remaining_fixed_catalog.py::test_production_matching_step_preserves_an_explicit_frozen_jev_catalogue_four_times
+FAILED tests/test_remaining_fixed_catalog.py::test_same_id_changed_constraint_is_not_catalogue_agreement
+FAILED tests/test_remaining_fixed_catalog.py::test_main_service_internal_catalogue_binding_four_cold_and_no_jev_call
+FAILED tests/test_remaining_fixed_catalog.py::test_bound_catalogue_persistent_match_cache_and_producer_version_isolation
+FAILED tests/test_remaining_fixed_catalog.py::test_untrusted_changed_body_payload_ids_or_producer_rejected_before_model
+FAILED tests/test_remaining_fixed_catalog.py::test_jev_body_span_and_assessment_identity_are_required
+FAILED tests/test_remaining_fixed_catalog.py::test_async_single_and_batch_entry_preserve_supplied_catalogue
+FAILED tests/test_remaining_fixed_catalog.py::test_catalogue_replay_rejects_stale_version_and_result_mutation_does_not_change_input
+FAILED tests/test_remaining_resolver_batch.py::test_production_score_jobs_colliding_ids_one_resolver_call_and_restart_cache
+FAILED tests/test_remaining_resolver_batch.py::test_offline_eight_job_production_uses_the_exact_live_acceptance_contract
+46 failed, 2264 passed, 135 skipped, 1 warning, 12 subtests passed in 683.65s (0:11:23)

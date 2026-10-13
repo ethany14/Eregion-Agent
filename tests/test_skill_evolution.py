@@ -9,35 +9,35 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy import text
 
-from agent_runtime.feedback.models import LearningCandidateRow
-from agent_runtime.feedback.errors import FeedbackConflictError
-from agent_runtime.feedback.repository import FeedbackRepository
-from agent_runtime.feedback.types import CandidateScope, CandidateStatus, CandidateType, LearningCandidate
-from agent_runtime.skills.errors import SkillContentChangedError, SkillParseError, SkillValidationError
-from agent_runtime.skills.evolution import SkillEvolutionService
-from agent_runtime.skills.evolution_evaluation import (
+from eregion.runtime.feedback.models import LearningCandidateRow
+from eregion.runtime.feedback.errors import FeedbackConflictError
+from eregion.runtime.feedback.repository import FeedbackRepository
+from eregion.runtime.feedback.types import CandidateScope, CandidateStatus, CandidateType, LearningCandidate
+from eregion.runtime.skills.errors import SkillContentChangedError, SkillParseError, SkillValidationError
+from eregion.runtime.skills.evolution import SkillEvolutionService
+from eregion.runtime.skills.evolution_evaluation import (
     EvaluationCase, ModelObservation, evaluate_case, load_dataset, summarize,
 )
-from agent_runtime.skills.evolution_validation import validate_generated_package
-from agent_runtime.skills.registry import SkillRegistry
-from agent_runtime.skills.repository import SkillRepository
-from api.db import create_database, upgrade_database
-from api.main import create_app
+from eregion.runtime.skills.evolution_validation import validate_generated_package
+from eregion.runtime.skills.registry import SkillRegistry
+from eregion.runtime.skills.repository import SkillRepository
+from eregion.api.db import create_database, upgrade_database
+from eregion.api.main import create_app
 from fastapi.testclient import TestClient
 from types import SimpleNamespace
-from agent_runtime.memory.policy import LocalOwnerResolver
-from api.session_dependencies import SessionRuntime
-from agent_runtime.sessions.repository import SessionRepository
-from agent_runtime.sessions.state import SessionState, SessionStatus, SessionMessageDraft
-from agent_runtime.sessions.events import SessionEvent, SessionEventType
-from agent_runtime.tools.messages import AgentMessage
-from agent_runtime.context.repository import ContextSnapshotRepository
-from agent_runtime.context.projection import SessionContextProjector
-from agent_runtime.skills.discovery import SkillDiscovery
-from agent_runtime.skills.loader import SkillLoader
-from agent_runtime.skills.routing import SkillRouter
-from agent_runtime.skills.evolution_models import SkillActivationEventRow, SkillRuntimeMetricRow
-from agent_runtime.skills.evolution_types import ActivationMode
+from eregion.runtime.memory.policy import LocalOwnerResolver
+from eregion.api.session_dependencies import SessionRuntime
+from eregion.runtime.sessions.repository import SessionRepository
+from eregion.runtime.sessions.state import SessionState, SessionStatus, SessionMessageDraft
+from eregion.runtime.sessions.events import SessionEvent, SessionEventType
+from eregion.runtime.tools.messages import AgentMessage
+from eregion.runtime.context.repository import ContextSnapshotRepository
+from eregion.runtime.context.projection import SessionContextProjector
+from eregion.runtime.skills.discovery import SkillDiscovery
+from eregion.runtime.skills.loader import SkillLoader
+from eregion.runtime.skills.routing import SkillRouter
+from eregion.runtime.skills.evolution_models import SkillActivationEventRow, SkillRuntimeMetricRow
+from eregion.runtime.skills.evolution_types import ActivationMode
 
 
 class FakeModel:
@@ -338,7 +338,7 @@ def test_hard_gate_failure_and_holdout_are_separate():
     summary = summarize([baseline, candidate_result])
     assert summary["passed"] is False
     assert summary["hard_gates"]["task_success_non_regression"] is False
-    dataset, digest = load_dataset(Path(__file__).resolve().parents[1] / "evals" / "skill_evolution_v0.2.json")
+    dataset, digest = load_dataset(Path(__file__).resolve().parents[1] / "tools/evals" / "skill_evolution_v0.2.json")
     assert len(digest) == 64 and any(case.holdout for case in dataset.cases)
 
 

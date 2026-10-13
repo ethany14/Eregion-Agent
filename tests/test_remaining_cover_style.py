@@ -11,7 +11,7 @@ from evals.cover_style_review import screens
 
 @pytest.mark.parametrize('revise',[False,True])
 def test_cover_letter_generation_and_revision_receive_specific_natural_opening_rules(monkeypatch,revise):
-    import agent_runtime.application_pack.workflow as module
+    import eregion.runtime.application_pack.workflow as module
     calls=[]
     monkeypatch.setattr(module,'shared_model',lambda:object())
     def invoke(model,schema,system,context):
@@ -41,7 +41,7 @@ def frozen_revision():
 
 
 def test_frozen_actual_revision_retains_factual_pass_and_has_specific_advisory_style_targets():
-    from agent_runtime.application_pack.style import cover_revision_notes
+    from eregion.runtime.application_pack.style import cover_revision_notes
     data=frozen_revision();before=json.dumps(data,sort_keys=True)
     assert data['verification']['passed']
     assert data['usage']['usage_complete'] and data['usage']['calls']==2
@@ -73,7 +73,7 @@ def test_production_revision_context_carries_style_locations_without_overwriting
 
 
 def test_advisory_notes_do_not_confuse_supported_past_and_future_task_or_claim_style_quality():
-    from agent_runtime.application_pack.style import cover_revision_notes
+    from eregion.runtime.application_pack.style import cover_revision_notes
     # Synthetic editor contract, NOT a generated or human-approved letter.
     data={'paragraphs':[{'text':'I am applying for the verified role.'},
         {'text':'I built Python APIs.'},{'text':'I would welcome the opportunity to work on developing Python APIs.'}]}
@@ -87,7 +87,7 @@ def test_advisory_notes_do_not_confuse_supported_past_and_future_task_or_claim_s
     'I WOULD\nWELCOME THE CHANCE to discuss the role.',
 ])
 def test_style_screen_and_production_notes_agree_on_repeated_invitation_variants(second):
-    from agent_runtime.application_pack.style import cover_revision_notes
+    from eregion.runtime.application_pack.style import cover_revision_notes
     content={'paragraphs':[{'text':'I am applying and would welcome the opportunity to contribute.'},
         {'text':second}]}
     notes=cover_revision_notes(content)
@@ -112,7 +112,7 @@ def test_repeated_chance_invitation_reaches_actual_revision_context(career):
 
 
 def test_one_chance_invitation_and_distinct_supported_fact_remain_allowed():
-    from agent_runtime.application_pack.style import cover_revision_notes
+    from eregion.runtime.application_pack.style import cover_revision_notes
     content={'paragraphs':[{'text':'I am applying for the verified role.'},
         {'text':'I built Python APIs.'},
         {'text':'I would welcome the chance to develop Python APIs for the stated future task.'}]}
@@ -149,7 +149,7 @@ def seed_failed_draft(c,pack,*,frozen_verification=False):
     item=c.runtime.packs.save_artifact(pack.pack_id,item.pack_item_id,
         expected_version=item.version,content=content,idempotency_key='failed-original-draft',origin='model')
     if frozen_verification:
-        from agent_runtime.application_pack.types import ArtifactVerification
+        from eregion.runtime.application_pack.types import ArtifactVerification
         original=failure_fixture()
         assert original['snapshot']['items'][0]['claim_text']==evidence.claim_text
         assert original['snapshot']['items'][0]['exact_quote']==evidence.exact_quote
@@ -171,9 +171,9 @@ def seed_failed_draft(c,pack,*,frozen_verification=False):
 @pytest.mark.parametrize('repair',[False,True])
 def test_actual_failed_clause_reaches_production_reviser_and_cannot_survive_grounding(career,monkeypatch,repair):
     """Deterministic routing/grounding test; the injected draft is not style evidence."""
-    import agent_runtime.application_pack.workflow as module
-    from agent_runtime.application_pack.types import CoverLetter
-    from agent_runtime.application_pack.verifier import ArtifactVerifier
+    import eregion.runtime.application_pack.workflow as module
+    from eregion.runtime.application_pack.types import CoverLetter
+    from eregion.runtime.application_pack.verifier import ArtifactVerifier
     c=career;workflow,pack=prepare_pack(c)
     workflow._verifier=ArtifactVerifier()
     failed=seed_failed_draft(c,pack)
@@ -214,8 +214,8 @@ def test_actual_failed_clause_reaches_production_reviser_and_cannot_survive_grou
 
 
 def test_actual_rejected_text_remains_rejected_with_unchanged_verifier():
-    from agent_runtime.application_pack.types import EvidenceSnapshotItem
-    from agent_runtime.application_pack.verifier import ArtifactVerifier
+    from eregion.runtime.application_pack.types import EvidenceSnapshotItem
+    from eregion.runtime.application_pack.verifier import ArtifactVerifier
     data=failure_fixture()
     result=ArtifactVerifier().verify(data['content'],'cover_letter',
         [EvidenceSnapshotItem.model_validate(e) for e in data['snapshot']['items']],
@@ -265,10 +265,10 @@ def test_frozen_failed_verification_replay_preserves_issue_and_section_is_not_a_
 
 @pytest.mark.skipif(os.getenv('JOB_AGENT_LIVE_COVER_REVISION')!='1',reason='Only the unexecuted original-failure revision lane; no writer repeat')
 def test_real_original_failure_revision_with_frozen_provenance(career,tmp_path):
-    from agent_runtime.application_pack.workflow import SharedPackModel
-    from agent_runtime.application_pack.verifier import ArtifactVerifier
-    from agent_runtime.application_pack.rendering import render_cover_letter
-    from agent_runtime.provider_usage import UsageLedger,usage_scope
+    from eregion.runtime.application_pack.workflow import SharedPackModel
+    from eregion.runtime.application_pack.verifier import ArtifactVerifier
+    from eregion.runtime.application_pack.rendering import render_cover_letter
+    from eregion.runtime.provider_usage import UsageLedger,usage_scope
     import hashlib
     c=career;workflow,pack=prepare_pack(c);model=SharedPackModel()
     workflow._model=model;workflow._verifier=ArtifactVerifier(model.verify_claims)
@@ -308,10 +308,10 @@ def test_real_original_failure_revision_with_frozen_provenance(career,tmp_path):
 
 @pytest.mark.skipif(os.getenv('JOB_AGENT_LIVE_COVER_STYLE')!='1',reason='Explicit paid real cover-letter generation and grounding review')
 def test_real_cover_letter_preserves_source_citations_and_specific_natural_opening(career,tmp_path):
-    from agent_runtime.application_pack.workflow import SharedPackModel
-    from agent_runtime.application_pack.verifier import ArtifactVerifier
-    from agent_runtime.application_pack.rendering import render_cover_letter
-    from agent_runtime.provider_usage import UsageLedger,usage_scope
+    from eregion.runtime.application_pack.workflow import SharedPackModel
+    from eregion.runtime.application_pack.verifier import ArtifactVerifier
+    from eregion.runtime.application_pack.rendering import render_cover_letter
+    from eregion.runtime.provider_usage import UsageLedger,usage_scope
     c=career;job_source=failure_fixture()['job']
     workflow,pack=prepare_pack(c);model=SharedPackModel()
     workflow._model=model;workflow._verifier=ArtifactVerifier(model.verify_claims)
@@ -371,6 +371,6 @@ def test_real_cover_letter_preserves_source_citations_and_specific_natural_openi
 
 def test_writer_prompt_requires_verified_employer_need_in_opening():
     # E5 live r3: an optional "may refer to the need" let the writer drop it.
-    from agent_runtime.application_pack.workflow import _COVER_SYSTEM
+    from eregion.runtime.application_pack.workflow import _COVER_SYSTEM
     assert 'the first paragraph must include it in a separate second sentence' in _COVER_SYSTEM
     assert 'may refer to' not in _COVER_SYSTEM

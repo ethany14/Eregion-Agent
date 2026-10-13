@@ -3,9 +3,9 @@ import builtins
 
 import pytest
 
-from agent_runtime.auto_apply.browser import ApplicationBrowser, BrowserBlocked
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.repository import ApplyRepository
+from eregion.runtime.auto_apply.browser import ApplicationBrowser, BrowserBlocked
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.repository import ApplyRepository
 from test_auto_apply import database, request, wait
 
 

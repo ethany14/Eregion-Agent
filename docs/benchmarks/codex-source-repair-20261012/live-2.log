@@ -1,0 +1,147 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+______________________________ test_api_first_b6 ______________________________
+
+career = namespace(runtime=namespace(database=Database(engine=Engine(sqlite:///C:/Users/zhiyu/Documents/Codex/2026-10-11/docs-s...tLab generated PDF document -- digest (opensource)\n\n/Info 5 0 R\n/Root 4 0 R\n/Size 8\n>>\nstartxref\n1104\n%%EOF\n')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000227D06B15B0>
+
+    @LIVE
+    def test_api_first_b6(career, monkeypatch):
+        from agent_runtime.career.discovery import JobDiscovery
+        from agent_runtime.career.external_tool_usage import ExternalToolLedger
+        from agent_runtime.career.service import CareerService
+        from api.services.fit_analysis_service import FitAnalysisService
+        from job_agent.jev_fit.settings import Settings
+        from job_agent.pdf_rendering import render_letter_pdf
+        from scripts.e2e_repair_evaluation import APPLICANTS
+        from test_remaining_live import settle_live
+    
+        output = Path(os.environ['OPT_LIVE_OUTPUT'])
+        assert not output.exists(), 'Use a new output directory; never overwrite a paid sample'
+        output.mkdir(parents=True)
+        for key, value in FLAGS.items():
+            monkeypatch.setenv(key, value)
+        head = subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
+        (output / 'invocation.json').write_text(json.dumps({'head': head, 'flags': FLAGS, 'goal': GOAL,
+            'applicant': 'analyst', 'node': 'tests/test_api_first_b6_live.py::test_api_first_b6'}, indent=2),
+            encoding='utf-8')
+    
+        c = career
+        c.repository.change(c.state['task_id'], status='cancelled', pause_requested=True)
+        c.applications.repository.save_candidate(
+            {'first_name': 'Synthetic', 'last_name': 'analyst', 'email': 'analyst@example.com'},
+            resume=render_letter_pdf(APPLICANTS['analyst']), name='synthetic.pdf', extracted=True)
+        c.harness.discovery = JobDiscovery()
+        c.harness.analysis._fit_service = FitAnalysisService(jev_enabled=True,
+            jev_config=replace(Settings.load(cache_path=output / 'fit.sqlite3'), resolve_unknowns=False))
+        service = CareerService(c.runtime, c.applications, harness=c.harness, start_alert_scheduler=False)
+        service.loop.budget = 60
+        task = None
+        try:
+            task = service.start(GOAL, str(uuid4()))
+>           result = settle_live(service, task['run_id'], output, 'analyst')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_api_first_b6_live.py:87: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+service = <agent_runtime.career.service.CareerService object at 0x00000227D0D7E510>
+task_id = 'a484e899-7889-45ad-a658-f4f8da08c398'
+output = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/docs/benchmarks/codex-source-repair-20261012/live-2')
+applicant = 'analyst', timeout = 600
+
+    def settle_live(service,task_id,output,applicant,timeout=600):
+        from agent_runtime.provider_usage import UsageLedger
+        started=time.monotonic()
+        while time.monotonic()-started<timeout:
+            state=service.repository.get(task_id)
+            if state['status'] in {'completed','needs_input','cancelled'}:break
+            time.sleep(.3)
+        else:
+            service.cancel(task_id)
+            state=service.repository.get(task_id)
+        (output/'transcript.json').write_text(json.dumps(state,ensure_ascii=False,indent=2),encoding='utf-8')
+        summary={'status':state['status'],'calls':state['model_calls'],'seconds':round(time.monotonic()-started,2),
+            'jobs':len(state['jobs']),'materials':len(state['packs']),'applications':len(state['application_runs']),
+            'error':(state.get('error') or {}).get('code'),'tools':[h['tool'] for h in state['history']],
+            'final':next((m['text'] for m in reversed(state['messages']) if m['role']=='assistant'),'')}
+        summary['usage']=UsageLedger(service.repository.sessions).summary(task_id=task_id,run_ids=state['application_runs'])
+        summary['recommendations']=state.get('recommendations',[])
+        summary['schedules']=len(service.harness.alerts.list())
+        from agent_runtime.career.alerts import job_key
+        retrieved={job_key(j['url']) for j in state.get('retrieved_jobs',{}).values() if j.get('url')}
+        summary['verified_jobs']=[]
+        for identifier in state['jobs']:
+            job=service.harness.job_summary(identifier,detail=True)
+            job['retrieved']=bool(job.get('url')) and job_key(job['url']) in retrieved
+            job['disqualified']=any(m.get('match_status')=='confirmed_condition' and m.get('condition_satisfied') is False
+                for m in (job.get('match_report') or {}).get('matches',[]))
+            summary['verified_jobs'].append(job)
+        summary['tool_evidence']=[{'tool':h['tool'],'arguments':h.get('arguments'),'result':h.get('result')} for h in state['history']]
+        (output/'summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding='utf-8')
+        print(json.dumps({k:v for k,v in summary.items() if k not in {'tool_evidence','verified_jobs'}},ensure_ascii=True),flush=True)
+        acceptance=evaluate_search(summary,applicant)
+        (output/'acceptance.json').write_text(json.dumps(acceptance,ensure_ascii=False,indent=2),encoding='utf-8')
+>       assert acceptance['status']=='passed',acceptance
+E       AssertionError: {'status': 'failed', 'failures': ['loop_not_completed_cleanly', 'fewer_than_two_verified_scored_qualifying_recommendations'], 'qualified_count': 1, 'main_input_tokens': 564634, ...}
+E       assert 'failed' == 'passed'
+E         
+E         - passed
+E         + failed
+
+tests\test_remaining_live.py:54: AssertionError
+---------------------------- Captured stderr setup ----------------------------
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 0001_create_runs, Create persisted API runs table.
+INFO  [alembic.runtime.migration] Running upgrade 0001_create_runs -> 0002_custom_agent, Create custom agent state and event tables.
+INFO  [alembic.runtime.migration] Running upgrade 0002_custom_agent -> 0003_tool_runtime, Create persistent tool-call audit tables.
+INFO  [alembic.runtime.migration] Running upgrade 0003_tool_runtime -> 0004_backend_cutover, Add persisted backend ownership for controlled custom-runtime cutover.
+INFO  [alembic.runtime.migration] Running upgrade 0004_backend_cutover -> 0005_session_runtime, Create versioned session snapshots, messages, and events.
+INFO  [alembic.runtime.migration] Running upgrade 0005_session_runtime -> 0006_session_resumability, Add persisted pending-decision and loop-limit fields to sessions.
+INFO  [alembic.runtime.migration] Running upgrade 0006_session_resumability -> 0007_execution_claims, Add session and tool execution claims.
+INFO  [alembic.runtime.migration] Running upgrade 0007_execution_claims -> 0008_session_cancellation_deadlines, Add session cancellation and deadline state.
+INFO  [alembic.runtime.migration] Running upgrade 0008_session_cancellation_deadlines -> 0009_memory_runtime, Add governed memory items and audit events.
+INFO  [alembic.runtime.migration] Running upgrade 0009_memory_runtime -> 0010_skill_runtime, Add governed Skill registry, versions, and lifecycle events.
+INFO  [alembic.runtime.migration] Running upgrade 0010_skill_runtime -> 0011_context_runtime, Add immutable model-context snapshots and usage audit.
+INFO  [alembic.runtime.migration] Running upgrade 0011_context_runtime -> 0012_context_management, Add the distinct approved Skill lifecycle state.
+INFO  [alembic.runtime.migration] Running upgrade 0012_context_management -> 0013_job_workspace, Create persistent Job Workspace domain.
+INFO  [alembic.runtime.migration] Running upgrade 0013_job_workspace -> 0014_workspace_failure, Add safe Workspace analysis failure state.
+INFO  [alembic.runtime.migration] Running upgrade 0014_workspace_failure -> 0015_career_evidence, Career Evidence Vault tables.
+INFO  [alembic.runtime.migration] Running upgrade 0015_career_evidence -> 0016_interviewer_agent, Application-scoped Interviewer sessions, assessments and immutable turns.
+INFO  [alembic.runtime.migration] Running upgrade 0016_interviewer_agent -> 0017_application_pack, Versioned application packs and evidence snapshots.
+INFO  [alembic.runtime.migration] Running upgrade 0017_application_pack -> 0018_multi_agent_runtime, Persist deterministic multi-agent task graphs and attempts.
+INFO  [alembic.runtime.migration] Running upgrade 0018_multi_agent_runtime -> 0019_multi_agent_job_workflow, Persist explicit Standard versus Multi-Agent ownership.
+INFO  [alembic.runtime.migration] Running upgrade 0019_multi_agent_job_workflow -> 0020_interview_match_cohorts, Keep interview assessments for each projected match report separately.
+INFO  [alembic.runtime.migration] Running upgrade 0020_interview_match_cohorts -> 0021_mock_interview, Persistent mock interviews, immutable turns, plans, reports and audit.
+INFO  [alembic.runtime.migration] Running upgrade 0021_mock_interview -> 0022_feedback_learning, Governed feedback events and reviewable learning candidates.
+INFO  [alembic.runtime.migration] Running upgrade 0022_feedback_learning -> 0023_governed_skill_evolution, Add governed Skill evolution records without changing historical Skill rows.
+INFO  [alembic.runtime.migration] Running upgrade 0023_governed_skill_evolution -> 0024_conversation_first_assistant, Add stable Assistant timeline and registered action requests.
+INFO  [alembic.runtime.migration] Running upgrade 0024_conversation_first_assistant -> 0025_conversation_learning, Add governed conversation experiences and reusable learning patterns.
+INFO  [alembic.runtime.migration] Running upgrade 0025_conversation_learning -> 0026_resume_documents, Add server-side PDF resume documents.
+INFO  [alembic.runtime.migration] Running upgrade 0026_resume_documents -> 0027_session_archive, Add local conversation archive projection.
+INFO  [alembic.runtime.migration] Running upgrade 0027_session_archive -> 0028_review_integrity, Persist analysis sources, regeneration instructions and model budgets.
+INFO  [alembic.runtime.migration] Running upgrade 0028_review_integrity -> 0029_auto_applications, Persist site-specific application attempts and submission uncertainty.
+INFO  [alembic.runtime.migration] Running upgrade 0029_auto_applications -> 0030_application_memory, Confirmed application answers, scoped to the candidate email.
+INFO  [alembic.runtime.migration] Running upgrade 0030_application_memory -> 0031_saved_candidate, Durable local applicant profile and original resume for new applications.
+INFO  [alembic.runtime.migration] Running upgrade 0031_saved_candidate -> 0032_career_tasks, Unified career conversations over reusable job capabilities.
+INFO  [alembic.runtime.migration] Running upgrade 0032_career_tasks -> 0033_career_task_meta, Conversation organisation: custom titles, pins, groups, archive and a 30-day trash.
+INFO  [alembic.runtime.migration] Running upgrade 0033_career_task_meta -> 0034_career_job_alerts, Scheduled autonomous searches and recommendation digests.
+INFO  [alembic.runtime.migration] Running upgrade 0034_career_job_alerts -> 0035_analysis_cache, Persist validated analyses and pack timing summaries.
+INFO  [alembic.runtime.migration] Running upgrade 0035_analysis_cache -> 0036_provider_usage, Durable provider usage without conversation or application version changes.
+INFO  [alembic.runtime.migration] Running upgrade 0036_provider_usage -> 0037_external_tool_operations, Durable spend records for external paid tools (Treg), separate from model usage.
+---------------------------- Captured stdout call -----------------------------
+{"status": "needs_input", "calls": 49, "seconds": 438.54, "jobs": 2, "materials": 0, "applications": 0, "error": "provider_budget", "tools": ["read_context", "search_jobs", "read_context", "read_context", "read_context", "read_context", "read_job", "read_context", "read_context", "read_job", "read_context", "read_context", "search_jobs", "read_job", "read_context", "read_context", "read_context", "import_job", "score_job", "search_jobs", "recommend_job", "read_job", "read_context", "import_job"], "final": "I stopped at the provider budget limit. Saved work is preserved; the requested work is not complete.\n\nSaved so far:\n- Recommended: Graduate Data Analyst \u2014 adMarketplace \u2014 https://www.linkedin.com/jobs/view/4469763828/ \u2014 score 80.72", "usage": {"calls": 60, "completed": 60, "failed": 0, "pending": 0, "discarded": 0, "retries": 0, "input_tokens": 627632, "output_tokens": 44537, "unknown_usage_calls": 0, "groups": [{"purpose": "agent", "model": "muse-spark-1.3-contributor", "calls": 49, "input_tokens": 564634, "output_tokens": 36555, "unknown_usage_calls": 0, "cached_input_tokens": 252193, "reasoning_tokens": 29077, "cache_hit_ratio": 0.4466486254812852, "reasoning_share": 0.7954315415127889}, {"purpose": "jev:fit:extract_requirements", "model": "jev-1.13.0", "calls": 3, "input_tokens": 46393, "output_tokens": 6024, "unknown_usage_calls": 0, "cache_hit_ratio": null, "reasoning_share": null}, {"purpose": "jev:fit:refine_extraction_yes_no", "model": "jev-1.13.0", "calls": 2, "input_tokens": 8350, "output_tokens": 1014, "unknown_usage_calls": 0, "cache_hit_ratio": null, "reasoning_share": null}, {"purpose": "jev:fit:condition_category_yes_no", "model": "jev-1.13.0", "calls": 2, "input_tokens": 2066, "output_tokens": 266, "unknown_usage_calls": 0, "cache_hit_ratio": null, "reasoning_share": null}, {"purpose": "jev:fit:support_yes_no", "model": "jev-1.13.0", "calls": 1, "input_tokens": 2942, "output_tokens": 462, "unknown_usage_calls": 0, "cache_hit_ratio": null, "reasoning_share": null}, {"purpose": "jev:fit:focused_yes_no", "model": "jev-1.13.0", "calls": 1, "input_tokens": 646, "output_tokens": 38, "unknown_usage_calls": 0, "cache_hit_ratio": null, "reasoning_share": null}, {"purpose": "jev:fit:clarify_full_support_yes_no", "model": "jev-1.13.0", "calls": 1, "input_tokens": 1081, "output_tokens": 72, "unknown_usage_calls": 0, "cache_hit_ratio": null, "reasoning_share": null}, {"purpose": "jev:fit:verify_citations_yes_no", "model": "jev-1.13.0", "calls": 1, "input_tokens": 1520, "output_tokens": 106, "unknown_usage_calls": 0, "cache_hit_ratio": null, "reasoning_share": null}], "budget_input_tokens": 627632, "cached_input_tokens": 252193, "reasoning_tokens": 29077, "cache_hit_ratio": 0.40181666964080864, "reasoning_share": 0.6528728922019894, "usage_complete": true, "provider_attempts": 60}, "recommendations": [{"application_id": "7a40aa3b-6282-4c8f-a81f-980e9d0b7cc3", "title": "Graduate Data Analyst", "company": "adMarketplace", "location": "New York, NY", "url": "https://www.linkedin.com/jobs/view/4469763828/", "match_score": 80.72, "reason": "Entry-level Graduate Data Analyst in New York, NY matching junior request; scored 80.72 with 7 matched requirements (degree, SQL, Python/R, visualization, modern stack exposure).", "caveats": "LinkedIn posting lists Entry level, New York NY; work-mode/remote policy not confirmed in excerpt \u2013 confirm on posting. 6 requirements unresolved in scoring (soft skills/statistics) \u2013 review match report."}], "schedules": 0}
+============================== warnings summary ===============================
+.venv\Lib\site-packages\_pytest\config\__init__.py:1345
+  C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\config\__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+.venv\Lib\site-packages\_pytest\config\__init__.py:1345
+  C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\config\__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; langsmith
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_api_first_b6_live.py::test_api_first_b6 - AssertionError: {...
+1 failed, 2 warnings in 442.99s (0:07:22)

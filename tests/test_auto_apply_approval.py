@@ -3,13 +3,13 @@ import json
 
 import pytest
 
-from agent_runtime.auto_apply.agent import AgentTools, grounded
-from agent_runtime.auto_apply.browser import BrowserBlocked
-from agent_runtime.auto_apply.contracts import ContinueApplication
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.memory import compatible, pending_approvals, review_required
-from agent_runtime.auto_apply.models import ApplicationMemoryRow
-from agent_runtime.auto_apply.repository import ApplyRepository
+from eregion.runtime.auto_apply.agent import AgentTools, grounded
+from eregion.runtime.auto_apply.browser import BrowserBlocked
+from eregion.runtime.auto_apply.contracts import ContinueApplication
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.memory import compatible, pending_approvals, review_required
+from eregion.runtime.auto_apply.models import ApplicationMemoryRow
+from eregion.runtime.auto_apply.repository import ApplyRepository
 from test_auto_apply import FakeBrowser, database, field, request, wait
 
 
@@ -129,7 +129,7 @@ def test_profile_facts_still_fill_the_candidates_own_contact_fields():
 
 def test_untrusted_host_is_rejected():
     from fastapi.testclient import TestClient
-    from api.main import create_app
+    from eregion.api.main import create_app
     client = TestClient(create_app(session_runtime_factory=lambda: None))
     assert client.get("/health", headers={"host": "attacker.example"}).status_code == 400
     assert client.get("/health", headers={"host": "127.0.0.1:8000"}).status_code != 400

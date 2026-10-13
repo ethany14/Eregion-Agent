@@ -1,0 +1,132 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_ test_long_real_search_conversations[analyst-junior data analyst in New York] _
+
+career = namespace(runtime=namespace(database=Database(engine=Engine(sqlite:///C:/Users/zhiyu/Documents/Codex/2026-10-11/docs-s...tLab generated PDF document -- digest (opensource)\n\n/Info 5 0 R\n/Root 4 0 R\n/Size 8\n>>\nstartxref\n1104\n%%EOF\n')
+tmp_path = WindowsPath('C:/Users/zhiyu/Documents/Codex/2026-10-11/docs-specs-optimization-plan-v2/work/r1-review/.r1-evidence/L4-B0-r1/temp/test_long_real_search_conversa0')
+applicant = 'analyst', query = 'junior data analyst in New York'
+
+    @pytest.mark.parametrize('applicant,query',[
+        ('analyst','junior data analyst in New York'),
+        ('backend','senior backend engineer, remote US'),
+        ('student','machine learning internship, California'),
+        ('designer','junior UX designer, Austin'),
+    ])
+    def test_long_real_search_conversations(career,tmp_path,applicant,query):
+        c=career
+        c.repository.change(c.state['task_id'],status='cancelled',pause_requested=True)
+        c.applications.repository.save_candidate({'first_name':'Synthetic','last_name':applicant,'email':f'{applicant}@example.com'},
+            resume=render_letter_pdf(APPLICANTS[applicant]),name='synthetic.pdf',extracted=True)
+        c.harness.discovery=JobDiscovery()
+        c.harness.analysis._fit_service=FitAnalysisService(jev_enabled=True,
+            jev_config=replace(Settings.load(cache_path=tmp_path/'fit.sqlite3'),resolve_unknowns=False))
+        service=CareerService(c.runtime,c.applications,harness=c.harness,start_alert_scheduler=False)
+        service.loop.budget=60
+        try:
+            goal=(f'Find two current {query} positions for my saved resume. Start with LinkedIn or Indeed; '
+                'if blocked or login is required, immediately use public company career boards or other sources. '
+                'Read and score jobs you can verify, recommend any you can verify, and summarize the actual result. '
+                'Respect the requested seniority and disclose blocked sources or insufficient results. Do not apply or create a schedule.')
+            task=service.start(goal,str(uuid4()))
+>           result=settle_live(service,task['run_id'],tmp_path,applicant)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_remaining_live.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+service = <agent_runtime.career.service.CareerService object at 0x000002046999E660>
+task_id = 'ac33c8b9-8cf7-4441-b25f-60208090bfc1'
+output = WindowsPath('C:/Users/zhiyu/Documents/Codex/2026-10-11/docs-specs-optimization-plan-v2/work/r1-review/.r1-evidence/L4-B0-r1/temp/test_long_real_search_conversa0')
+applicant = 'analyst', timeout = 600
+
+    def settle_live(service,task_id,output,applicant,timeout=600):
+        from agent_runtime.provider_usage import UsageLedger
+        started=time.monotonic()
+        while time.monotonic()-started<timeout:
+            state=service.repository.get(task_id)
+            if state['status'] in {'completed','needs_input','cancelled'}:break
+            time.sleep(.3)
+        else:
+            service.cancel(task_id)
+            state=service.repository.get(task_id)
+        (output/'transcript.json').write_text(json.dumps(state,ensure_ascii=False,indent=2),encoding='utf-8')
+        summary={'status':state['status'],'calls':state['model_calls'],'seconds':round(time.monotonic()-started,2),
+            'jobs':len(state['jobs']),'materials':len(state['packs']),'applications':len(state['application_runs']),
+            'error':(state.get('error') or {}).get('code'),'tools':[h['tool'] for h in state['history']],
+            'final':next((m['text'] for m in reversed(state['messages']) if m['role']=='assistant'),'')}
+        summary['usage']=UsageLedger(service.repository.sessions).summary(task_id=task_id,run_ids=state['application_runs'])
+        summary['recommendations']=state.get('recommendations',[])
+        summary['schedules']=len(service.harness.alerts.list())
+        from agent_runtime.career.alerts import job_key
+        retrieved={job_key(j['url']) for j in state.get('retrieved_jobs',{}).values() if j.get('url')}
+        summary['verified_jobs']=[]
+        for identifier in state['jobs']:
+            job=service.harness.job_summary(identifier,detail=True)
+            job['retrieved']=bool(job.get('url')) and job_key(job['url']) in retrieved
+            job['disqualified']=any(m.get('match_status')=='confirmed_condition' and m.get('condition_satisfied') is False
+                for m in (job.get('match_report') or {}).get('matches',[]))
+            summary['verified_jobs'].append(job)
+        summary['tool_evidence']=[{'tool':h['tool'],'arguments':h.get('arguments'),'result':h.get('result')} for h in state['history']]
+        (output/'summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding='utf-8')
+        print(json.dumps({k:v for k,v in summary.items() if k not in {'tool_evidence','verified_jobs'}},ensure_ascii=True),flush=True)
+        acceptance=evaluate_search(summary,applicant)
+        (output/'acceptance.json').write_text(json.dumps(acceptance,ensure_ascii=False,indent=2),encoding='utf-8')
+>       assert acceptance['status']=='passed',acceptance
+E       AssertionError: {'status': 'failed', 'failures': ['loop_not_completed_cleanly', 'fewer_than_two_verified_scored_qualifying_recommendations'], 'qualified_count': 0, 'main_input_tokens': 587860, ...}
+E       assert 'failed' == 'passed'
+E         
+E         - passed
+E         + failed
+
+tests\test_remaining_live.py:54: AssertionError
+---------------------------- Captured stderr setup ----------------------------
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 0001_create_runs, Create persisted API runs table.
+INFO  [alembic.runtime.migration] Running upgrade 0001_create_runs -> 0002_custom_agent, Create custom agent state and event tables.
+INFO  [alembic.runtime.migration] Running upgrade 0002_custom_agent -> 0003_tool_runtime, Create persistent tool-call audit tables.
+INFO  [alembic.runtime.migration] Running upgrade 0003_tool_runtime -> 0004_backend_cutover, Add persisted backend ownership for controlled custom-runtime cutover.
+INFO  [alembic.runtime.migration] Running upgrade 0004_backend_cutover -> 0005_session_runtime, Create versioned session snapshots, messages, and events.
+INFO  [alembic.runtime.migration] Running upgrade 0005_session_runtime -> 0006_session_resumability, Add persisted pending-decision and loop-limit fields to sessions.
+INFO  [alembic.runtime.migration] Running upgrade 0006_session_resumability -> 0007_execution_claims, Add session and tool execution claims.
+INFO  [alembic.runtime.migration] Running upgrade 0007_execution_claims -> 0008_session_cancellation_deadlines, Add session cancellation and deadline state.
+INFO  [alembic.runtime.migration] Running upgrade 0008_session_cancellation_deadlines -> 0009_memory_runtime, Add governed memory items and audit events.
+INFO  [alembic.runtime.migration] Running upgrade 0009_memory_runtime -> 0010_skill_runtime, Add governed Skill registry, versions, and lifecycle events.
+INFO  [alembic.runtime.migration] Running upgrade 0010_skill_runtime -> 0011_context_runtime, Add immutable model-context snapshots and usage audit.
+INFO  [alembic.runtime.migration] Running upgrade 0011_context_runtime -> 0012_context_management, Add the distinct approved Skill lifecycle state.
+INFO  [alembic.runtime.migration] Running upgrade 0012_context_management -> 0013_job_workspace, Create persistent Job Workspace domain.
+INFO  [alembic.runtime.migration] Running upgrade 0013_job_workspace -> 0014_workspace_failure, Add safe Workspace analysis failure state.
+INFO  [alembic.runtime.migration] Running upgrade 0014_workspace_failure -> 0015_career_evidence, Career Evidence Vault tables.
+INFO  [alembic.runtime.migration] Running upgrade 0015_career_evidence -> 0016_interviewer_agent, Application-scoped Interviewer sessions, assessments and immutable turns.
+INFO  [alembic.runtime.migration] Running upgrade 0016_interviewer_agent -> 0017_application_pack, Versioned application packs and evidence snapshots.
+INFO  [alembic.runtime.migration] Running upgrade 0017_application_pack -> 0018_multi_agent_runtime, Persist deterministic multi-agent task graphs and attempts.
+INFO  [alembic.runtime.migration] Running upgrade 0018_multi_agent_runtime -> 0019_multi_agent_job_workflow, Persist explicit Standard versus Multi-Agent ownership.
+INFO  [alembic.runtime.migration] Running upgrade 0019_multi_agent_job_workflow -> 0020_interview_match_cohorts, Keep interview assessments for each projected match report separately.
+INFO  [alembic.runtime.migration] Running upgrade 0020_interview_match_cohorts -> 0021_mock_interview, Persistent mock interviews, immutable turns, plans, reports and audit.
+INFO  [alembic.runtime.migration] Running upgrade 0021_mock_interview -> 0022_feedback_learning, Governed feedback events and reviewable learning candidates.
+INFO  [alembic.runtime.migration] Running upgrade 0022_feedback_learning -> 0023_governed_skill_evolution, Add governed Skill evolution records without changing historical Skill rows.
+INFO  [alembic.runtime.migration] Running upgrade 0023_governed_skill_evolution -> 0024_conversation_first_assistant, Add stable Assistant timeline and registered action requests.
+INFO  [alembic.runtime.migration] Running upgrade 0024_conversation_first_assistant -> 0025_conversation_learning, Add governed conversation experiences and reusable learning patterns.
+INFO  [alembic.runtime.migration] Running upgrade 0025_conversation_learning -> 0026_resume_documents, Add server-side PDF resume documents.
+INFO  [alembic.runtime.migration] Running upgrade 0026_resume_documents -> 0027_session_archive, Add local conversation archive projection.
+INFO  [alembic.runtime.migration] Running upgrade 0027_session_archive -> 0028_review_integrity, Persist analysis sources, regeneration instructions and model budgets.
+INFO  [alembic.runtime.migration] Running upgrade 0028_review_integrity -> 0029_auto_applications, Persist site-specific application attempts and submission uncertainty.
+INFO  [alembic.runtime.migration] Running upgrade 0029_auto_applications -> 0030_application_memory, Confirmed application answers, scoped to the candidate email.
+INFO  [alembic.runtime.migration] Running upgrade 0030_application_memory -> 0031_saved_candidate, Durable local applicant profile and original resume for new applications.
+INFO  [alembic.runtime.migration] Running upgrade 0031_saved_candidate -> 0032_career_tasks, Unified career conversations over reusable job capabilities.
+INFO  [alembic.runtime.migration] Running upgrade 0032_career_tasks -> 0033_career_task_meta, Conversation organisation: custom titles, pins, groups, archive and a 30-day trash.
+INFO  [alembic.runtime.migration] Running upgrade 0033_career_task_meta -> 0034_career_job_alerts, Scheduled autonomous searches and recommendation digests.
+INFO  [alembic.runtime.migration] Running upgrade 0034_career_job_alerts -> 0035_analysis_cache, Persist validated analyses and pack timing summaries.
+INFO  [alembic.runtime.migration] Running upgrade 0035_analysis_cache -> 0036_provider_usage, Durable provider usage without conversation or application version changes.
+INFO  [alembic.runtime.migration] Running upgrade 0036_provider_usage -> 0037_external_tool_operations, Durable spend records for external paid tools (Treg), separate from model usage.
+---------------------------- Captured stdout call -----------------------------
+{"status": "needs_input", "calls": 46, "seconds": 464.64, "jobs": 2, "materials": 0, "applications": 0, "error": "provider_budget", "tools": ["browser_read", "read_context", "read_context", "search_jobs", "read_job", "read_context", "read_context", "inspect_job", "browser_read", "browser_read", "recommend_job", "search_jobs", "browser_open", "search_jobs", "search_jobs", "read_context", "read_context", "read_context", "read_context", "read_context", "read_context", "read_context", "read_context", "read_context"], "final": "I stopped at the provider budget limit. Saved work is preserved; the requested work is not complete.", "usage": {"calls": 60, "completed": 60, "failed": 0, "pending": 0, "discarded": 0, "retries": 0, "input_tokens": 630982, "output_tokens": 42090, "unknown_usage_calls": 0, "groups": [{"purpose": "agent", "model": "<configured-value>", "calls": 45, "input_tokens": 587860, "output_tokens": 36857, "unknown_usage_calls": 0, "cached_input_tokens": 263773, "reasoning_tokens": 30429, "cache_hit_ratio": 0.44870037083659375, "reasoning_share": 0.8255962232411753}, {"purpose": "jev:fit:extract_requirements", "model": "jev-1.13.0", "calls": 2, "input_tokens": 21192, "output_tokens": 2760, "unknown_usage_calls": 0, "cache_hit_ratio": null, "reasoning_share": null}, {"purpose": "jev:fit:refine_extraction_yes_no", "model": "jev-1.13.0", "calls": 2, "input_tokens": 4858, "output_tokens": 531, "unknown_usage_calls": 0, "cache_hit_ratio": null, "reasoning_share": null}, {"purpose": "jev:fit:condition_category_yes_no", "model": "jev-1.13.0", "calls": 3, "input_tokens": 3882, "output_tokens": 533, "unknown_usage_calls": 0, "cache_hit_ratio": null, "reasoning_share": null}, {"purpose": "jev:fit:support_yes_no", "model": "jev-1.13.0", "calls": 2, "input_tokens": 6438, "output_tokens": 960, "unknown_usage_calls": 0, "cache_hit_ratio": null, "reasoning_share": null}, {"purpose": "jev:fit:focused_yes_no", "model": "jev-1.13.0", "calls": 2, "input_tokens": 2316, "output_tokens": 178, "unknown_usage_calls": 0, "cache_hit_ratio": null, "reasoning_share": null}, {"purpose": "jev:fit:clarify_full_support_yes_no", "model": "jev-1.13.0", "calls": 2, "input_tokens": 2372, "output_tokens": 161, "unknown_usage_calls": 0, "cache_hit_ratio": null, "reasoning_share": null}, {"purpose": "jev:fit:verify_citations_yes_no", "model": "jev-1.13.0", "calls": 2, "input_tokens": 2064, "output_tokens": 110, "unknown_usage_calls": 0, "cache_hit_ratio": null, "reasoning_share": null}], "budget_input_tokens": 630982, "cached_input_tokens": 263773, "reasoning_tokens": 30429, "cache_hit_ratio": 0.41803569673936813, "reasoning_share": 0.7229508196721312, "usage_complete": true, "provider_attempts": 60}, "recommendations": [{"application_id": "57fd530a-4145-4860-9fb8-a6532c7244a9", "title": "Data Analyst", "company": "Good Apple", "location": "New York, NY", "url": "https://www.indeed.com/jobs?l=New+York%2C+NY&q=junior+data+analyst&vjk=2233e7ae15e45957", "match_score": 43.46, "reason": "Verified New York, NY Data Analyst posting with explicit junior evidence: 0-2 years of marketing or analytics experience. Resume overlap in Python, SQL, Tableau/pandas and analytics experience; reporting/dashboards focus aligns with analyst background.", "caveats": "Score 43.46/100 is a limited fit; gaps in advanced SQL, data pipelines/architecture, client-facing reporting and presentation expectations. Verify current opening status, exact New York work location/mode, and eligibility directly on the posting before applying. LinkedIn and Indeed browser access were blocked this turn."}], "schedules": 0}
+============================== warnings summary ===============================
+..\..\..\..\..\JobHunterAgent\.venv\Lib\site-packages\starlette\testclient.py:53
+  <project>\.venv\Lib\site-packages\starlette\testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_remaining_live.py::test_long_real_search_conversations[analyst-junior data analyst in New York]
+1 failed, 1 warning in 471.65s (0:07:51)

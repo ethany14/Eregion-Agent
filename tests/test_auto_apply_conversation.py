@@ -1,12 +1,12 @@
 """A multi-question chat reply remains usable even when the model fails."""
 import pytest
 
-from agent_runtime.auto_apply.agent import AgentTools
-from agent_runtime.auto_apply.browser import BrowserBlocked
-from agent_runtime.auto_apply.conversation import ordered_answers, input_prompt
-from agent_runtime.auto_apply.contracts import ChatRequest, ContinueApplication
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.repository import ApplyRepository
+from eregion.runtime.auto_apply.agent import AgentTools
+from eregion.runtime.auto_apply.browser import BrowserBlocked
+from eregion.runtime.auto_apply.conversation import ordered_answers, input_prompt
+from eregion.runtime.auto_apply.contracts import ChatRequest, ContinueApplication
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.repository import ApplyRepository
 from test_auto_apply import FakeBrowser, database, field, request, wait
 
 

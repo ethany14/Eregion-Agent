@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {health, saveWorkspace, analyzeApplication, ApiError} from '../chrome_extension/api-client.js';
+import {health, saveWorkspace, analyzeApplication, ApiError} from '../frontend/chrome_extension/api-client.js';
 
 test('Lens saves the selected job and analyzes the returned application version', async t => {
   const requests = [];

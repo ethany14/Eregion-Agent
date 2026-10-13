@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {safeMarkdownLink} from '../web_app/chat-markdown.js';
+import {safeMarkdownLink} from '../frontend/web_app/chat-markdown.js';
 
 test('Markdown links preserve job query parameters and local document downloads',()=>{
   assert.equal(safeMarkdownLink('https://example.com/jobs?a=1&amp;b=2'),'https://example.com/jobs?a=1&b=2');

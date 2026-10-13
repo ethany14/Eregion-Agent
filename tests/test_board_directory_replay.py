@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 
 from test_b6_offline_replay import frozen_web, offline_guard, replay
 from test_career_flow import career
-from agent_runtime.career import board_directory
+from eregion.runtime.career import board_directory
 
 
 def install(monkeypatch, frozen_web, include_synthetic):

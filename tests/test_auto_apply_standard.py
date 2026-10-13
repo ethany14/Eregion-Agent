@@ -4,8 +4,8 @@ import base64
 import pytest
 from fastapi.testclient import TestClient
 
-from agent_runtime.auto_apply.matching import question_identity
-from agent_runtime.auto_apply.repository import ApplyRepository
+from eregion.runtime.auto_apply.matching import question_identity
+from eregion.runtime.auto_apply.repository import ApplyRepository
 from test_auto_apply import database, field, request
 
 
@@ -65,7 +65,7 @@ def test_answer_from_an_application_updates_the_standard_answer(database):
 
 def test_standard_answers_api(database):
     from types import SimpleNamespace
-    from api.main import create_app
+    from eregion.api.main import create_app
     app = create_app(run_service=object(), session_runtime=SimpleNamespace(database=database))
     with TestClient(app, base_url="http://localhost") as client:
         assert client.put("/api/auto-apply/standard-answers", json={"answers": {"salary": "$1"}}).status_code == 409

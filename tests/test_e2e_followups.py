@@ -1,5 +1,5 @@
 """Regressions for defects found while verifying the 2026-10-10 E2E repairs."""
-from job_agent.jev_fit.projection import resume_projection
+from eregion.domain.jev_fit.projection import resume_projection
 
 
 def entries(text, kind):
@@ -51,7 +51,7 @@ def test_ambiguous_two_line_header_stays_unowned():
 
 
 # ---- C4 / D4: requirement splitting ---------------------------------------------------------
-from job_agent.jev_fit.core import boilerplate, job_units
+from eregion.domain.jev_fit.core import boilerplate, job_units
 
 
 def texts(jd):
@@ -83,7 +83,7 @@ def test_benefits_salary_and_eeo_are_context_not_requirements():
 
 # ---- C4: main-model resolution of requirements Jev leaves unknown -----------------------------
 import pytest
-from job_agent.jev_fit.resolve import UnknownDecision, UnknownResolution, resolve_unknowns
+from eregion.domain.jev_fit.resolve import UnknownDecision, UnknownResolution, resolve_unknowns
 
 EVIDENCE = 'Built Python tools for analytics.\nRan Kubernetes clusters in production for 3 years.\n'
 
@@ -138,8 +138,8 @@ def test_resolver_failure_keeps_the_honest_interval():
 def test_fit_service_sends_only_jev_unknowns_to_the_main_model(tmp_path, monkeypatch):
     from dataclasses import replace
     import httpx
-    from api.services.fit_analysis_service import FitAnalysisService
-    from job_agent.jev_fit.settings import Settings
+    from eregion.api.services.fit_analysis_service import FitAnalysisService
+    from eregion.domain.jev_fit.settings import Settings
     from test_jev_fit_production import JevEndpoint, NoMainModel
     endpoint = JevEndpoint(); endpoint.unknown = True
     sent = []
@@ -148,8 +148,8 @@ def test_fit_service_sends_only_jev_unknowns_to_the_main_model(tmp_path, monkeyp
         ids = [line.split()[1] for line in human.splitlines() if line.startswith('- j')]
         return UnknownResolution(decisions=[UnknownDecision(requirement_id=i, is_candidate_requirement=True, level='required',
             personal_condition=False, status='matched', evidence_quote='Built Python tools.', reason='quoted') for i in ids])
-    monkeypatch.setattr('job_agent.model.invoke_structured', fake_invoke)
-    monkeypatch.setattr('job_agent.model.shared_model', lambda **_: object())
+    monkeypatch.setattr('eregion.domain.model.invoke_structured', fake_invoke)
+    monkeypatch.setattr('eregion.domain.model.shared_model', lambda **_: object())
     config = replace(Settings(key='test-only', cache_path=tmp_path / 'd.sqlite3'), resolve_unknowns=True)
     service = FitAnalysisService(NoMainModel(), jev_enabled=True, jev_config=config, jev_transport=httpx.MockTransport(endpoint))
     result = service._analyze_sync(resume_text='Candidate Example\nEXPERIENCE\nEngineer | Example Lab | 2023-01 | 2026-01\n'
@@ -180,7 +180,7 @@ class _Runs:
 
 def _harness(tasks):
     from types import SimpleNamespace
-    from agent_runtime.career.harness import CareerHarness
+    from eregion.runtime.career.harness import CareerHarness
     harness=CareerHarness.__new__(CareerHarness)
     harness.repository=_Repo(tasks)
     harness.applications=SimpleNamespace(repository=_Runs())
@@ -212,7 +212,7 @@ def test_abandoned_run_is_not_adopted_while_still_executing():
 
 # ---- D6: runtime feedback never changes an archived source reference ---------------------------
 def test_progress_feedback_does_not_change_archive_ref():
-    from agent_runtime.request_context import ContextArchive
+    from eregion.runtime.request_context import ContextArchive
     archive=ContextArchive()
     big={'application_id':'job-1','status':'needs_evidence','report':'x'*8000}
     first=archive.tool_result(dict(big))
@@ -223,7 +223,7 @@ def test_progress_feedback_does_not_change_archive_ref():
 
 # ---- D7: browser contexts pin a locale instead of inheriting the OS ----------------------------
 def test_browser_context_locale_is_pinned(monkeypatch):
-    from agent_runtime.auto_apply.browser import context_options
+    from eregion.runtime.auto_apply.browser import context_options
     monkeypatch.delenv('JOB_AGENT_BROWSER_LOCALE', raising=False)
     assert context_options()['locale']=='en-US'
     assert context_options()['extra_http_headers']['Accept-Language'].startswith('en-US')
@@ -233,7 +233,7 @@ def test_browser_context_locale_is_pinned(monkeypatch):
 
 # ---- C3 / D8: upload obligations follow the actual controls ------------------------------------
 def test_required_generic_upload_field_counts_as_the_resume_slot():
-    from agent_runtime.auto_apply.autofill import pending_documents
+    from eregion.runtime.auto_apply.autofill import pending_documents
     refresh={'document_refresh':{'resume':True}}
     assert pending_documents(refresh,[{'key':'f','kind':'file','label':'Attachments','required':True}])==['resume']
     assert pending_documents(refresh,[{'key':'f','kind':'file','label':'Additional documents','required':False}])==[]
@@ -241,7 +241,7 @@ def test_required_generic_upload_field_counts_as_the_resume_slot():
 
 
 def test_resolver_decisions_persist_so_scores_do_not_drift(tmp_path):
-    from job_agent.jev_fit.resolve import DecisionStore
+    from eregion.domain.jev_fit.resolve import DecisionStore
     store = DecisionStore(tmp_path / 'd.sqlite3')
     calls = []
     def once(model, schema, system, human):
@@ -258,7 +258,7 @@ def test_resolver_decisions_persist_so_scores_do_not_drift(tmp_path):
 
 
 def test_quote_verification_tolerates_only_presentation_differences():
-    from job_agent.jev_fit.resolve import locate
+    from eregion.domain.jev_fit.resolve import locate
     source = 'Built 14 dashboards.\n\x7f Wrote SQL pipelines; cut time\nfrom 3 days to 4 hours.\nLed the team’s data–quality work.'
     span = locate('Built 14 dashboards.\n\x07 Wrote SQL pipelines; cut time from 3 days to 4 hours.', source)
     assert span and source[span[0]:span[1]].startswith('Built 14') and source[span[0]:span[1]].endswith('4 hours.')
@@ -270,7 +270,7 @@ def test_quote_verification_tolerates_only_presentation_differences():
 # ---- 0.2: a wait on an already-finished application must never sleep forever -----------------
 def test_finished_application_is_never_waited_on():
     from types import SimpleNamespace
-    from agent_runtime.career.harness import CareerHarness
+    from eregion.runtime.career.harness import CareerHarness
     harness = CareerHarness.__new__(CareerHarness)
     child = {'run_id': 'r1', 'status': 'submitted', 'chat_revision': 0, 'messages': []}
     harness.applications = SimpleNamespace(repository=SimpleNamespace(get=lambda run_id: child))
@@ -283,7 +283,7 @@ def test_finished_application_is_never_waited_on():
 
 
 # ---- Step 5: Jev expected score (one consistent number instead of a range) --------------------
-from job_agent.jev_fit.core import expected_score, score as interval_score
+from eregion.domain.jev_fit.core import expected_score, score as interval_score
 
 
 def match(full, related=.5, requirement=.99, preferred=0., condition=.01, status='unknown', level='required'):
@@ -324,7 +324,7 @@ def test_flattened_lists_are_restored_without_splitting_proper_nouns():
 
 # ---- A1: default main-model catalogue from deterministic local units --------------------------
 def test_local_catalogue_requirements_levels_years_and_duties():
-    from job_agent.requirement_catalog import local_job_analysis
+    from eregion.domain.requirement_catalog import local_job_analysis
     body = ('About us: We build payments.\nWhat you\'ll do\n- Own the API platform\n- Mentor engineers\n'
             'Requirements\n- 8+ years of backend experience\n- Strong SQL\n- Willing to travel up to 25%\n'
             'Nice to have\n- Experience with Kafka\nBenefits:\n- 401(k) match\n')
@@ -339,8 +339,8 @@ def test_local_catalogue_requirements_levels_years_and_duties():
 
 
 def test_story_text_is_not_a_condition_and_conditions_only_postings_fall_back():
-    from api.services.fit_analysis_service import FitAnalysisService
-    from job_agent.jev_fit.core import CANDIDATE_CONDITION
+    from eregion.api.services.fit_analysis_service import FitAnalysisService
+    from eregion.domain.jev_fit.core import CANDIDATE_CONDITION
     assert not CANDIDATE_CONDITION.search('which he had encountered when traveling in Japan')
     assert CANDIDATE_CONDITION.search('Requires frequent travel to client sites')
     story = 'Product Designer\nOur founder loved traveling in Japan.\nLogistics\nHybrid in San Francisco or New York.\n'
@@ -348,8 +348,8 @@ def test_story_text_is_not_a_condition_and_conditions_only_postings_fall_back():
 
 
 def test_duty_only_posting_scores_its_stated_duties_deterministically():
-    from api.services.fit_analysis_service import FitAnalysisService
-    from job_agent.requirement_catalog import local_job_analysis
+    from eregion.api.services.fit_analysis_service import FitAnalysisService
+    from eregion.domain.requirement_catalog import local_job_analysis
     body = ("Senior Product Designer\nWhat you'll do\n- Own product architecture and interaction design\n"
             "- Prototype new experiments\nLogistics\nHybrid in New York.\n")
     job = local_job_analysis(body)
@@ -359,8 +359,8 @@ def test_duty_only_posting_scores_its_stated_duties_deterministically():
 
 
 def test_model_duration_not_stated_in_source_is_dropped_not_fatal():
-    from job_agent.domain import normalize_job_analysis
-    from job_agent.schemas import JobAnalysis, JobRequirement
+    from eregion.domain.domain import normalize_job_analysis
+    from eregion.domain.schemas import JobAnalysis, JobRequirement
     jd = 'Senior Designer\nRequirements\n- Strong portfolio of shipped products\n'
     item = JobRequirement(requirement_id='r1', requirement_group_id='r1', canonical_name='portfolio', display_name='Portfolio',
         original_text='Strong portfolio of shipped products', source_text='Strong portfolio of shipped products',
@@ -373,7 +373,7 @@ def test_model_duration_not_stated_in_source_is_dropped_not_fatal():
 def test_level_free_title_needs_opening_level_evidence_for_junior_request():
     # B6 live: "Associate Data Analyst" with a preferred one-year minimum was
     # recommended as a junior match because only the title was checked.
-    from agent_runtime.career.search_policy import recommendation_warning
+    from eregion.runtime.career.search_policy import recommendation_warning
     policy={'levels':['junior'],'strict':False}
     warning=recommendation_warning(policy,'Associate Data Analyst',
         'A minimum of 1 year data management experience is preferred.')
@@ -392,7 +392,7 @@ def test_board_search_needs_role_terms_not_one_shared_word():
     # B6 live r3: "junior data analyst" on Datadog's board returned
     # "Accounts Payable Analyst" and "AI Research Scientist - Data".
     import json as _json
-    from agent_runtime.career.discovery import JobDiscovery
+    from eregion.runtime.career.discovery import JobDiscovery
     discovery=JobDiscovery()
     jobs=[{'absolute_url':f'https://boards.greenhouse.io/acme/jobs/{i}','title':title,'location':{'name':'New York, NY'}}
           for i,title in enumerate(['Accounts Payable Analyst','AI Research Scientist - Data','Data Analyst','Junior Data Analyst, Growth'])]
@@ -414,12 +414,12 @@ def test_board_search_needs_role_terms_not_one_shared_word():
 def test_local_catalogue_bare_lists_and_inline_levels(body, expected):
     # Review findings: bare one-per-line lists were read as headings (0 requirements) and
     # an item's own "preferred" was overridden by its section.
-    from job_agent.requirement_catalog import local_job_analysis
+    from eregion.domain.requirement_catalog import local_job_analysis
     assert [(r.atomic_text, r.level) for r in local_job_analysis(body).requirements] == expected
 
 
 def test_bare_list_lines_are_items_but_prose_headings_still_split():
-    from job_agent.jev_fit.core import job_units
+    from eregion.domain.jev_fit.core import job_units
     units = lambda body: [(u['text'], u.get('section')) for u in job_units(body)]
     assert units('Requirements:\nPython\nSQL') == [('Requirements:', 'Requirements'), ('Python', 'Requirements'), ('SQL', 'Requirements')]
     assert units('We build tools.\nWhat You Will Be Doing\n- Ship APIs')[1] == ('What You Will Be Doing', 'What You Will Be Doing')
@@ -429,7 +429,7 @@ def test_bare_list_lines_are_items_but_prose_headings_still_split():
 
 
 def test_fit_cache_signature_changes_with_main_catalogue_mode(monkeypatch):
-    from api.services.fit_analysis_service import FitAnalysisService
+    from eregion.api.services.fit_analysis_service import FitAnalysisService
     service = FitAnalysisService(handler=type('H', (), {'analysis_cache_namespace': lambda self: 'ns'})(), jev_enabled=False)
     monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG', 'local')
     local = service.cache_signature()
@@ -440,9 +440,9 @@ def test_fit_cache_signature_changes_with_main_catalogue_mode(monkeypatch):
 
 
 def test_resume_analysis_is_reused_across_locally_catalogued_jobs(monkeypatch):
-    from api.services.fit_analysis_service import FitAnalysisService
-    from custom_agent.handlers import JobAgentStepHandler
-    from job_agent.schemas import ResumeAnalysis, ResumeEvidence, SkillAssessment, SkillEvidence, JobAnalysis
+    from eregion.api.services.fit_analysis_service import FitAnalysisService
+    from eregion.domain.workflow.handlers import JobAgentStepHandler
+    from eregion.domain.schemas import ResumeAnalysis, ResumeEvidence, SkillAssessment, SkillEvidence, JobAnalysis
     monkeypatch.setenv('TYPESAFE_ENABLED', 'false')
     monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG', 'local')
     calls = []
@@ -470,7 +470,7 @@ def test_resume_analysis_is_reused_across_locally_catalogued_jobs(monkeypatch):
 def test_absence_claim_check_allows_the_disclaimer_that_denies_it(text, rejected):
     # Paid P1: the honest summary "coverage gap, not proof no vacancies exist" was
     # rejected as an absence claim, forcing the loop into the no-progress stop.
-    from agent_runtime.career.source_health import validate_coverage
+    from eregion.runtime.career.source_health import validate_coverage
     state = {'messages': [{'role': 'user', 'id': 'u1', 'text': 'find jobs'}],
              'search_source_health': {'user_turn_id': 'u1', 'sources': {'https://www.indeed.com': {'blocked': True}}}}
     try:
@@ -484,7 +484,7 @@ def test_absence_claim_check_allows_the_disclaimer_that_denies_it(text, rejected
 def test_new_grad_title_satisfies_junior_request_and_vice_versa():
     # Paid P1b: "Graduate Data Analyst" (qualified by the evaluator) got
     # "Seniority mismatch: requested junior; this posting is new_grad".
-    from agent_runtime.career.search_policy import recommendation_warning
+    from eregion.runtime.career.search_policy import recommendation_warning
     assert recommendation_warning({'levels': ['junior'], 'strict': False}, 'Graduate Data Analyst', '') is None
     assert recommendation_warning({'levels': ['new_grad'], 'strict': False}, 'Junior Data Analyst', '') is None
     assert recommendation_warning({'levels': ['junior'], 'strict': False}, 'Data Analyst Intern', '')['actual'] == 'intern'

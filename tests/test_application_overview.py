@@ -4,9 +4,9 @@ from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
-from agent_runtime.workspace.types import ApplicationStatus as S
-from api.main import create_app
-from api.services.application_overview import overview, stage_reached
+from eregion.runtime.workspace.types import ApplicationStatus as S
+from eregion.api.main import create_app
+from eregion.api.services.application_overview import overview, stage_reached
 from test_job_workspace import make_job, workspace  # noqa: F401 - pytest fixture import
 
 

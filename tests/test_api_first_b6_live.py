@@ -52,12 +52,12 @@ def test_goal_drops_the_browser_first_instruction():
 
 @LIVE
 def test_api_first_b6(career, monkeypatch):
-    from agent_runtime.career.discovery import JobDiscovery
-    from agent_runtime.career.external_tool_usage import ExternalToolLedger
-    from agent_runtime.career.service import CareerService
-    from api.services.fit_analysis_service import FitAnalysisService
-    from job_agent.jev_fit.settings import Settings
-    from job_agent.pdf_rendering import render_letter_pdf
+    from eregion.runtime.career.discovery import JobDiscovery
+    from eregion.runtime.career.external_tool_usage import ExternalToolLedger
+    from eregion.runtime.career.service import CareerService
+    from eregion.api.services.fit_analysis_service import FitAnalysisService
+    from eregion.domain.jev_fit.settings import Settings
+    from eregion.domain.pdf_rendering import render_letter_pdf
     from scripts.e2e_repair_evaluation import APPLICANTS
     from test_remaining_live import settle_live
 

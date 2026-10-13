@@ -5,23 +5,23 @@ from alembic.config import Config
 from pathlib import Path
 from sqlalchemy import inspect
 
-from agent_runtime.feedback.repository import FeedbackRepository
-from agent_runtime.feedback.service import FeedbackService
-from agent_runtime.feedback.types import CandidateType
-from agent_runtime.learning.repository import ConversationLearningRepository
-from agent_runtime.learning.service import ConversationLearningService
-from agent_runtime.learning.types import (
+from eregion.runtime.feedback.repository import FeedbackRepository
+from eregion.runtime.feedback.service import FeedbackService
+from eregion.runtime.feedback.types import CandidateType
+from eregion.runtime.learning.repository import ConversationLearningRepository
+from eregion.runtime.learning.service import ConversationLearningService
+from eregion.runtime.learning.types import (
     ExperienceSignal,
     ExperienceSignalType,
     LearningObservation,
     LearningPatternStatus,
 )
-from agent_runtime.memory.repository import MemoryRepository
-from agent_runtime.sessions.events import SessionEvent, SessionEventType
-from agent_runtime.sessions.repository import SessionRepository
-from agent_runtime.sessions.state import SessionMessageDraft, SessionState
-from agent_runtime.tools.messages import AgentMessage
-from api.db import create_database
+from eregion.runtime.memory.repository import MemoryRepository
+from eregion.runtime.sessions.events import SessionEvent, SessionEventType
+from eregion.runtime.sessions.repository import SessionRepository
+from eregion.runtime.sessions.state import SessionMessageDraft, SessionState
+from eregion.runtime.tools.messages import AgentMessage
+from eregion.api.db import create_database
 
 
 class ScriptedObserver:

@@ -8,10 +8,10 @@ from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
 
-from agent_runtime.provider_usage import (UsageLedger, current_scope, usage_scope,
+from eregion.runtime.provider_usage import (UsageLedger, current_scope, usage_scope,
     capture_provider_attempts, summarize, provider_call)
-from job_agent.model import create_model, ProviderCompatibleChatOpenAI, invoke_structured, model_settings_fingerprint
-from job_agent.reasoning import purpose_key, SCHEMA_PURPOSES
+from eregion.domain.model import create_model, ProviderCompatibleChatOpenAI, invoke_structured, model_settings_fingerprint
+from eregion.domain.reasoning import purpose_key, SCHEMA_PURPOSES
 from evals.opt_report import report, metrics
 from test_b6_offline_replay import replay, offline_guard, frozen_web, ScriptedModel
 from test_career_flow import career
@@ -117,8 +117,8 @@ def test_cache_fingerprint_isolates_levels(tmp_path, purpose):
 
 
 def test_jev_and_fast_cache_identity():
-    from job_agent.jev_fit.settings import Settings
-    from agent_runtime.fast_decisions import FastDecisions
+    from eregion.domain.jev_fit.settings import Settings
+    from eregion.runtime.fast_decisions import FastDecisions
     assert Settings('fake', reasoning={'LLM_REASONING_SUPPORT_YES_NO':'low'}).signature() != Settings(
         'fake', reasoning={'LLM_REASONING_SUPPORT_YES_NO':'medium'}).signature()
     assert FastDecisions(reasoning={'LLM_REASONING_FORM_OPTIONS':'low'}).cache_namespace() != FastDecisions(
@@ -175,11 +175,11 @@ def test_old_report_does_not_invent_missing_fields(tmp_path):
 
 
 def test_career_kernel_provider_rows_include_repair_and_timing(tmp_path):
-    from agent_runtime.loop_engine import AgentLoop, Turn
-    from agent_runtime.loop_model import ModelRequests
-    from api.db import create_database
+    from eregion.runtime.core.engine import AgentLoop, Turn
+    from eregion.runtime.core.model import ModelRequests
+    from eregion.api.db import create_database
     from sqlalchemy import select
-    from agent_runtime.provider_usage import ProviderUsageRow
+    from eregion.runtime.provider_usage import ProviderUsageRow
     database = create_database('sqlite:///' + (tmp_path/'kernel.db').as_posix(), create_schema_for_tests=True)
     ledger = UsageLedger(database.session_factory)
     calls = []
@@ -216,7 +216,7 @@ def test_career_kernel_provider_rows_include_repair_and_timing(tmp_path):
 
 
 def test_batch_schema_retry_has_one_owner(monkeypatch):
-    from job_agent.batch_retry import retry_batch
+    from eregion.domain.batch_retry import retry_batch
     monkeypatch.setenv('JOB_AGENT_REASONING_ESCALATION', '1')
     bodies = []
     def transport(request):
@@ -244,7 +244,7 @@ def test_schema_retry_off_by_default(monkeypatch):
 
 
 def test_grounding_repair_escalates_only_second_interview_attempt(interview_setup, monkeypatch):
-    from agent_runtime.mock_interview.types import MockAnswerEvaluation, MockStatus
+    from eregion.runtime.mock_interview.types import MockAnswerEvaluation, MockStatus
     monkeypatch.setenv('JOB_AGENT_REASONING_ESCALATION', '1')
     controller, scripted, application, db = interview_setup
     started = controller.start(application, idempotency_key='grounding-escalation')
@@ -274,7 +274,7 @@ def test_grounding_repair_escalates_only_second_interview_attempt(interview_setu
 @pytest.mark.parametrize('purpose', ['job_screening','skill_evidence','skill_evidence_verify',
                                    'question_category','memory_relevance','form_options'])
 def test_fast_wire_default_and_isolated_result_cache(purpose):
-    from agent_runtime.fast_decisions import FastDecisions
+    from eregion.runtime.fast_decisions import FastDecisions
     from test_jev_singleflight import QUESTIONS, response as decision_response
     bodies = []
     def transport(request):
@@ -294,8 +294,8 @@ def test_fast_wire_default_and_isolated_result_cache(purpose):
     'condition_category_yes_no','support_yes_no','focused_yes_no','clarify_full_support_yes_no','verify_citations_yes_no'])
 def test_jev_wire_default_and_validation_retry(monkeypatch, purpose):
     from contextvars import copy_context
-    from job_agent.jev_fit.settings import Settings
-    from job_agent.jev_fit.transport import Broker
+    from eregion.domain.jev_fit.settings import Settings
+    from eregion.domain.jev_fit.transport import Broker
     bodies = []
     def transport(request):
         payload = json.loads(request.content); bodies.append(payload)
@@ -320,11 +320,11 @@ def test_jev_wire_default_and_validation_retry(monkeypatch, purpose):
 @pytest.mark.parametrize('purpose', [None,'agent','fast'])
 @pytest.mark.parametrize('setting', ['low','medium','off'])
 def test_interview_legacy_payload_bytes(tmp_path, monkeypatch, purpose, setting):
-    import agent_runtime.mock_interview.model as module
+    import eregion.runtime.mock_interview.model as module
     bodies = []
     monkeypatch.setenv('LLM_INTERVIEW_REASONING',setting)
     monkeypatch.setattr(module, 'DEFAULT_ENV_PATH', tmp_path/'missing', raising=False)
-    import job_agent.model as shared
+    import eregion.domain.model as shared
     monkeypatch.setattr(shared, 'DEFAULT_ENV_PATH', tmp_path/'missing')
     settings = {'LLM_MODEL_ID':'test','LLM_FAST_MODEL_ID':'test-fast','LLM_API_KEY':'fake',
                 'LLM_AGENT_REASONING':'high'}
@@ -346,8 +346,8 @@ def test_interview_legacy_payload_bytes(tmp_path, monkeypatch, purpose, setting)
 
 
 def test_fit_result_signature_includes_reasoning(tmp_path, monkeypatch):
-    from api.services.fit_analysis_service import FitAnalysisService
-    monkeypatch.setattr('job_agent.model.dotenv_values', lambda *a, **kw: {})
+    from eregion.api.services.fit_analysis_service import FitAnalysisService
+    monkeypatch.setattr('eregion.domain.model.dotenv_values', lambda *a, **kw: {})
     service = FitAnalysisService(jev_enabled=False)
     monkeypatch.setenv('LLM_REASONING_SCORING','low')
     low = service.cache_signature()
@@ -379,9 +379,9 @@ def test_async_provider_plain_fallback_is_bounded(monkeypatch):
 def test_typesafe_plain_fallback_is_bounded(lane, monkeypatch):
     monkeypatch.setenv('JOB_AGENT_REASONING_REJECTION_RETRY', '1')
     from contextvars import copy_context
-    from agent_runtime.fast_decisions import FastDecisions
-    from job_agent.jev_fit.settings import Settings
-    from job_agent.jev_fit.transport import Broker
+    from eregion.runtime.fast_decisions import FastDecisions
+    from eregion.domain.jev_fit.settings import Settings
+    from eregion.domain.jev_fit.transport import Broker
     from test_jev_singleflight import QUESTIONS, response as decision_response
     bodies = []
     def transport(request):
@@ -409,7 +409,7 @@ def test_typesafe_plain_fallback_is_bounded(lane, monkeypatch):
 
 def test_fast_escalation_then_plain_fallback_counts_actual_attempts(monkeypatch):
     monkeypatch.setenv('JOB_AGENT_REASONING_REJECTION_RETRY', '1')
-    from agent_runtime.fast_decisions import FastDecisions
+    from eregion.runtime.fast_decisions import FastDecisions
     from test_jev_singleflight import QUESTIONS, response as decision_response
     monkeypatch.setenv('JOB_AGENT_REASONING_ESCALATION','1')
     bodies = []
@@ -433,8 +433,8 @@ def test_fast_escalation_then_plain_fallback_counts_actual_attempts(monkeypatch)
 
 def test_jev_broker_keys_track_effective_purpose_level():
     from types import SimpleNamespace
-    from job_agent.jev_fit.settings import Settings
-    from job_agent.jev_fit.transport import Broker
+    from eregion.domain.jev_fit.settings import Settings
+    from eregion.domain.jev_fit.transport import Broker
     config = Settings('fake',reasoning={'LLM_REASONING_SUPPORT_YES_NO':'low'})
     broker = Broker(config,None)
     try:
@@ -449,9 +449,9 @@ def test_jev_broker_keys_track_effective_purpose_level():
 @pytest.mark.parametrize('flag', ['reasoning_escalation','reasoning_fallback'])
 @pytest.mark.parametrize('kind', ['fit','durable'])
 def test_changed_effective_level_does_not_populate_original_cache(tmp_path, flag, kind):
-    from api.services.fit_analysis_service import _AnalysisCache
-    from agent_runtime.analysis_cache import AnalysisCache
-    from api.db import create_database
+    from eregion.api.services.fit_analysis_service import _AnalysisCache
+    from eregion.runtime.analysis_cache import AnalysisCache
+    from eregion.api.db import create_database
     db = create_database('sqlite:///' + (tmp_path/'cache.db').as_posix(), create_schema_for_tests=True)
     cache = _AnalysisCache() if kind == 'fit' else AnalysisCache(db.session_factory)
     calls = []
@@ -475,8 +475,8 @@ def test_changed_effective_level_does_not_populate_original_cache(tmp_path, flag
 
 
 def test_jev_escalated_answer_does_not_populate_low_cache(monkeypatch):
-    from job_agent.jev_fit.settings import Settings
-    from job_agent.jev_fit.transport import Broker
+    from eregion.domain.jev_fit.settings import Settings
+    from eregion.domain.jev_fit.transport import Broker
     monkeypatch.setenv('JOB_AGENT_REASONING_ESCALATION','1')
     calls = []
     class Cache:
@@ -505,9 +505,9 @@ def test_jev_escalated_answer_does_not_populate_low_cache(monkeypatch):
 def test_shared_upgraded_result_cannot_poison_parent_cache(tmp_path, monkeypatch, kind):
     from concurrent.futures import ThreadPoolExecutor
     from threading import Event
-    from api.services.fit_analysis_service import _AnalysisCache
-    from agent_runtime.analysis_cache import AnalysisCache
-    from api.db import create_database
+    from eregion.api.services.fit_analysis_service import _AnalysisCache
+    from eregion.runtime.analysis_cache import AnalysisCache
+    from eregion.api.db import create_database
     db = create_database('sqlite:///' + (tmp_path/'shared.db').as_posix(), create_schema_for_tests=True)
     child = _AnalysisCache() if kind == 'fit' else AnalysisCache(db.session_factory)
     parent = _AnalysisCache()
@@ -541,8 +541,8 @@ def test_shared_upgraded_result_cannot_poison_parent_cache(tmp_path, monkeypatch
 def test_shared_fast_upgrade_cannot_poison_parent_cache(monkeypatch):
     from concurrent.futures import ThreadPoolExecutor
     from threading import Event
-    from api.services.fit_analysis_service import _AnalysisCache
-    from agent_runtime.fast_decisions import FastDecisions
+    from eregion.api.services.fit_analysis_service import _AnalysisCache
+    from eregion.runtime.fast_decisions import FastDecisions
     from test_jev_singleflight import QUESTIONS, response as decision_response
     monkeypatch.setenv('JOB_AGENT_REASONING_ESCALATION','1')
     started, release, waiting = Event(), Event(), Event()

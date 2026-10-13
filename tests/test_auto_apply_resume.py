@@ -6,10 +6,10 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
-from agent_runtime.auto_apply.contracts import ChatRequest, can_reopen
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.repository import ApplyConflict, ApplyRepository
-from api.main import create_app
+from eregion.runtime.auto_apply.contracts import ChatRequest, can_reopen
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.repository import ApplyConflict, ApplyRepository
+from eregion.api.main import create_app
 from test_auto_apply import FakeBrowser, database, request, wait
 
 

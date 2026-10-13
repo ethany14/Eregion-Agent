@@ -6,14 +6,14 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
-from agent_runtime.auto_apply.agent import AgentTools
-from agent_runtime.auto_apply.browser import BrowserBlocked
-from agent_runtime.auto_apply.browser_sessions import BrowserSessionStore
-from agent_runtime.auto_apply.contracts import AccountCredentials, posting
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.navigation import action_kind
-from agent_runtime.auto_apply.repository import ApplyRepository
-from api.main import create_app
+from eregion.runtime.auto_apply.agent import AgentTools
+from eregion.runtime.auto_apply.browser import BrowserBlocked
+from eregion.runtime.auto_apply.browser_sessions import BrowserSessionStore
+from eregion.runtime.auto_apply.contracts import AccountCredentials, posting
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.navigation import action_kind
+from eregion.runtime.auto_apply.repository import ApplyRepository
+from eregion.api.main import create_app
 from test_auto_apply import FakeBrowser, database, request, wait
 
 
@@ -81,7 +81,7 @@ def test_credentials_cannot_be_sent_to_another_site_or_stale_attempt(database):
     try:
         run=loop.start(request());state=wait(loop,run['run_id'])
         state=repo.save(state,status='needs_input',account_request={'origin':'https://jobs.lever.co','mode':'login','consents':[]})
-        from agent_runtime.auto_apply.repository import ApplyConflict
+        from eregion.runtime.auto_apply.repository import ApplyConflict
         cred=AccountCredentials(expected_version=state['version'],origin='https://evil.example',mode='login',username='test@example.com',password='DO-NOT-STORE')
         with pytest.raises(ApplyConflict): loop.account(run['run_id'],cred)
         assert 'DO-NOT-STORE' not in json.dumps(repo.get(run['run_id']))

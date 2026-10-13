@@ -3,9 +3,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from job_agent.model import ProviderCompatibleChatOpenAI, create_model, invoke_structured
+from eregion.domain.model import ProviderCompatibleChatOpenAI, create_model, invoke_structured
 from langchain_core.messages import AIMessage, HumanMessage
-from job_agent.prompts import (
+from eregion.domain.prompts import (
     JOB_PROMPT,
     MATCH_PROMPT,
     PROMPT_VERSION,
@@ -13,7 +13,7 @@ from job_agent.prompts import (
     VERIFY_RESUME_PROMPT,
     WRITE_RESUME_PROMPT,
 )
-from job_agent.schemas import (
+from eregion.domain.schemas import (
     SCHEMA_VERSION,
     JobRequirement,
     MissingRequirement,
@@ -78,7 +78,7 @@ def test_optional_model_settings_are_stripped_and_blank_values_are_omitted(tmp_p
 
 
 def test_model_cache_fingerprint_tracks_configuration_without_exposing_secrets(tmp_path):
-    from job_agent.model import model_settings_fingerprint
+    from eregion.domain.model import model_settings_fingerprint
     path=tmp_path/'.env'
     path.write_text('LLM_MODEL_ID=one\nLLM_API_KEY=private-test-key\n',encoding='utf-8')
     key=model_settings_fingerprint(env_path=path,environ={})

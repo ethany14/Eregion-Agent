@@ -6,11 +6,11 @@ from types import SimpleNamespace
 import pytest
 from langchain_core.messages import AIMessage
 
-from agent_runtime.career.interview_queue import InterviewQueue
-from agent_runtime.career.repository import TaskRepository
-from agent_runtime.career.service import CareerService
-from agent_runtime.execution import ExecutionClosed, ExecutionService
-from api.db import create_database
+from eregion.runtime.career.interview_queue import InterviewQueue
+from eregion.runtime.career.repository import TaskRepository
+from eregion.runtime.career.service import CareerService
+from eregion.runtime.execution import ExecutionClosed, ExecutionService
+from eregion.api.db import create_database
 from test_shared_agent_loop import Harness, Model, call, finish
 
 

@@ -6,8 +6,8 @@ from pathlib import Path
 import pytest
 from types import SimpleNamespace
 
-from agent_runtime import AgentMessage, LangChainToolModelAdapter, NormalizedToolCall
-from agent_runtime.errors import ToolModelError
+from eregion.runtime import AgentMessage, LangChainToolModelAdapter, NormalizedToolCall
+from eregion.runtime.errors import ToolModelError
 
 
 class FakeLangChainModel:
@@ -198,7 +198,7 @@ def test_adapter_propagates_dynamic_timeout_only_when_provider_accepts_it():
 
 
 def test_tool_calling_evaluation_dataset_contract():
-    path = Path(__file__).resolve().parent.parent / "evals" / "tool_calling_cases.json"
+    path = Path(__file__).resolve().parent.parent / "tools/evals" / "tool_calling_cases.json"
     cases = json.loads(path.read_text(encoding="utf-8"))
     assert len(cases) >= 4
     assert len({case["id"] for case in cases}) == len(cases)

@@ -8,11 +8,11 @@ import pytest
 from fastapi.testclient import TestClient
 from playwright.sync_api import sync_playwright, expect
 
-from api.main import create_app
-from agent_runtime.auto_apply.browser import ApplicationBrowser
-from agent_runtime.auto_apply.browser_sessions import BrowserSessionStore
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.career.service import CareerService
+from eregion.api.main import create_app
+from eregion.runtime.auto_apply.browser import ApplicationBrowser
+from eregion.runtime.auto_apply.browser_sessions import BrowserSessionStore
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.career.service import CareerService
 from test_career_flow import career, ToolModel, execute
 from test_auto_apply import wait
 

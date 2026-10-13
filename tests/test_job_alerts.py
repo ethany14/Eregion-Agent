@@ -5,10 +5,10 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
-from agent_runtime.career.alerts import AlertConfig, AlertRepository, next_due, job_key
-from agent_runtime.career.alert_scheduler import AlertScheduler
-from agent_runtime.career.service import CareerService
-from api.main import create_app
+from eregion.runtime.career.alerts import AlertConfig, AlertRepository, next_due, job_key
+from eregion.runtime.career.alert_scheduler import AlertScheduler
+from eregion.runtime.career.service import CareerService
+from eregion.api.main import create_app
 from test_auto_apply import database
 from test_career_flow import career, ToolModel, settled, execute
 

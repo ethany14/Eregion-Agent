@@ -4,8 +4,8 @@ import os
 from urllib.parse import urlsplit
 import pytest
 
-from agent_runtime.auto_apply.browser import ApplicationBrowser, BrowserBlocked
-from agent_runtime.browser.session import BrowserSession
+from eregion.runtime.auto_apply.browser import ApplicationBrowser, BrowserBlocked
+from eregion.runtime.browser.session import BrowserSession
 
 pytestmark=pytest.mark.skipif(os.getenv('JOB_AGENT_BROWSER_TESTS')!='1',reason='Offline Chrome opt-in')
 

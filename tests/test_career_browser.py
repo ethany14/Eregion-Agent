@@ -7,8 +7,8 @@ import pytest
 from fastapi.testclient import TestClient
 from playwright.sync_api import sync_playwright, expect
 
-from api.main import create_app
-from agent_runtime.career.service import CareerService
+from eregion.api.main import create_app
+from eregion.runtime.career.service import CareerService
 from test_career_flow import career, ToolModel, execute
 from langchain_core.messages import AIMessage
 from test_task_loop import ProviderError
@@ -17,7 +17,7 @@ pytestmark=pytest.mark.skipif(os.getenv('JOB_AGENT_BROWSER_TESTS')!='1',reason='
 
 
 def test_general_browsing_without_resume_has_preview_in_existing_chat(career,tmp_path):
-    from agent_runtime.browser.manager import BrowsingManager
+    from eregion.runtime.browser.manager import BrowsingManager
     from test_general_browser import LocalWebBrowser
     c=career
     c.repository.change(c.state['task_id'],status='cancelled',pause_requested=True)
@@ -53,7 +53,7 @@ def test_general_browsing_without_resume_has_preview_in_existing_chat(career,tmp
 
 
 def test_rendered_browser_evidence_flows_into_saved_job(career):
-    from agent_runtime.browser.manager import BrowsingManager
+    from eregion.runtime.browser.manager import BrowsingManager
     from test_general_browser import LocalWebBrowser
     c=career
     class JobBrowser(LocalWebBrowser):

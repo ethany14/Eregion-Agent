@@ -1,0 +1,36 @@
+{
+  "status": "failed",
+  "failures": [
+    "loop_not_completed_cleanly",
+    "fewer_than_two_verified_scored_qualifying_recommendations"
+  ],
+  "qualified_count": 0,
+  "main_input_tokens": 462620,
+  "total_input_tokens": 497158,
+  "limits": {
+    "main_calls": 60,
+    "main_input_tokens": 1000000,
+    "total_input_tokens": 1000000
+  },
+  "jobs": [
+    {
+      "application_id": "bd65b75e-17c6-4202-b6e3-a9e71cb0aab6",
+      "url": "https://www.linkedin.com/jobs/view/4475055219/",
+      "title": "Associate Data Analyst",
+      "location": "New York, NY",
+      "score": 46.29,
+      "checks": {
+        "role": true,
+        "seniority": false,
+        "location": true,
+        "scored": true,
+        "retrieved": true,
+        "recommended": true,
+        "reply_url": true,
+        "reply_score": true,
+        "eligible": true,
+        "distinct": true
+      }
+    }
+  ]
+}

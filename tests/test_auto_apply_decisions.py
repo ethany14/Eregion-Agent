@@ -4,10 +4,10 @@ import os
 
 import pytest
 
-from agent_runtime.auto_apply.agent import AgentTools
-from agent_runtime.auto_apply.autofill import autofill, desired_answer
-from agent_runtime.auto_apply.browser import BrowserBlocked
-from agent_runtime.auto_apply.decisions import active_decision
+from eregion.runtime.auto_apply.agent import AgentTools
+from eregion.runtime.auto_apply.autofill import autofill, desired_answer
+from eregion.runtime.auto_apply.browser import BrowserBlocked
+from eregion.runtime.auto_apply.decisions import active_decision
 from test_auto_apply import FakeBrowser, field, request
 
 

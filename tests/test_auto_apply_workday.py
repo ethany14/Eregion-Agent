@@ -5,12 +5,12 @@ from pathlib import Path
 
 import pytest
 
-from agent_runtime.auto_apply import authentication
-from agent_runtime.auto_apply.agent import HybridApplicationAgent
-from agent_runtime.auto_apply.browser import ApplicationBrowser, BrowserBlocked
-from agent_runtime.auto_apply.contracts import AccountCredentials, ContinueApplication
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.repository import ApplyRepository
+from eregion.runtime.auto_apply import authentication
+from eregion.runtime.auto_apply.agent import HybridApplicationAgent
+from eregion.runtime.auto_apply.browser import ApplicationBrowser, BrowserBlocked
+from eregion.runtime.auto_apply.contracts import AccountCredentials, ContinueApplication
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.repository import ApplyRepository
 from test_auto_apply import database, request, wait
 from test_auto_apply_agent import ScriptModel
 
@@ -80,7 +80,7 @@ def test_registration_explicit_consent_and_password_exclusion():
 
 def test_login_state_reused_by_same_owner_only(tmp_path):
     if os.name!='nt':pytest.skip('DPAPI')
-    from agent_runtime.auto_apply.browser_sessions import BrowserSessionStore
+    from eregion.runtime.auto_apply.browser_sessions import BrowserSessionStore
     store=BrowserSessionStore(tmp_path/'state')
     b=WorkdayBrowser(URL,session_store=store,owner_key='owner1')
     try:
@@ -122,7 +122,7 @@ def test_workday_visible_submit_surface_and_header_are_disambiguated():
 def test_secure_account_ui_keeps_password_out_of_chat_and_clears_input():
     from playwright.sync_api import sync_playwright
     from urllib.parse import urlsplit
-    root=Path(__file__).parents[1]/'web_app';requests=[]
+    root=Path(__file__).parents[1]/'frontend/web_app';requests=[]
     state={'run_id':'account-ui','version':3,'url':URL,'status':'needs_input','message':'Sign in securely.',
         'fields':[],'messages':[],'account_request':{'origin':'https://example.wd5.myworkdayjobs.com','mode':'login','consents':[]}}
     with sync_playwright() as p:

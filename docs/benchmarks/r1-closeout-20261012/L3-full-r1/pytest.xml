@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="33.739" timestamp="2026-10-12T04:58:18.834688-04:00" hostname="LAPTOP-MFSRDG1D"><testcase classname="tests.test_integrated_p8_material_live" name="test_live_material_revision[full]" time="28.155"><failure message="AssertionError: assert &lt;ItemStatus.N...eds_revision'&gt; == &lt;ItemStatus.A...iting_review'&gt;&#10;  &#10;  - awaiting_review&#10;  + needs_revision">setup = (&lt;agent_runtime.application_pack.workflow.ApplicationPackWorkflow object at 0x000001D4B74E23C0&gt;, &lt;agent_runtime.applic...review/.r1-evidence/L3-full-r1/temp/test_live_material_revision_fu0/pack.db), autoflush=True, expire_on_commit=False)))
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000001D4B07348A0&gt;
+variant = 'full'
+
+    @pytest.mark.skipif(os.getenv('JOB_AGENT_LIVE_MATERIAL_PATCHES') != '1',
+                       reason='L3 paid material comparison; explicit networked reviewer opt-in required')
+    @pytest.mark.parametrize('variant', ['full', 'patch'])
+    def test_live_material_revision(setup, monkeypatch, variant):
+        output = os.getenv('OPT_LIVE_OUTPUT')
+        assert output, 'Set an unused output directory for each L3 pair'
+        target = Path(output) / (variant + '.json')
+        assert not target.exists(), 'Never overwrite a paid attempt'
+        target.parent.mkdir(parents=True, exist_ok=True)
+        monkeypatch.setenv('JOB_AGENT_OPT_MATERIAL_PATCHES', str(int(variant == 'patch')))
+        monkeypatch.setenv('JOB_AGENT_TASK_MAX_INPUT_TOKENS', '80000')
+        monkeypatch.setenv('JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS', '6')
+        workflow, packs, _, _, _, db = setup
+        pack, item, original = pending(setup)
+        workflow._model = SharedPackModel()
+        ledger = UsageLedger(db.session_factory)
+        task_id = 'l3-' + pack.pack_id
+        start = time.monotonic()
+        done = None
+        with capture_provider_attempts() as attempts:
+            try:
+                with usage_scope(task_id=task_id, run_id=task_id, purpose='material_revision', ledger=ledger):
+                    done = workflow.continue_item(pack.pack_id, item.pack_item_id)
+            finally:
+                target.write_text(json.dumps({'variant': variant,
+                    'status': str(done.status) if done else 'interrupted',
+                    'seconds': time.monotonic() - start, 'provider_usage': ledger.summary(task_id=task_id),
+                    'wire': wire_summary(attempts), 'human_style_review': 'pending',
+                    'original': original, 'artifact': packs.artifact(pack.pack_id, item.pack_item_id)},
+                    indent=2, default=str), encoding='utf-8')
+&gt;       assert done.status == ItemStatus.AWAITING_REVIEW
+E       AssertionError: assert &lt;ItemStatus.N...eds_revision'&gt; == &lt;ItemStatus.A...iting_review'&gt;
+E         
+E         - awaiting_review
+E         + needs_revision
+
+tests\test_integrated_p8_material_live.py:44: AssertionError</failure></testcase></testsuite></testsuites>

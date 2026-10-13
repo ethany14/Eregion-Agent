@@ -4,7 +4,7 @@ from urllib.parse import parse_qs, urljoin, urlsplit
 
 from fastapi.testclient import TestClient
 
-from api.main import create_app
+from eregion.api.main import create_app
 
 
 def test_web_app_route_and_assets_are_served() -> None:

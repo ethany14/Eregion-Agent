@@ -2,26 +2,26 @@ from __future__ import annotations
 
 import pytest
 
-from api.db import create_database
-from api.db import upgrade_database
+from eregion.api.db import create_database
+from eregion.api.db import upgrade_database
 from alembic import command
 from alembic.config import Config
 from pathlib import Path
 from sqlalchemy import text
 from types import SimpleNamespace
 from fastapi.testclient import TestClient
-from api.main import create_app
-from agent_runtime.memory.policy import LocalOwnerResolver
-from agent_runtime.feedback.errors import FeedbackConflictError
-from agent_runtime.feedback.policy import classify, structured_edit_diff
-from agent_runtime.feedback.repository import FeedbackRepository
-from agent_runtime.feedback.service import FeedbackService
-from agent_runtime.feedback.types import CandidateType, FeedbackEvent, FeedbackSourceType, SignalStrength
-from agent_runtime.feedback.types import FeedbackProcessStatus
-from agent_runtime.feedback.errors import FeedbackNotFoundError, LearningCandidateNotFoundError
+from eregion.api.main import create_app
+from eregion.runtime.memory.policy import LocalOwnerResolver
+from eregion.runtime.feedback.errors import FeedbackConflictError
+from eregion.runtime.feedback.policy import classify, structured_edit_diff
+from eregion.runtime.feedback.repository import FeedbackRepository
+from eregion.runtime.feedback.service import FeedbackService
+from eregion.runtime.feedback.types import CandidateType, FeedbackEvent, FeedbackSourceType, SignalStrength
+from eregion.runtime.feedback.types import FeedbackProcessStatus
+from eregion.runtime.feedback.errors import FeedbackNotFoundError, LearningCandidateNotFoundError
 from pydantic import ValidationError
-from agent_runtime.memory.repository import MemoryRepository
-from agent_runtime.evidence.repository import CareerEvidenceRepository
+from eregion.runtime.memory.repository import MemoryRepository
+from eregion.runtime.evidence.repository import CareerEvidenceRepository
 from uuid import NAMESPACE_URL, uuid5
 
 
@@ -174,7 +174,7 @@ def test_stale_attempt_and_atomic_aggregation_rollback(service, monkeypatch):
         repo.stage(event.feedback_event_id, owner_id="alice", attempt_id=attempt_id,
             expected_version=event.processing_version - 1,
             status=FeedbackProcessStatus.COMPLETED)
-    import agent_runtime.feedback.repository as module
+    import eregion.runtime.feedback.repository as module
     def fail(*args, **kwargs):
         raise RuntimeError("simulated failure")
     monkeypatch.setattr(module, "ready_for_review", fail)
@@ -329,7 +329,7 @@ def test_processor_safe_failure_and_bounded_retry(service, monkeypatch):
         source_type=FeedbackSourceType.EXPLICIT_INSTRUCTION,
         source_action_id="retry", original_content="Use concise bullet points.",
         signal_strength=SignalStrength.HIGHEST))
-    import agent_runtime.feedback.processor as module
+    import eregion.runtime.feedback.processor as module
     original = module.classify
     def fail(_):
         raise RuntimeError("secret token should not be persisted")

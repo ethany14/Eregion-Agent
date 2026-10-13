@@ -2,19 +2,19 @@
 from types import SimpleNamespace
 import pytest
 
-from agent_runtime.auto_apply.agent import AgentTools
-from agent_runtime.auto_apply.browser import BrowserBlocked
+from eregion.runtime.auto_apply.agent import AgentTools
+from eregion.runtime.auto_apply.browser import BrowserBlocked
 from test_auto_apply import FakeBrowser, field, request
 from test_auto_apply_agent import state
 from test_session_coordinator import runtime, coordinator, ScriptedModel, response, user
-from agent_runtime.sessions import SessionStatus, SessionOutcomeStatus
-from agent_runtime.application_pack.types import ApplicationAnswer, GroundedBlock, EvidenceSnapshotItem
-from agent_runtime.application_pack.verifier import ArtifactVerifier
-from agent_runtime.interviewer.policy import validate_candidate
-from agent_runtime.interviewer.types import InterviewAnswerAssessment
-from agent_runtime.interviewer.errors import InterviewValidationError
-from agent_runtime.memory.retrieval import MemoryRetriever
-from agent_runtime.memory import MemoryQuery, MemorySensitivity
+from eregion.runtime.sessions import SessionStatus, SessionOutcomeStatus
+from eregion.runtime.application_pack.types import ApplicationAnswer, GroundedBlock, EvidenceSnapshotItem
+from eregion.runtime.application_pack.verifier import ArtifactVerifier
+from eregion.runtime.interviewer.policy import validate_candidate
+from eregion.runtime.interviewer.types import InterviewAnswerAssessment
+from eregion.runtime.interviewer.errors import InterviewValidationError
+from eregion.runtime.memory.retrieval import MemoryRetriever
+from eregion.runtime.memory import MemoryQuery, MemorySensitivity
 from test_memory_retrieval_context import memory, FakeReader
 from test_auto_apply import database, wait
 from session_paths import session_decision_path  # noqa: F401 (both decision paths)
@@ -61,10 +61,10 @@ def test_model_answer_batch_is_atomic_and_does_not_borrow_consent():
 
 
 def test_chat_reaches_model_before_parser_and_stores_the_model_binding(database):
-    from agent_runtime.auto_apply.agent import HybridApplicationAgent
-    from agent_runtime.auto_apply.loop import ApplicationLoop
-    from agent_runtime.auto_apply.repository import ApplyRepository
-    from agent_runtime.auto_apply.contracts import ChatRequest
+    from eregion.runtime.auto_apply.agent import HybridApplicationAgent
+    from eregion.runtime.auto_apply.loop import ApplicationLoop
+    from eregion.runtime.auto_apply.repository import ApplyRepository
+    from eregion.runtime.auto_apply.contracts import ChatRequest
     from test_auto_apply_agent import ScriptModel
     browser = FakeBrowser("")
     browser.fields = [field("city", "combobox", "Location (City)"), field("referral")]

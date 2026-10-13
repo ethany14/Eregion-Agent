@@ -2,8 +2,8 @@
 import threading
 import time
 
-from agent_runtime.auto_apply.loop import ApplicationLoop, site_key
-from agent_runtime.auto_apply.repository import ApplyRepository
+from eregion.runtime.auto_apply.loop import ApplicationLoop, site_key
+from eregion.runtime.auto_apply.repository import ApplyRepository
 from test_auto_apply import FakeBrowser, database, request, wait
 
 

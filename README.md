@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: light)" srcset="site/assets/readme/banner-light.webp">
-    <img src="site/assets/readme/banner-dark.webp" alt="Eregion: your job search, in one conversation." width="100%">
+    <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/readme/banner-light.webp">
+    <img src="frontend/site/assets/readme/banner-dark.webp" alt="Eregion: your job search, in one conversation." width="100%">
   </picture>
 </p>
 
@@ -9,7 +9,7 @@
   <a href="#get-started"><img src="https://img.shields.io/badge/python-3.12-3d6a4a?style=flat-square&logo=python&logoColor=white" alt="Python 3.12"></a>
   <a href="docs/configuration.md"><img src="https://img.shields.io/badge/models-OpenAI--compatible-3d6a4a?style=flat-square" alt="Any OpenAI-compatible model"></a>
   <a href="#deployment-and-compatibility"><img src="https://img.shields.io/badge/runs-locally-9a7428?style=flat-square" alt="Runs locally"></a>
-  <a href="chrome_extension/README.md"><img src="https://img.shields.io/badge/Chrome-Eregion%20Lens-c0532a?style=flat-square&logo=googlechrome&logoColor=white" alt="Chrome extension"></a>
+  <a href="frontend/chrome_extension/README.md"><img src="https://img.shields.io/badge/Chrome-Eregion%20Lens-c0532a?style=flat-square&logo=googlechrome&logoColor=white" alt="Chrome extension"></a>
   <a href="#day-and-night"><img src="https://img.shields.io/badge/themes-Day%20%C2%B7%20Night-1b2420?style=flat-square" alt="Day and Night themes"></a>
 </p>
 
@@ -33,8 +33,8 @@ model-assisted work sends relevant content to the providers you configure.
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: light)" srcset="site/assets/screens/chat-light.webp">
-    <img src="site/assets/screens/chat-night.webp" alt="A conversation in Eregion: a 91/100 match for a Product Analyst role, with the agent's explanation of strengths and the one gap." width="92%">
+    <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/screens/chat-light.webp">
+    <img src="frontend/site/assets/screens/chat-night.webp" alt="A conversation in Eregion: a 91/100 match for a Product Analyst role, with the agent's explanation of strengths and the one gap." width="92%">
   </picture>
 </p>
 
@@ -74,16 +74,16 @@ waits for an answer. You can correct it, pause it, or take control of its browse
   <tr>
     <td width="50%" valign="top">
       <picture>
-        <source media="(prefers-color-scheme: light)" srcset="site/assets/screens/home-light.webp">
-        <img src="site/assets/screens/home-night.webp" alt="The Chronicle home view: today's events, beacons that need you, and applications on the road.">
+        <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/screens/home-light.webp">
+        <img src="frontend/site/assets/screens/home-night.webp" alt="The Chronicle home view: today's events, beacons that need you, and applications on the road.">
       </picture>
       <h3>📖 Chronicle</h3>
       Your home page: what happened today, and which conversations are waiting on you.
     </td>
     <td width="50%" valign="top">
       <picture>
-        <source media="(prefers-color-scheme: light)" srcset="site/assets/screens/road-light.webp">
-        <img src="site/assets/screens/road-night.webp" alt="The Road: application totals, a winding map of stations, and a progress table.">
+        <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/screens/road-light.webp">
+        <img src="frontend/site/assets/screens/road-night.webp" alt="The Road: application totals, a winding map of stations, and a progress table.">
       </picture>
       <h3>🛤️ The Road</h3>
       Every application on one map, board or table, with response rates and weekly activity.
@@ -92,16 +92,16 @@ waits for an answer. You can correct it, pause it, or take control of its browse
   <tr>
     <td width="50%" valign="top">
       <picture>
-        <source media="(prefers-color-scheme: light)" srcset="site/assets/screens/forge-light.webp">
-        <img src="site/assets/screens/forge-night.webp" alt="The Forge: tailored resumes and cover letters with a drafted, tempered and sealed trail and a verified preview.">
+        <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/screens/forge-light.webp">
+        <img src="frontend/site/assets/screens/forge-night.webp" alt="The Forge: tailored resumes and cover letters with a drafted, tempered and sealed trail and a verified preview.">
       </picture>
       <h3>⚒️ The Forge</h3>
       Generated materials are <i>drafted</i>, <i>tempered</i> (every claim checked against your resume) and <i>sealed</i> once you approve them.
     </td>
     <td width="50%" valign="top">
       <picture>
-        <source media="(prefers-color-scheme: light)" srcset="site/assets/screens/phone-light.webp">
-        <img src="site/assets/screens/phone-night.webp" alt="Eregion on a phone-width screen." width="46%">
+        <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/screens/phone-light.webp">
+        <img src="frontend/site/assets/screens/phone-night.webp" alt="Eregion on a phone-width screen." width="46%">
       </picture>
       <h3>💬 Council</h3>
       Your conversations with the agent, in folders, pinned or archived. Works at phone width too.
@@ -125,6 +125,17 @@ folders and an archive keep the workspace organized as your search grows. See th
 and recovery.
 
 ## Get started
+
+Developing the agent? Start with the [runtime map](backend/eregion/runtime/README.md),
+[documentation index](docs/README.md), or open
+[`JobHunterAgent.code-workspace`](JobHunterAgent.code-workspace) for an ordered
+project view centered on the single AgentLoop.
+
+The source tree is grouped into `backend/`, `frontend/` and `tools/`. Backend code
+uses one Python namespace: `eregion.runtime`, `eregion.domain`, and `eregion.api`.
+See [backend layout and startup](backend/README.md). After updating an existing
+checkout, rerun `python -m pip install -r requirements.txt` and use the new server
+module below; the old top-level Python packages have been removed.
 
 > [!NOTE]
 > You need **Python 3.12**, **Google Chrome** for browser tasks, and credentials
@@ -185,7 +196,7 @@ Run from the repository root, in the activated environment:
 
 ```sh
 python -m alembic upgrade head
-python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
+python -m uvicorn eregion.api.main:app --host 127.0.0.1 --port 8000
 ```
 
 Open **[localhost:8000/apply](http://localhost:8000/apply)**.
@@ -218,7 +229,7 @@ Try a request such as:
 tab, lets you edit the result, and compares it with your saved resume. Open the
 saved job in Eregion to continue with materials, applications or interview prep.
 
-→ [Install Eregion Lens](chrome_extension/README.md)
+→ [Install Eregion Lens](frontend/chrome_extension/README.md)
 
 ## Deployment and compatibility
 
@@ -254,19 +265,21 @@ Setup:
    - `JOB_AGENT_TREG_ENABLED=1` allows Treg calls.
    - `JOB_AGENT_TREG_SEARCH_PROVIDER` picks `anyapi` or `crawl4ai`.
    - `JOB_AGENT_TREG_CRAWL4AI_SCRAPE_ENABLED=1` separately allows page text extraction.
-   - `JOB_AGENT_JOB_API_FIRST=1` makes search start from company-board APIs; it works with Treg off.
+   - `JOB_AGENT_JOB_API_FIRST=1` is the default: company-board APIs plus configured LinkedIn MCP; it works with Treg off. See [default sources](docs/configuration.md#default-job-sources) for the one-time MCP login and configuration.
 5. **Know the limits.** Spend is capped per task (`JOB_AGENT_TREG_TASK_MAX_COST_USD`, default $0.10), per UTC day for this deployment (`JOB_AGENT_TREG_DAILY_MAX_COST_USD`, $0.50), per call (`JOB_AGENT_TREG_CALL_MAX_COST_USD`, $0.01, sent to Treg as a hard cap) and by attempt count. These limits cover this deployment's database only, not other apps using the same Treg account.
 
 What happens when something is missing:
-- **Missing key or Treg disabled:** search falls back to company boards and the browser.
+- **Missing key or Treg disabled:** public company boards and configured LinkedIn MCP remain available; browser use supplements missing evidence.
 - **Authentication failure, out of balance (HTTP 402) or a reached limit:** Treg stops for that task and the reason is reported.
 - **Unknown charges** (for example a timeout after sending) stay counted against the limit until confirmed.
 
 Checking the configuration does not call Treg. The live API smoke test is a separate opt-in (`JOB_AGENT_TREG_LIVE_API_TEST=1`), and normal tests never spend. To turn Treg off, set `JOB_AGENT_TREG_ENABLED=0`. To restore the original search route completely, also set `JOB_AGENT_JOB_API_FIRST=0`. Spend records are kept. Details: [configuration](docs/configuration.md#optional-treg-job-sources).
 
 R1 acceptance update (2026-10-12): optimization experiments remain disabled by default;
-history remains `current`. Offline regression passed, but real-search acceptance has
-not passed the two-recommendation requirement, so R2 migration is not released.
+history remains `current`. Offline regression passed. The user-approved gate amendment
+allows R2 migration preparation to proceed while preserving the failed browser-first
+B6 result. The two-recommendation business gate is still required on the migrated
+API-first configuration in R6/R9; end-to-end acceptance is not yet complete.
 See the [R1 gate report](docs/diagnostics/r1-closeout-and-r2-gate-20261012.md)
 and [adoption decisions](docs/diagnostics/r1-adoption-decisions-20261012.md).
 
@@ -279,7 +292,7 @@ and [adoption decisions](docs/diagnostics/r1-adoption-decisions-20261012.md).
 | 🧭 [Agent architecture](docs/agent-loop.md) | Shared loop, evidence, context, persistence and browser workers |
 | ⚡ [Jev and performance](docs/jev-benchmark.md) | Fast-path behaviour, recorded measurements and reproducible comparisons |
 | 🛠️ [Development](docs/development.md) | Repository layout, local checks, live evaluation and contributions |
-| 🌍 [Website](https://ethany14.github.io/Eregion-Agent/) | Product overview and download · [source and publishing](site/README.md) |
+| 🌍 [Website](https://ethany14.github.io/Eregion-Agent/) | Product overview and download · [source and publishing](frontend/site/README.md) |
 
 <details>
 <summary><b>Run the checks</b></summary>
@@ -300,7 +313,7 @@ and a [health endpoint](http://localhost:8000/health).
 
 <p align="center">
   <br>
-  <img src="site/assets/holly.svg" width="36" alt=""><br>
+  <img src="frontend/site/assets/holly.svg" width="36" alt=""><br>
   <sub><i>A little less paperwork. A step closer.</i></sub>
 </p>
 

@@ -14,8 +14,8 @@ from pathlib import Path
 
 import pytest
 
-from agent_runtime.loop_engine import AgentLoop
-from agent_runtime.tools.loop import ToolCallingLoop
+from eregion.runtime.core.engine import AgentLoop
+from eregion.runtime.tools.loop import ToolCallingLoop
 
 
 @pytest.fixture(autouse=True)

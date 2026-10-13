@@ -6,7 +6,7 @@ from uuid import uuid4
 
 import pytest
 
-from agent_runtime.career.service import CareerService
+from eregion.runtime.career.service import CareerService
 from test_career_flow import career, execute, ToolModel
 
 
@@ -105,10 +105,10 @@ def test_model_answer_and_end_cannot_skip_earlier_unconsumed_chat_messages(caree
 def test_new_service_recovers_durable_inputs_and_post_commit_crash_exactly_once(career,tmp_path,crash):
     from copy import copy
     from types import SimpleNamespace
-    from api.db import create_database
-    from agent_runtime.career.harness import CareerHarness
-    from agent_runtime.career.repository import TaskRepository
-    from agent_runtime.mock_interview.repository import MockInterviewRepository
+    from eregion.api.db import create_database
+    from eregion.runtime.career.harness import CareerHarness
+    from eregion.runtime.career.repository import TaskRepository
+    from eregion.runtime.mock_interview.repository import MockInterviewRepository
     c=career;controller,identifier=prepared(c)
     ids=[str(uuid4()) for _ in range(3)]
     for i,mid in enumerate(ids):

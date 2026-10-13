@@ -4,11 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from agent_runtime import host_protocol
-from agent_runtime.auto_apply.runner import ApplicationHost
-from agent_runtime.task_host import TaskHost
+from eregion.runtime.core import host_protocol
+from eregion.runtime.auto_apply.runner import ApplicationHost
+from eregion.runtime.tasks.host import TaskHost
 
-ENGINE = Path(host_protocol.__file__).with_name('loop_engine.py')
+ENGINE = Path(host_protocol.__file__).with_name('engine.py')
 
 
 @pytest.mark.parametrize('host', [TaskHost, ApplicationHost])
@@ -35,9 +35,9 @@ def test_the_engine_uses_only_contract_members():
 
 def test_runtime_does_not_import_api_route_modules():
     # Business functions the runtime needs live in neutral modules; routes import them.
-    root = ENGINE.parent
+    root = ENGINE.parent.parent
     offenders = [f'{path.relative_to(root.parent)}: {line.strip()}'
                  for path in root.rglob('*.py')
                  for line in path.read_text(encoding='utf-8').splitlines()
-                 if re.search(r'from api\.\w+_routes import|import api\.\w+_routes', line)]
+                 if re.search(r'from eregion\.api\.\w+_routes import|import eregion\.api\.\w+_routes', line)]
     assert offenders == []

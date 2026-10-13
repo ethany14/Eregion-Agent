@@ -7,14 +7,14 @@ import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from pydantic import BaseModel, ConfigDict
 
-from agent_runtime import (
+from eregion.runtime import (
     AgentMessage, LangChainToolModelAdapter, NormalizedToolCall, TokenUsage,
     ToolCallRepository, ToolCallingLoop, ToolContext, ToolDataClassification,
     ToolExecutionStatus, ToolExecutor, ToolLoopStatus, ToolModelResponse,
     ToolProvenance, ToolRegistry, ToolResult, ToolRiskLevel, ToolSideEffect,
 )
-from agent_runtime.errors import ToolModelError
-from api.db import create_database
+from eregion.runtime.errors import ToolModelError
+from eregion.api.db import create_database
 
 
 class EchoInput(BaseModel):
@@ -396,7 +396,7 @@ def test_langchain_adapter_normalizes_provider_exception():
 
 
 def test_tool_selection_dataset_has_valid_allowed_expectations():
-    path = Path(__file__).resolve().parent.parent / "evals" / "tool_selection_v1.json"
+    path = Path(__file__).resolve().parent.parent / "tools/evals" / "tool_selection_v1.json"
     cases = json.loads(path.read_text(encoding="utf-8"))
     assert len(cases) >= 5
     assert len({case["id"] for case in cases}) == len(cases)

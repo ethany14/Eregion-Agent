@@ -1,12 +1,12 @@
 import asyncio
 import pytest
 from fastapi.testclient import TestClient
-from api.db import create_database
-from api.main import create_app
-from api.repositories.run_repository import RunRepository
-from api.runtime import create_run_service
-from api.schemas.runs import CreateRunRequest, ReviewRequest
-from api.services.run_service import SAFE_RUN_ERROR, InvalidRunStateError, RunNotFoundError
+from eregion.api.db import create_database
+from eregion.api.main import create_app
+from eregion.api.repositories.run_repository import RunRepository
+from eregion.api.runtime import create_run_service
+from eregion.api.schemas.runs import CreateRunRequest, ReviewRequest
+from eregion.api.services.run_service import SAFE_RUN_ERROR, InvalidRunStateError, RunNotFoundError
 from runtime_helpers import CompleteFakeHandler, FailingHandler, sqlite_url
 
 

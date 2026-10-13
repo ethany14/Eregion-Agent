@@ -4,9 +4,9 @@ from uuid import uuid4
 
 import pytest
 
-from agent_runtime.career.harness import CareerHarness
-from agent_runtime.workspace.types import ArtifactType
-from job_agent.schemas import JobAnalysis, ResumeAnalysis, SkillMatch
+from eregion.runtime.career.harness import CareerHarness
+from eregion.runtime.workspace.types import ArtifactType
+from eregion.domain.schemas import JobAnalysis, ResumeAnalysis, SkillMatch
 from test_career_flow import career, execute
 from test_remaining_search_completion import GOAL, URL, prepare
 
@@ -26,7 +26,7 @@ def interval_state():
 def test_completion_accepts_exact_bounded_uncertainty(format):
     final=format.format(url=URL)+'\nRead and scored, not recommended; unresolved qualifications remain.'
     CareerHarness.validate_completion(None, interval_state(), final)
-    from agent_runtime.career.reply_evidence import reply_job_scores
+    from eregion.runtime.career.reply_evidence import reply_job_scores
     assert not reply_job_scores(final).get(URL)  # Neither bound is a point score.
 
 

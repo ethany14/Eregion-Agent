@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 from langchain_core.messages import HumanMessage
 
-from agent_runtime.auto_apply.agent import AgentTools, HybridApplicationAgent, VISUAL_TOOLS
-from agent_runtime.auto_apply.browser import BrowserBlocked
+from eregion.runtime.auto_apply.agent import AgentTools, HybridApplicationAgent, VISUAL_TOOLS
+from eregion.runtime.auto_apply.browser import BrowserBlocked
 from test_auto_apply_agent import ScriptModel, state
 from test_auto_apply_browser import FixtureBrowser
 
@@ -92,7 +92,7 @@ def test_failed_dom_action_automatically_gives_model_screenshot_and_tools(browse
 
 
 def test_visual_images_stop_after_returning_to_dom_and_capture_once(browser, monkeypatch):
-    from agent_runtime.auto_apply.visual import VisualBrowser
+    from eregion.runtime.auto_apply.visual import VisualBrowser
     original = VisualBrowser.capture
     captures, image_turns = [], []
     def capture(self):

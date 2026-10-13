@@ -2,9 +2,9 @@
 import copy
 import json
 import pytest
-from agent_runtime.context_experiments import state_messages, scoped, digest
-from agent_runtime.request_context import ContextArchive, prepare_request, encoded
-from agent_runtime.loop_context import ConversationWindow
+from eregion.runtime.context_experiments import state_messages, scoped, digest
+from eregion.runtime.request_context import ContextArchive, prepare_request, encoded
+from eregion.runtime.core.context import ConversationWindow
 
 
 def snapshot():

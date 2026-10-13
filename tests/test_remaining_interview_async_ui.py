@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 from playwright.sync_api import sync_playwright,expect
 
-from api.main import create_app
+from eregion.api.main import create_app
 from test_career_flow import career
 from test_remaining_interview_async import service_for
 from test_remaining_interview_fifo import prepared

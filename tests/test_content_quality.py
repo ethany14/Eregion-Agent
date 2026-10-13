@@ -3,26 +3,26 @@ from types import SimpleNamespace
 
 import pytest
 
-from agent_runtime.application_pack.rendering import render_cover_letter
-from agent_runtime.application_pack.types import (
+from eregion.runtime.application_pack.rendering import render_cover_letter
+from eregion.runtime.application_pack.types import (
     ApplicationAnswer, CoverLetter, CoverLetterParagraph, EvidenceSnapshotItem,
     GroundedBlock,
 )
-from agent_runtime.application_pack.verifier import ArtifactVerifier
-from agent_runtime.evidence.extraction import (
+from eregion.runtime.application_pack.verifier import ArtifactVerifier
+from eregion.runtime.evidence.extraction import (
     career_fact_candidates, extract_evidence_candidates, validate_candidate_source,
 )
-from agent_runtime.memory.proposals import (
+from eregion.runtime.memory.proposals import (
     MemoryProposal, extract_memory_proposals, proposal_conflicts,
 )
-from job_agent.domain import normalize_resume_analysis, normalize_tailored_resume_claim_ids
-from job_agent.quality import (
+from eregion.domain.domain import normalize_resume_analysis, normalize_tailored_resume_claim_ids
+from eregion.domain.quality import (
     claim_similarity, clean_tailored_resume, deduplicate_claims,
     find_duplicate_claims, normalize_generated_resume_metadata, quality_result,
     validate_resume_structure,
 )
-from job_agent.rendering import render_tailored_resume, render_tailored_resume_markdown
-from job_agent.schemas import (
+from eregion.domain.rendering import render_tailored_resume, render_tailored_resume_markdown
+from eregion.domain.schemas import (
     ResumeAnalysis, ResumeEntry, ResumeEvidence, ResumeSection, ResumeSourceEntry,
     SupportedClaim, TailoredResume,
 )

@@ -1,8 +1,8 @@
 """AgentLoop never acts on a model result that arrives after cancel or steering."""
 from langchain_core.messages import AIMessage
 
-from agent_runtime.loop_engine import AgentLoop, Turn
-from agent_runtime.task_loop import function
+from eregion.runtime.core.engine import AgentLoop, Turn
+from eregion.runtime.tasks.loop import function
 
 TOOL = function('write_item', 'Update an item.', {'value': {'type': 'string'}})
 

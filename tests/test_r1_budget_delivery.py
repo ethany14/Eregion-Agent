@@ -1,9 +1,9 @@
 """Budget stops deliver local saved results without restarting paid work."""
 import pytest
 
-from agent_runtime.task_loop import TaskLoop
-from agent_runtime.provider_usage import TaskProviderBudgetExceeded
-from agent_runtime.career.repository import TaskRepository
+from eregion.runtime.tasks.loop import TaskLoop
+from eregion.runtime.provider_usage import TaskProviderBudgetExceeded
+from eregion.runtime.career.repository import TaskRepository
 from test_auto_apply import database
 from test_career_flow import settled
 from test_task_loop import Harness

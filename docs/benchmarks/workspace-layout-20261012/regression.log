@@ -1,0 +1,58 @@
+........................................................................ [ 43%]
+.....................F.................................................. [ 87%]
+....................                                                     [100%]
+================================== FAILURES ===================================
+________________ test_task_owners_do_not_create_private_pools _________________
+
+    def test_task_owners_do_not_create_private_pools():
+        """Pools for task ownership live in ExecutionService; other modules may not start their own."""
+        owners = ['agent_runtime/task_loop.py', 'agent_runtime/career/service.py',
+                  'agent_runtime/career/interview_queue.py', 'agent_runtime/multi_agent/scheduler.py',
+                  'agent_runtime/auto_apply/loop.py']
+        for name in owners:
+>           text = (ROOT / name).read_text(encoding='utf-8')
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_execution_service.py:96: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/zhiyu/Documents/JobHunterAgent/agent_runtime/task_loop.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\agent_runtime\\task_loop.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:53
+  C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\starlette\testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+.venv\Lib\site-packages\_pytest\cacheprovider.py:469
+  C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\cacheprovider.py:469: PytestCacheWarning: could not create cache path C:\Users\zhiyu\Documents\JobHunterAgent\.pytest_cache\v\cache\nodeids: [WinError 5] 拒绝访问。: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\.pytest_cache\\v\\cache'
+    config.cache.set("cache/nodeids", sorted(self.cached_nodeids))
+
+.venv\Lib\site-packages\_pytest\cacheprovider.py:423
+  C:\Users\zhiyu\Documents\JobHunterAgent\.venv\Lib\site-packages\_pytest\cacheprovider.py:423: PytestCacheWarning: could not create cache path C:\Users\zhiyu\Documents\JobHunterAgent\.pytest_cache\v\cache\lastfailed: [WinError 5] 拒绝访问。: 'C:\\Users\\zhiyu\\Documents\\JobHunterAgent\\.pytest_cache\\v\\cache'
+    config.cache.set("cache/lastfailed", self.lastfailed)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_execution_service.py::test_task_owners_do_not_create_private_pools
+1 failed, 163 passed, 3 warnings in 68.74s (0:01:08)

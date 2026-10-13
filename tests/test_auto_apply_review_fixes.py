@@ -7,13 +7,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from api.db import create_database
-from agent_runtime.auto_apply.agent import AgentTools, grounded
-from agent_runtime.auto_apply.browser import ApplicationBrowser, SCAN, BrowserBlocked
-from agent_runtime.auto_apply.matching import question_identity
-from agent_runtime.auto_apply.memory import compatible, same_employer
-from agent_runtime.auto_apply.models import ApplicationMemoryRow
-from agent_runtime.auto_apply.repository import ApplyRepository, ApplyConflict
+from eregion.api.db import create_database
+from eregion.runtime.auto_apply.agent import AgentTools, grounded
+from eregion.runtime.auto_apply.browser import ApplicationBrowser, SCAN, BrowserBlocked
+from eregion.runtime.auto_apply.matching import question_identity
+from eregion.runtime.auto_apply.memory import compatible, same_employer
+from eregion.runtime.auto_apply.models import ApplicationMemoryRow
+from eregion.runtime.auto_apply.repository import ApplyRepository, ApplyConflict
 
 
 def field(label='Desired salary', kind='text', key='q'):
@@ -239,7 +239,7 @@ class ChromeChecks(unittest.TestCase):
         self.assertIsNotNone(self.browser.confirmation(after_submit=True))
 
     def test_real_standard_answer_form_only_sends_edits(self):
-        source = (ROOT / 'web_app/apply.js').read_text(encoding='utf-8')
+        source = (ROOT / 'frontend/web_app/apply.js').read_text(encoding='utf-8')
         functions = source[source.index('async function loadStandardAnswers()'):source.index("$('#add-education').addEventListener")]
         self.page.set_content('<div id="standard-fields"></div>')
         self.page.evaluate('''() => {

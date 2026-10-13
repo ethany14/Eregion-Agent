@@ -2,13 +2,13 @@ from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
-from agent_runtime.resumes.repository import ResumeDocumentRepository
-from api.db import create_database
-from api.main import create_app
-from api.resume_routes import extract_pdf_text
-from api.session_dependencies import get_session_runtime
-from api.services.fit_analysis_service import FitAnalysisResult
-from job_agent.schemas import (
+from eregion.runtime.resumes.repository import ResumeDocumentRepository
+from eregion.api.db import create_database
+from eregion.api.main import create_app
+from eregion.api.resume_routes import extract_pdf_text
+from eregion.api.session_dependencies import get_session_runtime
+from eregion.api.services.fit_analysis_service import FitAnalysisResult
+from eregion.domain.schemas import (
     JobAnalysis, SkillMatch,
 )
 
@@ -70,7 +70,7 @@ def test_upload_list_and_quick_analysis_use_server_resume(tmp_path, monkeypatch)
     runtime = SimpleNamespace(resumes=ResumeDocumentRepository(database.session_factory), owner_resolver=OwnerResolver())
     app = create_app(run_service=object(), fit_analysis_service=FakeFitAnalysisService())
     app.dependency_overrides[get_session_runtime] = lambda: runtime
-    monkeypatch.setattr("api.resume_routes.extract_pdf_text", lambda _content: ("Python developer", 1))
+    monkeypatch.setattr("eregion.api.resume_routes.extract_pdf_text", lambda _content: ("Python developer", 1))
     try:
         with TestClient(app) as client:
             uploaded = client.post("/api/resumes", content=b"%PDF test", headers={

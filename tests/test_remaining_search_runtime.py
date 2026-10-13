@@ -7,9 +7,9 @@ from uuid import uuid4
 
 from langchain_core.messages import HumanMessage
 
-from agent_runtime.request_context import ContextArchive, prepare_request
-from agent_runtime.loop_context import ConversationWindow
-from agent_runtime.task_host import TaskHost
+from eregion.runtime.request_context import ContextArchive, prepare_request
+from eregion.runtime.core.context import ConversationWindow
+from eregion.runtime.tasks.host import TaskHost
 from test_career_flow import career
 
 
@@ -104,8 +104,8 @@ def test_actual_stalled_click_remains_blocked_after_large_result_archiving(caree
 @pytest.mark.parametrize('known_ineligible',[False,True])
 def test_production_recommendation_allows_disclosed_low_fit_but_blocks_known_ineligibility(career,known_ineligible):
     from test_career_flow import execute
-    from agent_runtime.workspace.types import ArtifactType
-    from job_agent.schemas import SkillEvidence
+    from eregion.runtime.workspace.types import ArtifactType
+    from eregion.domain.schemas import SkillEvidence
     c=career;url='https://jobs.lever.co/example/abc123'
     execute(c,'read_job',url=url)
     job=execute(c,'import_job',url=url);identifier=job['application_id']

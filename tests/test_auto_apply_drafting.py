@@ -6,14 +6,14 @@ from pathlib import Path
 
 import pytest
 
-from agent_runtime.auto_apply.agent import AgentTools, HybridApplicationAgent
-from agent_runtime.auto_apply.autofill import autofill, desired_answer
-from agent_runtime.auto_apply.browser import BrowserBlocked
-from agent_runtime.auto_apply.contracts import ContinueApplication
-from agent_runtime.auto_apply.drafting import resume_context, visible_drafts
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.repository import ApplyRepository
-from api.auto_apply_routes import public
+from eregion.runtime.auto_apply.agent import AgentTools, HybridApplicationAgent
+from eregion.runtime.auto_apply.autofill import autofill, desired_answer
+from eregion.runtime.auto_apply.browser import BrowserBlocked
+from eregion.runtime.auto_apply.contracts import ContinueApplication
+from eregion.runtime.auto_apply.drafting import resume_context, visible_drafts
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.repository import ApplyRepository
+from eregion.api.auto_apply_routes import public
 from test_auto_apply import FakeBrowser, database, field, request, wait
 from test_auto_apply_agent import ScriptModel, args
 
@@ -190,7 +190,7 @@ def test_resume_draft_ui_edits_and_sends_through_real_api(database):
     from types import SimpleNamespace
     from fastapi.testclient import TestClient
     from playwright.sync_api import sync_playwright, expect
-    from api.main import create_app
+    from eregion.api.main import create_app
 
     repo = ApplyRepository(database.session_factory)
     pdf = project_pdf()

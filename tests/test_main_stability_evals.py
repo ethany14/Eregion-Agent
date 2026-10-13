@@ -10,7 +10,7 @@ from evals import run_main_stability as runner
 
 
 def dataset():
-    return json.loads(Path('evals/fit_labels_v1.json').read_text(encoding='utf-8'))
+    return json.loads(Path('tools/evals/fit_labels_v1.json').read_text(encoding='utf-8'))
 
 
 def runtime():
@@ -24,7 +24,7 @@ def valid_row():
 
 
 def test_offline_plan_does_not_read_model_configuration_or_claim_pass(monkeypatch):
-    monkeypatch.setattr('job_agent.model.dotenv_values', lambda *a: pytest.fail('offline read .env'))
+    monkeypatch.setattr('eregion.domain.model.dotenv_values', lambda *a: pytest.fail('offline read .env'))
     monkeypatch.setattr(runner, 'cold_service', lambda: pytest.fail('offline created live service'))
     data = dataset(); plan = runner.make_plan(data)
     assert len(plan['trials']) == 288+32
@@ -83,12 +83,12 @@ def test_real_fit_service_cold_isolation_and_sqlite_usage_with_offline_provider(
     # Exercises timeout/retry accounting inside job extraction, so pin the free-extraction
     # route; the default local catalogue performs no job-extraction call.
     monkeypatch.setenv('JOB_AGENT_MAIN_CATALOG','extract')
-    from api.db import create_database
-    from api.services.fit_analysis_service import FitAnalysisService
-    from custom_agent.handlers import JobAgentStepHandler
-    from agent_runtime.fast_decisions import FastDecisions
-    from agent_runtime.provider_usage import provider_call
-    from job_agent.schemas import SkillAssessment
+    from eregion.api.db import create_database
+    from eregion.api.services.fit_analysis_service import FitAnalysisService
+    from eregion.domain.workflow.handlers import JobAgentStepHandler
+    from eregion.runtime.fast_decisions import FastDecisions
+    from eregion.runtime.provider_usage import provider_call
+    from eregion.domain.schemas import SkillAssessment
     from test_speed_pipeline import Analyzer
     factories=[]
     class OfflineProvider(Analyzer):
@@ -141,7 +141,7 @@ def test_factory_is_main_only_and_no_result_or_persistent_cache():
 def test_live_configuration_gate_keeps_180_seconds_and_sdk_retry_zero(monkeypatch):
     monkeypatch.setattr(runner,'cold_service',lambda:type('Service',(),{'cache_signature':lambda _: 'frozen'})())
     settings={'model':'synthetic-main','temperature':0,'timeout':179,'max_retries':0,'reasoning_effort':'high'}
-    monkeypatch.setattr('job_agent.model.create_model',lambda **_:dict(settings))
+    monkeypatch.setattr('eregion.domain.model.create_model',lambda **_:dict(settings))
     with pytest.raises(ValueError):runner.live_runtime()
     settings['timeout']=180;settings['max_retries']=1
     with pytest.raises(ValueError):runner.live_runtime()

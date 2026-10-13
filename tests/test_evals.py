@@ -20,8 +20,8 @@ from evals.run_stability_evals import (
 from evals.run_evals import EVALS_DIR, load_cases
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
-from job_agent.schemas import SupportedClaim, TailoredResume
-from job_agent.domain import canonicalize_requirement, extract_minimum_years
+from eregion.domain.schemas import SupportedClaim, TailoredResume
+from eregion.domain.domain import canonicalize_requirement, extract_minimum_years
 
 
 def workflow_result(case_id: str, *, case_type="valid_workflow", strict=None,
@@ -249,7 +249,7 @@ def test_tag_summary_reports_recall_and_unexpected_missing_requirements():
 def test_evaluations_use_custom_loop_and_writer_ablation_does_not_claim_verification():
     from evals.runtime import EvaluationWorkflow
     from runtime_helpers import CompleteFakeHandler
-    from custom_agent.state import Step
+    from eregion.domain.workflow.state import Step
     class RecordingHandler(CompleteFakeHandler):
         def __init__(self): self.steps = []
         def execute(self, step, state):
@@ -268,9 +268,9 @@ def test_evaluations_use_custom_loop_and_writer_ablation_does_not_claim_verifica
 
 
 def test_reflection_evaluation_uses_custom_verifier_and_reviser(monkeypatch):
-    from custom_agent.handlers import JobAgentStepHandler
+    from eregion.domain.workflow.handlers import JobAgentStepHandler
     from evals.run_evals import _adversarial_state, run_adversarial_case
-    from job_agent.schemas import VerificationResult, UnsupportedClaim
+    from eregion.domain.schemas import VerificationResult, UnsupportedClaim
     case = {"id": "reflection", "resume_text": "Built Python APIs.",
             "job_description": "Python APIs", "supported_claims": ["Built Python APIs."],
             "injected_claims": ["Managed Kubernetes production."]}

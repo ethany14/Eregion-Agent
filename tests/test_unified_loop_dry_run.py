@@ -6,19 +6,19 @@ from pathlib import Path
 
 import pytest
 
-from agent_runtime.auto_apply.repository import ApplyRepository
-from agent_runtime.career.repository import TaskRepository
-from agent_runtime.sessions.events import SessionEvent, SessionEventType
-from agent_runtime.sessions.repository import SessionRepository
-from agent_runtime.sessions.state import SessionMessageDraft, SessionState, SessionStatus
-from agent_runtime.tools.messages import AgentMessage, NormalizedToolCall
-from api.db import create_database, upgrade_database
+from eregion.runtime.auto_apply.repository import ApplyRepository
+from eregion.runtime.career.repository import TaskRepository
+from eregion.runtime.sessions.events import SessionEvent, SessionEventType
+from eregion.runtime.sessions.repository import SessionRepository
+from eregion.runtime.sessions.state import SessionMessageDraft, SessionState, SessionStatus
+from eregion.runtime.tools.messages import AgentMessage, NormalizedToolCall
+from eregion.api.db import create_database, upgrade_database
 from test_auto_apply import request
 from test_multi_agent import make_plan, validate
 from test_career_flow import career  # noqa: F401
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location('unified_loop_dry_run', ROOT / 'scripts/unified_loop_dry_run.py')
+spec = importlib.util.spec_from_file_location('unified_loop_dry_run', ROOT / 'tools/scripts/unified_loop_dry_run.py')
 dry = importlib.util.module_from_spec(spec); spec.loader.exec_module(dry)
 
 
@@ -58,7 +58,7 @@ def build_source(path: Path) -> Path:
         assistant = AgentMessage(message_id='s-run-a1', role='assistant', tool_calls=[call])
         _session(sessions, 's-running', SessionStatus.RUNNING, messages=[assistant],
                  pending_assistant_message_id='s-run-a1', pending_tool_call_ids=['c1'])
-        from agent_runtime.multi_agent.repository import AgentTaskRepository
+        from eregion.runtime.coordination.repository import AgentTaskRepository
         agent_tasks = AgentTaskRepository(db.session_factory)
         plan = make_plan(); agent_tasks.create_plan(plan, validate(plan))
     finally:
@@ -101,7 +101,7 @@ def test_an_owner_that_misses_an_object_fails_the_coverage_check(source, tmp_pat
 
 
 def test_more_than_500_ready_agent_tasks_are_all_covered_and_truncation_fails(tmp_path):
-    from agent_runtime.multi_agent.repository import AgentTaskRepository
+    from eregion.runtime.coordination.repository import AgentTaskRepository
     path = tmp_path / 'many.db'
     upgrade_database(f"sqlite:///{path.as_posix()}")
     db = create_database(f"sqlite:///{path.as_posix()}")

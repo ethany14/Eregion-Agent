@@ -6,18 +6,18 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import BaseModel, ConfigDict
 
-from agent_runtime.executor import ToolExecutor
-from agent_runtime.policy import ToolPolicy
-from agent_runtime.registry import ToolRegistry
-from agent_runtime.repository import ToolCallRepository
-from agent_runtime.sessions.claims import SessionClaimRepository
-from agent_runtime.sessions.coordinator import SessionCoordinator
-from agent_runtime.sessions.events import SessionEvent, SessionEventType
-from agent_runtime.sessions.repository import SessionRepository
-from agent_runtime.sessions.state import SessionMessageDraft, SessionMessageVisibility, SessionStatus
-from agent_runtime.tools.loop import ToolCallingLoop
-from agent_runtime.tools.messages import AgentMessage, NormalizedToolCall, ToolModelResponse
-from agent_runtime.types import (
+from eregion.runtime.executor import ToolExecutor
+from eregion.runtime.policy import ToolPolicy
+from eregion.runtime.registry import ToolRegistry
+from eregion.runtime.repository import ToolCallRepository
+from eregion.runtime.sessions.claims import SessionClaimRepository
+from eregion.runtime.sessions.coordinator import SessionCoordinator
+from eregion.runtime.sessions.events import SessionEvent, SessionEventType
+from eregion.runtime.sessions.repository import SessionRepository
+from eregion.runtime.sessions.state import SessionMessageDraft, SessionMessageVisibility, SessionStatus
+from eregion.runtime.tools.loop import ToolCallingLoop
+from eregion.runtime.tools.messages import AgentMessage, NormalizedToolCall, ToolModelResponse
+from eregion.runtime.types import (
     ToolContext,
     ToolDataClassification,
     ToolProvenance,
@@ -25,10 +25,10 @@ from agent_runtime.types import (
     ToolRiskLevel,
     ToolSideEffect,
 )
-from api.db import create_database, upgrade_database
-from api.main import create_app
-from api.repositories.run_repository import RunRepository
-from api.session_dependencies import JOB_ASSISTANT_READONLY_TOOLS, SessionRuntime
+from eregion.api.db import create_database, upgrade_database
+from eregion.api.main import create_app
+from eregion.api.repositories.run_repository import RunRepository
+from eregion.api.session_dependencies import JOB_ASSISTANT_READONLY_TOOLS, SessionRuntime
 from session_paths import session_decision_path  # noqa: F401 (both decision paths)
 
 
@@ -98,7 +98,7 @@ def build_runtime(tmp_path, responses=(), *, write_render=False):
         loop=loop,
         claims=claims,
     )
-    from agent_runtime.tools.run_reader import SqlAlchemyRunReader
+    from eregion.runtime.tools.run_reader import SqlAlchemyRunReader
 
     return SessionRuntime(
         database,

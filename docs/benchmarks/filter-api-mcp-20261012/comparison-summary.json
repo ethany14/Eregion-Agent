@@ -1,0 +1,55 @@
+{
+  "api": [
+    {
+      "provider": "anyapi",
+      "searches": 3,
+      "transport_success": 3,
+      "nonempty": 3,
+      "median_seconds": 6.622,
+      "min_seconds": 4.466,
+      "max_seconds": 7.431,
+      "candidates": 30,
+      "model_calls": 0,
+      "model_tokens": 0
+    },
+    {
+      "provider": "crawl4ai",
+      "searches": 3,
+      "transport_success": 3,
+      "nonempty": 2,
+      "median_seconds": 1.654,
+      "min_seconds": 1.456,
+      "max_seconds": 25.943,
+      "candidates": 40,
+      "model_calls": 0,
+      "model_tokens": 0
+    }
+  ],
+  "mcp": {
+    "status": "two_search_batches_complete",
+    "business_calls": 9,
+    "search_success": 3,
+    "nonempty": 3,
+    "search_seconds": [
+      14.714,
+      6.788,
+      6.57
+    ],
+    "detail_seconds": [
+      1.968,
+      1.842,
+      2.339
+    ],
+    "complete_details": 3,
+    "model_calls": 0,
+    "model_tokens": 0,
+    "error": null,
+    "repeat_search_success": 3,
+    "repeat_search_seconds": [
+      12.777,
+      6.774,
+      6.84
+    ],
+    "repeat_error": null
+  }
+}

@@ -4,9 +4,9 @@ from uuid import uuid4
 import httpx
 import pytest
 
-from agent_runtime.career.discovery import JobDiscovery
-from agent_runtime.career.harness import CareerHarness
-from agent_runtime.career.repository import TaskRepository
+from eregion.runtime.career.discovery import JobDiscovery
+from eregion.runtime.career.harness import CareerHarness
+from eregion.runtime.career.repository import TaskRepository
 from test_career_flow import career, execute
 
 
@@ -97,7 +97,7 @@ def test_nonexclusive_search_persists_real_mismatch_caveat(career):
 
 
 def test_board_exclusions_apply_by_tenant_not_shared_api_host():
-    from agent_runtime.career.discovery import board_source
+    from eregion.runtime.career.discovery import board_source
     requests=[];d=discovery(requests)
     result=d.search('backend',boards=[BLOCKED,HEALTHY],excluded_sources=[board_source(BLOCKED)],
         excluded_hosts=['api.ashbyhq.com'])
@@ -115,7 +115,7 @@ def test_same_user_turn_survives_revision_change_and_more_than_eight_sources(car
     for _ in range(151):c.repository.append(c.state['task_id'],role='assistant',text='Saved progress.')
     result=execute(c,'search_jobs',query='engineer',boards=[{'platform':'ashby','company':'synthetic-0'}])
     assert len(requests)==12 and result['skipped_sources']
-    from agent_runtime.career.source_health import projection
+    from eregion.runtime.career.source_health import projection
     view=projection(c.repository.get(c.state['task_id']))
     assert view['source_count']==12 and len(view['sources'])==8
 
@@ -204,8 +204,8 @@ def test_blocked_browser_does_not_repeat_open_read_or_query_after_restart(career
 
 
 def test_workday_browser_and_api_source_identity_respects_hyphenated_sites():
-    from agent_runtime.career.discovery import board_source
-    from agent_runtime.career.source_health import browser_source
+    from eregion.runtime.career.discovery import board_source
+    from eregion.runtime.career.source_health import browser_source
     base='https://synthetic.wd5.myworkdayjobs.com'
     a=browser_source(base+'/External-Careers/job/Remote/Engineer_R1')
     b=browser_source(base+'/Other-Careers/job/Remote/Engineer_R1')
@@ -276,7 +276,7 @@ def test_first_detail_403_persists_health_and_blocks_other_acquisition_tools(car
 
 
 def test_blocked_remote_source_does_not_prevent_literal_authorized_jd_import(career,monkeypatch):
-    from agent_runtime.semantics import SemanticDecisions
+    from eregion.runtime.semantics import SemanticDecisions
     monkeypatch.setattr(SemanticDecisions,'pasted_job_text',lambda self,message,quote:quote in message)
     c=career;requests=[];c.harness.discovery=discovery(requests)
     text='We are hiring a Backend Engineer. This full-time position requires Python APIs and SQL. Build production services for our software team.'

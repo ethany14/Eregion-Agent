@@ -8,32 +8,32 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy import inspect, select
 
-from agent_runtime import ToolCallRepository, ToolExecutor, ToolRegistry
-from agent_runtime.context.models import MemoryUsageEventRow, SkillUsageEventRow
-from agent_runtime.context.projection import SessionContextProjector
-from agent_runtime.context.repository import ContextSnapshotRepository
-from agent_runtime.context.snapshots import (
+from eregion.runtime import ToolCallRepository, ToolExecutor, ToolRegistry
+from eregion.runtime.context.models import MemoryUsageEventRow, SkillUsageEventRow
+from eregion.runtime.context.projection import SessionContextProjector
+from eregion.runtime.context.repository import ContextSnapshotRepository
+from eregion.runtime.context.snapshots import (
     ContextBlockManifest,
     ContextSnapshot,
     ContextSnapshotStatus,
     ContextSnapshotUnavailableError,
     MemorySnapshotRef,
 )
-from agent_runtime.context.types import ContextBlockKind
-from agent_runtime.memory import (
+from eregion.runtime.context.types import ContextBlockKind
+from eregion.runtime.memory import (
     MemoryProvenance, MemoryRepository, MemoryScope, MemoryType,
 )
-from agent_runtime.memory.retrieval import MemoryRetriever
-from agent_runtime.policy import ToolPolicy
-from agent_runtime.sessions import SessionEvent, SessionEventType, SessionMessageDraft, SessionRepository, SessionState, SessionStatus
-from agent_runtime.sessions.claims import SessionClaimRepository
-from agent_runtime.sessions.clock import FakeClock
-from agent_runtime.sessions.coordinator import SessionCoordinator
-from agent_runtime.skills import SkillDiscovery, SkillLoader, SkillRegistry, SkillRepository, SkillStatus
-from agent_runtime.skills.routing import SessionSkillProfile, SkillRouter
-from agent_runtime.tools.loop import ToolCallingLoop
-from agent_runtime.tools.messages import AgentMessage, NormalizedToolCall, TokenUsage, ToolModelResponse
-from api.db import create_database
+from eregion.runtime.memory.retrieval import MemoryRetriever
+from eregion.runtime.policy import ToolPolicy
+from eregion.runtime.sessions import SessionEvent, SessionEventType, SessionMessageDraft, SessionRepository, SessionState, SessionStatus
+from eregion.runtime.sessions.claims import SessionClaimRepository
+from eregion.runtime.sessions.clock import FakeClock
+from eregion.runtime.sessions.coordinator import SessionCoordinator
+from eregion.runtime.skills import SkillDiscovery, SkillLoader, SkillRegistry, SkillRepository, SkillStatus
+from eregion.runtime.skills.routing import SessionSkillProfile, SkillRouter
+from eregion.runtime.tools.loop import ToolCallingLoop
+from eregion.runtime.tools.messages import AgentMessage, NormalizedToolCall, TokenUsage, ToolModelResponse
+from eregion.api.db import create_database
 from session_paths import session_decision_path  # noqa: F401 (both decision paths)
 
 

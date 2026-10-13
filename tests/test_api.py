@@ -6,19 +6,19 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from api.main import app
-from api.db import create_database
-from api.repositories.run_repository import RunRepository
-from api.routes.runs import get_run_service
-from api.schemas.runs import CreateRunResponse, RunResponse
-from api.services.run_service import (
+from eregion.api.main import app
+from eregion.api.db import create_database
+from eregion.api.repositories.run_repository import RunRepository
+from eregion.api.routes.runs import get_run_service
+from eregion.api.schemas.runs import CreateRunResponse, RunResponse
+from eregion.api.services.run_service import (
     SAFE_RUN_ERROR,
     InvalidRunStateError,
     RunNotFoundError,
     RunService,
 )
-from custom_agent.loop import AgentLoop
-from custom_agent.repository import StateRepository
+from eregion.domain.workflow.analysis import AnalysisWorkflow
+from eregion.domain.workflow.repository import StateRepository
 from runtime_helpers import CompleteFakeHandler, FailingHandler
 
 
@@ -96,7 +96,7 @@ def test_health(api_client):
 
 def test_create_run_uses_fake_service_without_llm(api_client):
     client, _ = api_client
-    with patch("job_agent.model.create_model") as model:
+    with patch("eregion.domain.model.create_model") as model:
         response = client.post(
             "/runs",
             json={"resume_text": FACT, "job_description": "Requires Python"},
@@ -182,7 +182,7 @@ def test_review_conflict_returns_409(api_client):
 
 def make_service(repository, handler):
     return RunService(repository=repository,
-        loop=AgentLoop(repository=StateRepository(repository._session_factory), handler=handler))
+        loop=AnalysisWorkflow(repository=StateRepository(repository._session_factory), handler=handler))
 
 
 def test_run_service_uses_run_id_as_thread_id_and_resumes_approval(run_repository):

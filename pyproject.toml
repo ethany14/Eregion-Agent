@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eregion-workspace"
+version = "0.1.0"
+description = "Local career agent with a single shared AgentLoop"
+requires-python = ">=3.12"
+
+[tool.setuptools]
+package-dir = {"" = "backend", scripts = "tools/scripts", evals = "tools/evals"}
+
+[tool.setuptools.packages.find]
+where = ["backend", "tools"]
+include = ["eregion*", "scripts*", "evals*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+"eregion.runtime.career" = ["board_directory.json"]

@@ -6,11 +6,11 @@ from pathlib import Path
 import pytest
 from test_application_pack import setup
 from test_integrated_p7 import pending
-from agent_runtime.application_pack.workflow import SharedPackModel
-from agent_runtime.application_pack.types import ItemStatus
-from agent_runtime.provider_usage import UsageLedger, usage_scope, capture_provider_attempts
+from eregion.runtime.application_pack.workflow import SharedPackModel
+from eregion.runtime.application_pack.types import ItemStatus
+from eregion.runtime.provider_usage import UsageLedger, usage_scope, capture_provider_attempts
 from evals.opt_report import wire_summary
-from agent_runtime.application_pack.verifier import ArtifactVerifier
+from eregion.runtime.application_pack.verifier import ArtifactVerifier
 
 
 def use_revision_model(workflow, model):

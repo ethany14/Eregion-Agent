@@ -3,11 +3,11 @@ from types import SimpleNamespace
 
 import pytest
 
-from agent_runtime.career import source_mode
-from agent_runtime.career.prompt import SYSTEM, TRIMMED_SYSTEM
-from agent_runtime.loop_engine import describe_tools
-from agent_runtime.request_options import slim_tools
-from agent_runtime.task_host import TaskHost
+from eregion.runtime.career import source_mode
+from eregion.runtime.career.prompt import SYSTEM, TRIMMED_SYSTEM
+from eregion.runtime.core.engine import describe_tools
+from eregion.runtime.request_options import slim_tools
+from eregion.runtime.tasks.host import TaskHost
 from test_career_flow import career  # noqa: F401
 
 
@@ -35,7 +35,7 @@ def test_unknown_prompt_is_never_rewritten():
 
 
 def test_host_descriptions_survive_slimming_without_mutating_tools():
-    from agent_runtime.career.harness import TOOLS
+    from eregion.runtime.career.harness import TOOLS
     original = [t for t in TOOLS if t['function']['name'] in {'search_jobs', 'read_job', 'score_job'}]
     before = [t['function']['description'] for t in original]
     tools = describe_tools(slim_tools(original), source_mode.tool_descriptions(True))

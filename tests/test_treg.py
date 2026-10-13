@@ -6,10 +6,10 @@ from threading import Barrier
 import httpx
 import pytest
 
-from agent_runtime.career import treg_config, treg_jobs
-from agent_runtime.career.external_tool_usage import BudgetExceeded, ExternalToolLedger
-from agent_runtime.career.treg_client import TregClient, TregUnavailable
-from api.db import create_database
+from eregion.runtime.career import treg_config, treg_jobs
+from eregion.runtime.career.external_tool_usage import BudgetExceeded, ExternalToolLedger
+from eregion.runtime.career.treg_client import TregClient, TregUnavailable
+from eregion.api.db import create_database
 
 FAKE = 'fake-test-token-not-real'
 
@@ -44,7 +44,7 @@ def test_config_precedence_empty_override_and_defaults(tmp_path):
     # An explicitly empty process variable means "not configured"; it never falls back to the file.
     assert treg_config.load(environ={'TREG_TOKEN': ''}, env_path=env_file).token is None
     defaults = treg_config.load(environ={}, env_path=tmp_path / 'missing.env')
-    assert not defaults.enabled and not defaults.api_first and defaults.usable() == 'treg_disabled'
+    assert not defaults.enabled and defaults.api_first and defaults.usable() == 'treg_disabled'
     assert defaults.task_max_micro == 100_000 and defaults.daily_max_micro == 500_000 and defaults.call_max_micro == 10_000
     assert treg_config.load(environ={'TREG_TOKEN': 'your-treg-token', 'JOB_AGENT_TREG_ENABLED': '1'},
                             env_path=tmp_path / 'missing.env').usable() == 'treg_token_missing'
@@ -248,7 +248,7 @@ def test_scrape_trims_other_jobs_and_counts_real_linkedin_links():
 
 def test_career_harness_close_releases_treg_client_once_even_if_another_close_fails():
     from types import SimpleNamespace
-    from agent_runtime.career.harness import CareerHarness
+    from eregion.runtime.career.harness import CareerHarness
     closed = []
 
     def closer(name, error=None):

@@ -7,11 +7,12 @@ import types
 from pathlib import Path
 
 import pytest
+from scripts.baseline_imports import relocate_imports
 from langchain_core.messages import HumanMessage, ToolMessage
-from agent_runtime.request_context import ContextArchive, prepare_request, encoded
-from agent_runtime.loop_context import ConversationWindow
-from agent_runtime.request_options import snapshot_refs, slim_tools
-from agent_runtime.provider_usage import current_scope
+from eregion.runtime.request_context import ContextArchive, prepare_request, encoded
+from eregion.runtime.core.context import ConversationWindow
+from eregion.runtime.request_options import snapshot_refs, slim_tools
+from eregion.runtime.provider_usage import current_scope
 from test_b6_offline_replay import replay, offline_guard, frozen_web, ScriptedModel
 from test_career_flow import career
 from test_auto_apply import database
@@ -25,15 +26,15 @@ def test_off_requests_equal_fixed_base(monkeypatch):
     monkeypatch.setenv('JOB_AGENT_OPT_HISTORY_POLICY', 'current')
     source = subprocess.check_output(['git', 'show', BASE + ':agent_runtime/request_context.py']).decode()
     legacy = types.ModuleType('legacy_request')
-    exec(compile(source, 'base/request_context.py', 'exec'), legacy.__dict__)
+    exec(compile(relocate_imports(source), 'base/request_context.py', 'exec'), legacy.__dict__)
     old_window_module = types.ModuleType('legacy_window')
-    exec(subprocess.check_output(['git','show',BASE+':agent_runtime/loop_context.py']).decode(), old_window_module.__dict__)
+    exec(relocate_imports(subprocess.check_output(['git','show',BASE+':agent_runtime/loop_context.py']).decode()), old_window_module.__dict__)
     legacy.ConversationWindow = old_window_module.ConversationWindow
     old_prompt = {}
-    exec(subprocess.check_output(['git','show',BASE+':agent_runtime/career/prompt.py']).decode(), old_prompt)
-    from agent_runtime.career.prompt import SYSTEM
+    exec(relocate_imports(subprocess.check_output(['git','show',BASE+':agent_runtime/career/prompt.py']).decode()), old_prompt)
+    from eregion.runtime.career.prompt import SYSTEM
     assert SYSTEM == old_prompt['SYSTEM']
-    from agent_runtime.career.harness import TOOLS
+    from eregion.runtime.career.harness import TOOLS
     for budget in (48000, 8000):
         window = ConversationWindow()
         old_window = old_window_module.ConversationWindow()
@@ -72,11 +73,11 @@ def test_stage2_b6_measurement(replay, career, monkeypatch, case):
     if (all(os.getenv('JOB_AGENT_OPT_' + name, '0') != '1'
             for name in ('SNAPSHOT_REFS','STABLE_TOOLS','PROMPT_TRIM'))
             and os.getenv('JOB_AGENT_OPT_HISTORY_POLICY', 'current') == 'current'):
-        import agent_runtime.loop_engine as engine
+        import eregion.runtime.core.engine as engine
         legacy = types.ModuleType('legacy_request')
-        exec(subprocess.check_output(['git','show',BASE+':agent_runtime/request_context.py']).decode(), legacy.__dict__)
+        exec(relocate_imports(subprocess.check_output(['git','show',BASE+':agent_runtime/request_context.py']).decode()), legacy.__dict__)
         old_window = types.ModuleType('legacy_window')
-        exec(subprocess.check_output(['git','show',BASE+':agent_runtime/loop_context.py']).decode(), old_window.__dict__)
+        exec(relocate_imports(subprocess.check_output(['git','show',BASE+':agent_runtime/loop_context.py']).decode()), old_window.__dict__)
         legacy.ConversationWindow = old_window.ConversationWindow
         original_prepare = engine.prepare_request
         def compare_request(prompt, tools, window, snapshot, archive, **kwargs):
@@ -130,8 +131,8 @@ def test_stage2_b6_measurement(replay, career, monkeypatch, case):
 @pytest.mark.parametrize('name', ['write_item', 'read_context'])
 def test_stable_disallowed_has_no_effect_and_breaks_loop(database, monkeypatch, name):
     from test_shared_agent_loop import Harness, Model, call, settled
-    from agent_runtime.career.repository import TaskRepository
-    from agent_runtime.task_loop import TaskLoop
+    from eregion.runtime.career.repository import TaskRepository
+    from eregion.runtime.tasks.loop import TaskLoop
     from langchain_core.messages import AIMessage
     monkeypatch.setenv('JOB_AGENT_OPT_STABLE_TOOLS', '1')
     harness = Harness()
@@ -176,8 +177,8 @@ def test_history_protects_current_user_and_original_evidence(monkeypatch, policy
 @pytest.mark.parametrize('restriction', ['no_page','must_decide','completion','search_only','recommendation'])
 def test_stable_capabilities_keep_legacy_execution_mask(career, monkeypatch, restriction):
     from types import SimpleNamespace
-    from agent_runtime.task_host import TaskHost
-    from agent_runtime.loop_engine import validate_call, ToolArgumentsError
+    from eregion.runtime.tasks.host import TaskHost
+    from eregion.runtime.core.engine import validate_call, ToolArgumentsError
     c = career
     if restriction == 'must_decide':
         c.repository.change(c.state['task_id'], progress_guard={'revision':0,'count':2})
@@ -206,8 +207,8 @@ def test_stable_capabilities_keep_legacy_execution_mask(career, monkeypatch, res
 
 
 def test_slim_schema_retains_title_parameter_and_constraints():
-    from agent_runtime.career.harness import TOOLS
-    from agent_runtime.loop_engine import validate_call, ToolArgumentsError
+    from eregion.runtime.career.harness import TOOLS
+    from eregion.runtime.core.engine import validate_call, ToolArgumentsError
     slim = slim_tools(TOOLS)
     valid = {'name':'import_job', 'args':{'url':'https://example.com','title':'Junior Analyst'}}
     validate_call(valid, slim)
@@ -215,10 +216,10 @@ def test_slim_schema_retains_title_parameter_and_constraints():
         validate_call({'name':'score_jobs','args':{'application_ids':[]}}, slim)
     assert len(encoded(slim)) < len(encoded(TOOLS))
 
-    from agent_runtime.career.harness import CareerHarness
-    from agent_runtime.task_loop import CONTROL_TOOLS
-    from agent_runtime.request_context import READ_CONTEXT
-    from agent_runtime.career.prompt import SYSTEM, TRIMMED_SYSTEM
+    from eregion.runtime.career.harness import CareerHarness
+    from eregion.runtime.tasks.loop import CONTROL_TOOLS
+    from eregion.runtime.request_context import READ_CONTEXT
+    from eregion.runtime.career.prompt import SYSTEM, TRIMMED_SYSTEM
     tools = [*CONTROL_TOOLS, *CareerHarness.tools, READ_CONTEXT]
     output = os.getenv('OPT_STAGE2_OUTPUT')
     if output:

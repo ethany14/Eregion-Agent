@@ -7,12 +7,12 @@ from threading import Event
 import pytest
 from langchain_core.messages import AIMessage
 
-from agent_runtime.auto_apply.agent import AgentTools, HybridApplicationAgent
-from agent_runtime.auto_apply.contracts import ChatRequest, ContinueApplication, ResumeProfileRequest
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.matching import resolve_option, question_identity
-from agent_runtime.auto_apply.repository import ApplyRepository
-from agent_runtime.auto_apply.resume_profile import ResumeFacts, extract_profile
+from eregion.runtime.auto_apply.agent import AgentTools, HybridApplicationAgent
+from eregion.runtime.auto_apply.contracts import ChatRequest, ContinueApplication, ResumeProfileRequest
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.matching import resolve_option, question_identity
+from eregion.runtime.auto_apply.repository import ApplyRepository
+from eregion.runtime.auto_apply.resume_profile import ResumeFacts, extract_profile
 from test_auto_apply import FakeBrowser, database, field, request, wait
 from test_auto_apply_agent import ScriptModel
 

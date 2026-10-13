@@ -9,13 +9,13 @@ from types import SimpleNamespace
 import pytest
 from langchain_core.messages import AIMessage
 
-from api.db import create_database
-from api.services.fit_analysis_service import FitAnalysisService
-from custom_agent.handlers import JobAgentStepHandler
-from custom_agent.state import AgentState, Step
-from agent_runtime.analysis_cache import AnalysisCache
-from agent_runtime.fast_decisions import FastDecisions
-from job_agent.schemas import ResumeAnalysis, ResumeEvidence, JobAnalysis, JobRequirement, SkillAssessment, SkillEvidence
+from eregion.api.db import create_database
+from eregion.api.services.fit_analysis_service import FitAnalysisService
+from eregion.domain.workflow.handlers import JobAgentStepHandler
+from eregion.domain.workflow.state import AgentState, Step
+from eregion.runtime.analysis_cache import AnalysisCache
+from eregion.runtime.fast_decisions import FastDecisions
+from eregion.domain.schemas import ResumeAnalysis, ResumeEvidence, JobAnalysis, JobRequirement, SkillAssessment, SkillEvidence
 
 class Analyzer:
     def __init__(self): self.calls = []; self.version = 'v1'
@@ -76,7 +76,7 @@ def test_unvalidated_resume_never_enters_cache(tmp_path):
 
 @pytest.mark.parametrize('count,expected', [(18, [18]), (60, [24, 24, 12])])
 def test_matching_batches_keep_all_requirements_and_bound_large_jobs(count, expected):
-    from job_agent.fast_match import assess_skills
+    from eregion.domain.fast_match import assess_skills
     resume = ResumeAnalysis(summary='', skills=[], education=[], evidence=[])
     job = JobAnalysis(title='Role', summary='', responsibilities=[], requirements=[JobRequirement(
         requirement_id=str(i), canonical_name=f'duty{i}', original_text=f'Duty {i}', level='required', category='responsibility') for i in range(count)])
@@ -92,7 +92,7 @@ def test_matching_batches_keep_all_requirements_and_bound_large_jobs(count, expe
     assert [m.requirement_id for m in result.matches] == [r.requirement_id for r in job.requirements]
 
 def test_exact_skill_keeps_negation_expertise_and_tool_identity():
-    from job_agent.fast_match import exact_skill_quote
+    from eregion.domain.fast_match import exact_skill_quote
     r = JobRequirement(requirement_id='r', canonical_name='tableau', original_text='Tableau', level='required')
     def evidence(text): return [ResumeEvidence(evidence_id='e', source_section='Skills', exact_text=text)]
     assert exact_skill_quote(r, evidence('Used Tableau.')) == 'Used Tableau.'
@@ -101,7 +101,7 @@ def test_exact_skill_keeps_negation_expertise_and_tool_identity():
     assert exact_skill_quote(r.model_copy(update={'atomic_text':'Advanced Tableau administration'}), evidence('Used Tableau.')) is None
 
 def test_sentence_references_round_trip_exactly():
-    from job_agent.job_extraction import numbered_sentences, ReferencedJobExtraction
+    from eregion.domain.job_extraction import numbered_sentences, ReferencedJobExtraction
     text = 'Engineer.\nMust know Python; SQL is preferred.\nBuild APIs.'
     sentences = numbered_sentences(text)
     extraction = ReferencedJobExtraction(title='Engineer', summary='', statements=[{'sentence_id':'s1', 'requirements':[
@@ -117,7 +117,7 @@ def test_sentence_references_round_trip_exactly():
     with pytest.raises(ValueError): extraction.expand({})
 
 def test_summary_counts_survive_bounded_trace():
-    from agent_runtime.telemetry import timing_update, application_perf_summary
+    from eregion.runtime.telemetry import timing_update, application_perf_summary
     state = {'created_at':'2026-10-09T00:00:00+00:00'}
     for i in range(100):
         state['page_history'] = [{'heading':str(i//50)}]
@@ -128,7 +128,7 @@ def test_summary_counts_survive_bounded_trace():
     assert len(state['timings']) == 80
 
 def test_thirty_field_snapshot_filters_memory_and_completed_fields(monkeypatch):
-    from agent_runtime.auto_apply.agent import AgentTools, HIDDEN_TOOLS
+    from eregion.runtime.auto_apply.agent import AgentTools, HIDDEN_TOOLS
     from test_auto_apply import FakeBrowser, field
     browser = FakeBrowser(''); browser.fields = [field(f'f{i}') for i in range(30)]
     for f in browser.fields:
@@ -153,9 +153,9 @@ FORM = '''<main><h1 id="heading">Application contact</h1><form onsubmit="event.p
 @pytest.mark.parametrize('url', ['https://job-boards.greenhouse.io/example/jobs/123',
     'https://jobs.lever.co/example/speed-test', 'https://example.wd5.myworkdayjobs.com/en-US/Careers/job/Speed-Test_R123'])
 def test_known_three_page_application_needs_zero_model_calls(url, monkeypatch):
-    from agent_runtime.auto_apply.browser import ApplicationBrowser
-    from agent_runtime.auto_apply.agent import HybridApplicationAgent
-    from agent_runtime.auto_apply.autofill import autofill
+    from eregion.runtime.auto_apply.browser import ApplicationBrowser
+    from eregion.runtime.auto_apply.agent import HybridApplicationAgent
+    from eregion.runtime.auto_apply.autofill import autofill
     monkeypatch.setenv('TYPESAFE_ENABLED','false'); monkeypatch.setenv('JOB_AGENT_HIDDEN_BROWSER','headless')
     class Browser(ApplicationBrowser):
         def _guard_request(self, route): route.fulfill(content_type='text/html', body=FORM)
@@ -176,9 +176,9 @@ def test_known_three_page_application_needs_zero_model_calls(url, monkeypatch):
 
 def test_duplicate_batch_rejected_before_any_mutation(monkeypatch):
     from test_auto_apply import FakeBrowser, field
-    from agent_runtime.auto_apply.agent import AgentTools
-    from agent_runtime.auto_apply.runner import ApplicationHost
-    from agent_runtime.loop_engine import Turn, ToolArgumentsError
+    from eregion.runtime.auto_apply.agent import AgentTools
+    from eregion.runtime.auto_apply.runner import ApplicationHost
+    from eregion.runtime.core.engine import Turn, ToolArgumentsError
     monkeypatch.setenv('TYPESAFE_ENABLED','false')
     browser=FakeBrowser('');browser.fields=[field('name')]
     session=AgentTools(browser,{'profile':{'first_name':'Test','last_name':'Candidate'},'answers':{}},autofill=lambda:{},active=lambda:True)
@@ -190,8 +190,8 @@ def test_duplicate_batch_rejected_before_any_mutation(monkeypatch):
 
 @pytest.mark.skipif(os.getenv('JOB_AGENT_BROWSER_TESTS') != '1', reason='Opt-in real Chrome')
 def test_worker_chrome_is_shared_but_contexts_are_isolated(monkeypatch):
-    from agent_runtime.auto_apply.browser import ApplicationBrowser
-    from agent_runtime.auto_apply.worker import BrowserWorker
+    from eregion.runtime.auto_apply.browser import ApplicationBrowser
+    from eregion.runtime.auto_apply.worker import BrowserWorker
     monkeypatch.setenv('JOB_AGENT_HIDDEN_BROWSER','headless')
     class Browser(ApplicationBrowser):
         def _guard_request(self,route):route.fulfill(content_type='text/html',body=FORM)
@@ -215,7 +215,7 @@ def test_worker_chrome_is_shared_but_contexts_are_isolated(monkeypatch):
 
 def test_one_turn_can_fill_four_independent_fields(monkeypatch):
     from test_auto_apply import FakeBrowser, field
-    from agent_runtime.auto_apply.agent import HybridApplicationAgent
+    from eregion.runtime.auto_apply.agent import HybridApplicationAgent
     monkeypatch.setenv('TYPESAFE_ENABLED','false')
     browser=FakeBrowser('');browser.fields=[field(f'answer{i}') for i in range(4)]
     browser.page_state=lambda: {'can_submit':True,'controls':[],'url':'https://example.invalid/apply','heading':'Application'}
@@ -237,7 +237,7 @@ def test_one_turn_can_fill_four_independent_fields(monkeypatch):
 
 def test_unknown_required_field_gets_one_model_question(monkeypatch):
     from test_auto_apply import FakeBrowser, field
-    from agent_runtime.auto_apply.agent import HybridApplicationAgent
+    from eregion.runtime.auto_apply.agent import HybridApplicationAgent
     monkeypatch.setenv('TYPESAFE_ENABLED','false')
     browser=FakeBrowser('');browser.fields=[field('editor',label='Preferred editor')]
     calls=[]
@@ -251,8 +251,8 @@ def test_unknown_required_field_gets_one_model_question(monkeypatch):
 
 def test_observation_schema_stays_stable_and_does_not_poll_repository(monkeypatch):
     from test_auto_apply import FakeBrowser, field
-    from agent_runtime.auto_apply.agent import AgentTools
-    from agent_runtime.auto_apply.runner import ApplicationHost
+    from eregion.runtime.auto_apply.agent import AgentTools
+    from eregion.runtime.auto_apply.runner import ApplicationHost
     monkeypatch.setenv('TYPESAFE_ENABLED','false')
     browser=FakeBrowser('');browser.fields=[field('editor',label='Preferred editor')]
     state={'profile':{},'answers':{},'chat_revision':3};reads=[]
@@ -267,8 +267,8 @@ def test_observation_schema_stays_stable_and_does_not_poll_repository(monkeypatc
     assert len(reads)==count
 
 def test_factual_only_revision_removes_claim_without_a_model():
-    from job_agent.schemas import ResumeSourceEntry, ResumeEntry, ResumeSection, SupportedClaim, TailoredResume, VerificationResult, UnsupportedClaim
-    from job_agent.resume_selection import remove_unsupported
+    from eregion.domain.schemas import ResumeSourceEntry, ResumeEntry, ResumeSection, SupportedClaim, TailoredResume, VerificationResult, UnsupportedClaim
+    from eregion.domain.resume_selection import remove_unsupported
     source=ResumeSourceEntry(source_entry_id='s',entry_type='experience',heading='Developer',evidence_ids=['e'])
     resume=ResumeAnalysis(summary='',skills=[],education=[],source_entries=[source],evidence=[
         ResumeEvidence(evidence_id='e',source_section='Experience',source_entry_id='s',exact_text='Built Python APIs.')])
@@ -282,14 +282,14 @@ def test_factual_only_revision_removes_claim_without_a_model():
     assert [c.text for c in revised.claims()]==['Built Python APIs.']
 
 def test_rejected_draft_never_starts_extra_model_verification():
-    from agent_runtime.application_pack.verification import verify_material_resume
-    from agent_runtime.application_pack.types import ArtifactVerification, ClaimIssue
+    from eregion.runtime.application_pack.verification import verify_material_resume
+    from eregion.runtime.application_pack.types import ArtifactVerification, ClaimIssue
     reject=ArtifactVerification(passed=False,issues=[ClaimIssue(block_id='x',unsupported_text='x',reason='unsupported',cited_evidence_ids=[],revision_instruction='remove')])
     def failure(state):raise AssertionError('A rejected draft must not incur a second model request')
     assert verify_material_resume(None, SimpleNamespace(verify_resume=failure), lambda:reject) is reject
 
 def test_cached_fast_options_are_not_counted_as_provider_calls():
-    from agent_runtime.telemetry import timing_update, application_perf_summary
+    from eregion.runtime.telemetry import timing_update, application_perf_summary
     state = {}
     state.update(timing_update(state, 'model', 1, input_tokens=100, context_chars=200))
     state.update(timing_update(state, 'fast_options', .001, requests=0, input_tokens=0))
@@ -301,23 +301,23 @@ def test_cached_fast_options_are_not_counted_as_provider_calls():
     assert summary['average_context_chars'] == 200
 
 def test_optional_browser_model_tiers_keep_recovery_on_main(monkeypatch):
-    from agent_runtime.auto_apply.agent import ConfiguredToolModel
+    from eregion.runtime.auto_apply.agent import ConfiguredToolModel
     used = []
     class Model:
         request_timeout = 10
         def __init__(self, tier): self.tier = tier
         def bind_tools(self, tools): return self
         def invoke(self, messages, **kwargs): used.append(self.tier); return AIMessage(content='Ready')
-    monkeypatch.setattr('job_agent.model.shared_model', lambda **kwargs: Model(kwargs['purpose']))
+    monkeypatch.setattr('eregion.domain.model.shared_model', lambda **kwargs: Model(kwargs['purpose']))
     model = ConfiguredToolModel()
     for snapshot in ({'fields':[]}, {'fields':[{'kind':'textarea'}]}, {'runtime_feedback':{'repeated_action':True}}, {'recovery':'previous action failed'}):
         model.invoke_turn([], [], snapshot)
     assert used == ['fast', 'agent', 'agent', 'agent']
 
 def test_batch_rejects_new_conditional_fields_before_any_action(monkeypatch):
-    from agent_runtime.auto_apply.agent import AgentTools
-    from agent_runtime.auto_apply.runner import ApplicationHost
-    from agent_runtime.loop_engine import ToolArgumentsError
+    from eregion.runtime.auto_apply.agent import AgentTools
+    from eregion.runtime.auto_apply.runner import ApplicationHost
+    from eregion.runtime.core.engine import ToolArgumentsError
     from test_auto_apply import FakeBrowser, field
     monkeypatch.setenv('TYPESAFE_ENABLED','false')
     browser = FakeBrowser(''); browser.fields = [field('first')]
@@ -331,8 +331,8 @@ def test_batch_rejects_new_conditional_fields_before_any_action(monkeypatch):
     assert not browser.fields[0]['value']
 
 def test_document_replacement_invalidates_memory_revision_and_close_unsubscribes(tmp_path):
-    from agent_runtime.auto_apply.repository import ApplyRepository
-    from agent_runtime.auto_apply.loop import ApplicationLoop
+    from eregion.runtime.auto_apply.repository import ApplyRepository
+    from eregion.runtime.auto_apply.loop import ApplicationLoop
     from test_auto_apply import request, FakeBrowser
     db = create_database('sqlite:///' + (tmp_path/'revision.db').as_posix(),create_schema_for_tests=True)
     repo = ApplyRepository(db.session_factory)

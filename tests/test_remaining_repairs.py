@@ -5,10 +5,10 @@ import json
 import pytest
 from sqlalchemy import select
 
-from agent_runtime.auto_apply.contracts import posting
-from agent_runtime.auto_apply.models import AutoApplicationRow
-from agent_runtime.auto_apply.repository import ApplyRepository, DuplicateApplication
-from agent_runtime.career.alerts import job_key
+from eregion.runtime.auto_apply.contracts import posting
+from eregion.runtime.auto_apply.models import AutoApplicationRow
+from eregion.runtime.auto_apply.repository import ApplyRepository, DuplicateApplication
+from eregion.runtime.career.alerts import job_key
 from test_auto_apply import database, request
 from test_career_flow import career, execute
 
@@ -93,7 +93,7 @@ def test_cross_conversation_alias_rejects_live_owner_then_adopts_cancelled_owner
 
 @pytest.mark.parametrize('terminal',['submitted','submission_unknown'])
 def test_application_loop_restart_alias_does_not_open_browser(database,terminal):
-    from agent_runtime.auto_apply.loop import ApplicationLoop
+    from eregion.runtime.auto_apply.loop import ApplicationLoop
     repo=ApplyRepository(database.session_factory)
     state,_=repo.create(request(url='https://careers.example.com/jobs/4021/apply'))
     repo.save(state,status=terminal,submission_started=True)
@@ -107,7 +107,7 @@ def test_application_loop_restart_alias_does_not_open_browser(database,terminal)
 
 
 def test_running_parent_restart_reuses_legacy_child(career):
-    from agent_runtime.task_loop import TaskLoop
+    from eregion.runtime.tasks.loop import TaskLoop
     from test_career_flow import ToolModel, settled
     from test_auto_apply import wait
     c=career
@@ -140,7 +140,7 @@ def test_literal_country_saved_without_substring_or_legal_inference(database):
 
 
 def test_stale_account_banner_follows_child_wait_token(career):
-    from agent_runtime.career.service import CareerService
+    from eregion.runtime.career.service import CareerService
     from test_auto_apply import wait
     c=career
     first=execute(c,'open_application_url',url='https://careers.example.com/jobs/4021')
@@ -162,7 +162,7 @@ def test_stale_account_banner_follows_child_wait_token(career):
 
 
 def test_two_stalled_reads_require_decision_without_another_read(career):
-    from agent_runtime.task_host import TaskHost
+    from eregion.runtime.tasks.host import TaskHost
     from types import SimpleNamespace
     from threading import RLock
     c=career
@@ -210,7 +210,7 @@ def test_plural_claim_rejected_when_only_one_started(career):
 
 def test_public_board_sources_and_blocked_fallback():
     import httpx
-    from agent_runtime.career.discovery import JobDiscovery
+    from eregion.runtime.career.discovery import JobDiscovery
     calls=[]
     def serve(req):
         calls.append((str(req.url),req.method,req.content))
@@ -233,7 +233,7 @@ def test_public_board_sources_and_blocked_fallback():
 
 
 def test_budget_reserves_final_decisions_without_extending_limit(career):
-    from agent_runtime.task_host import TaskHost
+    from eregion.runtime.tasks.host import TaskHost
     from types import SimpleNamespace
     c=career
     c.repository.change(c.state['task_id'],model_calls=57)
@@ -251,7 +251,7 @@ def test_budget_reserves_final_decisions_without_extending_limit(career):
     'Both applications have started, but the PDF failed.',
 ])
 def test_plural_status_claim_cannot_be_excused_by_unrelated_failure(text):
-    from agent_runtime.career.harness import CareerHarness
+    from eregion.runtime.career.harness import CareerHarness
     from types import SimpleNamespace
     urls=['https://careers.example.com/jobs/5001','https://careers.example.com/jobs/5002']
     runs={'one':{'url':urls[0],'status':'awaiting_review'},'two':{'url':urls[1],'status':'failed'}}

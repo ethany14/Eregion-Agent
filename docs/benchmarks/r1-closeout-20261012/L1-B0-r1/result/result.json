@@ -1,0 +1,84 @@
+{
+ "status": "needs_input",
+ "decisions": 10,
+ "error": "no_progress",
+ "acceptance": {
+  "status": "failed",
+  "failures": [
+   "loop_not_completed_cleanly",
+   "fewer_than_two_verified_scored_qualifying_recommendations"
+  ],
+  "qualified_count": 0,
+  "main_input_tokens": 108115,
+  "total_input_tokens": 108115,
+  "limits": {
+   "main_calls": 60,
+   "main_input_tokens": 1000000,
+   "total_input_tokens": 1000000
+  },
+  "jobs": []
+ },
+ "provider_usage": {
+  "calls": 10,
+  "completed": 10,
+  "failed": 0,
+  "pending": 0,
+  "discarded": 0,
+  "retries": 0,
+  "input_tokens": 108115,
+  "output_tokens": 3494,
+  "unknown_usage_calls": 0,
+  "groups": [
+   {
+    "purpose": "agent",
+    "model": "<configured-value>",
+    "calls": 10,
+    "input_tokens": 108115,
+    "output_tokens": 3494,
+    "unknown_usage_calls": 0,
+    "cached_input_tokens": 43400,
+    "reasoning_tokens": 2364,
+    "cache_hit_ratio": 0.40142440919391387,
+    "reasoning_share": 0.676588437321122
+   }
+  ],
+  "budget_input_tokens": 108115,
+  "cached_input_tokens": 43400,
+  "reasoning_tokens": 2364,
+  "cache_hit_ratio": 0.40142440919391387,
+  "reasoning_share": 0.676588437321122,
+  "usage_complete": true,
+  "provider_attempts": 10
+ },
+ "wire": {
+  "requests": 10,
+  "unknown_previous": 1,
+  "prefix_share": 0.4463653880242085,
+  "first_change": {
+   "message": 7,
+   "tools": 2
+  },
+  "provider_cached_share": 0.40142440919391387,
+  "provider_cache_unknown": 0,
+  "heuristic_note": "prefix_share is chars of identical leading request text; cached share is provider tokens"
+ },
+ "actions": [
+  "browser_open",
+  "browser_open",
+  "read_context",
+  "read_job",
+  "search_jobs",
+  "read_context",
+  "read_context",
+  "browser_open",
+  "browser_read",
+  "browser_open"
+ ],
+ "seconds": 46.31341999999859,
+ "blocked_frozen_requests": 9,
+ "attempt_errors": [],
+ "flags": {
+  "JOB_AGENT_OPT_HISTORY_POLICY": "current",
+  "JOB_AGENT_OPT_VERIFY_AND_SCORE": "0"
+ }
+}

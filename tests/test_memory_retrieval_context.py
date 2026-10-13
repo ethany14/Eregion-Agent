@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from agent_runtime.context import (
+from eregion.runtime.context import (
     ContextAssembler,
     ContextBlock,
     ContextBlockKind,
@@ -12,7 +12,7 @@ from agent_runtime.context import (
     ContextBudgetExceededError,
     estimate_tokens,
 )
-from agent_runtime.memory import (
+from eregion.runtime.memory import (
     MemoryItem,
     MemoryProvenance,
     MemoryQuery,
@@ -23,10 +23,10 @@ from agent_runtime.memory import (
     MemoryType,
     lexical_tokens,
 )
-from agent_runtime.memory.repository import MemoryRepository
-from agent_runtime.memory.rendering import render_memory_item
-from agent_runtime.sessions.clock import FakeClock
-from api.db import create_database
+from eregion.runtime.memory.repository import MemoryRepository
+from eregion.runtime.memory.rendering import render_memory_item
+from eregion.runtime.sessions.clock import FakeClock
+from eregion.api.db import create_database
 
 NOW = datetime(2026, 1, 1, tzinfo=UTC)
 

@@ -8,7 +8,7 @@ import pytest
 from playwright.sync_api import expect, sync_playwright
 
 pytestmark = pytest.mark.skipif(os.getenv('JOB_AGENT_BROWSER_TESTS') != '1', reason='Opt-in offline Chrome')
-WEB = Path(__file__).resolve().parents[1] / 'web_app'
+WEB = Path(__file__).resolve().parents[1] / 'frontend/web_app'
 
 
 @pytest.mark.parametrize('theme', ['light', 'night'])

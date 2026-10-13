@@ -7,24 +7,24 @@ from types import SimpleNamespace
 
 import pytest
 
-from agent_runtime.context.repository import ContextSnapshotRepository
-from agent_runtime.evidence.repository import CareerEvidenceRepository
-from agent_runtime.interviewer.controller import InterviewController
-from agent_runtime.interviewer.repository import InterviewRepository
-from agent_runtime.interviewer.types import (
+from eregion.runtime.context.repository import ContextSnapshotRepository
+from eregion.runtime.evidence.repository import CareerEvidenceRepository
+from eregion.runtime.interviewer.controller import InterviewController
+from eregion.runtime.interviewer.repository import InterviewRepository
+from eregion.runtime.interviewer.types import (
     AnswerOutcome, InterviewAnswerAssessment, InterviewQuestion, InterviewStatus,
 )
-from agent_runtime.interviewer.errors import InterviewStaleVersionError
-from agent_runtime.interviewer.policy import InterviewPriorityPolicy, validate_candidate
-from agent_runtime.interviewer.errors import InterviewValidationError
-from agent_runtime.mock_interview.errors import MockInterviewValidation
-from agent_runtime.evidence.types import EvidenceStatus
-from agent_runtime.sessions.repository import SessionRepository
-from agent_runtime.workspace.models import ApplicationArtifactRow
-from agent_runtime.workspace.repository import JobWorkspaceRepository
-from agent_runtime.security import canonical_json
-from api.db import create_database, upgrade_database
-from api.main import create_app
+from eregion.runtime.interviewer.errors import InterviewStaleVersionError
+from eregion.runtime.interviewer.policy import InterviewPriorityPolicy, validate_candidate
+from eregion.runtime.interviewer.errors import InterviewValidationError
+from eregion.runtime.mock_interview.errors import MockInterviewValidation
+from eregion.runtime.evidence.types import EvidenceStatus
+from eregion.runtime.sessions.repository import SessionRepository
+from eregion.runtime.workspace.models import ApplicationArtifactRow
+from eregion.runtime.workspace.repository import JobWorkspaceRepository
+from eregion.runtime.security import canonical_json
+from eregion.api.db import create_database, upgrade_database
+from eregion.api.main import create_app
 from fastapi.testclient import TestClient
 from alembic import command
 from alembic.config import Config
@@ -479,7 +479,7 @@ def test_question_context_is_application_scoped_and_snapshotted(interview_setup)
     assert application_id in context
     assert "SecretOtherApplicationToken" not in context
     assert "Kubernetes" not in context
-    from agent_runtime.context.models import ContextSnapshotRow
+    from eregion.runtime.context.models import ContextSnapshotRow
     with db.session_factory() as session:
         snapshots = session.query(ContextSnapshotRow).filter_by(session_id=started.agent_session_id).all()
         assert len(snapshots) == 1

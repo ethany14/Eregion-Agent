@@ -4,13 +4,13 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from agent_runtime import ToolCallRequest, ToolContext, ToolDataClassification, ToolExecutionStatus, ToolExecutor, ToolRegistry, ToolRiskLevel, ToolSideEffect
-from agent_runtime.tools import SqlAlchemyRunReader, register_builtin_job_agent_tools
-from agent_runtime.tools.run_reader import ReadRun
-from agent_runtime.tools.schemas import PublicRunResult
-from api.db import create_database
-from api.repositories.run_repository import RunRepository
-from job_agent.schemas import JobAnalysis, JobRequirement, MissingRequirement, ResumeAnalysis, ResumeEvidence, ScoreBreakdown, SkillEvidence, SkillMatch, SupportedClaim, TailoredResume, VerificationResult
+from eregion.runtime import ToolCallRequest, ToolContext, ToolDataClassification, ToolExecutionStatus, ToolExecutor, ToolRegistry, ToolRiskLevel, ToolSideEffect
+from eregion.runtime.tools import SqlAlchemyRunReader, register_domain_tools
+from eregion.runtime.tools.run_reader import ReadRun
+from eregion.runtime.tools.schemas import PublicRunResult
+from eregion.api.db import create_database
+from eregion.api.repositories.run_repository import RunRepository
+from eregion.domain.schemas import JobAnalysis, JobRequirement, MissingRequirement, ResumeAnalysis, ResumeEvidence, ScoreBreakdown, SkillEvidence, SkillMatch, SupportedClaim, TailoredResume, VerificationResult
 
 
 def make_result(title: str, score: float, statuses: dict[str, str]) -> PublicRunResult:
@@ -71,7 +71,7 @@ def builtin_runtime():
             result=make_result("Data Engineer", 75, {"python": "matched", "sql": "missing", "power bi": "partial", "work authorization": "needs_confirmation", "tableau": "matched"}),
             created_at=now - timedelta(days=2), updated_at=now - timedelta(hours=1)),
     ]
-    registry = register_builtin_job_agent_tools(ToolRegistry(), FakeRunReader(runs))
+    registry = register_domain_tools(ToolRegistry(), FakeRunReader(runs))
     executor = ToolExecutor(registry)
     context = ToolContext(task_id="tool-test", allowed_tools=frozenset({
         "list_recent_runs", "get_run_result", "compare_run_requirements", "render_tailored_resume"}))
@@ -151,7 +151,7 @@ def test_sqlalchemy_run_reader_and_builtins_do_not_expose_raw_sources(tmp_path):
         repository.update("db-run", status="awaiting_review",
             result=make_result("Backend Engineer", 100, {"python": "matched"}).model_dump(mode="json"),
             error_message=None)
-        registry = register_builtin_job_agent_tools(ToolRegistry(), SqlAlchemyRunReader(database.session_factory))
+        registry = register_domain_tools(ToolRegistry(), SqlAlchemyRunReader(database.session_factory))
         executor = ToolExecutor(registry)
         context = ToolContext(run_id="tool-reader", allowed_tools=frozenset({"list_recent_runs", "get_run_result"}))
         listed = call(executor, context, "list_recent_runs", {"limit": 10})

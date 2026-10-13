@@ -4,7 +4,7 @@ import pytest
 from test_application_pack import setup
 from test_integrated_p7 import pending
 from test_integrated_p8_material_live import use_revision_model
-from agent_runtime.application_pack.types import CoverLetter, ItemStatus
+from eregion.runtime.application_pack.types import CoverLetter, ItemStatus
 
 
 @pytest.mark.parametrize('supported', [True, False])

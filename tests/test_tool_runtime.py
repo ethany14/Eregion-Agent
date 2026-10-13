@@ -4,12 +4,12 @@ import json
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import IntegrityError
 
-from api.db import create_database, upgrade_database
+from eregion.api.db import create_database, upgrade_database
 
 import pytest
 from pydantic import BaseModel, ConfigDict, Field
 
-from agent_runtime import (
+from eregion.runtime import (
     RESUME_EVIDENCE_SOURCE_TYPES,
     ToolCallRequest,
     ToolContext,
@@ -22,10 +22,10 @@ from agent_runtime import (
     ToolRiskLevel,
     provenance_may_support_resume_claim,
 )
-from agent_runtime.errors import DuplicateToolError, UnknownToolError
-from agent_runtime.errors import IdempotencyConflictError, ApprovalBindingError, RetryableToolError, StaleToolCallError, ToolTimeoutError
-from agent_runtime.models import ToolCallEventRow
-from agent_runtime.security import REDACTED, arguments_hash
+from eregion.runtime.errors import DuplicateToolError, UnknownToolError
+from eregion.runtime.errors import IdempotencyConflictError, ApprovalBindingError, RetryableToolError, StaleToolCallError, ToolTimeoutError
+from eregion.runtime.models import ToolCallEventRow
+from eregion.runtime.security import REDACTED, arguments_hash
 
 
 class ReadArguments(BaseModel):

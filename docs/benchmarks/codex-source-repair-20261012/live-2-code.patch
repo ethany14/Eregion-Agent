@@ -1,0 +1,96 @@
+diff --git a/agent_runtime/career/discovery.py b/agent_runtime/career/discovery.py
+index ee4ebb1..cc98093 100644
+--- a/agent_runtime/career/discovery.py
++++ b/agent_runtime/career/discovery.py
+@@ -352,7 +352,11 @@ class JobDiscovery:
+             if source in excluded_sources or (board.get('platform')=='workday' and host and host in excluded_hosts):
+                 skipped_sources.append(source)
+                 continue
+-            sources_checked.append({**board,'source':source})
++            # Coverage metadata belongs to the directory, not each search response.
++            # Whole-company location inventories can dwarf the actual job cards.
++            sources_checked.append({**{k:board[k] for k in ('platform','company','host','site',
++                'display_name','source_url','verified_at','verified_by','job_count_at_verification') if k in board},
++                'source':source})
+             try:
+                 platform,company = board['platform'],board['company']
+                 if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',company):raise ValueError('Invalid company board token.')
+diff --git a/agent_runtime/career/linkedin_source.py b/agent_runtime/career/linkedin_source.py
+index 561184a..eff3c55 100644
+--- a/agent_runtime/career/linkedin_source.py
++++ b/agent_runtime/career/linkedin_source.py
+@@ -9,6 +9,7 @@ from __future__ import annotations
+ 
+ import json
+ import re
++from urllib.parse import urlsplit
+ from typing import Any, Callable
+ 
+ SERVER_ID = 'linkedin'
+@@ -38,6 +39,21 @@ def job_url(job_id: str) -> str:
+     return f'https://www.linkedin.com/jobs/view/{job_id}/'
+ 
+ 
++def _matches_job_url(url: str, job_id: str) -> bool:
++    """Bind evidence to a public LinkedIn posting, not a substring in another URL."""
++    if not re.fullmatch(r'[0-9]{5,20}', job_id):
++        return False
++    try:
++        parsed = urlsplit(url)
++        return (parsed.scheme == 'https'
++                and parsed.hostname in {'linkedin.com', 'www.linkedin.com'}
++                and parsed.username is None and parsed.password is None
++                and parsed.port in (None, 443)
++                and parsed.path in {f'/jobs/view/{job_id}', f'/jobs/view/{job_id}/'})
++    except ValueError:
++        return False
++
++
+ class LinkedInMcpSource:
+     """Adapter with a per-batch call budget, per-call deadline and stop conditions.
+ 
+@@ -109,7 +125,7 @@ class LinkedInMcpSource:
+         elif len(posting) < MIN_POSTING_CHARS:
+             reasons.append('job_posting_too_short')
+         url = str(payload.get('url') or '')
+-        if not re.search(rf'/jobs/view/{re.escape(job_id)}(?:/|\?|$)', url):
++        if not _matches_job_url(url, job_id):
+             reasons.append('identity_unverified')  # the page must be this job, not a redirect or another posting
+         if apply.get('type') == 'closed':
+             status = 'closed'
+diff --git a/agent_runtime/request_context.py b/agent_runtime/request_context.py
+index 0ce54ce..775c195 100644
+--- a/agent_runtime/request_context.py
++++ b/agent_runtime/request_context.py
+@@ -58,6 +58,13 @@ class ContextArchive:
+             return self.incomplete(ref)
+         value = stored['value']
+         root_value = value
++        progress_only = (isinstance(value, list) and bool(value) and all(
++            isinstance(row, dict) and row.get('role') == 'assistant' and 'text' in row
++            and 'id' in row and 'at' in row for row in value))
++        if progress_only and not historical:
++            return {'ref': ref, 'error_code': 'assistant_progress_context', 'no_new_evidence': True,
++                'content': '', 'next': 'These are your own earlier progress messages, not job evidence. '
++                'Use source results or finish with the verified outcome. historical=true is only for an explicit conversation audit.'}
+         if isinstance(value, dict) and value.get('truncated'):
+             return self.incomplete(ref)
+         if self.is_history(value):
+@@ -147,6 +154,7 @@ class ContextArchive:
+                   'next_offset': end if end < len(text) else None,
+                   'read_progress': progress}
+         if exhausted:result['no_new_evidence']=True
++        if progress_only:result.update(no_new_evidence=True, historical=True)
+         if ancestor_read:result.update(no_new_evidence=True,already_read_parent=True)
+         # A flag cannot turn an already-visible immutable range into new evidence.
+         # Re-fetch it only when compaction actually removed it from the request.
+@@ -615,6 +623,9 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
+         if older:
+             before=len(encoded(rows))
+             live['assistant_progress_history']=archive.reference(older)
++            live['assistant_progress_history'].pop('read_with', None)
++            live['assistant_progress_history'].update(audit_only=True,
++                note='Prior assistant narration only; no source evidence. Do not read to continue this task.')
+             live['messages']=[row for i,row in enumerate(rows) if row.get('role')!='assistant' or i in keep]
+             size+=len(encoded(live['messages']))+len(encoded(live['assistant_progress_history']))-before
+     if size > max_chars and isinstance(live.get('research_pages'),list):

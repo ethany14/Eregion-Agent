@@ -6,10 +6,10 @@ import os
 from pathlib import Path
 import pytest
 from langchain_core.messages import ToolMessage
-from job_agent.model import ProviderCompatibleChatOpenAI
-from agent_runtime import wire_metrics
-from agent_runtime.provider_usage import current_scope
-from agent_runtime.request_context import encoded
+from eregion.domain.model import ProviderCompatibleChatOpenAI
+from eregion.runtime import wire_metrics
+from eregion.runtime.provider_usage import current_scope
+from eregion.runtime.request_context import encoded
 from test_b6_offline_replay import replay, offline_guard, frozen_web, ScriptedModel
 from test_career_flow import career
 

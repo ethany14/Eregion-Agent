@@ -2,11 +2,11 @@
 import logging
 from types import SimpleNamespace
 
-from agent_runtime.auto_apply.agent import HybridApplicationAgent
-from agent_runtime.auto_apply.loop import MAX_RETRY_DELAY, RETRY_POLICY, ApplicationLoop
-from agent_runtime.model_runtime import model_failure
+from eregion.runtime.auto_apply.agent import HybridApplicationAgent
+from eregion.runtime.auto_apply.loop import MAX_RETRY_DELAY, RETRY_POLICY, ApplicationLoop
+from eregion.runtime.model_runtime import model_failure
 from test_auto_apply import database
-from agent_runtime.auto_apply.repository import ApplyRepository
+from eregion.runtime.auto_apply.repository import ApplyRepository
 
 
 def test_rate_limits_back_off_longer_than_other_failures(database):

@@ -4,10 +4,10 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
-from agent_runtime.auto_apply.browser import ApplicationBrowser, BrowserBlocked
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.repository import ApplyRepository, ApplyConflict
-from api.main import create_app
+from eregion.runtime.auto_apply.browser import ApplicationBrowser, BrowserBlocked
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.repository import ApplyRepository, ApplyConflict
+from eregion.api.main import create_app
 from test_auto_apply import database, FakeBrowser, request, wait
 from test_career_flow import career
 from test_job_alerts import start_service

@@ -5,10 +5,10 @@ from uuid import uuid4
 import pytest
 from langchain_core.messages import HumanMessage
 
-from agent_runtime.career.alerts import job_key
-from agent_runtime.career.search_recovery import recovery
-from agent_runtime.request_context import ContextArchive, prepare_request
-from agent_runtime.loop_context import ConversationWindow
+from eregion.runtime.career.alerts import job_key
+from eregion.runtime.career.search_recovery import recovery
+from eregion.runtime.request_context import ContextArchive, prepare_request
+from eregion.runtime.core.context import ConversationWindow
 from test_career_flow import career, execute
 from test_remaining_search_runtime import host_for
 
@@ -125,7 +125,7 @@ def test_search_schema_does_not_remove_other_explicit_requested_capabilities(car
 
 def test_real_qualification_final_cannot_vacuously_pass_without_saved_recommendations():
     from pathlib import Path
-    from agent_runtime.career.harness import CareerHarness
+    from eregion.runtime.career.harness import CareerHarness
     case=json.loads((Path(__file__).parent/'fixtures/remaining_qualification_analyst.json').read_text(encoding='utf-8'))
     state={'goal':case['goal'],'analyses':case['analyses'],'recommendations':[]}
     with pytest.raises(ValueError,match='URL'):

@@ -4,9 +4,9 @@ from types import SimpleNamespace
 import httpx
 import pytest
 
-from agent_runtime.career import treg_config
-from agent_runtime.career.external_tool_usage import ExternalToolLedger
-from agent_runtime.career.treg_client import TregClient
+from eregion.runtime.career import treg_config
+from eregion.runtime.career.external_tool_usage import ExternalToolLedger
+from eregion.runtime.career.treg_client import TregClient
 from test_career_flow import career, execute  # noqa: F401
 from test_remaining_search_completion import URL, prepare
 
@@ -78,7 +78,7 @@ def test_api_first_uses_the_directory_without_treg(career, monkeypatch):
     c.harness.discovery = Discovery()
     result = execute(c, 'search_jobs', query='junior data analyst', location='New York, NY')
     assert c.harness.discovery.calls == [('directory', 'junior data analyst')]
-    assert 'treg_supplement' in result and result['treg_supplement']['error_code'] == 'treg_unavailable'
+    assert 'treg_supplement' not in result and result['linkedin_mcp']['error_code'] == 'linkedin_mcp_unavailable'
 
 
 def test_linkedin_only_never_traverses_other_boards(career, monkeypatch):
@@ -88,7 +88,7 @@ def test_linkedin_only_never_traverses_other_boards(career, monkeypatch):
     ask(c, 'Find junior data analyst jobs only on LinkedIn.')
     c.harness.discovery = Discovery()
     result = execute(c, 'search_jobs', query='junior data analyst', location='New York, NY')
-    assert result['error_code'] == 'treg_unavailable' and c.harness.discovery.calls == []
+    assert result['error_code'] == 'linkedin_mcp_unavailable' and c.harness.discovery.calls == []
 
 
 def test_linkedin_only_with_treg_returns_candidate_cards_and_records_spend(career, monkeypatch):

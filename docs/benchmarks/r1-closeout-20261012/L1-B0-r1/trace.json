@@ -1,0 +1,534 @@
+{
+  "goal": "Find two current junior data analyst in New York positions for my saved resume. Start with LinkedIn or Indeed; if blocked or login is required, immediately use public company career boards or other sources. Read and score jobs you can verify, recommend any you can verify, and summarize the actual result. Respect the requested seniority and disclose blocked sources or insufficient results. Do not apply or create a schedule.",
+  "status": "needs_input",
+  "error": {
+    "stage": "decision",
+    "code": "no_progress",
+    "retryable": true,
+    "message": "Repeated steps produced no new evidence. Saved work is preserved; the request is incomplete."
+  },
+  "progress_guard": {
+    "revision": 0,
+    "count": 3
+  },
+  "history": [
+    {
+      "tool": "browser_open",
+      "arguments": {
+        "url": "https://www.linkedin.com/jobs/search/?keywords=junior%20data%20analyst&location=New%20York%2C%20NY"
+      },
+      "result": {
+        "error": "Source blocked in this user turn. Switch to a different public source; changing query or page does not unblock it. The user can sign in using browser control, or retry in a new turn. Do not bypass verification.",
+        "error_code": "source_blocked",
+        "source": "Frozen source unavailable: no recorded response",
+        "no_new_evidence": true,
+        "next": "Use a healthy observed candidate or discover a different public source. This source remains blocked for this user turn.",
+        "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation."
+      }
+    },
+    {
+      "tool": "browser_open",
+      "arguments": {
+        "url": "https://www.indeed.com/jobs?q=junior+data+analyst&l=New+York%2C+NY"
+      },
+      "result": {
+        "context_ref": "ctx-2400c19f61d70e28e298b1a3",
+        "chars": 15277,
+        "read_with": "read_context",
+        "available_keys": [
+          "title",
+          "primary_heading",
+          "heading",
+          "job_detail",
+          "text",
+          "text_offset",
+          "text_length",
+          "region_ref",
+          "regions",
+          "url",
+          "controls",
+          "control_count",
+          "observation_id",
+          "page_evidence_hash"
+        ],
+        "job_detail": {
+          "body_scope": "bounded_selector",
+          "title": "Data Analyst",
+          "instruction": "A single bounded posting body is available. Use read_job to capture it instead of rereading search controls.",
+          "read_job_arguments": {
+            "url": "https://www.indeed.com/jobs?q=junior+data+analyst&l=New+York%2C+NY"
+          }
+        },
+        "regions": [
+          {
+            "ref": "b-bu17q1-171",
+            "label": "junior data analyst jobs in New York, NY",
+            "tag": "MAIN",
+            "text_length": 13484
+          },
+          {
+            "ref": "b-bu17q1-172",
+            "label": "Democratize data and insights through data integration and the use of visualization tools. Fast learner, comfortable using advanced SQL, experience working with",
+            "tag": "DIV",
+            "text_length": 270
+          },
+          {
+            "ref": "b-bu17q1-173",
+            "label": "Producing data analysis for and providing feedback on data visualizations and descriptions in communications materials, blogs, journal articles, reports, and… V",
+            "tag": "DIV",
+            "text_length": 333
+          },
+          {
+            "ref": "b-bu17q1-174",
+            "label": "Foundational knowledge of data analytics concepts, including data collection, validation, analysis, visualization, and insight generation. View all American Exp",
+            "tag": "DIV",
+            "text_length": 447
+          },
+          {
+            "ref": "b-bu17q1-175",
+            "label": "The Associate Data Analyst will support data collection from City agencies and other sources while maintaining property data in a Salesforce environment and… Vi",
+            "tag": "DIV",
+            "text_length": 450
+          },
+          {
+            "ref": "b-bu17q1-176",
+            "label": "Support a variety of teams on data analysis. Revenue Analysis: provide analytical support to iHeartMedia leadership, proactively identifying issues and… View al",
+            "tag": "DIV",
+            "text_length": 372
+          }
+        ],
+        "url": "https://www.indeed.com/jobs?q=junior+data+analyst&l=New+York%2C+NY",
+        "title": "Now Hiring: 400 Junior Data Analyst Jobs in New York, NY | Indeed",
+        "heading": "junior data analyst jobs in New York, NY / Data Analyst / Data Analyst / Campus Undergraduate Full-Time Analyst - 2027 Data & Analytics, Enterprise Technology Services- New York, NY / Associate Data Analyst / Digital Data Analyst / Data Analyst / Data Analyst / Data Analyst / Graduate Data Analyst / Data Analyst / (USA) Data Analyst II / Data Analyst / Data Analyst / Junior Risk Analyst / Analyst, Master Transactional Data / People also searched: / Resume Resources: / Career Resources: / Employer Resources: / Data Analyst / Job details / Full job description / Company and salary information / ",
+        "observation_id": "b6-observation-2",
+        "control_count": 25,
+        "page_evidence_hash": "03e4b3128bd8a6d1a20760fa779ca41615543c32e88767934aea7b46d42d42bd",
+        "primary_heading": "junior data analyst jobs in New York, NY",
+        "text_offset": 0,
+        "text_length": 13596,
+        "region_ref": null,
+        "text_preview": "Skip to main content\nHome\nCompany reviews\nFind salaries\nSign in\n🇺🇸\nEn\nEmployers / Post Job\nStart of main content\nKeyword : all jobs\n&nbsp;\nEdit location input box label\nSearch\nDate posted\nPay\nDistance\n1\nEasily apply\nJob type\nExperience level\nEducation\nSkill\nCompensation package\nEncouraged to apply\nUpload your resume - Let employers find you\n&nbsp;\njunior data analyst jobs in New York, NY\nSort by:\nrelevance - date\nData Analyst\nGoodApple\nNew York, NY\n$69,000 - $85,000 a year\nFull-time\nDemocratize data and insights through data integration and the use of visualization tools.\nFast learner, comfortable using advanced SQL, experience working with…\nView all GoodApple jobs in New York, NY - New York jobs\nSalary Search: Data Analyst salaries in New York, NY\nData Analyst\nNYU Langone Health\nHybrid wo",
+        "observed_links": [
+          {
+            "url": "https://www.indeed.com/career/data-analyst/salaries/New-York--NY",
+            "label": "Data Analyst salaries in New York, NY",
+            "context": ""
+          },
+          {
+            "url": "https://www.indeed.com/career/data-analyst/salaries/10016--NY",
+            "label": "Data Analyst salaries in New York, NY",
+            "context": ""
+          },
+          {
+            "url": "https://www.indeed.com/career/technology-analyst/salaries/New-York--NY",
+            "label": "Campus Undergraduate Full-Time Analyst - 2027 Data & Analytics, Enterprise Technology Services- New York, NY salaries in New York, NY",
+            "context": ""
+          },
+          {
+            "url": "https://www.indeed.com/career/digital-analyst/salaries/New-York--NY",
+            "label": "Digital Data Analyst salaries in New York, NY",
+            "context": ""
+          }
+        ],
+        "controls": {
+          "context_ref": "ctx-c2795b47460ba676b809bb36",
+          "chars": 2762,
+          "read_with": "read_context",
+          "preview": "[{\"ref\":\"b-bu17q1-26\",\"label\":\"full details of Data Analyst\",\"tag\":\"A\",\"type\":\"\",\"role\":\"button\",\"hr"
+        },
+        "next_control_offset": 12,
+        "more_controls": "Use browser_read with next_control_offset or a query; path can inspect the archived controls without changing observation_id.",
+        "all_controls": {
+          "ref": "ctx-2400c19f61d70e28e298b1a3",
+          "path": [
+            "controls"
+          ],
+          "instruction": "The controls preview below is only a subset. Read this full source path or use browser_read query/next_control_offset to find job links."
+        }
+      }
+    },
+    {
+      "tool": "read_context",
+      "arguments": {
+        "ref": "ctx-2400c19f61d70e28e298b1a3"
+      },
+      "result": {
+        "ref": "ctx-2400c19f61d70e28e298b1a3",
+        "offset": 0,
+        "chars": 15277,
+        "content": "{\"title\":\"Now Hiring: 400 Junior Data Analyst Jobs in New York, NY | Indeed\",\"primary_heading\":\"junior data analyst jobs in New York, NY\",\"heading\":\"junior data analyst jobs in New York, NY / Data Analyst / Data Analyst / Campus Undergraduate Full-Time Analyst - 2027 Data & Analytics, Enterprise Technology Services- New York, NY / Associate Data Analyst / Digital Data Analyst / Data Analyst / Data Analyst / Data Analyst / Graduate Data Analyst / Data Analyst / (USA) Data Analyst II / Data Analyst / Data Analyst / Junior Risk Analyst / Analyst, Master Transactional Data / People also searched: / Resume Resources: / Career Resources: / Employer Resources: / Data Analyst / Job details / Full job description / Company and salary information / \",\"job_detail\":{\"body_scope\":\"bounded_selector\",\"title\":\"Data Analyst\",\"instruction\":\"A single bounded posting body is available. Use read_job to capture it instead of rereading search controls.\",\"read_job_arguments\":{\"url\":\"https://www.indeed.com/jobs?q=junior+data+analyst&l=New+York%2C+NY\"}},\"text\":\"Skip to main content\\nHome\\nCompany reviews\\nFind salaries\\nSign in\\n🇺🇸\\nEn\\nEmployers / Post Job\\nStart of main content\\nKeyword : all jobs\\n&nbsp;\\nEdit location input box label\\nSearch\\nDate posted\\nPay\\nDistance\\n1\\nEasily apply\\nJob type\\nExperience level\\nEducation\\nSkill\\nCompensation package\\nEncouraged to apply\\nUpload your resume - Let employers find you\\n&nbsp;\\njunior data analyst jobs in New York, NY\\nSort by:\\nrelevance - date\\nData Analyst\\nGoodApple\\nNew York, NY\\n$69,000 - $85,000 a year\\nFull-time\\nDemocratize data and insights through data integration and the use of visualization tools.\\nFast learner, comfortable using advanced SQL, experience working with…\\nView all GoodApple jobs in New York, NY - New York jobs\\nSalary Search: Data Analyst salaries in New York, NY\\nData Analyst\\nNYU Langone Health\\nHybrid work in New York, NY 10016\\n$70,481.60 - $83,475.00 a year\\nProducing data analysis for and providing feedback on data visualizations and descriptions in communications materials, blogs, journal articles, reports, and…\\nView all NYU Langone Health jobs in New York, NY - New York jobs\\nSalary Search: Data Analyst salaries in New York, NY\\nSee popular questions & answers about NYU Langone Health\\nCampus Undergraduate Full-Time Analyst - 2027 Data & Analytics, Enterprise Technology Services- New York, NY\\nAmerican Express\\nHybrid work in New York, NY\\n$78,000 - $124,750 a year\\nFoundational knowledge of data analytics concepts, including data collection, validation, analysis, visualization, and insight generation.\\nView all American Express jobs in New York, NY - New York jobs - Technology Analyst jobs in New York, NY\\nSalary Search: Campus Undergraduate Full-Time Analyst - 2027 Data & Analytics, Enterprise Technology Services- New York, NY salaries in New York, NY\\nSee popular questions & answers about American Express\\nAssociate Data Analyst\\nResearch Foundation of The City University of New...",
+        "next_offset": 3000,
+        "read_progress": {
+          "historical_access": false,
+          "recent_ranges": [
+            [
+              0,
+              3000
+            ]
+          ],
+          "ref": "ctx-2400c19f61d70e28e298b1a3",
+          "path": [],
+          "ranges": [
+            [
+              0,
+              3000
+            ]
+          ],
+          "chars": 15277,
+          "reads": 1,
+          "next_unread_offset": 3000
+        },
+        "available_paths": [
+          {
+            "path": [
+              "title"
+            ],
+            "chars": 67,
+            "type": "str"
+          },
+          {
+            "path": [
+              "primary_heading"
+            ],
+            "chars": 42,
+            "type": "str"
+          },
+          {
+            "path": [
+              "heading"
+            ],
+            "chars": 602,
+            "type": "str"
+          },
+          {
+            "path": [
+              "job_detail"
+            ],
+            "chars": 279,
+            "type": "dict",
+            "identity": {
+              "title": "Data Analyst"
+            }
+          },
+          {
+            "path": [
+              "text"
+            ],
+            "chars": 7176,
+            "type": "str"
+          },
+          {
+            "path": [
+              "text_offset"
+            ],
+            "chars": 1,
+            "type": "int"
+          },
+          {
+            "path": [
+              "text_length"
+            ],
+            "chars": 5,
+            "type": "int"
+          },
+          {
+            "path": [
+              "region_ref"
+            ],
+            "chars": 4,
+            "type": "NoneType"
+          },
+          {
+            "path": [
+              "regions"
+            ],
+            "chars": 1228,
+            "type": "list"
+          },
+          {
+            "path": [
+              "url"
+            ],
+            "chars": 68,
+            "type": "str"
+          },
+          {
+            "path": [
+              "controls"
+            ],
+            "chars": 5526,
+            "type": "list"
+          },
+          {
+            "path": [
+              "control_count"
+            ],
+            "chars": 2,
+            "type": "int"
+          },
+          {
+            "path": [
+              "observation_id"
+            ],
+            "chars": 18,
+            "type": "str"
+          },
+          {
+            "path": [
+              "page_evidence_hash"
+            ],
+            "chars": 66,
+            "type": "str"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "read_job",
+      "arguments": {
+        "url": "https://www.indeed.com/rc/clk?jk=2233e7ae15e45957"
+      },
+      "result": {
+        "error": "Source blocked in this user turn. Switch to a different public source; changing query or page does not unblock it. The user can sign in using browser control, or retry in a new turn. Do not bypass verification.",
+        "error_code": "source_blocked",
+        "source": "Frozen source unavailable: no recorded response",
+        "no_new_evidence": true,
+        "next": "Use a healthy observed candidate or discover a different public source. This source remains blocked for this user turn.",
+        "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation."
+      }
+    },
+    {
+      "tool": "search_jobs",
+      "arguments": {
+        "location": "New York, NY",
+        "query": "junior data analyst",
+        "use_directory": true
+      },
+      "result": {
+        "context_ref": "ctx-5f6897f9d7c2640bc6b3a4bb",
+        "chars": 76909,
+        "read_with": "read_context",
+        "available_keys": [
+          "jobs",
+          "errors",
+          "sources_checked",
+          "skipped_sources",
+          "board_outcomes",
+          "stale_boards",
+          "directory",
+          "directory_searched",
+          "directory_remaining",
+          "directory_matching",
+          "note",
+          "excluded_blocked_hosts"
+        ],
+        "jobs": []
+      }
+    },
+    {
+      "tool": "read_context",
+      "arguments": {
+        "ref": "ctx-5f6897f9d7c2640bc6b3a4bb"
+      },
+      "result": {
+        "ref": "ctx-5f6897f9d7c2640bc6b3a4bb",
+        "offset": 0,
+        "chars": 76909,
+        "content": "{\"jobs\":[],\"errors\":[{\"board\":{\"platform\":\"greenhouse\",\"company\":\"doordashusa\",\"display_name\":\"doordashusa\",\"domains\":[\"ML\",\"backend\",\"data/analytics\",\"design\"],\"locations\":[\" San Francisco, CA\",\" San Francisco, CA; Sunnyvale, CA\",\" St. Petersburg, FL\",\"Akron, OH\",\"Albuquerque, NM\",\"Alexandria, VA\",\"Atlanta, GA\",\"Atlanta, GA; Dallas, TX; Houston, TX; Nashville, TN; Charlotte, NC; Las Vegas, NV; Salt Lake City, UT\",\"Atlanta, GA; Dallas, TX; San Diego, CA; Portland, OR; Phoenix, AZ; Houston, TX; Minneapolis, MN ; Kansas City, MO; St. Louis, MO; Austin, TX; Chicago, IL; Philadelphia, PA; Bakersfield, CA; Denver, CO; Las Vegas, NV\",\"Aurora, CO\",\"Austin, TX\",\"Austin, TX; Dallas, TX; Houston, TX; Miami, FL; Atlanta, GA; Raleigh-Durham, NC; Charlotte, NC; Phoenix, AZ; Nashville, TN; Omaha, NE; Tampa, FL; San Francisco, CA\",\"Austin, TX; Dallas, TX; Houston, TX; San Antonio, TX\",\"Austin, TX; Washington, D.C; Seattle, WA; Los Angeles, CA; Chicago, IL; Tempe, AZ\",\"Baltimore, MD\",\"Baton Rouge, LA\",\"Bay Area, CA; Seattle, WA; Los Angeles, CA; New York, NY\",\"Bay Point, CA\",\"Bay Point, CA; Concord, CA \",\"Bay Point, CA; Oakland, CA\",\"Bay Point, CA; Petaluma, CA\",\"Boston, MA\",\"Boston, MA; Washington, DC; Atlanta, GA; Austin, TX; Baltimore, MD; Hartford, CT; New Haven, CT; Philadelphia, PA; Miami, FL; Chicago, IL; Charlotte, NC; Raleigh-Durham, NC; Tampa, FL; Orlando, FL; Pittsburgh, PA; Richmond, VA; Jacksonville, FL; Columbus, OH; Dallas, TX; Houston, TX; Minneapolis, MN; Nashville, TN; Kansas City, MO; St. Louis, MO\",\"Chandler, AZ\",\"Charleston, SC\",\"Charleston, SC; Columbia, SC; Augusta, GA \",\"Charlotte, NC\",\"Charlotte, NC; Atlanta, GA\",\"Chattanooga, TN\",\"Cherry Hill, NJ\",\"Chicago, IL; Austin, TX; Detroit, MI; Atlanta, GA; Miami, FL; Washington, DC; Baltimore, MD; Philadelphia, PA; New York, NY; Boston, MA; Richmond, VA\",\"Chicago, IL; Dallas, TX; Atlanta, GA; Los Angeles, CA; New York, NY \",\"Chicago, IL; Denver, CA; Los Angeles, CA; New York, NY; San Francisco, CA; Seattle, WA; Sunnyvale, CA; Tempe, AZ; Washington, DC, Atlanta, GA; Austin, TX; Boston, MA; Miami, FL\",\"Chicago, IL; Detroit, MI; New York, NY; Philadelphia, PA; Washington, DC\",\"Chicago, IL; New York, NY; Seattle, WA; San Francisco, CA\",\"Chicago, IL; San Francisco, CA; New York, NY; Los Angeles, CA\",\"Chicago, IL; San Francisco, CA; Seattle,WA\",\"Chicago, IL; Washington D.C.; San Francisco, CA\",\"Cincinnati, OH\",\"Cincinnati, OH \",\"Colorado Springs, CO\",\"Columbia, SC\",\"Columbia, SC \",\"Concord, CA\",\"Concord, CA; Bay Point, CA\",\"Crestwood, IL\",\"Dayton, OH\",\"Decatur, GA\",\"Denver, CO; Austin, TX\",\"Draper, UT\",\"Dublin, CA; San Francisco, CA\",\"Ferndale, MI\",\"Florissant, MO\",\"Fort Lauderdale, FL\",\"Fort Worth, TX\",\"Fremont, CA\",\"Fremont, CA; Mesa, AZ\",\"Fremont, CA; San Jose, CA; Sunnyvale, CA\",\"Fremont, CA; Sunnyvale, CA; Dublin, CA; San Jose, CA;\",\"Fresno, CA\",\"Harrisburg, PA\",\"Henrico, VA\",\"Hicksville, NY\",\"Huntsville, AL\",\"Indianapolis, IN\",\"Jacksonville, FL\",\"Kalamazoo, MI\",\"Las Vegas, NV\",\"Lexington, KY\",\"",
+        "next_offset": 3000,
+        "read_progress": {
+          "historical_access": false,
+          "recent_ranges": [
+            [
+              0,
+              3000
+            ]
+          ],
+          "ref": "ctx-5f6897f9d7c2640bc6b3a4bb",
+          "path": [],
+          "ranges": [
+            [
+              0,
+              3000
+            ]
+          ],
+          "chars": 76909,
+          "reads": 1,
+          "next_unread_offset": 3000
+        },
+        "available_paths": [
+          {
+            "path": [
+              "jobs"
+            ],
+            "chars": 2,
+            "type": "list"
+          },
+          {
+            "path": [
+              "errors"
+            ],
+            "chars": 38580,
+            "type": "list"
+          },
+          {
+            "path": [
+              "sources_checked"
+            ],
+            "chars": 37800,
+            "type": "list"
+          },
+          {
+            "path": [
+              "skipped_sources"
+            ],
+            "chars": 2,
+            "type": "list"
+          },
+          {
+            "path": [
+              "board_outcomes"
+            ],
+            "chars": 2,
+            "type": "list"
+          },
+          {
+            "path": [
+              "stale_boards"
+            ],
+            "chars": 2,
+            "type": "list"
+          },
+          {
+            "path": [
+              "directory"
+            ],
+            "chars": 4,
+            "type": "bool"
+          },
+          {
+            "path": [
+              "directory_searched"
+            ],
+            "chars": 136,
+            "type": "list"
+          },
+          {
+            "path": [
+              "directory_remaining"
+            ],
+            "chars": 2,
+            "type": "int"
+          },
+          {
+            "path": [
+              "directory_matching"
+            ],
+            "chars": 2,
+            "type": "int"
+          },
+          {
+            "path": [
+              "note"
+            ],
+            "chars": 135,
+            "type": "str"
+          },
+          {
+            "path": [
+              "excluded_blocked_hosts"
+            ],
+            "chars": 37,
+            "type": "list"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "read_context",
+      "arguments": {
+        "path": [
+          "note"
+        ],
+        "ref": "ctx-5f6897f9d7c2640bc6b3a4bb"
+      },
+      "result": {
+        "ref": "ctx-5f6897f9d7c2640bc6b3a4bb",
+        "path": [
+          "note"
+        ],
+        "offset": 0,
+        "chars": 135,
+        "content": "\"Directory links require read, qualification, import, score and recommendation. Stale boards are excluded; coverage is not exhaustive.\"",
+        "next_offset": null,
+        "read_progress": {
+          "historical_access": false,
+          "recent_ranges": [
+            [
+              0,
+              135
+            ]
+          ],
+          "ref": "ctx-5f6897f9d7c2640bc6b3a4bb",
+          "path": [
+            "note"
+          ],
+          "ranges": [
+            [
+              0,
+              135
+            ]
+          ],
+          "chars": 135,
+          "reads": 1,
+          "next_unread_offset": null
+        }
+      }
+    },
+    {
+      "tool": "browser_open",
+      "arguments": {
+        "url": "https://www.ziprecruiter.com/Jobs/Junior-Data-Analyst/in-New-York,NY"
+      },
+      "result": {
+        "error": "Source blocked in this user turn. Switch to a different public source; changing query or page does not unblock it. The user can sign in using browser control, or retry in a new turn. Do not bypass verification.",
+        "error_code": "source_blocked",
+        "source": "Frozen source unavailable: no recorded response",
+        "no_new_evidence": true,
+        "next": "Use a healthy observed candidate or discover a different public source. This source remains blocked for this user turn.",
+        "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation."
+      }
+    },
+    {
+      "tool": "browser_read",
+      "arguments": {
+        "observation_id": "b6-observation-2",
+        "region_ref": "b-bu17q1-171"
+      },
+      "result": {
+        "error": "Source blocked in this user turn. Switch to a different public source; changing query or page does not unblock it. The user can sign in using browser control, or retry in a new turn. Do not bypass verification.",
+        "error_code": "source_blocked",
+        "source": "browser:www.indeed.com",
+        "no_new_evidence": true,
+        "next": "Use a healthy observed candidate or discover a different public source. This source remains blocked for this user turn.",
+        "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation."
+      }
+    },
+    {
+      "tool": "browser_open",
+      "arguments": {
+        "url": "https://www.dice.com/jobs?q=junior+data+analyst&location=New+York%2C+NY"
+      },
+      "result": {
+        "error": "Source blocked in this user turn. Switch to a different public source; changing query or page does not unblock it. The user can sign in using browser control, or retry in a new turn. Do not bypass verification.",
+        "error_code": "source_blocked",
+        "source": "Frozen source unavailable: no recorded response",
+        "no_new_evidence": true,
+        "next": "Use a healthy observed candidate or discover a different public source. This source remains blocked for this user turn.",
+        "progress_feedback": "No new evidence from this action. Change query, route, source or capability. If alternatives are exhausted, finish with verified results and the limitation."
+      }
+    }
+  ],
+  "recovery": null,
+  "final": "I stopped because repeated steps produced no new evidence. Saved results are preserved; the requested work is not yet complete. Open the saved results or retry with a different source or approach."
+}

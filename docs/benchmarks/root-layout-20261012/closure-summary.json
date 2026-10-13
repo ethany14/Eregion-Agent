@@ -1,0 +1,8 @@
+{
+  "latest_unique_passed": 2306,
+  "latest_unique_skipped": 135,
+  "unresolved_failures": [],
+  "original_failure_cases": 42,
+  "failure_cases_reexecuted": 42,
+  "failure_cases_not_reexecuted": []
+}

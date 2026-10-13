@@ -1,8 +1,8 @@
 """Completed fields stay unchanged across repeated model actions and retries."""
 import pytest
 
-from agent_runtime.auto_apply.agent import AgentTools
-from agent_runtime.auto_apply.matching import resolve_option
+from eregion.runtime.auto_apply.agent import AgentTools
+from eregion.runtime.auto_apply.matching import resolve_option
 from test_auto_apply import FakeBrowser, field, request
 
 CITY = "Ithaca, New York, United States"

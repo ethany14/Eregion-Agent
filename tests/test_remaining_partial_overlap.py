@@ -3,7 +3,7 @@ import re
 
 import pytest
 
-from job_agent.jev_fit import resolve
+from eregion.domain.jev_fit import resolve
 from test_e2e_followups import raw_with_unknowns
 
 
@@ -68,7 +68,7 @@ def test_quote_fabrication_stays_unknown_not_missing():
 
 
 def test_transparent_inflection_and_no_arbitrary_single_letter_or_unlisted_alias():
-    from job_agent.partial_support import partial_overlap
+    from eregion.domain.partial_support import partial_overlap
     assert partial_overlap('Financial forecasting','Built financial forecasts.')
     assert partial_overlap('Build REST APIs','Developed REST APIs.')
     assert not partial_overlap('Financial forecasting A I X','Python APIs A I X')

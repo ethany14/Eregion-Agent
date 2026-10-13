@@ -8,12 +8,12 @@ import sys
 from pathlib import Path
 from typing import Callable, Sequence
 
-from api.db import create_database, upgrade_database
-from job_agent.workflow.handlers import JobAgentStepHandler
-from job_agent.workflow.analysis import AnalysisWorkflow
-from job_agent.workflow.repository import StateRepository
-from job_agent.workflow.state import AgentStatus
-from job_agent.results import public_result
+from eregion.api.db import create_database, upgrade_database
+from eregion.domain.workflow.handlers import JobAgentStepHandler
+from eregion.domain.workflow.analysis import AnalysisWorkflow
+from eregion.domain.workflow.repository import StateRepository
+from eregion.domain.workflow.state import AgentStatus
+from eregion.domain.results import public_result
 
 
 def _read_text(path: Path, label: str) -> str:

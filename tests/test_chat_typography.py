@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 from playwright.sync_api import sync_playwright, expect
 
-from api.main import create_app
+from eregion.api.main import create_app
 
 pytestmark=pytest.mark.skipif(os.getenv('JOB_AGENT_BROWSER_TESTS')!='1',reason='Opt-in offline Chrome integration.')
 

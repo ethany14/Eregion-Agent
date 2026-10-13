@@ -5,8 +5,8 @@ text still need cited evidence.
 """
 import pytest
 
-from agent_runtime.application_pack.types import CoverLetter, CoverLetterParagraph
-from agent_runtime.application_pack.verifier import ArtifactVerifier, _without_employer_requirements
+from eregion.runtime.application_pack.types import CoverLetter, CoverLetterParagraph
+from eregion.runtime.application_pack.verifier import ArtifactVerifier, _without_employer_requirements
 
 JD = 'Backend Engineer at Example. Requirements: Python API experience, SQL.'
 ROLE = 'Backend Engineer'
@@ -73,7 +73,7 @@ def test_offline_replay_of_the_frozen_l3_full_artifact():
     """Re-verify the stored paid L3 artifact (no model call) with production pairing semantics."""
     import json
     from pathlib import Path
-    from agent_runtime.application_pack.types import EvidenceSnapshotItem
+    from eregion.runtime.application_pack.types import EvidenceSnapshotItem
     artifact = json.loads(json.dumps(L3_ARTIFACT))
     frozen = Path(__file__).resolve().parents[1] / 'docs/benchmarks/r1-closeout-20261012/L3-full-r1/result/full.json'
     if frozen.exists():  # local evidence bundle; the copy below must match it exactly

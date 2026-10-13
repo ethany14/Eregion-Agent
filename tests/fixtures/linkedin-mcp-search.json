@@ -1,0 +1,95 @@
+{
+  "url": "https://www.linkedin.com/jobs/search/?keywords=junior+data+analyst&location=New+York%2C+NY&f_E=2",
+  "sections": {
+    "search_results": "junior data analyst in New York, New York, United States\n331 results\nSet alert\nSet job alert for Junior data analyst in New York, NY\nJump to active job details\nJump to active search result\n\nWe’re gradually retiring classic job search starting in September. Try AI-powered job search and describe the role you want in your own words.\n\nTry AI job search\nLearn more\nFall Analyst - AI\nAxon Capital\nNew York, NY (On-site)\nViewed\nPromoted\nEasy Apply\nJunior Data Analyst\nCalibrate\nUnited States (Remote)\n1 benefit\n2 school alumni work here\n1 month ago\nData Analyst, AI Agent Analytics — New Grad\nJobright.ai\nUnited States (Remote)\n1 school alum works here\nPromoted\nYield Analyst\nCadent\nNew York, NY (Hybrid)\n401(k), +4 benefits\nActively reviewing applicants\nPromoted\nEasy Apply\nAI Solutions Analyst\nWisdomTree\nNew York, NY (Hybrid)\n401(k), +1 benefit\n1 school alum works here\nPromoted\nAnalyst - Analytics and Insights\nOmnicom Media\nNew York, NY (On-site)\n35 school alumni work here\nPromoted\nData Scientist – Equity Research\nJefferies\nNew York, NY (On-site)\n401(k), +1 benefit\n100 school alumni work here\nPromoted\nResearch Analyst, Digital & Insights\nFTI Consulting\nNew York, NY (Hybrid)\n57 school alumni work here\nPromoted\nAI Business Enablement Analyst\nRaymond James\nNew York, NY (Hybrid)\n44 school alumni work here\nPromoted\nAre these results helpful?\n\nYour feedback helps us improve search results.\n\nAre you finding what you’re looking for? No\n \nAre you finding what you’re looking for? Yes\nApply where you’re more likely to hear back with Premium\nClaim 1 month free\nDismiss premium promotion\n1\n2\n3\n…\nNext"
+  },
+  "job_ids": [
+    "4455419332",
+    "4460477929",
+    "4471529335",
+    "4466320538",
+    "4461382414",
+    "4465167538",
+    "4470991185",
+    "4468144908",
+    "4471222002"
+  ],
+  "total": {
+    "count": 331,
+    "exact": true
+  },
+  "promoted_job_ids": [
+    "4455419332",
+    "4471529335",
+    "4466320538",
+    "4461382414",
+    "4465167538",
+    "4470991185",
+    "4468144908",
+    "4471222002"
+  ],
+  "references": {
+    "search_results": [
+      {
+        "kind": "job",
+        "url": "/jobs/view/4455419332/",
+        "text": "Fall Analyst - AI",
+        "context": "job result"
+      },
+      {
+        "kind": "job",
+        "url": "/jobs/view/4460477929/",
+        "text": "Junior Data Analyst",
+        "context": "job result"
+      },
+      {
+        "kind": "job",
+        "url": "/jobs/view/4471529335/",
+        "text": "Data Analyst, AI Agent Analytics — New Grad",
+        "context": "job result"
+      },
+      {
+        "kind": "job",
+        "url": "/jobs/view/4466320538/",
+        "text": "Yield Analyst",
+        "context": "job result"
+      },
+      {
+        "kind": "job",
+        "url": "/jobs/view/4461382414/",
+        "text": "AI Solutions Analyst",
+        "context": "job result"
+      },
+      {
+        "kind": "job",
+        "url": "/jobs/view/4465167538/",
+        "text": "Analyst - Analytics and Insights",
+        "context": "job result"
+      },
+      {
+        "kind": "job",
+        "url": "/jobs/view/4470991185/",
+        "text": "Data Scientist – Equity Research",
+        "context": "job result"
+      },
+      {
+        "kind": "job",
+        "url": "/jobs/view/4468144908/",
+        "text": "Research Analyst, Digital & Insights",
+        "context": "job result"
+      },
+      {
+        "kind": "job",
+        "url": "/jobs/view/4471222002/",
+        "text": "AI Business Enablement Analyst",
+        "context": "job result"
+      },
+      {
+        "kind": "company",
+        "url": "/company/axoncap/",
+        "text": "Axon Capital logo",
+        "context": "search result"
+      }
+    ]
+  }
+}

@@ -7,12 +7,12 @@ from uuid import uuid4
 
 import pytest
 
-from agent_runtime.career.alerts import job_key
-from agent_runtime.career.search_recovery import recovery
-from agent_runtime.career.source_health import browser_source, active_sources, record_browser
-from agent_runtime.progress import search_evidence
-from agent_runtime.request_context import ContextArchive
-from agent_runtime.telemetry import outcome_fingerprint
+from eregion.runtime.career.alerts import job_key
+from eregion.runtime.career.search_recovery import recovery
+from eregion.runtime.career.source_health import browser_source, active_sources, record_browser
+from eregion.runtime.progress import search_evidence
+from eregion.runtime.request_context import ContextArchive
+from eregion.runtime.telemetry import outcome_fingerprint
 from test_career_flow import career, execute
 from test_remaining_search_runtime import host_for
 
@@ -136,7 +136,7 @@ def test_context_fingerprint_survives_history_eviction_and_restart(career):
 
 
 def test_actual_same_search_limit_churn_does_not_repeat_io_after_restart(career):
-    from agent_runtime.career.harness import CareerHarness
+    from eregion.runtime.career.harness import CareerHarness
     c=career;requests=[]
     actual=next(h['result'] for h in frozen()['history'] if h['tool']=='search_jobs' and h['result'].get('jobs'))
     c.harness.discovery=SimpleNamespace(search=lambda **args:requests.append(args) or copy.deepcopy(actual))
@@ -167,7 +167,7 @@ def test_larger_limit_can_expand_an_actually_truncated_search(career):
 
 
 def test_saved_target_body_import_is_local_even_when_remote_source_later_blocked(career):
-    from agent_runtime.career.posting_qualification import PostingRejected
+    from eregion.runtime.career.posting_qualification import PostingRejected
     c=career;tid=c.state['task_id'];state=frozen()['state']
     job=next(iter(state['retrieved_jobs'].values()))
     c.repository.change(tid,user_turn_id=state['user_turn_id'],

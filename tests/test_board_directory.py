@@ -8,9 +8,9 @@ from datetime import UTC, datetime, timedelta
 import httpx
 import pytest
 
-from agent_runtime.career import board_directory as directory
-from agent_runtime.career.discovery import JobDiscovery, DiscoveryCancelled
-from agent_runtime.career.source_health import record_board_outcomes, active_sources
+from eregion.runtime.career import board_directory as directory
+from eregion.runtime.career.discovery import JobDiscovery, DiscoveryCancelled
+from eregion.runtime.career.source_health import record_board_outcomes, active_sources
 from scripts.verify_board_directory import refresh
 from test_career_flow import career
 
@@ -153,6 +153,26 @@ def test_directory_deduplicates_tracking_variants(monkeypatch):
     d.close()
 
 
+def test_search_does_not_echo_company_wide_location_inventory():
+    board = entry()
+    board.update(locations=['Unrelated city ' + str(i) for i in range(2000)],
+                 family_locations={'data/analytics':['Unrelated city'] * 2000})
+    def serve(request):
+        return httpx.Response(200,json={'jobs':[{'absolute_url':'https://job-boards.greenhouse.io/synthetic/jobs/1',
+            'title':'Junior Data Analyst','location':{'name':'New York, NY'}}]})
+    d = discovery(serve)
+    try:
+        result = d.search('data analyst', 'New York, NY', boards=[board])
+    finally:
+        d.close()
+    source = result['sources_checked'][0]
+    assert source['source'] == 'ats:greenhouse:synthetic' and source['verified_at'] == board['verified_at']
+    assert len(json.dumps(source)) < 1000
+    assert 'locations' not in source and 'family_locations' not in source
+    assert result['jobs'][0]['location'] == 'New York, NY'
+    assert len(board['locations']) == 2000  # directory matching metadata remains intact
+
+
 def test_refresh_updates_metadata_from_get():
     requests=[]
     def serve(request):
@@ -245,7 +265,7 @@ def test_board_search_cancellation_check_is_throttled(career):
     # Review: the cancellation probe loaded the whole task state once per downloaded
     # chunk; a large board response meant hundreds of repository reads.
     from uuid import uuid4
-    from agent_runtime.career.discovery import JobDiscovery
+    from eregion.runtime.career.discovery import JobDiscovery
     c = career
     class Discovery(JobDiscovery):
         def search_directory(self, query, location='', limit=10, *, cancelled, **_):
@@ -262,7 +282,7 @@ def test_board_search_cancellation_check_is_throttled(career):
 
 
 def test_family_location_coverage_and_ranking():
-    from agent_runtime.career.board_directory import select_boards
+    from eregion.runtime.career.board_directory import select_boards
     base={'platform':'greenhouse','display_name':'X','verified_at':'2026-10-10','verified_by':'public_api_get',
           'job_count_at_verification':5,'notes':'test','source_url':'https://job-boards.greenhouse.io/x'}
     paris={**base,'company':'paris','domains':['data/analytics','backend'],'locations':['Paris, France','New York, NY'],
@@ -280,8 +300,8 @@ def test_repeated_directory_search_pages_to_next_boards(career):
     # Paid P1: 30 boards matched "data analyst, NYC" but every repeat searched the same
     # top five, so the agent saw one posting six times and hit the no-progress stop.
     from uuid import uuid4
-    from agent_runtime.career import board_directory
-    from agent_runtime.career.discovery import JobDiscovery, board_source
+    from eregion.runtime.career import board_directory
+    from eregion.runtime.career.discovery import JobDiscovery, board_source
     c = career
     base = {'platform': 'greenhouse', 'display_name': 'X', 'verified_at': __import__('datetime').date.today().isoformat(),
             'verified_by': 'public_api_get', 'job_count_at_verification': 3, 'notes': 't', 'domains': ['data/analytics'],

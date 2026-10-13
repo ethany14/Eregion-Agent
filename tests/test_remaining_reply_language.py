@@ -4,9 +4,9 @@ from uuid import uuid4
 
 import pytest
 
-from agent_runtime.career.harness import CareerHarness
-from agent_runtime.workspace.types import ArtifactType
-from job_agent.schemas import JobAnalysis,ResumeAnalysis,SkillMatch,MissingRequirement
+from eregion.runtime.career.harness import CareerHarness
+from eregion.runtime.workspace.types import ArtifactType
+from eregion.domain.schemas import JobAnalysis,ResumeAnalysis,SkillMatch,MissingRequirement
 from test_career_flow import career,execute
 
 

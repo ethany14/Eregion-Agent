@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {careerTimeline} from '../web_app/career-chat.js';
+import {careerTimeline} from '../frontend/web_app/career-chat.js';
 
 const at=n=>`2026-10-09T10:${String(n).padStart(2,'0')}:00Z`;
 const message=(id,n,role='assistant')=>({id,at:at(n),role});

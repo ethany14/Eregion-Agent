@@ -4,9 +4,9 @@ import os
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
-from agent_runtime.auto_apply import authentication
-from agent_runtime.auto_apply.browser import BrowserBlocked
-from agent_runtime.auto_apply.contracts import AccountCredentials
+from eregion.runtime.auto_apply import authentication
+from eregion.runtime.auto_apply.browser import BrowserBlocked
+from eregion.runtime.auto_apply.contracts import AccountCredentials
 from test_auto_apply_workday import WorkdayBrowser, URL
 
 pytestmark = pytest.mark.skipif(os.getenv('JOB_AGENT_BROWSER_TESTS') != '1', reason='Offline Chrome opt-in')

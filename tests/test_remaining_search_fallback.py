@@ -4,7 +4,7 @@ from urllib.parse import parse_qs
 import httpx
 from test_career_flow import career,execute
 
-from agent_runtime.career.discovery import JobDiscovery
+from eregion.runtime.career.discovery import JobDiscovery
 
 
 def test_duckduckgo_challenge_is_a_blocked_source_and_bing_links_are_unwrapped():
@@ -45,7 +45,7 @@ def test_first_query_word_dictionary_or_senior_living_is_not_a_job_candidate():
 
 
 def test_blocked_and_repeated_empty_engines_are_not_retried_for_every_query_or_restart(career):
-    from agent_runtime.career.harness import CareerHarness
+    from eregion.runtime.career.harness import CareerHarness
     c=career;requests=[]
     def handle(request):
         requests.append(request.url.host)
@@ -79,7 +79,7 @@ def test_public_board_city_state_aliases_preserve_ny_and_reject_pa():
 
 
 def test_city_suffix_is_not_removed_from_unrelated_place_names():
-    from agent_runtime.career.discovery import location_matches
+    from eregion.runtime.career.discovery import location_matches
     assert location_matches('Kansas City, MO','Kansas City, Missouri, USA')
     assert not location_matches('Kansas, MO','Kansas City, Missouri, USA')
 

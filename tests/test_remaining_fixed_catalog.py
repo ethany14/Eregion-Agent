@@ -4,15 +4,15 @@ import json
 import httpx
 import pytest
 
-from api.services.fit_analysis_service import FitAnalysisService
-from custom_agent.handlers import JobAgentStepHandler
-from custom_agent.state import AgentState,Step
+from eregion.api.services.fit_analysis_service import FitAnalysisService
+from eregion.domain.workflow.handlers import JobAgentStepHandler
+from eregion.domain.workflow.state import AgentState,Step
 from evals.audit_fit_catalog import freeze_catalog,compare_catalog
-from job_agent.job_extraction import JobExtraction
-from job_agent.jev_fit.settings import Settings
-from job_agent.schemas import ResumeAnalysis,JobAnalysis,SkillAssessment,SkillEvidence
+from eregion.domain.job_extraction import JobExtraction
+from eregion.domain.jev_fit.settings import Settings
+from eregion.domain.schemas import ResumeAnalysis,JobAnalysis,SkillAssessment,SkillEvidence
 from test_jev_fit_production import JevEndpoint,NoMainModel
-from job_agent.requirement_catalog import FrozenRequirementCatalog
+from eregion.domain.requirement_catalog import FrozenRequirementCatalog
 
 
 BODY='Engineer\nRequired: Python and SQL.\n'
@@ -34,7 +34,7 @@ def matches(job):
 
 def test_default_main_service_scores_a_local_deterministic_catalogue(tmp_path):
     """A1 default route: no free-form extraction; the same ordered IDs on every cold run."""
-    from job_agent.requirement_catalog import FrozenRequirementCatalog, LOCAL_PRODUCER
+    from eregion.domain.requirement_catalog import FrozenRequirementCatalog, LOCAL_PRODUCER
     jev=inputs(tmp_path)
     asked=[]
     class OfflineMain:
@@ -126,8 +126,8 @@ def test_main_service_internal_catalogue_binding_four_cold_and_no_jev_call(tmp_p
 
 def test_bound_catalogue_persistent_match_cache_and_producer_version_isolation(tmp_path):
     from dataclasses import replace
-    from api.db import create_database
-    from agent_runtime.analysis_cache import AnalysisCache
+    from eregion.api.db import create_database
+    from eregion.runtime.analysis_cache import AnalysisCache
     frozen=catalog(tmp_path);calls=[]
     db=create_database('sqlite:///'+(tmp_path/'main-cache.db').as_posix(),create_schema_for_tests=True)
     try:

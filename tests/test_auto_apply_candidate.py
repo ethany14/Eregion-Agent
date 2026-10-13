@@ -5,15 +5,15 @@ import os
 
 import pytest
 
-from agent_runtime.auto_apply.agent import AgentTools
-from agent_runtime.auto_apply.autofill import autofill, desired_answer
-from agent_runtime.auto_apply.browser import BrowserBlocked
-from agent_runtime.auto_apply.contracts import ContinueApplication
-from agent_runtime.auto_apply.education import facts, gaps, normalize_records
-from agent_runtime.auto_apply.loop import ApplicationLoop
-from agent_runtime.auto_apply.memory import compatible
-from agent_runtime.auto_apply.repository import ApplyRepository
-from agent_runtime.auto_apply.resume_profile import ResumeFacts, extract_profile
+from eregion.runtime.auto_apply.agent import AgentTools
+from eregion.runtime.auto_apply.autofill import autofill, desired_answer
+from eregion.runtime.auto_apply.browser import BrowserBlocked
+from eregion.runtime.auto_apply.contracts import ContinueApplication
+from eregion.runtime.auto_apply.education import facts, gaps, normalize_records
+from eregion.runtime.auto_apply.loop import ApplicationLoop
+from eregion.runtime.auto_apply.memory import compatible
+from eregion.runtime.auto_apply.repository import ApplyRepository
+from eregion.runtime.auto_apply.resume_profile import ResumeFacts, extract_profile
 from test_auto_apply import FakeBrowser, database, field, request, wait
 
 
@@ -25,7 +25,7 @@ RECORDS=normalize_records([
 def test_configured_model_extraction_uses_agent_compatible_tool_transport(monkeypatch):
     from langchain_openai import ChatOpenAI
     from langchain_core.messages import AIMessage
-    from agent_runtime.auto_apply.resume_profile import extract_facts
+    from eregion.runtime.auto_apply.resume_profile import extract_facts
     model=ChatOpenAI(model='fixture',api_key='fixture-key');requests=[]
     def invoke(self,messages,**kwargs):
         requests.append(kwargs)
@@ -43,8 +43,8 @@ def test_configured_model_extraction_uses_agent_compatible_tool_transport(monkey
 def test_candidate_api_preserves_pdf_on_profile_edits_and_extraction_is_read_only(database,monkeypatch):
     from types import SimpleNamespace
     from fastapi.testclient import TestClient
-    from api.main import create_app
-    import agent_runtime.auto_apply.resume_profile as extraction
+    from eregion.api.main import create_app
+    import eregion.runtime.auto_apply.resume_profile as extraction
     loop=ApplicationLoop(ApplyRepository(database.session_factory),browser_factory=FakeBrowser)
     app=create_app(run_service=object(),session_runtime=SimpleNamespace(database=database));app.state.auto_apply=loop
     monkeypatch.setattr(extraction,'extract_profile',lambda _: {'profile':{'first_name':'Extracted'},'warning':None})
@@ -218,7 +218,7 @@ def test_chat_ui_restores_resume_edits_education_and_batches_answers(tmp_path):
     from pathlib import Path
     from urllib.parse import urlsplit
     from test_auto_apply_browser import FixtureBrowser
-    browser=FixtureBrowser(request().url);assets=Path(__file__).parents[1]/'web_app'
+    browser=FixtureBrowser(request().url);assets=Path(__file__).parents[1]/'frontend/web_app'
     saved={'profile':{**request().profile.model_dump(),'education':RECORDS},'resume_base64':request().resume_base64,'resume_name':'Saved.pdf','needs_extraction':False}
     questions=[field('english','select','Fluent in English?'),field('consent','checkbox','Recruitment data processing')]
     questions[0]['options']=[{'label':'Yes','value':'1'},{'label':'No','value':'0'}]

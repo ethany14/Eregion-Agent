@@ -158,16 +158,16 @@ make billable requests with the scripts' synthetic inputs. Use a new output
 directory for each run; the benchmark enables its Jev scope in its own process.
 
 ```sh
-python scripts/benchmark_jev.py --output artifacts/browser-eval/jev-run-001 --repeats 2 --suite all
-python scripts/check_jev_routing.py
-python scripts/quality_jev.py artifacts/browser-eval/jev-run-001/quality.json
-python scripts/compare_jev_extractions.py --input artifacts/browser-eval/jev-run-001/benchmark-all.json --output artifacts/browser-eval/jev-run-001/crosscheck.json
+python tools/scripts/benchmark_jev.py --output artifacts/browser-eval/jev-run-001 --repeats 2 --suite all
+python tools/scripts/check_jev_routing.py
+python tools/scripts/quality_jev.py artifacts/browser-eval/jev-run-001/quality.json
+python tools/scripts/compare_jev_extractions.py --input artifacts/browser-eval/jev-run-001/benchmark-all.json --output artifacts/browser-eval/jev-run-001/crosscheck.json
 ```
 
 For a synthetic context-sharing comparison:
 
 ```sh
-python scripts/benchmark_context_sharing.py --live --jev --output artifacts/browser-eval/context-run-001
+python tools/scripts/benchmark_context_sharing.py --live --jev --output artifacts/browser-eval/context-run-001
 ```
 
 Record the code commit, model identity, source inputs, cache state, task IDs, and

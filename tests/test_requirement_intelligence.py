@@ -1,14 +1,14 @@
 import pytest
 
-from custom_agent.handlers import JobAgentStepHandler
-from custom_agent.state import AgentState, Step
-from job_agent.domain import (
+from eregion.domain.workflow.handlers import JobAgentStepHandler
+from eregion.domain.workflow.state import AgentState, Step
+from eregion.domain.domain import (
     make_requirement_group_id,
     make_requirement_id,
     normalize_job_analysis,
 )
-from job_agent.prompts import JOB_PROMPT
-from job_agent.schemas import (
+from eregion.domain.prompts import JOB_PROMPT
+from eregion.domain.schemas import (
     JobAnalysis,
     JobRequirement,
     RequirementCategory,

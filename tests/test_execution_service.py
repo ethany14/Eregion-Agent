@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from agent_runtime.execution import ExecutionClosed, ExecutionService
+from eregion.runtime.execution import ExecutionClosed, ExecutionService
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -68,9 +68,9 @@ def test_closed_service_rejects_work_and_close_is_idempotent():
 
 
 def test_composition_root_shares_one_execution_service(tmp_path, monkeypatch):
-    from api.session_dependencies import create_session_runtime
-    from agent_runtime.auto_apply.loop import ApplicationLoop
-    from agent_runtime.auto_apply.repository import ApplyRepository
+    from eregion.api.session_dependencies import create_session_runtime
+    from eregion.runtime.auto_apply.loop import ApplicationLoop
+    from eregion.runtime.auto_apply.repository import ApplyRepository
     runtime = create_session_runtime(database_url=f"sqlite:///{(tmp_path / 'r.db').as_posix()}",
                                      model=object())
     try:
@@ -89,18 +89,18 @@ def test_composition_root_shares_one_execution_service(tmp_path, monkeypatch):
 
 def test_task_owners_do_not_create_private_pools():
     """Pools for task ownership live in ExecutionService; other modules may not start their own."""
-    owners = ['agent_runtime/task_loop.py', 'agent_runtime/career/service.py',
-              'agent_runtime/career/interview_queue.py', 'agent_runtime/multi_agent/scheduler.py',
-              'agent_runtime/auto_apply/loop.py']
+    owners = ['backend/eregion/runtime/tasks/loop.py', 'backend/eregion/runtime/career/service.py',
+              'backend/eregion/runtime/career/interview_queue.py', 'backend/eregion/runtime/coordination/scheduler.py',
+              'backend/eregion/runtime/auto_apply/loop.py']
     for name in owners:
         text = (ROOT / name).read_text(encoding='utf-8')
         assert not re.search(r'ThreadPoolExecutor\(', text), name
 
 
 def test_startup_recovery_is_once_per_process_even_if_a_loop_is_rebuilt(tmp_path):
-    from agent_runtime.career.repository import TaskRepository
-    from agent_runtime.task_loop import TaskLoop
-    from api.db import create_database
+    from eregion.runtime.career.repository import TaskRepository
+    from eregion.runtime.tasks.loop import TaskLoop
+    from eregion.api.db import create_database
     db = create_database(f"sqlite:///{(tmp_path / 't.db').as_posix()}", create_schema_for_tests=True)
     repository = TaskRepository(db.session_factory)
     state, _ = repository.create('find jobs', 'key-1')

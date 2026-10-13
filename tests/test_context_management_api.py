@@ -5,18 +5,18 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from agent_runtime.context.snapshots import (
+from eregion.runtime.context.snapshots import (
     ContextBlockManifest,
     ContextSnapshot,
     MemorySnapshotRef,
     SkillSnapshotRef,
 )
-from agent_runtime.context.types import ContextBlockKind, ContextTrustLevel
-from agent_runtime.memory import MemoryProvenance, MemoryScope, MemoryType
-from agent_runtime.sessions.events import SessionEvent, SessionEventType
-from agent_runtime.sessions.state import SessionState
-from api.main import create_app
-from api.session_dependencies import SessionRuntime, create_session_runtime
+from eregion.runtime.context.types import ContextBlockKind, ContextTrustLevel
+from eregion.runtime.memory import MemoryProvenance, MemoryScope, MemoryType
+from eregion.runtime.sessions.events import SessionEvent, SessionEventType
+from eregion.runtime.sessions.state import SessionState
+from eregion.api.main import create_app
+from eregion.api.session_dependencies import SessionRuntime, create_session_runtime
 
 
 def write_skill(

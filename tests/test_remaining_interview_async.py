@@ -7,8 +7,8 @@ from uuid import uuid4
 
 import pytest
 
-from agent_runtime.career.service import CareerService
-from agent_runtime.mock_interview.errors import MockInterviewConflict
+from eregion.runtime.career.service import CareerService
+from eregion.runtime.mock_interview.errors import MockInterviewConflict
 from test_career_flow import career, ToolModel
 from test_remaining_interview_fifo import prepared,wait_for
 
@@ -27,7 +27,7 @@ def answered(controller,identifier):
 
 
 def test_two_repository_instances_cannot_overwrite_answer_receipt_with_chat_update(career):
-    from agent_runtime.career.repository import TaskRepository
+    from eregion.runtime.career.repository import TaskRepository
     c=career;other=TaskRepository(c.repository.sessions);barrier=Barrier(2)
     seen={};errors=[]
     def mutate(key):
@@ -132,7 +132,7 @@ def test_feedback_version_advances_while_q2_provider_paused_without_losing_q2_or
 
 @pytest.mark.parametrize('answer_count',[2,3])
 def test_saved_answer_dispatch_retries_old_feedback_version_race_without_duplicate_answer(career,monkeypatch,answer_count):
-    from agent_runtime.mock_interview.repository import MockInterviewRepository
+    from eregion.runtime.mock_interview.repository import MockInterviewRepository
     c=career;controller,identifier=prepared(c)
     release_old=Event();old_saved=Event();paused=Event();conflicts=[]
     evaluate=controller.model.evaluate;advance=MockInterviewRepository._advance
@@ -175,10 +175,10 @@ def test_saved_answer_dispatch_retries_old_feedback_version_race_without_duplica
 
 @pytest.mark.parametrize('phase',['after_answer','after_queue','after_feedback'])
 def test_new_service_recovers_pending_or_committed_feedback_without_duplicate_answers(career,tmp_path,phase):
-    from api.db import create_database
-    from agent_runtime.career.harness import CareerHarness
-    from agent_runtime.career.repository import TaskRepository
-    from agent_runtime.mock_interview.repository import MockInterviewRepository
+    from eregion.api.db import create_database
+    from eregion.runtime.career.harness import CareerHarness
+    from eregion.runtime.career.repository import TaskRepository
+    from eregion.runtime.mock_interview.repository import MockInterviewRepository
     c=career;controller,identifier=prepared(c)
     mid=str(uuid4());text='A1: Durable Python answer.'
     c.repository.append(c.state['task_id'],role='user',text=text,id=mid,context={'interview_id':identifier})
@@ -217,7 +217,7 @@ def test_delayed_adaptive_followup_keeps_current_question_and_original_parent(ca
     # Preserve adaptive semantics: a late follow-up is queued after the already
     # displayed question, never replaces it or consumes another answer's text.
     from sqlalchemy import update
-    from agent_runtime.mock_interview.models import MockInterviewRow
+    from eregion.runtime.mock_interview.models import MockInterviewRow
     with c.runtime.database.session_factory.begin() as db:
         db.execute(update(MockInterviewRow).where(MockInterviewRow.mock_interview_id==identifier).values(max_followups_per_question=1))
     actual=controller.model.evaluate;gate=Event()

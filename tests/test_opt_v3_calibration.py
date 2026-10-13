@@ -9,12 +9,12 @@ import httpx
 import pytest
 from langchain_core.messages import AIMessage
 
-from agent_runtime.provider_usage import (UsageLedger, provider_call, usage_scope,
+from eregion.runtime.provider_usage import (UsageLedger, provider_call, usage_scope,
     capture_provider_attempts, TaskProviderBudgetExceeded)
-from agent_runtime.loop_context import ConversationWindow
-from agent_runtime.request_context import prepare_request, ContextArchive
-from job_agent.model import ProviderCompatibleChatOpenAI, invoke_structured
-from job_agent.reasoning import cache_observation
+from eregion.runtime.core.context import ConversationWindow
+from eregion.runtime.request_context import prepare_request, ContextArchive
+from eregion.domain.model import ProviderCompatibleChatOpenAI, invoke_structured
+from eregion.domain.reasoning import cache_observation
 from test_token_usage import ledger
 from test_opt_metrics_reasoning import Tiny, response
 from test_auto_apply import database
@@ -49,7 +49,7 @@ def test_rejection_default_and_opt_in(monkeypatch, async_mode, enabled, level, e
 
 
 def test_fast_default_identity():
-    from agent_runtime.fast_decisions import FastDecisions
+    from eregion.runtime.fast_decisions import FastDecisions
     from test_jev_singleflight import QUESTIONS, response as decision_response
     service = FastDecisions(api_key='fake', enabled=True, transport=httpx.MockTransport(lambda r: decision_response()))
     expected = hashlib.sha256(json.dumps([True, service.base_url, service.model, 'fake', 2.5]).encode()).hexdigest()
@@ -61,7 +61,7 @@ def test_fast_default_identity():
 
 
 def test_default_structured_and_batch_retry(monkeypatch):
-    from job_agent.batch_retry import retry_batch
+    from eregion.domain.batch_retry import retry_batch
     monkeypatch.delenv('JOB_AGENT_REASONING_ESCALATION', raising=False)
     bodies = []
     def transport(request):
@@ -144,8 +144,8 @@ def test_atomic_parallel_reservations(ledger, monkeypatch):
 
 
 def test_budget_stop_preserves_saved_work(database, monkeypatch):
-    from agent_runtime.task_loop import TaskLoop
-    from agent_runtime.career.repository import TaskRepository
+    from eregion.runtime.tasks.loop import TaskLoop
+    from eregion.runtime.career.repository import TaskRepository
     monkeypatch.setenv('JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS', '2')
     repo = TaskRepository(database.session_factory)
     harness = Harness()
@@ -182,7 +182,7 @@ def test_unset_budget_retains_unmetered_and_unknown_usage(ledger, monkeypatch):
 
 
 def test_default_analysis_future_and_durable_cache(ledger):
-    from agent_runtime.analysis_cache import AnalysisCache
+    from eregion.runtime.analysis_cache import AnalysisCache
     from threading import Event
     cache = AnalysisCache(ledger.sessions)
     entered, release = Event(), Event()
@@ -218,7 +218,7 @@ def test_report_attributes_layers_and_separates_runs():
 
 
 def test_window_pending_counter_survives_slice_restart():
-    from agent_runtime.loop_engine import AgentLoop
+    from eregion.runtime.core.engine import AgentLoop
     class Host:
         def persist(self, runtime): self.runtime = runtime
     host = Host()
@@ -243,9 +243,9 @@ def test_report_does_not_blame_eviction_of_already_omitted_group():
 
 @pytest.mark.parametrize('lane', ['fast','fit'])
 def test_typesafe_default_rejection_one_attempt(lane, monkeypatch):
-    from agent_runtime.fast_decisions import FastDecisions
-    from job_agent.jev_fit.settings import Settings
-    from job_agent.jev_fit.transport import Broker
+    from eregion.runtime.fast_decisions import FastDecisions
+    from eregion.domain.jev_fit.settings import Settings
+    from eregion.domain.jev_fit.transport import Broker
     from test_jev_singleflight import QUESTIONS
     monkeypatch.delenv('JOB_AGENT_REASONING_REJECTION_RETRY', raising=False)
     bodies = []
@@ -324,7 +324,7 @@ def test_transport_retry_does_not_reenable_reasoning_after_fallback(monkeypatch,
 
 
 def test_interview_retains_legacy_retry_without_flag(monkeypatch):
-    from agent_runtime.mock_interview import model as interview
+    from eregion.runtime.mock_interview import model as interview
     monkeypatch.delenv('JOB_AGENT_REASONING_REJECTION_RETRY', raising=False)
     bodies = []
     def transport(request):
@@ -358,7 +358,7 @@ def _status_error(status, message):
     (lambda: TimeoutError('reasoning timed out'), False),
 ])
 def test_only_explicit_parameter_rejection_counts_as_reasoning_rejection(exc, expected):
-    from job_agent.reasoning import reasoning_parameter_rejected
+    from eregion.domain.reasoning import reasoning_parameter_rejected
     assert reasoning_parameter_rejected(exc()) is expected
 
 
@@ -367,7 +367,7 @@ def test_connection_error_mentioning_reasoning_does_not_trigger_plain_retry(monk
     # then again without reasoning, on top of the transport retries.
     import httpx
     from openai import APIConnectionError
-    from job_agent.model import ProviderCompatibleChatOpenAI
+    from eregion.domain.model import ProviderCompatibleChatOpenAI
     from langchain_core.messages import HumanMessage
     monkeypatch.setenv('JOB_AGENT_REASONING_REJECTION_RETRY', '1')
     model = ProviderCompatibleChatOpenAI(model='m', api_key='k', base_url='https://provider.test/v1',
@@ -386,7 +386,7 @@ def test_connection_error_mentioning_reasoning_does_not_trigger_plain_retry(monk
 def test_plain_retry_shares_one_retry_budget(monkeypatch):
     import httpx
     from openai import APIConnectionError
-    from job_agent.model import ProviderCompatibleChatOpenAI
+    from eregion.domain.model import ProviderCompatibleChatOpenAI
     from langchain_core.messages import HumanMessage
     monkeypatch.setenv('JOB_AGENT_REASONING_REJECTION_RETRY', '1')
     model = ProviderCompatibleChatOpenAI(model='m', api_key='k', base_url='https://provider.test/v1',

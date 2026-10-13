@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from sqlalchemy import inspect
 from sqlalchemy.exc import IntegrityError
 
-from agent_runtime.memory import (
+from eregion.runtime.memory import (
     InvalidMemoryTransitionError,
     LocalOwnerResolver,
     MemoryAlreadyExistsError,
@@ -25,9 +25,9 @@ from agent_runtime.memory import (
     MemoryType,
     StaleMemoryError,
 )
-from agent_runtime.memory.models import MemoryEventRow
-from agent_runtime.sessions.clock import FakeClock
-from api.db import create_database
+from eregion.runtime.memory.models import MemoryEventRow
+from eregion.runtime.sessions.clock import FakeClock
+from eregion.api.db import create_database
 
 
 @pytest.fixture
@@ -121,7 +121,7 @@ def test_candidate_audit_confirmation_and_owner_isolation(memory_runtime):
 def test_confirmation_rechecks_memory_policy(memory_runtime, monkeypatch):
     _, repository, _ = memory_runtime
     item = candidate(repository)
-    from agent_runtime.memory.policy import MemoryPolicyDecision
+    from eregion.runtime.memory.policy import MemoryPolicyDecision
 
     monkeypatch.setattr(
         repository._policy,

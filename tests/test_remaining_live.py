@@ -7,11 +7,11 @@ from uuid import uuid4
 
 import pytest
 
-from agent_runtime.career.discovery import JobDiscovery
-from agent_runtime.career.service import CareerService
-from api.services.fit_analysis_service import FitAnalysisService
-from job_agent.jev_fit.settings import Settings
-from job_agent.pdf_rendering import render_letter_pdf
+from eregion.runtime.career.discovery import JobDiscovery
+from eregion.runtime.career.service import CareerService
+from eregion.api.services.fit_analysis_service import FitAnalysisService
+from eregion.domain.jev_fit.settings import Settings
+from eregion.domain.pdf_rendering import render_letter_pdf
 from scripts.e2e_repair_evaluation import APPLICANTS
 from test_career_flow import career
 from scripts.remaining_search_acceptance import evaluate_search
@@ -20,7 +20,7 @@ pytestmark=pytest.mark.skipif(os.getenv('JOB_AGENT_LIVE_REMAINING')!='1',reason=
 
 
 def settle_live(service,task_id,output,applicant,timeout=600):
-    from agent_runtime.provider_usage import UsageLedger
+    from eregion.runtime.provider_usage import UsageLedger
     started=time.monotonic()
     while time.monotonic()-started<timeout:
         state=service.repository.get(task_id)
@@ -37,7 +37,7 @@ def settle_live(service,task_id,output,applicant,timeout=600):
     summary['usage']=UsageLedger(service.repository.sessions).summary(task_id=task_id,run_ids=state['application_runs'])
     summary['recommendations']=state.get('recommendations',[])
     summary['schedules']=len(service.harness.alerts.list())
-    from agent_runtime.career.alerts import job_key
+    from eregion.runtime.career.alerts import job_key
     retrieved={job_key(j['url']) for j in state.get('retrieved_jobs',{}).values() if j.get('url')}
     summary['verified_jobs']=[]
     for identifier in state['jobs']:

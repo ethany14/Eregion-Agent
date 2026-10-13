@@ -1,0 +1,399 @@
+{
+  "scope": "source-only; no model usage",
+  "records": [
+    {
+      "query": "junior data analyst",
+      "location": "New York, NY",
+      "seconds": 12.777,
+      "result": {
+        "status": "ok",
+        "jobs": [
+          {
+            "url": "https://www.linkedin.com/jobs/view/4455419332/",
+            "provider_job_id": "4455419332",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4460477929/",
+            "provider_job_id": "4460477929",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4471529335/",
+            "provider_job_id": "4471529335",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4466320538/",
+            "provider_job_id": "4466320538",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4461382414/",
+            "provider_job_id": "4461382414",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4470991185/",
+            "provider_job_id": "4470991185",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4465167538/",
+            "provider_job_id": "4465167538",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4128647515/",
+            "provider_job_id": "4128647515",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4471222002/",
+            "provider_job_id": "4471222002",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          }
+        ],
+        "partial": false,
+        "section_errors": [],
+        "dropped_without_identity": 0,
+        "total": 347,
+        "total_exact": true,
+        "unapplied_filters": []
+      },
+      "normalized_size": {
+        "chars": 1745,
+        "utf8_bytes": 1745,
+        "token_estimate_chars_div4": 436,
+        "token_estimator": "rough chars/4; not model-specific or billed usage"
+      },
+      "model_calls": 0,
+      "model_tokens": 0
+    },
+    {
+      "query": "graduate data analyst",
+      "location": "New York, NY",
+      "seconds": 6.774,
+      "result": {
+        "status": "ok",
+        "jobs": [
+          {
+            "url": "https://www.linkedin.com/jobs/view/4471522054/",
+            "provider_job_id": "4471522054",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4459903231/",
+            "provider_job_id": "4459903231",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4461372317/",
+            "provider_job_id": "4461372317",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4466320538/",
+            "provider_job_id": "4466320538",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4439471695/",
+            "provider_job_id": "4439471695",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4460477929/",
+            "provider_job_id": "4460477929",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4432001930/",
+            "provider_job_id": "4432001930",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4460400303/",
+            "provider_job_id": "4460400303",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4418820627/",
+            "provider_job_id": "4418820627",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4464927432/",
+            "provider_job_id": "4464927432",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          }
+        ],
+        "partial": false,
+        "section_errors": [],
+        "dropped_without_identity": 0,
+        "total": 196,
+        "total_exact": true,
+        "unapplied_filters": []
+      },
+      "normalized_size": {
+        "chars": 1923,
+        "utf8_bytes": 1923,
+        "token_estimate_chars_div4": 481,
+        "token_estimator": "rough chars/4; not model-specific or billed usage"
+      },
+      "model_calls": 0,
+      "model_tokens": 0
+    },
+    {
+      "query": "software engineer intern",
+      "location": "New York, NY",
+      "seconds": 6.84,
+      "result": {
+        "status": "ok",
+        "jobs": [
+          {
+            "url": "https://www.linkedin.com/jobs/view/4474601269/",
+            "provider_job_id": "4474601269",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4474840946/",
+            "provider_job_id": "4474840946",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4477154054/",
+            "provider_job_id": "4477154054",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4460205602/",
+            "provider_job_id": "4460205602",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4471739687/",
+            "provider_job_id": "4471739687",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4460934903/",
+            "provider_job_id": "4460934903",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4454593886/",
+            "provider_job_id": "4454593886",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4318512358/",
+            "provider_job_id": "4318512358",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/4464643040/",
+            "provider_job_id": "4464643040",
+            "source": "linkedin_mcp",
+            "completeness": "card",
+            "title": null,
+            "company": null,
+            "location": null
+          }
+        ],
+        "partial": false,
+        "section_errors": [],
+        "dropped_without_identity": 0,
+        "total": 138,
+        "total_exact": true,
+        "unapplied_filters": []
+      },
+      "normalized_size": {
+        "chars": 1745,
+        "utf8_bytes": 1745,
+        "token_estimate_chars_div4": 436,
+        "token_estimator": "rough chars/4; not model-specific or billed usage"
+      },
+      "model_calls": 0,
+      "model_tokens": 0
+    }
+  ],
+  "raw_sizes": [
+    {
+      "tool": "search_jobs",
+      "seconds": 12.777,
+      "size": {
+        "chars": 6879,
+        "utf8_bytes": 6915,
+        "token_estimate_chars_div4": 1720,
+        "token_estimator": "rough chars/4; not model-specific or billed usage"
+      }
+    },
+    {
+      "tool": "search_jobs",
+      "seconds": 6.773,
+      "size": {
+        "chars": 8111,
+        "utf8_bytes": 8151,
+        "token_estimate_chars_div4": 2028,
+        "token_estimator": "rough chars/4; not model-specific or billed usage"
+      }
+    },
+    {
+      "tool": "search_jobs",
+      "seconds": 6.84,
+      "size": {
+        "chars": 7596,
+        "utf8_bytes": 7618,
+        "token_estimate_chars_div4": 1899,
+        "token_estimator": "rough chars/4; not model-specific or billed usage"
+      }
+    }
+  ],
+  "store": {
+    "calls_used": 3,
+    "stopped": null,
+    "log": [
+      {
+        "tool": "search_jobs",
+        "arguments": {
+          "keywords": "junior data analyst",
+          "max_pages": 1,
+          "location": "New York, NY",
+          "experience_level": "entry"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "search_jobs",
+        "arguments": {
+          "keywords": "graduate data analyst",
+          "max_pages": 1,
+          "location": "New York, NY",
+          "experience_level": "entry"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "search_jobs",
+        "arguments": {
+          "keywords": "software engineer intern",
+          "max_pages": 1,
+          "location": "New York, NY",
+          "experience_level": "internship"
+        },
+        "outcome": "ok"
+      }
+    ]
+  },
+  "error": null,
+  "elapsed_seconds": 28.856
+}

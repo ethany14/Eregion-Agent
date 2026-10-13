@@ -7,18 +7,18 @@ from uuid import uuid4
 
 import pytest
 
-from agent_runtime.context.repository import ContextSnapshotRepository
-from agent_runtime.mock_interview.controller import MockInterviewController
-from agent_runtime.mock_interview.worker import MockInterviewerWorker
-from agent_runtime.mock_interview.errors import MockInterviewConflict
-from agent_runtime.mock_interview.policy import build_plan, should_follow_up, validate_evaluation, validate_question
-from agent_runtime.mock_interview.repository import MockInterviewRepository
-from agent_runtime.mock_interview.types import InterviewMode, MockAnswerEvaluation, MockInterviewQuestion, MockStatus
-from agent_runtime.sessions.repository import SessionRepository
-from agent_runtime.application_pack.types import PackStatus
-from agent_runtime.workspace.repository import JobWorkspaceRepository
-from agent_runtime.workspace.types import ArtifactType
-from api.db import create_database, upgrade_database
+from eregion.runtime.context.repository import ContextSnapshotRepository
+from eregion.runtime.mock_interview.controller import MockInterviewController
+from eregion.runtime.mock_interview.worker import MockInterviewerWorker
+from eregion.runtime.mock_interview.errors import MockInterviewConflict
+from eregion.runtime.mock_interview.policy import build_plan, should_follow_up, validate_evaluation, validate_question
+from eregion.runtime.mock_interview.repository import MockInterviewRepository
+from eregion.runtime.mock_interview.types import InterviewMode, MockAnswerEvaluation, MockInterviewQuestion, MockStatus
+from eregion.runtime.sessions.repository import SessionRepository
+from eregion.runtime.application_pack.types import PackStatus
+from eregion.runtime.workspace.repository import JobWorkspaceRepository
+from eregion.runtime.workspace.types import ArtifactType
+from eregion.api.db import create_database, upgrade_database
 
 
 class ScriptedModel:
@@ -237,7 +237,7 @@ def test_invalid_evaluation_retries_once_then_fails_safely(setup):
 
 
 def test_discovered_fact_remains_candidate_until_explicit_confirmation(setup):
-    from agent_runtime.evidence.repository import CareerEvidenceRepository
+    from eregion.runtime.evidence.repository import CareerEvidenceRepository
     controller, model, application_id, db = setup
     controller.evidence = CareerEvidenceRepository(db.session_factory)
     original = model.evaluate
@@ -284,7 +284,7 @@ def test_answer_replay_after_next_question_and_crash_boundary(setup):
 
 def test_mock_api_and_worker_pause(setup):
     from fastapi.testclient import TestClient
-    from api.main import create_app
+    from eregion.api.main import create_app
     controller, model, application_id, _ = setup
     api = create_app(session_runtime=SimpleNamespace(mock_interviewer=controller))
     with TestClient(api) as client:

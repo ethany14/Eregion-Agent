@@ -15,7 +15,7 @@ flowchart TD
     Task --> Loop[Shared AgentLoop]
     Loop --> Model[Configured model]
     Loop --> Career[CareerHarness tools]
-    Career --> Search[Browser research and job import]
+    Career --> Search[Public board APIs + LinkedIn MCP; optional Treg]
     Career --> Fit[Evidence extraction and fit scoring]
     Career --> Materials[Versioned material generation and review]
     Career --> Interview[Interview practice]
@@ -30,19 +30,20 @@ flowchart TD
 
 | Component | Responsibility |
 | --- | --- |
-| [`loop_engine.py`](../agent_runtime/loop_engine.py) | Observe, decide, validate advertised actions, execute, checkpoint, and yield. |
-| [`loop_context.py`](../agent_runtime/loop_context.py) | Retain complete model/tool exchanges within a bounded window. |
-| [`loop_model.py`](../agent_runtime/loop_model.py) | Interruptible model waits, deadlines, and obsolete-request handling. |
-| [`task_host.py`](../agent_runtime/task_host.py) | Current request, conversation controls, result waits, persistence, and explicit completion. |
-| [`career/harness.py`](../agent_runtime/career/harness.py) | Job discovery, importing, scoring, materials, application handoff, and interviews. |
-| [`request_context.py`](../agent_runtime/request_context.py) | Compact observations, full-source archives, read progress, and resource freshness. |
-| [`auto_apply/runner.py`](../agent_runtime/auto_apply/runner.py) | Application observations, form actions, questions, validation, and review. |
-| [`browser/manager.py`](../agent_runtime/browser/manager.py) | General browsing sessions and bounded browser recovery. |
-| [`provider_usage.py`](../agent_runtime/provider_usage.py) | Actual provider-call accounting, task/run attribution, and usage summaries. |
+| [`core/engine.py`](../backend/eregion/runtime/core/engine.py) | Observe, decide, validate advertised actions, execute, checkpoint, and yield. |
+| [`core/context.py`](../backend/eregion/runtime/core/context.py) | Retain complete model/tool exchanges within a bounded window. |
+| [`core/model.py`](../backend/eregion/runtime/core/model.py) | Interruptible model waits, deadlines, and obsolete-request handling. |
+| [`tasks/host.py`](../backend/eregion/runtime/tasks/host.py) | Current request, conversation controls, result waits, persistence, and explicit completion. |
+| [`career/harness.py`](../backend/eregion/runtime/career/harness.py) | Job discovery, importing, scoring, materials, application handoff, and interviews. |
+| [`request_context.py`](../backend/eregion/runtime/request_context.py) | Compact observations, full-source archives, read progress, and resource freshness. |
+| [`auto_apply/runner.py`](../backend/eregion/runtime/auto_apply/runner.py) | Application observations, form actions, questions, validation, and review. |
+| [`browser/manager.py`](../backend/eregion/runtime/browser/manager.py) | General browsing sessions and bounded browser recovery. |
+| [`provider_usage.py`](../backend/eregion/runtime/provider_usage.py) | Actual provider-call accounting, task/run attribution, and usage summaries. |
 
-The persisted session/tool APIs and custom resume workflow still serve their
-existing callers. They share domain services but are not additional planners
-inside career chat. The active runtime does not use LangGraph.
+The persisted session/tool APIs use the same kernel. `eregion.domain.workflow`
+contains the deterministic `AnalysisWorkflow` for resume analysis; it is not an
+autonomous planner and has no AgentLoop alias. The old top-level packages and
+compatibility forwarding modules are removed. The active runtime does not use LangGraph.
 
 ## One turn, explicit outcomes
 
@@ -128,7 +129,7 @@ artifact. An invalid explicit choice requires resolution; it cannot silently
 fall back to a different approved item. The browser uses the selected content,
 not merely a filename or a reference in the parent task.
 
-See [Career evidence](../agent_runtime/evidence/README.md) for evidence lifecycle
+See [Career evidence](../backend/eregion/runtime/evidence/README.md) for evidence lifecycle
 and its distinction from memory.
 
 ## Browser execution

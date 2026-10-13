@@ -1,8 +1,8 @@
 """Deterministic step handler for custom-loop integration tests; no model calls."""
-from custom_agent.state import Step
-from custom_agent.steps import StepOutcome
-from job_agent.domain import make_evidence_id
-from job_agent.schemas import (JobAnalysis, JobRequirement, ResumeAnalysis,
+from eregion.domain.workflow.state import Step
+from eregion.domain.workflow.steps import StepOutcome
+from eregion.domain.domain import make_evidence_id
+from eregion.domain.schemas import (JobAnalysis, JobRequirement, ResumeAnalysis,
     ResumeEvidence, ScoreBreakdown, SkillEvidence, SkillMatch, SupportedClaim,
     TailoredResume, VerificationResult)
 

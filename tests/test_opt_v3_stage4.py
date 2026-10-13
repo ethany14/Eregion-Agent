@@ -8,11 +8,12 @@ import types
 from pathlib import Path
 
 import pytest
-from agent_runtime.request_context import encoded
-from agent_runtime.provider_usage import current_scope, TaskProviderBudgetExceeded
-from agent_runtime.career.harness import CareerHarness
-from agent_runtime.career.repository import TaskRepository
-from agent_runtime.task_host import TaskHost
+from scripts.baseline_imports import relocate_imports
+from eregion.runtime.request_context import encoded
+from eregion.runtime.provider_usage import current_scope, TaskProviderBudgetExceeded
+from eregion.runtime.career.harness import CareerHarness
+from eregion.runtime.career.repository import TaskRepository
+from eregion.runtime.tasks.host import TaskHost
 from test_career_flow import career, execute
 from test_b6_offline_replay import replay, frozen_web, offline_guard, ScriptedModel
 import test_board_directory_replay as directory
@@ -151,8 +152,8 @@ def test_crash_resume(career, monkeypatch, boundary, when):
 
 @pytest.mark.parametrize('kind', ['blocked','vacancy','unreadable','scoring','budget'])
 def test_failure_parity(career, monkeypatch, kind):
-    from agent_runtime.career.source_health import SourceBlocked
-    from agent_runtime.career.posting_qualification import PostingRejected
+    from eregion.runtime.career.source_health import SourceBlocked
+    from eregion.runtime.career.posting_qualification import PostingRejected
     c = career; monkeypatch.setenv('JOB_AGENT_OPT_VERIFY_AND_SCORE', '1')
     errors = {'blocked':SourceBlocked('browser:example.com'),
               'vacancy':PostingRejected('Not a current vacancy',code='not_current_vacancy'),
@@ -183,23 +184,23 @@ def test_failure_parity(career, monkeypatch, kind):
 @pytest.mark.parametrize('optimized', [False, True])
 def test_flag_off_base_arrays_and_requests(career, monkeypatch, optimized):
     from test_remaining_search_runtime import host_for
-    from agent_runtime.request_context import prepare_request, ContextArchive
-    from agent_runtime.loop_context import ConversationWindow
+    from eregion.runtime.request_context import prepare_request, ContextArchive
+    from eregion.runtime.core.context import ConversationWindow
     monkeypatch.setenv('JOB_AGENT_OPT_VERIFY_AND_SCORE','0')
     for flag in ('STABLE_TOOLS','PROMPT_TRIM','SNAPSHOT_REFS'):
         monkeypatch.setenv('JOB_AGENT_OPT_'+flag,'1' if optimized else '0')
     monkeypatch.setenv('JOB_AGENT_OPT_HISTORY_POLICY','checkpoint' if optimized else 'current')
     source = subprocess.check_output(['git','show',BASE+':agent_runtime/career/harness.py']).decode()
-    module = types.ModuleType('agent_runtime.career._stage4_base')
-    exec(compile(source,'base/harness.py','exec'), module.__dict__)
+    module = types.ModuleType('eregion.runtime.career._stage4_base')
+    exec(compile(relocate_imports(source),'base/harness.py','exec'), module.__dict__)
     state=career.repository.get(career.state['task_id'])
     assert career.harness.available_tools(state) == module.CareerHarness.available_tools(career.harness,state)
     assert career.harness.stable_tools(state) == module.CareerHarness.available_tools(career.harness,state,stable=True)
     with pytest.raises(ValueError,match='disabled'):
         execute(career,'verify_and_score',url=URL)
     host=host_for(career); turn=host.observe()
-    base=types.ModuleType('agent_runtime._stage4_host')
-    exec(subprocess.check_output(['git','show',BASE+':agent_runtime/task_host.py']).decode(),base.__dict__)
+    base=types.ModuleType('eregion.runtime._stage4_host')
+    exec(relocate_imports(subprocess.check_output(['git','show',BASE+':agent_runtime/task_host.py']).decode()),base.__dict__)
     old=base.TaskHost.observe(host)
     assert turn.tools == old.tools and turn.prompt == old.prompt
     assert turn.allowed_tools == old.allowed_tools
@@ -212,7 +213,7 @@ def test_flag_off_base_arrays_and_requests(career, monkeypatch, optimized):
 @pytest.mark.parametrize('restriction', ['search', 'recommendation', 'completion', 'must_decide'])
 def test_execution_masks(career, monkeypatch, stable, restriction):
     from test_remaining_search_runtime import host_for
-    from agent_runtime.loop_engine import validate_call, ToolArgumentsError
+    from eregion.runtime.core.engine import validate_call, ToolArgumentsError
     monkeypatch.setenv('JOB_AGENT_OPT_VERIFY_AND_SCORE', '1')
     monkeypatch.setenv('JOB_AGENT_OPT_STABLE_TOOLS', stable)
     c = career
@@ -254,8 +255,8 @@ def test_granular_then_composite_has_no_new_evidence(career, monkeypatch):
 
 
 def test_real_blocked_and_rejected_source_guards(career, monkeypatch):
-    from agent_runtime.career.source_health import record_browser
-    from agent_runtime.career.posting_qualification import PostingRejected
+    from eregion.runtime.career.source_health import record_browser
+    from eregion.runtime.career.posting_qualification import PostingRejected
     monkeypatch.setenv('JOB_AGENT_OPT_VERIFY_AND_SCORE','1')
     c = career; host = object.__new__(TaskHost)
     record_browser(c.repository,c.state['task_id'],{'url':URL,'blocked':True})
@@ -285,7 +286,7 @@ def test_saved_body_survives_eviction_restart(career, monkeypatch):
 
 @pytest.mark.parametrize('mode',['granular','composite'])
 def test_actual_provider_budget_stops_before_attempt(career, monkeypatch, mode):
-    from agent_runtime.provider_usage import usage_scope, UsageLedger, provider_call
+    from eregion.runtime.provider_usage import usage_scope, UsageLedger, provider_call
     c = career
     monkeypatch.setenv('JOB_AGENT_OPT_VERIFY_AND_SCORE','1')
     monkeypatch.setenv('JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS','0')
@@ -328,7 +329,7 @@ def test_unreadable_rendered_body_exact_failure(career, monkeypatch):
 
 
 def test_saved_body_local_import_on_blocked_source_and_tracking_identity(career, monkeypatch):
-    from agent_runtime.career.source_health import record_browser
+    from eregion.runtime.career.source_health import record_browser
     monkeypatch.setenv('JOB_AGENT_OPT_VERIFY_AND_SCORE','1')
     c=career
     execute(c,'read_job',url=URL)
@@ -359,8 +360,8 @@ def test_changed_resume_failure_does_not_claim_old_score_completed(career, monke
 
 @pytest.mark.parametrize('mode',['granular','composite'])
 def test_loop_budget_outcome_keeps_completed_steps(career, monkeypatch, mode):
-    from agent_runtime.career.service import CareerService
-    from agent_runtime.provider_usage import provider_call
+    from eregion.runtime.career.service import CareerService
+    from eregion.runtime.provider_usage import provider_call
     from test_career_flow import ToolModel, settled
     c=career
     # The service restores queued tasks; this fixture's seed is not this replay.

@@ -1,10 +1,10 @@
 """Old resume versions must not become extra employment or project entries."""
 from types import SimpleNamespace
 
-from agent_runtime.application_pack.policy import EvidenceSelectionPolicy
-from agent_runtime.application_pack.workflow import resume_analysis_from_snapshot
-from agent_runtime.job_workflow.workers import EvidenceFreezeWorker
-from job_agent.schemas import ResumeAnalysis, ResumeEvidence, ResumeSourceEntry
+from eregion.runtime.application_pack.policy import EvidenceSelectionPolicy
+from eregion.runtime.application_pack.workflow import resume_analysis_from_snapshot
+from eregion.runtime.job_workflow.workers import EvidenceFreezeWorker
+from eregion.domain.schemas import ResumeAnalysis, ResumeEvidence, ResumeSourceEntry
 from test_application_pack import setup
 
 

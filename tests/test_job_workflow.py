@@ -5,40 +5,40 @@ import json
 from types import SimpleNamespace
 import pytest
 
-from agent_runtime.job_workflow.plan import (
+from eregion.runtime.job_workflow.plan import (
     JOB_WORKFLOW_CONTEXT_TOKEN_BUDGET, build_analysis_plan,
 )
-from agent_runtime.job_workflow.workers import (
+from eregion.runtime.job_workflow.workers import (
     ArtifactRevisionWorker, ArtifactVerifierWorker, ArtifactWriterWorker,
     AnalysisProjectionWorker, CandidateAnalysisWorker, EvidenceFreezeWorker, EvidenceGapWorker,
     JobAnalysisWorker, PackAssemblerWorker, RequirementMatchWorker,
     SourceProvisionWorker,
 )
-from agent_runtime.application_pack.repository import PackRepository
-from agent_runtime.application_pack.workflow import ApplicationPackWorkflow
-from agent_runtime.application_pack.types import (
+from eregion.runtime.application_pack.repository import PackRepository
+from eregion.runtime.application_pack.workflow import ApplicationPackWorkflow
+from eregion.runtime.application_pack.types import (
     ApplicationAnswer, CoverLetter, CoverLetterParagraph, GroundedBlock,
 )
-from agent_runtime.evidence.repository import CareerEvidenceRepository
-from agent_runtime.interviewer.repository import InterviewRepository
-from agent_runtime.memory.repository import MemoryRepository
-from agent_runtime.multi_agent.context import AgentContextPolicy
-from agent_runtime.multi_agent.errors import WorkerStepError
-from agent_runtime.multi_agent.policy import AgentPlanValidator
-from agent_runtime.multi_agent.registry import AgentWorkerRegistry
-from agent_runtime.multi_agent.repository import AgentTaskRepository
-from agent_runtime.multi_agent.scheduler import AgentTaskScheduler
-from agent_runtime.multi_agent.types import TaskStatus
-from agent_runtime.sessions.events import SessionEvent, SessionEventType
-from agent_runtime.sessions.repository import SessionRepository
-from agent_runtime.sessions.state import SessionState
-from api.db import create_database, upgrade_database
-from agent_runtime.workspace.repository import JobWorkspaceRepository
-from job_agent.schemas import (
+from eregion.runtime.evidence.repository import CareerEvidenceRepository
+from eregion.runtime.interviewer.repository import InterviewRepository
+from eregion.runtime.memory.repository import MemoryRepository
+from eregion.runtime.coordination.context import AgentContextPolicy
+from eregion.runtime.coordination.errors import WorkerStepError
+from eregion.runtime.coordination.policy import AgentPlanValidator
+from eregion.runtime.coordination.registry import AgentWorkerRegistry
+from eregion.runtime.coordination.repository import AgentTaskRepository
+from eregion.runtime.coordination.scheduler import AgentTaskScheduler
+from eregion.runtime.coordination.types import TaskStatus
+from eregion.runtime.sessions.events import SessionEvent, SessionEventType
+from eregion.runtime.sessions.repository import SessionRepository
+from eregion.runtime.sessions.state import SessionState
+from eregion.api.db import create_database, upgrade_database
+from eregion.runtime.workspace.repository import JobWorkspaceRepository
+from eregion.domain.schemas import (
     JobAnalysis, JobRequirement, ResumeAnalysis, ResumeEvidence, SkillAssessment,
     SkillEvidence, SupportedClaim, TailoredResume, VerificationResult,
 )
-from custom_agent.handlers import JobAgentStepHandler
+from eregion.domain.workflow.handlers import JobAgentStepHandler
 
 
 class FakeSource:
@@ -177,7 +177,7 @@ def test_isolated_parallel_analysis_and_persisted_mode(tmp_path, max_calls):
 
 
 def test_job_analysis_context_budget_handles_realistic_jd_and_reports_excess(tmp_path):
-    from agent_runtime.context.budget import estimate_tokens
+    from eregion.runtime.context.budget import estimate_tokens
 
     url = f"sqlite:///{(tmp_path / 'long-job.db').as_posix()}"
     upgrade_database(url)
@@ -258,7 +258,7 @@ def test_component_gate_uses_shared_dataset_without_model_calls():
 
 
 def test_pack_plan_restricts_source_visibility_and_tools():
-    from agent_runtime.job_workflow.plan import build_pack_plan
+    from eregion.runtime.job_workflow.plan import build_pack_plan
     plan = build_pack_plan(application_id="app", parent_session_id="parent",
         idempotency_key="scope-test", job_snapshot_id="snapshot",
         requested_artifacts=frozenset({"tailored_resume", "cover_letter"}),
@@ -356,7 +356,7 @@ class FakePackModel:
 
 
 def test_full_no_interview_pack_flow_uses_frozen_evidence_and_public_schemas(tmp_path):
-    from agent_runtime.job_workflow.plan import build_pack_plan
+    from eregion.runtime.job_workflow.plan import build_pack_plan
     url = f"sqlite:///{(tmp_path / 'pack-flow.db').as_posix()}"
     upgrade_database(url)
     db = create_database(url)
@@ -430,8 +430,8 @@ def test_full_no_interview_pack_flow_uses_frozen_evidence_and_public_schemas(tmp
         assert {item.artifact_type for item in items} == {
             "tailored_resume", "cover_letter", "application_answer"}
         assert packs.snapshot(pack.pack_id).items[0].evidence_version_id == confirmed.current.evidence_version_id
-        from agent_runtime.multi_agent.models import AgentTaskAttemptRow
-        from agent_runtime.context.models import ContextSnapshotRow
+        from eregion.runtime.coordination.models import AgentTaskAttemptRow
+        from eregion.runtime.context.models import ContextSnapshotRow
         from sqlalchemy import select
         with db.session_factory() as session:
             writer_task = next(item for item in tasks.children(root.task_id)
@@ -489,7 +489,7 @@ def test_full_no_interview_pack_flow_uses_frozen_evidence_and_public_schemas(tmp
                             if link["direction"] == "output")
         final_report = next(link for link in tasks.artifact_links(revision_tasks["resume_verify_1"].task_id)
                             if link["direction"] == "output")
-        from agent_runtime.multi_agent.models import AgentTaskArtifactRow
+        from eregion.runtime.coordination.models import AgentTaskArtifactRow
         with db.session_factory() as session:
             first_content = json.loads(session.get(AgentTaskArtifactRow,
                                                    first_report["artifact_id"]).content_json)
@@ -539,11 +539,11 @@ def test_full_no_interview_pack_flow_uses_frozen_evidence_and_public_schemas(tmp
 def test_multi_agent_api_is_opt_in_idempotent_and_versioned(tmp_path):
     from uuid import uuid4
     from fastapi.testclient import TestClient
-    from agent_runtime.job_workflow.workers import ApplicationSourceReader
-    from api.main import create_app
-    from api.models import Run
-    from api.session_dependencies import SessionRuntime
-    from agent_runtime.registry import ToolRegistry
+    from eregion.runtime.job_workflow.workers import ApplicationSourceReader
+    from eregion.api.main import create_app
+    from eregion.api.models import Run
+    from eregion.api.session_dependencies import SessionRuntime
+    from eregion.runtime.registry import ToolRegistry
 
     url = f"sqlite:///{(tmp_path / 'api.db').as_posix()}"
     upgrade_database(url)
@@ -641,8 +641,8 @@ def test_multi_agent_api_is_opt_in_idempotent_and_versioned(tmp_path):
 
 def test_interviewer_worker_pauses_and_resumes_from_persisted_identifier():
     from types import SimpleNamespace
-    from agent_runtime.multi_agent.types import AgentTask, ExecutionContext, MultiAgentBudget
-    from agent_runtime.job_workflow.workers import InterviewerWorker
+    from eregion.runtime.coordination.types import AgentTask, ExecutionContext, MultiAgentBudget
+    from eregion.runtime.job_workflow.workers import InterviewerWorker
 
     class FakeController:
         status = "awaiting_answer"
@@ -680,10 +680,10 @@ def test_interviewer_worker_pauses_and_resumes_from_persisted_identifier():
 
 def test_interview_pause_survives_database_reopen(tmp_path):
     from types import SimpleNamespace
-    from agent_runtime.multi_agent.types import (
+    from eregion.runtime.coordination.types import (
         AgentPlan, AgentTaskResult, OutputArtifact, TaskDependencySpec, TaskSpec,
     )
-    from agent_runtime.job_workflow.workers import InterviewerWorker
+    from eregion.runtime.job_workflow.workers import InterviewerWorker
 
     class GapWorker:
         task_type = "gap_test"

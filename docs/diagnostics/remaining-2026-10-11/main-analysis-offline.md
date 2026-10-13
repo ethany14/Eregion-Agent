@@ -36,6 +36,6 @@
 
 ## 新验收入口
 
-见 [main_stability_README.md](../../../evals/main_stability_README.md)。默认 offline plan；显式 `--live` 才收费。本轮仅离线测试：同一冻结输入/实现、真正无结果缓存的生产服务、6 worker、32 次完整失败收集、每个 provider attempt 的 task 账本、未知用量拦截和历史重核。SQLite 集成使用真实 FitAnalysisService + 合成 provider：四次独立服务，每次 4 次调用含 1 个 timeout/1 个 retry，已知 40 input/20 output；这是测试计数，不是真实 API 成本。
+见 [main_stability_README.md](../../../tools/evals/main_stability_README.md)。默认 offline plan；显式 `--live` 才收费。本轮仅离线测试：同一冻结输入/实现、真正无结果缓存的生产服务、6 worker、32 次完整失败收集、每个 provider attempt 的 task 账本、未知用量拦截和历史重核。SQLite 集成使用真实 FitAnalysisService + 合成 provider：四次独立服务，每次 4 次调用含 1 个 timeout/1 个 retry，已知 40 input/20 output；这是测试计数，不是真实 API 成本。
 
 原 A–F 范围保留：B6 analyst52 calls/0 推荐仍失败，不收费重跑；backend 已过不重跑；C16 主模型延迟仍失败；A3 的 72 组/96 项人工复核 pending；E5 实际成稿风格仍失败；A5 89.015s 超 60s 的失败保留并按用户要求暂缓；推送/PR 等待批准。

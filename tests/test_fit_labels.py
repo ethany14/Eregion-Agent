@@ -9,7 +9,7 @@ from evals.run_fit_labels import evaluate, validate, validate_predictions, metri
 
 @pytest.fixture
 def dataset():
-    return json.loads(Path('evals/fit_labels_v1.json').read_text(encoding='utf-8'))
+    return json.loads(Path('tools/evals/fit_labels_v1.json').read_text(encoding='utf-8'))
 
 
 def test_real_source_cohort_is_complete_but_no_human_quality_is_claimed(dataset):
@@ -45,7 +45,7 @@ def reviewed_for_math(data):
 
 
 def prediction(data,pair,algorithm='main',form='structured'):
-    from api.services.fit_analysis_service import FitAnalysisResult
+    from eregion.api.services.fit_analysis_service import FitAnalysisResult
     people={a['applicant_id']:a for a in data['applicants']};jobs={j['job_id']:j for j in data['jobs']}
     j=jobs[pair['job_id']];quote=j['structured'][:30]
     result=FitAnalysisResult.model_validate({'analysis_id':'synthetic-math-fixture','latency_seconds':0,
@@ -194,7 +194,7 @@ def test_shared_quote_is_not_atomic_identity_or_duplicate_permission(dataset,mod
 
 def test_live_pipeline_attribution_checkpoint_and_no_silent_failure_retry(dataset,tmp_path,monkeypatch):
     """Exercise live orchestration with explicit offline providers, not paid accuracy."""
-    import api.services.fit_analysis_service as module
+    import eregion.api.services.fit_analysis_service as module
     from evals.run_fit_labels import live_rows
     calls=[]
     class OfflineService:

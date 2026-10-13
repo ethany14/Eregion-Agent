@@ -3,15 +3,15 @@ from types import SimpleNamespace
 
 import pytest
 
-from agent_runtime.application_pack.types import EvidenceSnapshotItem
-from agent_runtime.application_pack.verifier import ArtifactVerifier
-from agent_runtime.application_pack.verification import verify_material_resume
-from agent_runtime.application_pack.workflow import SharedPackModel
-from custom_agent.handlers import JobAgentStepHandler
-from custom_agent.state import AgentState, Step
-from job_agent.compact_match import match_payload
-from job_agent.fast_match import matching_batches
-from job_agent.schemas import (JobRequirement, ResumeAnalysis, ResumeEvidence, ResumeSourceEntry,
+from eregion.runtime.application_pack.types import EvidenceSnapshotItem
+from eregion.runtime.application_pack.verifier import ArtifactVerifier
+from eregion.runtime.application_pack.verification import verify_material_resume
+from eregion.runtime.application_pack.workflow import SharedPackModel
+from eregion.domain.workflow.handlers import JobAgentStepHandler
+from eregion.domain.workflow.state import AgentState, Step
+from eregion.domain.compact_match import match_payload
+from eregion.domain.fast_match import matching_batches
+from eregion.domain.schemas import (JobRequirement, ResumeAnalysis, ResumeEvidence, ResumeSourceEntry,
     ResumeEntry, ResumeSection, SupportedClaim, TailoredResume, VerificationResult, UnsupportedClaim)
 
 
@@ -91,7 +91,7 @@ def test_invalid_citation_skips_semantics_and_revised_content_is_rechecked():
 
 
 def test_custom_model_keeps_its_additional_rejection():
-    from agent_runtime.application_pack.types import ArtifactVerification
+    from eregion.runtime.application_pack.types import ArtifactVerification
     custom = SimpleNamespace(verify_resume=lambda _: VerificationResult(passed=False,
         unsupported_claims=[UnsupportedClaim(claim='Claim', reason='Unverified')], revision_feedback=['Remove claim.']))
     assert not verify_material_resume(None, custom, lambda: ArtifactVerification(passed=True)).passed

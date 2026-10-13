@@ -4,9 +4,9 @@ from threading import Event
 import pytest
 from langchain_core.messages import AIMessage
 
-from agent_runtime.task_loop import TaskLoop, function
-from agent_runtime.model_output import reply_text, output_problem
-from agent_runtime.career.repository import TaskRepository
+from eregion.runtime.tasks.loop import TaskLoop, function
+from eregion.runtime.model_output import reply_text, output_problem
+from eregion.runtime.career.repository import TaskRepository
 from test_auto_apply import database
 from test_career_flow import ToolModel, settled
 

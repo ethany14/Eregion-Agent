@@ -1,0 +1,392 @@
+"""Compare the writer-only workflow with the full verification workflow."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import subprocess
+from datetime import UTC, datetime
+from pathlib import Path
+from time import perf_counter
+from typing import Any
+
+from dotenv import dotenv_values
+from langchain_core.callbacks import BaseCallbackHandler
+from evals import DATASET_VERSION
+from evals.metrics import count_forbidden_claims
+from evals.run_evals import (
+    EVALS_DIR,
+    load_cases,
+    run_adversarial_case,
+    summarize_reflection,
+    tailored_resume_text,
+)
+from evals.runtime import EvaluationWorkflow
+from eregion.domain.model import DEFAULT_ENV_PATH as ENV_PATH, create_model as _create_model
+from eregion.domain.prompts import PROMPT_VERSION
+from eregion.domain.schemas import SCHEMA_VERSION, TailoredResume
+
+DEFAULT_CASES_PATH = EVALS_DIR / "cases.json"
+DEFAULT_ADVERSARIAL_CASES_PATH = EVALS_DIR / "adversarial_cases.json"
+DEFAULT_OUTPUT_PATH = EVALS_DIR / "results" / "ablation_v0.1.json"
+OFFICIAL_MODEL_PRICING = {
+    "gemini-3.7-flash": {
+        "input_per_million_usd": 0.75,
+        "output_per_million_usd": 3.75,
+        "effective_through": "2026-12-31",
+        "source": "https://ai.google.dev/gemini-api/docs/pricing",
+    }
+}
+
+
+class UsageCollector(BaseCallbackHandler):
+    """Collect call and token counts exposed by OpenAI-compatible providers."""
+
+    def __init__(self) -> None:
+        self.model_calls = 0
+        self.input_tokens = 0
+        self.output_tokens = 0
+        self.reported_cost_usd = 0.0
+        self.has_reported_cost = False
+
+    def on_llm_end(self, response: Any, **kwargs: Any) -> None:
+        self.model_calls += 1
+        for generations in response.generations:
+            for generation in generations[:1]:
+                message = getattr(generation, "message", None)
+                usage = getattr(message, "usage_metadata", None) or {}
+                self.input_tokens += int(usage.get("input_tokens", 0) or 0)
+                self.output_tokens += int(usage.get("output_tokens", 0) or 0)
+                metadata = getattr(message, "response_metadata", None) or {}
+                for key in ("cost", "cost_usd", "estimated_cost"):
+                    if isinstance(metadata.get(key), (int, float)):
+                        self.reported_cost_usd += float(metadata[key])
+                        self.has_reported_cost = True
+                        break
+
+    @property
+    def total_tokens(self) -> int:
+        return self.input_tokens + self.output_tokens
+
+
+def run_workflow_variant(
+    name: str, workflow: EvaluationWorkflow, cases: list[dict[str, Any]], usage: UsageCollector
+) -> dict[str, Any]:
+    results = []
+    for case in cases:
+        started = perf_counter()
+        expected_error = case.get("expected_error")
+        try:
+            result = workflow.run(
+                {"resume_text": case["resume_text"], "job_description": case["job_description"]},
+                run_id=f"ablation-{name}-{case['id']}", callbacks=[usage])
+            reached_review = result["reached_human_review"]
+            resume = TailoredResume.model_validate(result["tailored_resume"])
+            results.append(
+                {
+                    "case_id": case["id"],
+                    "case_type": "valid_workflow",
+                    "expected_behavior_achieved": result["completed"],
+                    "draft_completed": result["completed"],
+                    "reached_human_review": reached_review,
+                    "forbidden_claim_count": count_forbidden_claims(
+                        tailored_resume_text(resume), case.get("forbidden_claims", [])
+                    ),
+                    "latency_seconds": round(perf_counter() - started, 3),
+                    "error": None,
+                }
+            )
+        except Exception as exc:
+            message = str(exc)
+            passed = bool(expected_error and expected_error in message)
+            results.append(
+                {
+                    "case_id": case["id"],
+                    "case_type": "input_validation" if expected_error else "valid_workflow",
+                    "expected_behavior_achieved": passed,
+                    "reached_human_review": False,
+                    "forbidden_claim_count": 0,
+                    "latency_seconds": round(perf_counter() - started, 3),
+                    "error": None if passed else message,
+                }
+            )
+    valid = [item for item in results if item["case_type"] == "valid_workflow"]
+    return {
+        "results": results,
+        "expected_behavior_achieved": sum(item["expected_behavior_achieved"] for item in results),
+        "valid_workflows_reaching_human_review": sum(item["reached_human_review"] for item in valid),
+        "workflow_forbidden_claims": sum(item["forbidden_claim_count"] for item in valid),
+        "average_valid_workflow_latency_seconds": sum(item["latency_seconds"] for item in valid) / len(valid),
+    }
+
+
+def combine_usage(*collectors: UsageCollector) -> UsageCollector:
+    combined = UsageCollector()
+    combined.model_calls = sum(item.model_calls for item in collectors)
+    combined.input_tokens = sum(item.input_tokens for item in collectors)
+    combined.output_tokens = sum(item.output_tokens for item in collectors)
+    combined.reported_cost_usd = sum(item.reported_cost_usd for item in collectors)
+    combined.has_reported_cost = any(item.has_reported_cost for item in collectors)
+    return combined
+
+
+def usage_report(usage: UsageCollector, model_name: str) -> dict[str, Any]:
+    settings = {**dotenv_values(ENV_PATH), **os.environ}
+    input_rate = settings.get("LLM_INPUT_COST_PER_MILLION")
+    output_rate = settings.get("LLM_OUTPUT_COST_PER_MILLION")
+    if usage.has_reported_cost:
+        cost = usage.reported_cost_usd
+        basis = "provider_reported"
+    elif input_rate and output_rate:
+        cost = (
+            usage.input_tokens * float(input_rate)
+            + usage.output_tokens * float(output_rate)
+        ) / 1_000_000
+        basis = "configured_rates"
+        pricing = None
+    elif model_name in OFFICIAL_MODEL_PRICING:
+        pricing = OFFICIAL_MODEL_PRICING[model_name]
+        cost = (
+            usage.input_tokens * pricing["input_per_million_usd"]
+            + usage.output_tokens * pricing["output_per_million_usd"]
+        ) / 1_000_000
+        basis = "official_paid_tier_list_price"
+    else:
+        cost = None
+        basis = "unavailable_without_provider_cost_or_configured_rates"
+        pricing = None
+    if usage.has_reported_cost:
+        pricing = None
+    return {
+        "model_calls": usage.model_calls,
+        "input_tokens": usage.input_tokens,
+        "output_tokens": usage.output_tokens,
+        "total_tokens": usage.total_tokens,
+        "estimated_cost_usd": round(cost, 8) if cost is not None else None,
+        "cost_basis": basis,
+        "pricing": pricing,
+    }
+
+
+def average_usage(usage: dict[str, Any], workflow_count: int) -> dict[str, float]:
+    if not workflow_count:
+        return {
+            "model_calls": 0.0,
+            "input_tokens": 0.0,
+            "output_tokens": 0.0,
+            "total_tokens": 0.0,
+            "estimated_cost_usd": 0.0,
+        }
+    cost = usage["estimated_cost_usd"]
+    return {
+        "model_calls": usage["model_calls"] / workflow_count,
+        "input_tokens": usage["input_tokens"] / workflow_count,
+        "output_tokens": usage["output_tokens"] / workflow_count,
+        "total_tokens": usage["total_tokens"] / workflow_count,
+        "estimated_cost_usd": (
+            round(cost / workflow_count, 8) if cost is not None else None
+        ),
+    }
+
+
+def build_comparison(writer: dict[str, Any], full: dict[str, Any]) -> dict[str, Any]:
+    def change(new: float, old: float) -> float | None:
+        return (new - old) / old if old else None
+
+    writer_workflow = writer["workflow_usage"]
+    full_workflow = full["workflow_usage"]
+    writer_average = writer_workflow["per_workflow_average"]
+    full_average = full_workflow["per_workflow_average"]
+    writer_total = writer["total_evaluation_usage"]
+    full_total = full["total_evaluation_usage"]
+    unsupported_before = writer["remaining_unsupported_claims"]
+    unsupported_after = full["remaining_unsupported_claims"]
+    return {
+        "normal_workflow_per_case": {
+            "valid_workflow_count": writer_workflow["valid_workflow_count"],
+            "writer_only": {
+                "latency_seconds": writer["average_valid_workflow_latency_seconds"],
+                **writer_average,
+            },
+            "full_agent": {
+                "latency_seconds": full["average_valid_workflow_latency_seconds"],
+                **full_average,
+            },
+            "average_increase": {
+                "latency_seconds": round(
+                    full["average_valid_workflow_latency_seconds"]
+                    - writer["average_valid_workflow_latency_seconds"], 4
+                ),
+                "latency_rate": round(
+                    change(
+                        full["average_valid_workflow_latency_seconds"],
+                        writer["average_valid_workflow_latency_seconds"],
+                    ) or 0.0,
+                    6,
+                ),
+                "model_calls": full_average["model_calls"] - writer_average["model_calls"],
+                "total_tokens": full_average["total_tokens"] - writer_average["total_tokens"],
+                "estimated_cost_usd": round(
+                    full_average["estimated_cost_usd"]
+                    - writer_average["estimated_cost_usd"], 8
+                ),
+            },
+        },
+        "four_workflow_evaluation_totals": {
+            "writer_only": writer_workflow["totals"],
+            "full_agent": full_workflow["totals"],
+            "increase": {
+                "model_calls": full_workflow["totals"]["model_calls"] - writer_workflow["totals"]["model_calls"],
+                "total_tokens": full_workflow["totals"]["total_tokens"] - writer_workflow["totals"]["total_tokens"],
+                "estimated_cost_usd": round(
+                    full_workflow["totals"]["estimated_cost_usd"]
+                    - writer_workflow["totals"]["estimated_cost_usd"], 8
+                ),
+            },
+        },
+        "adversarial_suite": {
+            "case_count": full["adversarial_case_count"],
+            "injected_unsupported_claims": full["injected_unsupported_claims"],
+            "writer_only_remaining_unsupported_claims": unsupported_before,
+            "full_agent_detected_unsupported_claims": full["detected_unsupported_claims"],
+            "full_agent_remaining_unsupported_claims": unsupported_after,
+            "full_agent_detection_recall": full["unsupported_claim_detection_recall"],
+            "full_agent_removal_rate": full["unsupported_claim_removal_rate"],
+            "full_agent_supported_claim_false_positive_rate": full["supported_claim_false_positive_rate"],
+            "full_agent_usage": full["adversarial_usage"],
+        },
+        "all_evaluation_overhead": {
+            "model_calls": full_total["model_calls"] - writer_total["model_calls"],
+            "total_tokens": full_total["total_tokens"] - writer_total["total_tokens"],
+            "estimated_cost_usd": round(
+                full_total["estimated_cost_usd"] - writer_total["estimated_cost_usd"], 8
+            ),
+        },
+    }
+
+
+def run_ablation(cases_path: Path, adversarial_path: Path, output_path: Path) -> dict[str, Any]:
+    cases = load_cases(cases_path)
+    adversarial_cases = load_cases(adversarial_path)
+    writer_usage = UsageCollector()
+    full_workflow_usage = UsageCollector()
+    full_reflection_usage = UsageCollector()
+    model = _create_model()
+    model_name = model.model_name
+    writer = run_workflow_variant(
+        "writer-only", EvaluationWorkflow(writer_only=True), cases, writer_usage
+    )
+    full = run_workflow_variant(
+        "full-agent", EvaluationWorkflow(), cases, full_workflow_usage
+    )
+    reflection_results = [
+        run_adversarial_case(case, callbacks=[full_reflection_usage])
+        for case in adversarial_cases
+    ]
+    reflection = summarize_reflection(reflection_results)
+    injected = sum(len(case["injected_claims"]) for case in adversarial_cases)
+    writer_workflow_count = sum(item["expected_behavior_achieved"] for item in writer["results"]
+                                if item["case_type"] == "valid_workflow")
+    full_workflow_count = full["valid_workflows_reaching_human_review"]
+    writer_workflow_usage = usage_report(writer_usage, model_name)
+    full_workflow_usage_report = usage_report(full_workflow_usage, model_name)
+    writer_total_usage = usage_report(writer_usage, model_name)
+    full_total_usage = usage_report(
+        combine_usage(full_workflow_usage, full_reflection_usage), model_name
+    )
+    writer.update(
+        {
+            "adversarial_case_count": len(adversarial_cases),
+            "injected_unsupported_claims": injected,
+            "detected_unsupported_claims": 0,
+            "remaining_unsupported_claims": injected,
+            "unsupported_claim_detection_recall": None,
+            "unsupported_claim_removal_rate": 0.0,
+            "supported_claim_false_positive_rate": None,
+            "revision_success_rate": None,
+            "workflow_usage": {
+                "valid_workflow_count": writer_workflow_count,
+                "totals": writer_workflow_usage,
+                "per_workflow_average": average_usage(
+                    writer_workflow_usage, writer_workflow_count
+                ),
+            },
+            "adversarial_usage": usage_report(UsageCollector(), model_name),
+            "total_evaluation_usage": writer_total_usage,
+        }
+    )
+    full.update(
+        {
+            "adversarial_case_count": len(adversarial_cases),
+            "injected_unsupported_claims": injected,
+            "detected_unsupported_claims": reflection["detected_unsupported_claims"],
+            "remaining_unsupported_claims": reflection["remaining_unsupported_claims"],
+            "unsupported_claim_detection_recall": reflection["unsupported_claim_detection_recall"],
+            "unsupported_claim_removal_rate": (
+                (injected - reflection["remaining_unsupported_claims"]) / injected
+                if injected else 0.0
+            ),
+            "supported_claim_false_positive_rate": reflection["supported_claim_false_positive_rate"],
+            "revision_success_rate": reflection["revision_success_rate"],
+            "workflow_usage": {
+                "valid_workflow_count": full_workflow_count,
+                "totals": full_workflow_usage_report,
+                "per_workflow_average": average_usage(
+                    full_workflow_usage_report, full_workflow_count
+                ),
+            },
+            "adversarial_usage": usage_report(full_reflection_usage, model_name),
+            "total_evaluation_usage": full_total_usage,
+            "reflection_results": [item.model_dump(mode="json") for item in reflection_results],
+        }
+    )
+    report = {
+        "run_metadata": {
+            "timestamp": datetime.now(UTC).isoformat(),
+            "git_commit": subprocess.run(
+                ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+            ).stdout.strip(),
+            "model": model.model_name,
+            "temperature": model.temperature,
+            "max_retries": model.max_retries,
+            "prompt_version": PROMPT_VERSION,
+            "schema_version": SCHEMA_VERSION,
+            "dataset_version": DATASET_VERSION,
+            "runs_per_case": 1,
+        },
+        "version_a_writer_only": writer,
+        "version_b_full_agent": full,
+        "comparison": build_comparison(writer, full),
+    }
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    return report
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Run verifier ablation evaluation.")
+    parser.add_argument("--cases", type=Path, default=DEFAULT_CASES_PATH)
+    parser.add_argument("--adversarial-cases", type=Path, default=DEFAULT_ADVERSARIAL_CASES_PATH)
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT_PATH)
+    args = parser.parse_args()
+    report = run_ablation(args.cases, args.adversarial_cases, args.output)
+    for label, key in (
+        ("Version A - writer only", "version_a_writer_only"),
+        ("Version B - full agent", "version_b_full_agent"),
+    ):
+        result = report[key]
+        print(label)
+        print(f"  Unsupported claims remaining: {result['remaining_unsupported_claims']}")
+        print(f"  Average valid-workflow latency: {result['average_valid_workflow_latency_seconds']:.2f}s")
+        print(f"  Model calls per workflow: {result['workflow_usage']['per_workflow_average']['model_calls']:.1f}")
+        print(f"  Tokens per workflow: {result['workflow_usage']['per_workflow_average']['total_tokens']:.1f}")
+        print(f"  Estimated cost per workflow: ${result['workflow_usage']['per_workflow_average']['estimated_cost_usd']:.6f}")
+    print(f"Results saved to: {args.output}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

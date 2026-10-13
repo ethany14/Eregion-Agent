@@ -3,9 +3,9 @@ import copy
 import json
 import pytest
 
-from custom_agent.state import AgentState
-from job_agent.prompt_context import encode_context, compact_json_context, context_instruction, resume_context
-from job_agent.schemas import (ResumeAnalysis, ResumeEvidence, ResumeSourceEntry, JobAnalysis,
+from eregion.domain.workflow.state import AgentState
+from eregion.domain.prompt_context import encode_context, compact_json_context, context_instruction, resume_context
+from eregion.domain.schemas import (ResumeAnalysis, ResumeEvidence, ResumeSourceEntry, JobAnalysis,
     JobRequirement, SkillMatch, SkillEvidence)
 
 
@@ -78,7 +78,7 @@ def test_pack_revision_suffix_and_confirmed_preferences_are_not_lost():
 
 @pytest.mark.parametrize('operation', ['cover_letter','application_answer','revise_blocks'])
 def test_pack_adapters_keep_original_citations_and_revision_data(monkeypatch, operation):
-    from agent_runtime.application_pack.workflow import SharedPackModel
+    from eregion.runtime.application_pack.workflow import SharedPackModel
     body = {'evidence':[{'evidence_id':'e1','evidence_version_id':'v1',
                         'claim_text':'Candidate fact. '*120,'exact_quote':'Candidate fact. '*120}],
             'question':'Why this role?', 'preferences':[{'text':'Concise prose.'}]}
@@ -88,8 +88,8 @@ def test_pack_adapters_keep_original_citations_and_revision_data(monkeypatch, op
         encoded, end = json.JSONDecoder().raw_decode(content)
         assert restore(json.dumps(encoded)) == body and content[end:] == suffix
         return 'checked'
-    monkeypatch.setattr('agent_runtime.application_pack.workflow.shared_model', lambda:object())
-    monkeypatch.setattr('agent_runtime.application_pack.workflow.invoke_structured', invoke)
+    monkeypatch.setattr('eregion.runtime.application_pack.workflow.shared_model', lambda:object())
+    monkeypatch.setattr('eregion.runtime.application_pack.workflow.invoke_structured', invoke)
     adapter = SharedPackModel()
     context = json.dumps(body)+suffix
     result = (adapter.revise_blocks('cover_letter', context) if operation=='revise_blocks'
@@ -99,27 +99,27 @@ def test_pack_adapters_keep_original_citations_and_revision_data(monkeypatch, op
 
 def test_low_saving_resume_keeps_the_original_format_and_all_details(monkeypatch):
     from scripts.benchmark_context_sharing import fixture, LegacyAnalyzer
-    from custom_agent.handlers import SharedModelAnalyzer, JobAgentStepHandler
-    from custom_agent.state import Step
-    from job_agent.resume_selection import ResumeSelection
+    from eregion.domain.workflow.handlers import SharedModelAnalyzer, JobAgentStepHandler
+    from eregion.domain.workflow.state import Step
+    from eregion.domain.resume_selection import ResumeSelection
     state, _ = fixture()
     assert SharedModelAnalyzer().resume_context(state) is None
-    monkeypatch.setattr('job_agent.model.shared_model', lambda **_:object())
+    monkeypatch.setattr('eregion.domain.model.shared_model', lambda **_:object())
     def invoke(model, schema, prompt, content):
         assert content == LegacyAnalyzer().resume_context(state)
         assert not context_instruction(content)
         return ResumeSelection(summary=[], entries=[])
-    monkeypatch.setattr('custom_agent.handlers.invoke_structured', invoke)
+    monkeypatch.setattr('eregion.domain.workflow.handlers.invoke_structured', invoke)
     result = JobAgentStepHandler(analyzer=SharedModelAnalyzer()).execute(Step.WRITE_RESUME, state)
     assert {e.entry_id for s in result.updates['tailored_resume'].sections if s.section_type=='education'
             for e in s.entries} == {'graduate','undergrad'}
 
 
 def test_real_resume_adapter_receives_shared_context_and_writing_preferences(monkeypatch):
-    from agent_runtime.application_pack.workflow import SharedPackModel
-    from job_agent.resume_selection import ResumeSelection
+    from eregion.runtime.application_pack.workflow import SharedPackModel
+    from eregion.domain.resume_selection import ResumeSelection
     state, calls = material_state(), []
-    monkeypatch.setattr('job_agent.model.shared_model', lambda **_:object())
+    monkeypatch.setattr('eregion.domain.model.shared_model', lambda **_:object())
     def invoke(model, schema, prompt, content):
         calls.append((prompt,content))
         assert 'shared-text-v1' in prompt
@@ -128,14 +128,14 @@ def test_real_resume_adapter_receives_shared_context_and_writing_preferences(mon
         assert 'Keep Python APIs.' in content[end:]
         return ResumeSelection(summary=[], entries=[{'entry_id':'s1', 'selected_evidence_ids':['e1'],
             'bullets':[{'text':state.resume_analysis.evidence[0].exact_text, 'evidence_ids':['e1']}]}])
-    monkeypatch.setattr('custom_agent.handlers.invoke_structured', invoke)
+    monkeypatch.setattr('eregion.domain.workflow.handlers.invoke_structured', invoke)
     result = SharedPackModel().resume(state, [{'display_text':'Keep Python APIs.'}])
     assert len(calls) == 1
     assert result.claims()[0].source_entry_id == 's1'
 
 
 def test_semantic_reference_namespace_does_not_mix_claims(monkeypatch):
-    from agent_runtime.semantics import SemanticDecisions, ClaimDecisions
+    from eregion.runtime.semantics import SemanticDecisions, ClaimDecisions
     claims = [{'claim_id':str(i), 'claim':'Paraphrase', 'evidence':[
         {'quote':('Fact for A. ' if i < 4 else 'Fact for B. ')*100}]} for i in range(8)]
     def invoke(model, schema, prompt, content):
@@ -144,5 +144,5 @@ def test_semantic_reference_namespace_does_not_mix_claims(monkeypatch):
         for expected, actual in zip(claims, decoded['claims']):
             assert actual['claim_id'] == expected['claim_id'] and actual['evidence'] == expected['evidence']
         return ClaimDecisions(decisions=[{'claim_id':item['claim_id'], 'supported':False} for item in claims])
-    monkeypatch.setattr('agent_runtime.semantics.invoke_structured', invoke)
+    monkeypatch.setattr('eregion.runtime.semantics.invoke_structured', invoke)
     assert SemanticDecisions(model=object()).claims(claims) == set()

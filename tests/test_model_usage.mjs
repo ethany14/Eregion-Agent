@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {usageText} from '../web_app/model-usage.js';
+import {usageText} from '../frontend/web_app/model-usage.js';
 
 assert.equal(usageText({calls:0}), '');
 assert.match(usageText({calls:2,input_tokens:0,output_tokens:0,unknown_usage_calls:2}), /Token counts unavailable/);

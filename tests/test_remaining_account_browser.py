@@ -5,9 +5,9 @@ from urllib.parse import urlsplit
 
 import pytest
 
-from agent_runtime.auto_apply.browser import ApplicationBrowser
-from agent_runtime.auto_apply.browser_sessions import BrowserSessionStore
-from agent_runtime.browser.handoff import BrowserControlRequest,control_browser
+from eregion.runtime.auto_apply.browser import ApplicationBrowser
+from eregion.runtime.auto_apply.browser_sessions import BrowserSessionStore
+from eregion.runtime.browser.handoff import BrowserControlRequest,control_browser
 
 pytestmark=pytest.mark.skipif(os.getenv('JOB_AGENT_BROWSER_TESTS')!='1',reason='Opt-in offline Chrome')
 

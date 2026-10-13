@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {AnswerDrafts,renderAnswerBatch,renderPendingQuestion} from '../web_app/apply-answers.js';
+import {AnswerDrafts,renderAnswerBatch,renderPendingQuestion} from '../frontend/web_app/apply-answers.js';
 
 class Element {
   constructor(tag,text=''){this.tag=tag;this.textContent=text;this.children=[];this.attrs={};this.events={};}

@@ -1,6 +1,6 @@
 import pytest
 
-from job_agent.schemas import (
+from eregion.domain.schemas import (
     JobAnalysis,
     JobRequirement,
     RequirementCategory,

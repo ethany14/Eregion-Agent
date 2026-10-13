@@ -4,20 +4,19 @@ from pathlib import Path
 
 import pytest
 
-import custom_agent.handlers
-import custom_agent.loop
-import job_agent.workflow.handlers
-from job_agent.workflow.analysis import AgentLoop, AnalysisWorkflow
-from job_agent.workflow.errors import InvalidTransitionError
-from job_agent.workflow.state import Step
-from test_custom_agent import FACT, FakeHandler, custom_runtime  # noqa: F401
+from eregion.domain.workflow import analysis
+from eregion.domain.workflow.analysis import AnalysisWorkflow
+from eregion.domain.workflow.errors import InvalidTransitionError
+from eregion.domain.workflow.state import Step
+from test_analysis_workflow_state import FACT, FakeHandler, custom_runtime  # noqa: F401
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_old_import_paths_are_the_same_modules_not_copies():
-    assert custom_agent.handlers is job_agent.workflow.handlers
-    assert custom_agent.loop.AgentLoop is AnalysisWorkflow is AgentLoop
+def test_analysis_workflow_is_not_another_agent_loop():
+    assert not hasattr(analysis, 'AgentLoop')
+    assert not (ROOT / 'backend' / 'custom_agent').exists()
+    assert not (ROOT / 'backend' / 'eregion' / 'compat').exists()
 
 
 def test_each_advance_is_one_persisted_step(custom_runtime):
@@ -38,15 +37,15 @@ def test_each_advance_is_one_persisted_step(custom_runtime):
 
 
 def _created(workflow):
-    from job_agent.workflow.events import AgentEventType
-    from job_agent.workflow.state import AgentState
+    from eregion.domain.workflow.events import AgentEventType
+    from eregion.domain.workflow.state import AgentState
     state = AgentState(run_id='wf-1', resume_text=FACT, job_description='Requires Python', max_revisions=1)
     return state, workflow._event(state, AgentEventType.RUN_CREATED, Step.VALIDATE_INPUT)
 
 
 def test_production_code_does_not_import_the_legacy_package():
     offenders = []
-    for folder in ('agent_runtime', 'api', 'job_agent', 'evals', 'scripts'):
+    for folder in ('backend/eregion', 'tools/evals', 'tools/scripts'):
         for path in (ROOT / folder).rglob('*.py'):
             for line in path.read_text(encoding='utf-8').splitlines():
                 if re.match(r'\s*(from custom_agent[\s.]|import custom_agent\b)', line):

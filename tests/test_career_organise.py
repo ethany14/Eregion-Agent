@@ -5,9 +5,9 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
-from agent_runtime.career.repository import TaskRepository
-from agent_runtime.career.service import CareerService
-from api.main import create_app
+from eregion.runtime.career.repository import TaskRepository
+from eregion.runtime.career.service import CareerService
+from eregion.api.main import create_app
 from test_auto_apply import wait
 from test_career_flow import approve, career, execute, prepare  # noqa: F401 - pytest fixture import
 

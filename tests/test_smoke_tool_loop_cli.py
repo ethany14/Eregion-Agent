@@ -4,7 +4,7 @@ import argparse
 
 import pytest
 
-from agent_runtime import AgentMessage, ToolLoopOutcome, ToolLoopStatus
+from eregion.runtime import AgentMessage, ToolLoopOutcome, ToolLoopStatus
 from scripts.smoke_tool_loop import (
     build_parser,
     exit_code_for_outcome,

@@ -9,12 +9,12 @@ import sys
 import pytest
 from mcp.types import CallToolResult, TextContent, Tool
 
-from agent_runtime.career.linkedin_source import (BUSINESS_TOOLS, LinkedInMcpSource, LinkedInSourceStopped,
+from eregion.runtime.career.linkedin_source import (BUSINESS_TOOLS, LinkedInMcpSource, LinkedInSourceStopped,
                                                   job_url)
-from agent_runtime.mcp.config import McpRuntimeConfig, McpStdioServerConfig
-from agent_runtime.mcp.errors import McpCallTimeoutError
-from agent_runtime.mcp.manager import McpToolManager
-from agent_runtime.registry import ToolRegistry
+from eregion.runtime.mcp.config import McpRuntimeConfig, McpStdioServerConfig
+from eregion.runtime.mcp.errors import McpCallTimeoutError
+from eregion.runtime.mcp.manager import McpToolManager
+from eregion.runtime.registry import ToolRegistry
 
 ANY = {'type': 'object', 'properties': {}, 'additionalProperties': True}
 UPSTREAM_TOOLS = ['search_jobs', 'get_job_details', 'get_job_apply_url', 'get_saved_jobs', 'search_companies',
@@ -136,6 +136,33 @@ def test_an_unrelated_section_error_does_not_block_a_complete_posting():
     detail = LinkedInMcpSource(FakeLinkedIn({'get_job_details': result(payload)}).call_tool_for()).details('4475055219')
     assert detail['status'] == 'complete_jd' and detail['description'].startswith('About the job')
     assert 'More jobs' not in detail['description'] and 'More jobs' in detail['evidence_text']
+
+
+@pytest.mark.parametrize('url', [
+    'https://example.com/jobs/view/4475055219/',
+    'https://www.linkedin.com/jobs/search/?next=/jobs/view/4475055219/',
+    'https://www.linkedin.com/jobs/search/#/jobs/view/4475055219/',
+    'http://www.linkedin.com/jobs/view/4475055219/',
+    'https://user@www.linkedin.com/jobs/view/4475055219/',
+    'https://www.linkedin.com:8443/jobs/view/4475055219/',
+    'https://www.linkedin.com/jobs/view/4475055219/other',
+    'https://[invalid/jobs/view/4475055219/',
+])
+def test_detail_identity_requires_the_actual_linkedin_posting_url(url):
+    payload = {**DETAIL, 'url': url}
+    detail = LinkedInMcpSource(FakeLinkedIn({'get_job_details': result(payload)}).call_tool_for()).details('4475055219')
+    assert detail['status'] == 'incomplete' and detail['description'] is None
+    assert 'identity_unverified' in detail['incomplete_reasons']
+
+
+@pytest.mark.parametrize('url', [
+    'https://linkedin.com/jobs/view/4475055219',
+    'https://www.linkedin.com:443/jobs/view/4475055219/?trackingId=test',
+])
+def test_detail_identity_accepts_canonical_posting_with_tracking(url):
+    payload = {**DETAIL, 'url': url}
+    detail = LinkedInMcpSource(FakeLinkedIn({'get_job_details': result(payload)}).call_tool_for()).details('4475055219')
+    assert detail['status'] == 'complete_jd'
 
 
 def test_apply_url_only_for_external_postings():

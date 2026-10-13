@@ -10,21 +10,21 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from agent_runtime.application_pack.errors import PackConflictError, PackValidationError
-from agent_runtime.application_pack.policy import EvidenceSelectionPolicy, classify_question
-from agent_runtime.application_pack.repository import PackRepository
-from agent_runtime.application_pack.types import ApplicationAnswer, CoverLetter, CoverLetterParagraph, GroundedBlock, ItemStatus
-from agent_runtime.application_pack.verifier import ArtifactVerifier
-from agent_runtime.application_pack.workflow import ApplicationPackWorkflow
-from agent_runtime.evidence.repository import CareerEvidenceRepository
-from agent_runtime.memory.repository import MemoryRepository
-from agent_runtime.security import canonical_json
-from agent_runtime.workspace.models import ApplicationArtifactRow, ApplicationRunRow
-from agent_runtime.workspace.repository import JobWorkspaceRepository
-from api.db import create_database, upgrade_database
-from api.main import create_app
-from api.models import Run
-from job_agent.schemas import JobAnalysis, SupportedClaim, TailoredResume, VerificationResult
+from eregion.runtime.application_pack.errors import PackConflictError, PackValidationError
+from eregion.runtime.application_pack.policy import EvidenceSelectionPolicy, classify_question
+from eregion.runtime.application_pack.repository import PackRepository
+from eregion.runtime.application_pack.types import ApplicationAnswer, CoverLetter, CoverLetterParagraph, GroundedBlock, ItemStatus
+from eregion.runtime.application_pack.verifier import ArtifactVerifier
+from eregion.runtime.application_pack.workflow import ApplicationPackWorkflow
+from eregion.runtime.evidence.repository import CareerEvidenceRepository
+from eregion.runtime.memory.repository import MemoryRepository
+from eregion.runtime.security import canonical_json
+from eregion.runtime.workspace.models import ApplicationArtifactRow, ApplicationRunRow
+from eregion.runtime.workspace.repository import JobWorkspaceRepository
+from eregion.api.db import create_database, upgrade_database
+from eregion.api.main import create_app
+from eregion.api.models import Run
+from eregion.domain.schemas import JobAnalysis, SupportedClaim, TailoredResume, VerificationResult
 
 
 class FakePackModel:
@@ -83,7 +83,7 @@ class FakePackModel:
     " I graduated from Harvard.",
 ])
 def test_verifier_rejects_facts_appended_to_a_valid_quote(extra):
-    from agent_runtime.application_pack.types import EvidenceSnapshotItem
+    from eregion.runtime.application_pack.types import EvidenceSnapshotItem
     evidence = EvidenceSnapshotItem(evidence_id="e", evidence_version_id="v", content_hash="h",
         source_type="resume", selection_reason="application_link", associated_requirement_ids=[],
         claim_text="Built Python APIs.")
@@ -100,8 +100,8 @@ def test_nullable_job_title_does_not_crash_evidence_selection():
 
 
 def test_pack_preserves_analyzed_resume_after_default_changes_and_original_is_deleted(setup):
-    from agent_runtime.resumes.repository import ResumeDocumentRepository
-    from job_agent.schemas import ResumeAnalysis, ResumeEvidence
+    from eregion.runtime.resumes.repository import ResumeDocumentRepository
+    from eregion.domain.schemas import ResumeAnalysis, ResumeEvidence
     workflow, packs, workspace, _, saved, db = setup
     resumes = ResumeDocumentRepository(db.session_factory)
     original = "Original Candidate\noriginal@example.com\nEXPERIENCE\nBuilt Python APIs."
@@ -128,7 +128,7 @@ def test_pack_preserves_analyzed_resume_after_default_changes_and_original_is_de
 
 
 def test_pack_approval_returns_success_after_commit(setup):
-    from api.session_dependencies import get_session_runtime
+    from eregion.api.session_dependencies import get_session_runtime
     workflow, packs, _, _, saved, _ = setup
     pack = workflow.create(saved.application.application_id, expected_version=saved.application.version,
                            idempotency_key="create")

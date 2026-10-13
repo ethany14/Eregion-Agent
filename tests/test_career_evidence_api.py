@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
-from api.main import create_app
-from api.session_dependencies import create_session_runtime
+from eregion.api.main import create_app
+from eregion.api.session_dependencies import create_session_runtime
 
 
 def test_evidence_api_local_lifecycle_and_safe_projection(tmp_path):

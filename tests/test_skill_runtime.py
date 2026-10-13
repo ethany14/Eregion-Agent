@@ -8,7 +8,7 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy import inspect
 
-from agent_runtime.skills import (
+from eregion.runtime.skills import (
     InvalidSkillTransitionError,
     SkillContentChangedError,
     SkillDiscovery,
@@ -23,10 +23,10 @@ from agent_runtime.skills import (
     SkillStatus,
     SkillValidationError,
 )
-from agent_runtime.skills.hashing import hash_skill_package
-from agent_runtime.skills.security import MAX_PACKAGE_FILES
-from agent_runtime.sessions.clock import FakeClock
-from api.db import create_database
+from eregion.runtime.skills.hashing import hash_skill_package
+from eregion.runtime.skills.security import MAX_PACKAGE_FILES
+from eregion.runtime.sessions.clock import FakeClock
+from eregion.api.db import create_database
 
 
 def write_skill(
@@ -88,8 +88,8 @@ def approve_and_activate(registry: SkillRegistry, pending):
 
 def test_format_compliance_and_custom_metadata_convention(tmp_path):
     package = write_skill(tmp_path)
-    from agent_runtime.skills.parser import SkillParser
-    from agent_runtime.skills.validator import SkillValidator
+    from eregion.runtime.skills.parser import SkillParser
+    from eregion.runtime.skills.validator import SkillValidator
     parsed = SkillParser().parse(package)
     report = SkillValidator().validate(parsed, package)
     assert report.valid
@@ -107,14 +107,14 @@ def test_official_name_constraints_and_directory_equality(tmp_path, name):
     text = (package / "SKILL.md").read_text(encoding="utf-8")
     (package / "SKILL.md").write_text(text.replace("name: directory-name", f"name: {name}"), encoding="utf-8")
     registry = SkillRegistry.__new__(SkillRegistry)
-    from agent_runtime.skills.parser import SkillParser
-    from agent_runtime.skills.validator import SkillValidator
+    from eregion.runtime.skills.parser import SkillParser
+    from eregion.runtime.skills.validator import SkillValidator
     report = SkillValidator().validate(SkillParser().parse(package), package)
     assert not report.valid
 
 
 def test_unknown_fields_invalid_metadata_and_unsafe_yaml_are_rejected(tmp_path):
-    from agent_runtime.skills.parser import SkillParser
+    from eregion.runtime.skills.parser import SkillParser
     package = write_skill(tmp_path, extra_frontmatter="version: 1.0\n")
     with pytest.raises(SkillParseError, match="Unsupported"):
         SkillParser().parse(package)
@@ -294,7 +294,7 @@ def test_activation_event_failure_rolls_back_supersession(tmp_path, skill_runtim
 
 
 def test_package_file_count_limit(tmp_path, monkeypatch):
-    import agent_runtime.skills.security as security
+    import eregion.runtime.skills.security as security
     package = write_skill(tmp_path)
     monkeypatch.setattr(security, "MAX_PACKAGE_FILES", 3)
     with pytest.raises(SkillSecurityError, match="too many files"):
@@ -303,7 +303,7 @@ def test_package_file_count_limit(tmp_path, monkeypatch):
 
 
 def test_oversized_file_is_rejected_without_large_fixture(tmp_path, monkeypatch):
-    import agent_runtime.skills.security as security
+    import eregion.runtime.skills.security as security
     package = write_skill(tmp_path)
     monkeypatch.setattr(security, "MAX_RESOURCE_FILE_BYTES", 2)
     with pytest.raises(SkillSecurityError, match="too large"):
