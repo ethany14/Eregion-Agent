@@ -74,6 +74,9 @@ def opening_level(description):
     text=(description or '').casefold()
     junior=bool(re.search(r'\b(?:entry[- ]level|junior)[ -]+(?:role|position|opportunity)\b|'
         r'\bthis (?:role|position) is (?:an? )?(?:entry[- ]level|junior)\b',text))
+    for m in re.finditer(r'\b(?:seeking|hiring|recruiting|looking for)\s+(?:an?\s+)?(?:entry[- ]level|junior)\s+(?:professional|candidate|analyst|engineer|designer)\b',text):
+        clause=re.split(r'[.!?\n]',text[:m.start()])[-1][-80:]
+        if not re.search(r"\b(?:not|never|isn't|aren't|don't)\b",clause):junior=True
     junior=junior or any(0<=int(m[1])<=int(m[2])<=3 for m in re.finditer(
         r'(?:^|\n)\s*(?:[-*•]\s*)?(?:(?:requires?|minimum(?: of)?|at least|must have|candidates? must have|'
         r'you (?:have|bring)|(?:the )?(?:ideal|successful) candidate (?:has|will have)|experience\s*:)\s+)?'

@@ -58,6 +58,19 @@ class ContextArchive:
             return self.incomplete(ref)
         value = stored['value']
         root_value = value
+        if not path and not historical and isinstance(value,dict):
+            discovery=isinstance(value.get('jobs'),list) and any(k in value for k in ('linkedin_mcp','query_variants','directory_searched'))
+            qualification=value.get('error_code')=='qualification_needed'
+            if discovery or qualification:
+                # These are already summarized outcomes, not new JD evidence.
+                # Preserve targeted fields and explicit historical access below.
+                jobs=[{k:j[k] for k in ('url','title','company','location') if k in j}
+                      for j in value.get('jobs',[])[:8]]
+                return {'ref':ref,'content':'','no_new_evidence':True,'jobs':jobs,
+                        **{k:value[k] for k in ('error_code','issues','triage_evidence','next') if k in value},
+                        'available_paths':[{'path':[k]} for k in value],
+                        'progress_feedback':'This search or qualification summary is already available. Use pending candidates and the unresolved fields. '
+                                            'Read a specific job/field path only for a missing fact; historical=true preserves intentional audit access.'}
         if (not path and not historical and isinstance(value,dict)
                 and 'qualified_count' in value and isinstance(value.get('candidates'),list)):
             return {'ref':ref,'content':'','no_new_evidence':True,
@@ -387,7 +400,7 @@ class ContextArchive:
         if isinstance(result.get('regions'),list):
             summary['regions']=[{k:r[k] for k in ('ref','label','tag','text_length') if k in r}
                 for r in result['regions'][:6]]
-        for key in ('error', 'error_code', 'next', 'progress_feedback', 'no_new_evidence', 'retryable', 'saved', 'failed', 'action_performed', 'recovery',
+        for key in ('error', 'error_code', 'issues', 'next', 'progress_feedback', 'no_new_evidence', 'retryable', 'saved', 'failed', 'action_performed', 'recovery',
                     'url', 'title', 'company', 'location', 'triage_evidence', 'heading', 'observation_id', 'blocked', 'control_count', 'control_offset',
                     'page_evidence_hash','primary_heading','body_scope',
                     'text_offset', 'text_length', 'region_ref', 'application_id', 'pack_id', 'run_id', 'mock_interview_id', 'current_question',

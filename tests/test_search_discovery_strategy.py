@@ -61,6 +61,17 @@ def test_unknown_location_uses_only_explicit_opening_evidence():
     assert not assess({'goal':GOAL},{**job,'location':'Boston, MA','description':'This role is based in New York.'})['qualified']
 
 
+def test_employer_explicitly_seeking_entry_level_professional():
+    body='A financial services organization is seeking an entry-level professional to support AML transaction monitoring.'
+    assert opening_level(body)=='junior'
+    assert acceptance_constraints('analyst',{'title':'Compliance Data Analyst','location':'New York','description':body})['seniority']
+    for negative in ['You will mentor entry-level professionals.',
+                     'We are not seeking an entry-level professional.',
+                     'We are not currently hiring a junior analyst.']:
+        assert opening_level(negative) is None
+    assert opening_level(body+'\nRequires 5 years of experience.')=='senior'
+
+
 def test_linkedin_scope_excludes_other_jobs_and_keeps_original_offsets():
     raw='Example\nData Analyst\nNew York, NY\nAbout the job\n'+'We analyse data. '*35+'\nMore jobs\nJunior role: 0-2 years of experience.'
     body=scope(raw)
@@ -115,3 +126,20 @@ def test_list_mismatch_cannot_bypass_filter_via_direct_detail(career,monkeypatch
             execute(c,'read_job',url=DETAIL['url'])
         assert not fake.calls
     finally:manager.stop()
+
+
+@pytest.mark.parametrize('value',[
+    {'error_code':'qualification_needed','issues':['Opening level not established'],
+     'triage_evidence':[{'quote':'2+ years of experience.'}], 'source':'x'*6000},
+    {'jobs':[{'url':'https://example.com/jobs/1','title':'Data Analyst'}],
+     'linkedin_mcp':{'query_variants':['x'*6000]}},
+])
+def test_known_search_and_qualification_summaries_are_not_bulk_paged(value):
+    from eregion.runtime.request_context import ContextArchive
+    archive=ContextArchive();ref=archive.tool_result(value)['context_ref']
+    for offset in (0,3000):
+        read=archive.read(ref,offset)
+        assert read['no_new_evidence'] and read['content']==''
+    key='issues' if 'issues' in value else 'jobs'
+    assert archive.read(ref,path=[key])['content']
+    assert archive.read(ref,historical=True)['content']
