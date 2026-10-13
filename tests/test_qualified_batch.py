@@ -81,18 +81,18 @@ def test_batch_preflights_all_urls_before_io(career,monkeypatch):
 
 
 def test_larger_acquisition_keeps_scorer_groups_bounded_and_resume_reuses(career,monkeypatch):
-    c=career;jobs=[posting(i) for i in range(12)]
+    c=career;jobs=[posting(i) for i in range(20)]
     reads=prepare(c,monkeypatch,jobs)
     original=c.harness.analysis.analyze_many;groups=[]
     async def batch(ids,**kwargs):
         groups.append(len(ids));return await original(ids,**kwargs)
     monkeypatch.setattr(c.harness.analysis,'analyze_many',batch)
     value=execute(c,'verify_and_score_jobs',urls=[j['url'] for j in jobs])
-    assert value['qualified_count']==12 and len(value['jobs'])==12 and groups==[8,4]
-    assert len(reads)==12
+    assert value['qualified_count']==20 and len(value['jobs'])==20 and groups==[16,4]
+    assert len(reads)==20
     from eregion.runtime.request_context import ContextArchive
     summary=ContextArchive().tool_result(value)
-    assert isinstance(summary['jobs'],list) and len(summary['jobs'])==12
+    assert isinstance(summary['jobs'],list) and len(summary['jobs'])==20
     assert all(isinstance(j['decision_brief'],dict) for j in summary['jobs'])
 
 def test_cancel_mid_read_stops_before_import_or_next_source(career,monkeypatch):

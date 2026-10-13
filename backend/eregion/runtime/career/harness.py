@@ -45,8 +45,8 @@ TOOLS = [
     function('list_jobs','Inspect saved jobs from the old workspace as well as this task.',{'query':TEXT},[]),
     function('inspect_job','Read a saved job, score, gaps and linked artifacts.',APP),
     function('score_job','Run the existing resume/JD match analysis and persist the actual score and requirement gaps.',APP),
-    function('score_jobs','Compare up to eight imported jobs against the current resume in one batch. Uses shared Jev context when enabled; preserves uncertainty and separate results.',
-        {'application_ids':{'type':'array','minItems':1,'maxItems':8,'uniqueItems':True,'items':TEXT}},['application_ids']),
+    function('score_jobs','Compare up to sixteen imported jobs against the current resume in one batch. Uses shared Jev context when enabled; preserves uncertainty and separate results.',
+        {'application_ids':{'type':'array','minItems':1,'maxItems':16,'uniqueItems':True,'items':TEXT}},['application_ids']),
     function('generate_materials','Prepare verified drafts, reusing saved drafts for unchanged inputs. Only when the user explicitly requests a fresh/new set, use fresh=true with their message_id; preserves old documents. Use revise_material for feedback on an existing document.',
         {**APP,'artifacts':{'type':'array','minItems':1,'maxItems':2,'items':{'type':'string','enum':['tailored_resume','cover_letter']}},
             'fresh':{'type':'boolean'},'message_id':TEXT},['application_id','artifacts']),
@@ -1052,8 +1052,8 @@ class CareerHarness:
                     **self.job_summary(args['application_id'],detail=True)}
         if name=='score_jobs':
             identifiers=args['application_ids']
-            if not identifiers or len(identifiers)>8 or len(set(identifiers))!=len(identifiers):
-                raise ValueError('Choose one to eight unique imported jobs.')
+            if not identifiers or len(identifiers)>16 or len(set(identifiers))!=len(identifiers):
+                raise ValueError('Choose one to sixteen unique imported jobs.')
             for identifier in identifiers:self.require_link(state,'jobs',identifier)
             versions={a:rt.workspace.get_application(a).version for a in identifiers}
             from .qualification import record_many

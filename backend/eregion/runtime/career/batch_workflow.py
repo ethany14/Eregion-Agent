@@ -7,7 +7,7 @@ from .qualification import record_many
 
 TOOL=function('verify_and_score_jobs',
     'Process 1-20 observed posting URLs together: read/reuse, qualify against the user request, import qualified jobs, '
-    'then score qualified jobs in shared groups of at most eight. Unknown/mismatched jobs stay deferred without paid scoring. '
+    'then score qualified jobs in shared groups of at most sixteen. Unknown/mismatched jobs stay deferred without paid scoring. '
     'Never recommends; decide the returned scored jobs separately. Prefer this for multi-job searches.',
     {'urls':{'type':'array','minItems':1,'maxItems':20,'uniqueItems':True,'items':TEXT}})
 
@@ -72,8 +72,8 @@ def run(harness,task_id,args,call_id):
                 except (ValueError,LookupError) as exc:
                     item.update(status='import_failed',error=str(exc)[:400]);save(pending=None)
             scored=[]
-            for start in range(0,len(apps),8):
-                result=invoke('score_jobs',{'application_ids':apps[start:start+8]})
+            for start in range(0,len(apps),16):
+                result=invoke('score_jobs',{'application_ids':apps[start:start+16]})
                 if result.get('error'):save(pending=None,failure=result);return {**result,'jobs':scored,'candidates':items}
                 scored.extend(result['jobs'])
                 if not result.get('no_new_evidence'):changed=True

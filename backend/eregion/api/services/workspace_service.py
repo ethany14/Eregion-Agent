@@ -154,8 +154,8 @@ class WorkspaceAnalysisService:
             raise
 
     async def analyze_many(self, applications, *, resume_text, candidate_facts=None):
-        if not applications or len(applications)>8 or len(set(applications))!=len(applications):
-            raise ValueError('Choose one to eight unique applications.')
+        if not applications or len(applications)>16 or len(set(applications))!=len(applications):
+            raise ValueError('Choose one to sixteen unique applications.')
         snapshots={}
         for identifier in applications:
             app=self._workspace.get_application(identifier)

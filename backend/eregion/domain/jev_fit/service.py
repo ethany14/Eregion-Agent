@@ -9,6 +9,11 @@ from .settings import Settings, digest, canonical
 from .transport import Broker, Client, semantic_value
 
 
+# Jobs scored together share one request per stage; the stage overhead (~7 calls)
+# is paid per batch, so 16 halves it for a 10-15 job search versus 8.
+MAX_JOBS = 16
+
+
 class JevFitError(RuntimeError):
     pass
 
@@ -19,8 +24,8 @@ class JevFitService:
         self.resolver_model=resolver_model
 
     def analyze_many(self, *, resume_text, jobs, candidate_facts=None):
-        if not resume_text.strip() or not jobs or len(jobs)>8 or len({j['id']for j in jobs})!=len(jobs):
-            raise ValueError('Provide a resume and one to eight unique jobs.')
+        if not resume_text.strip() or not jobs or len(jobs)>MAX_JOBS or len({j['id']for j in jobs})!=len(jobs):
+            raise ValueError(f'Provide a resume and one to {MAX_JOBS} unique jobs.')
         if any(not j['job_description'].strip()for j in jobs):
             raise ValueError('A job description must not be empty.')
         cache=DecisionCache(self.config.cache_path,ttl=self.config.ttl,unknown_ttl=self.config.unknown_ttl)if self.config.cache_path else None
@@ -37,7 +42,7 @@ class JevFitService:
             if raw.get('provider_errors')or 'matches'not in raw:
                 raise JevFitError('Jev fit analysis could not complete: '+','.join(raw.get('provider_errors')or[raw['status']]))
             return job,client,raw
-        # All jobs (at most eight) run together so each stage is one shared request.
+        # All jobs (at most MAX_JOBS) run together so each stage is one shared request.
         broker.expect(len(jobs))
         try:
             with ThreadPoolExecutor(max_workers=len(jobs),thread_name_prefix='jev-fit')as pool:

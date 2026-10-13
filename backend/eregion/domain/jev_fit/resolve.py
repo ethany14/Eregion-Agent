@@ -197,7 +197,7 @@ def resolve_unknowns(raw, evidence, *, model, invoke=None, store=None):
 
 def resolve_unknowns_many(raws,evidence,*,model,invoke=None,store=None):
     """One provider request for up to eight jobs; keep job IDs and call attribution distinct."""
-    if not 1<=len(raws)<=8:raise ValueError('Resolve one to eight jobs.')
+    if not 1<=len(raws)<=16:raise ValueError('Resolve one to sixteen jobs.')
     if invoke is None:
         from eregion.domain.model import invoke_structured as invoke
     pending={};primary_keys={};aliases={};alias_ids={}
