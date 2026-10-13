@@ -279,3 +279,18 @@ def test_scoring_batch_is_sized_to_the_attempts_that_can_finish_it(career,monkey
         return
     now,later=c.harness.affordable_scoring(c.state['task_id'],ids)
     assert now==ids[:expected] and later==ids[expected:]
+
+
+def test_only_a_never_established_connection_counts_as_zero_usage():
+    import httpx
+    from eregion.runtime.provider_usage import _never_sent
+    def chained(cause):
+        try:
+            try:raise cause
+            except Exception as inner:raise RuntimeError('APIConnectionError') from inner
+        except RuntimeError as outer:return outer
+    request=httpx.Request('POST','https://example.com')
+    assert _never_sent(chained(httpx.ConnectError('refused',request=request)))
+    assert not _never_sent(chained(httpx.ReadError('reset',request=request)))
+    assert not _never_sent(chained(httpx.RemoteProtocolError('closed',request=request)))
+    assert not _never_sent(RuntimeError('unknown'))

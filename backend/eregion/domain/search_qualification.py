@@ -36,7 +36,11 @@ negation and alternative education/experience paths. Do not require a fixed titl
 Junior is a career level, not a regex or an arbitrary maximum-years cutoff. A 2+ minimum alone
 neither proves nor disproves junior level: explain it in the context of the complete opening.
 Explicit senior responsibility or higher mandatory experience must not be ignored because a
-title or one sentence says junior. Do not count a related but different occupation as the same role.
+title or one sentence says junior. The absence of senior, lead or management language is not
+evidence of a junior level: seniority is met only when this posting positively shows an early-career
+opening (for example an explicit entry/junior/associate/level-I designation, graduate or early-career
+framing, or training/supervised-entry framing read in context); otherwise it stays unknown.
+Do not count a related but different occupation as the same role.
 Location must describe where THIS opening can be worked; general US remote coverage does not
 by itself verify a requested city. Use geographic knowledge: boroughs/neighborhoods inside a
 requested city belong to that city; a nearby independent city is not the requested city. Ambiguous or conflicting
