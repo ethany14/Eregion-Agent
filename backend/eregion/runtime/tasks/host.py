@@ -69,6 +69,22 @@ class TaskHost:
                 'browser_scroll','browser_wait','screen_jobs'}
             tools=[t for t in tools if t['function']['name'] not in reads]
             controls=[t for t in controls if t['function']['name'] in {'finish_task','ask_user','pause_task'}]
+        # The task's provider-attempt cap is shared with tool work (qualification,
+        # Jev). Near it, the remaining attempts are for decisions and the reply.
+        from eregion.runtime.provider_usage import task_limits, UsageLedger, REPLY_RESERVE
+        cap=task_limits().get('provider_attempts')
+        if cap and cap>2*REPLY_RESERVE:
+            provider_remaining=cap-UsageLedger(self.loop.repository.sessions).summary(task_id=self.task_id)['calls']
+            snapshot['provider_attempts_remaining']=provider_remaining
+            if provider_remaining<=REPLY_RESERVE:
+                snapshot['completion_required']=True
+                snapshot['completion_reason']=('The provider budget is nearly spent: no further paid search, reading or scoring. '
+                    + ('Record decisions for already scored jobs if needed, then finish. ' if provider_remaining>1 else
+                       'This is the final call: finish now. ')
+                    + 'Report saved recommendations with their URLs and scores and the honest shortfall.')
+                decisions=getattr(harness,'batch_decision_tools',set())-{'read_context','dismiss_candidate'}
+                tools=[t for t in tools if provider_remaining>1 and t['function']['name'] in decisions]
+                controls=[t for t in CONTROL_TOOLS if t['function']['name']=='finish_task']
         if snapshot['budget_remaining']<=3:
             snapshot['completion_required']=True
             snapshot['completion_reason']='Use the remaining decisions to report the observed results and explicit unfinished work. No additional research or rereading. Do not claim requested constraints were met when they were not. Ask only for genuinely essential missing user input.'

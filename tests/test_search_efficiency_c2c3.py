@@ -236,3 +236,17 @@ def test_reserved_budget_becomes_a_tool_result_and_the_loop_can_finish():
         assert state['status']=='completed'
         assert state['history'][0]['result']['error_code']=='provider_budget_reserved'
     finally:case.tearDown()
+
+
+def test_last_provider_attempts_offer_only_decisions_then_only_the_reply(career,monkeypatch):
+    from eregion.runtime.provider_usage import UsageLedger
+    from test_remaining_search_runtime import host_for
+    monkeypatch.setenv('JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS','10')
+    c=career;host=host_for(c);ledger=UsageLedger(c.repository.sessions)
+    names=lambda turn:{t['function']['name'] for t in turn.tools}
+    assert 'search_jobs' in names(host.observe())
+    for i in range(8):ledger.start(f'c{i}',{'task_id':c.state['task_id']},{'purpose':'agent','input_tokens':1,'output_tokens':1})
+    turn=host.observe()
+    assert turn.snapshot['completion_required'] and names(turn)=={'finish_task','recommend_job','decide_job'}
+    ledger.start('c8',{'task_id':c.state['task_id']},{'purpose':'agent','input_tokens':1,'output_tokens':1})
+    assert names(host.observe())=={'finish_task'}
