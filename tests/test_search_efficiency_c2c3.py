@@ -313,3 +313,18 @@ def test_seniority_policy_follows_the_requested_level_not_a_fixed_junior_rule():
     for text in (POLICY, PROMPT):
         assert 'early-career' not in text and 'Junior is a career level' not in text
         assert 'requested' in text and 'years cutoff' in text
+
+
+def test_failed_qualification_group_is_retried_once_then_stays_unknown(career,monkeypatch):
+    repo,tid=setup(career);calls=[]
+    def flaky(request,postings):
+        calls.append(postings[0]['title'])
+        if calls.count(postings[0]['title'])==1:raise ConnectionError('reset')
+        return response(request,postings)
+    monkeypatch.setattr(q,'judge',flaky)
+    results=q.record_many(repo,tid,[job(i,title=f'Data Analyst {i}') for i in range(3)])
+    assert all(r['qualified'] for r in results) and len(calls)==2      # one group, one retry
+    def broken(request,postings):calls.append('x');raise ConnectionError('reset')
+    monkeypatch.setattr(q,'judge',broken);calls.clear()
+    results=q.record_many(repo,tid,[job(9,title='Data Analyst 9')])
+    assert len(calls)==2 and results[0]['review']['method']=='model_unavailable'   # bounded: never a third

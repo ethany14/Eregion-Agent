@@ -10,6 +10,7 @@ from eregion.domain.jev_fit.resolve import locate
 FIELDS=('role','location','seniority','vacancy')
 MAX_BATCH_CHARS=48000
 PARALLEL_GROUPS=3
+GROUP_RETRIES=1
 GROUP_SIZE=6
 
 
@@ -112,16 +113,23 @@ def record_many(repository,task_id,jobs):
         """Model IO only; runs in a worker. Persistence stays on the calling thread."""
         check()
         postings=[{'posting_id':str(i),**{k:j.get(k) or '' for k in ('title','location','description')}} for i,j in enumerate(group)]
-        try:
-            if len(json.dumps(postings,ensure_ascii=False))+len(request)>MAX_BATCH_CHARS:
-                raise ValueError('Qualification input too large; complete text was not truncated.')
-            with usage_scope(provider_guard=check):response=judge(request,postings)
-            ids=[d.posting_id for d in response.decisions]
-            if len(ids)!=len(group) or set(ids)!={str(i) for i in range(len(group))}:
-                raise ValueError('Qualification response identities do not match the supplied batch.')
-            return {d.posting_id:d for d in response.decisions},None
-        except (TaskProviderBudgetExceeded,LoopStop):raise
-        except Exception as exc:return {},type(exc).__name__
+        if len(json.dumps(postings,ensure_ascii=False))+len(request)>MAX_BATCH_CHARS:
+            return {},'ValueError'   # Too large: complete text is never truncated, so no retry helps.
+        error=None
+        # One bounded retry for a transport failure or an unusable reply (identities):
+        # without it a single dropped connection left every posting of the group
+        # unknown for the whole turn. Each attempt is metered; verdicts are never retried.
+        for attempt in range(1+GROUP_RETRIES):
+            check()
+            try:
+                with usage_scope(provider_guard=check):response=judge(request,postings)
+                ids=[d.posting_id for d in response.decisions]
+                if len(ids)!=len(group) or set(ids)!={str(i) for i in range(len(group))}:
+                    raise ValueError('Qualification response identities do not match the supplied batch.')
+                return {d.posting_id:d for d in response.decisions},None
+            except (TaskProviderBudgetExceeded,LoopStop):raise
+            except Exception as exc:error=type(exc).__name__
+        return {},error
     def save(group,decisions,error):
         check()
         outputs={}

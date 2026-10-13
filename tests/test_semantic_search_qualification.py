@@ -95,7 +95,9 @@ def test_unbound_model_evidence_cannot_qualify(career,monkeypatch,invalid):
     jobs=[job(),job(2,description='A distinct posting with a different source sentence.')]
     results=q.record_many(repo,tid,jobs)
     assert not results[0]['qualified']
-    assert not q.record_many(repo,tid,jobs)[0]['qualified'] and len(calls)==1
+    # An unusable reply (duplicate identities) gets exactly one bounded retry; the
+    # cached unknown then prevents further calls.
+    assert not q.record_many(repo,tid,jobs)[0]['qualified'] and len(calls)==(2 if invalid=='duplicate_id' else 1)
 
 
 def test_steering_during_judgment_discards_result(career,monkeypatch):
