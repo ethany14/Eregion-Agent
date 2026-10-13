@@ -208,9 +208,17 @@ class TaskHost:
                 return {'error':'This exact action already ran without resolving the request.',
                     'error_code':'repeated_action','no_new_evidence':True,
                     'next':'Use a different search query/source or finish with the actual limitation. Do not repeat these arguments.'}
-            from eregion.runtime.provider_usage import usage_scope
-            with usage_scope(purpose=call['name']):
-                result = self.loop.harness.execute(self.task_id, call['name'], call['args'], call_id=call['id'])
+            from eregion.runtime.provider_usage import usage_scope, ReplyBudgetReserved
+            try:
+                with usage_scope(purpose=call['name']):
+                    result = self.loop.harness.execute(self.task_id, call['name'], call['args'], call_id=call['id'])
+            except ReplyBudgetReserved as exc:
+                # Saved progress stays; only new paid tool work is refused.
+                return {'error':'The remaining provider budget is reserved for your decisions and final reply.',
+                        'error_code':'provider_budget_reserved','no_new_evidence':True,
+                        **getattr(exc,'workflow_detail',{}),
+                        'next':'Start no further paid work. Decide any scored jobs (free), then finish with the saved '
+                               'recommendations, their URLs and scores, and the honest shortfall.'}
         return result
 
     def action_error(self, exc):

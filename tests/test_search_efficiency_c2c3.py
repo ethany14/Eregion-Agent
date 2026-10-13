@@ -205,3 +205,34 @@ def test_one_reply_of_repeated_decisions_counts_once_toward_the_stall_limit():
         assert state['status']=='completed' and case.harness.writes==['0','1','2']
         assert state['progress_guard']['count']==1
     finally:case.tearDown()
+
+
+def test_last_attempts_are_reserved_for_the_main_model_reply(tmp_path):
+    from eregion.api.db import create_database
+    from eregion.runtime.provider_usage import UsageLedger, ReplyBudgetReserved, TaskProviderBudgetExceeded
+    db=create_database('sqlite:///'+(tmp_path/'u.sqlite3').as_posix(),create_schema_for_tests=True)
+    try:
+        ledger=UsageLedger(db.session_factory);scope={'task_id':'t'};limits={'provider_attempts':10}
+        def start(i,purpose):
+            ledger.start(f'c{i}',scope,{'purpose':purpose,'input_tokens':1,'output_tokens':1},limits=limits)
+        for i in range(8):start(i,'jev:fit:support_yes_no')
+        with pytest.raises(ReplyBudgetReserved):start(8,'search_qualification:SearchQualification')
+        start(8,'agent');start(9,'agent')            # the reply keeps its reserve
+        with pytest.raises(TaskProviderBudgetExceeded):start(10,'agent')   # the task cap is unchanged
+    finally:db.close()
+
+
+def test_reserved_budget_becomes_a_tool_result_and_the_loop_can_finish():
+    from eregion.runtime.provider_usage import ReplyBudgetReserved
+    class Reserved(loop_fixture.Harness):
+        def execute(self,task_id,name,args,**kwargs):raise ReplyBudgetReserved('reply_reserve')
+    case=DecisionBatch('test_independent_decisions_in_one_response_all_execute');case.setUp()
+    try:
+        case.harness=Reserved();call=loop_fixture.call
+        model=loop_fixture.Model([AIMessage(content='',tool_calls=[call('write_item',{'value':'x'},'a')]),
+                                  loop_fixture.finish('Saved results and the shortfall.')])
+        _,task=case.start(model)
+        state=loop_fixture.settled(case.repo,task)
+        assert state['status']=='completed'
+        assert state['history'][0]['result']['error_code']=='provider_budget_reserved'
+    finally:case.tearDown()

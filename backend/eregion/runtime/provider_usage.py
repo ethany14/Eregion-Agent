@@ -24,6 +24,16 @@ class TaskProviderBudgetExceeded(BaseException):
         super().__init__(reason)
 
 
+# The last provider attempts of a capped task belong to the main model, so a
+# task that spends its budget on tool work can still decide and reply. Tool
+# work (qualification, Jev, nested) stops first; the task cap itself is unchanged.
+REPLY_RESERVE = 2
+
+
+class ReplyBudgetReserved(TaskProviderBudgetExceeded):
+    """Tool work reached the attempts reserved for the main model's reply."""
+
+
 def task_limits():
     result = {}
     for metric, name in (('provider_attempts', 'JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS'),
@@ -169,6 +179,10 @@ class UsageLedger:
                 total = summarize(rows)
                 if 'provider_attempts' in limits and total['calls'] + 1 > limits['provider_attempts']:
                     raise TaskProviderBudgetExceeded('provider_attempts')
+                if ('provider_attempts' in limits and details.get('purpose') != 'agent'
+                        and limits['provider_attempts'] > 2 * REPLY_RESERVE
+                        and total['calls'] + 1 > limits['provider_attempts'] - REPLY_RESERVE):
+                    raise ReplyBudgetReserved('reply_reserve')
                 if 'input_tokens' in limits:
                     reserve = details.get('reserved_input_tokens')
                     unknown = any(r.get('source') != 'tool_action' and 'input_tokens' not in r
