@@ -160,3 +160,16 @@ def test_scored_qualification_quote_and_unresolved_recommendation_decision_reach
     assert known['url']==URL and known['match_score'] is not None
     assert '0-2 years' in str(known['qualification_evidence'])
     assert 'recommend_job' in snapshot['known_results']['instruction']
+
+
+def test_provider_attempt_reserve_also_allows_honest_incomplete_result(career,monkeypatch):
+    from eregion.runtime.provider_usage import UsageLedger
+    c=career;prepare(c)
+    c.repository.change(c.state['task_id'],model_calls=10,observed_job_candidates={job_key(URL):{'url':URL}})
+    monkeypatch.setenv('JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS','12')
+    ledger=UsageLedger(c.repository.sessions)
+    for i in range(8):ledger.start(f'c{i}',{'task_id':c.state['task_id']},{'purpose':'jev:fit:support_yes_no'})
+    with pytest.raises(ValueError,match='decisions available'):   # 4 attempts left: keep working
+        c.harness.validate_finish(c.repository.get(c.state['task_id']))
+    for i in range(8,10):ledger.start(f'c{i}',{'task_id':c.state['task_id']},{'purpose':'agent'})
+    c.harness.validate_finish(c.repository.get(c.state['task_id']))   # only the reply reserve remains

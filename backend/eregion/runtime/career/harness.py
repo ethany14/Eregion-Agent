@@ -1474,6 +1474,12 @@ class CareerHarness:
         from .search_recovery import recovery
         pending=recovery(state)
         remaining=state.get('model_budget',60)-state.get('model_calls',0)+state.get('budget_base',0)
+        # The task provider-attempt cap is shared with tool work; when its reply
+        # reserve is reached no candidate can be read or scored anyway.
+        from eregion.runtime.provider_usage import task_limits, UsageLedger, REPLY_RESERVE
+        cap=task_limits().get('provider_attempts')
+        if cap and cap>2*REPLY_RESERVE and state.get('task_id'):
+            remaining=min(remaining,cap-UsageLedger(self.repository.sessions).summary(task_id=state['task_id'])['calls'])
         if pending and pending['recommended_count']<pending['requested_count'] and pending['pending_candidates'] and remaining>3:
             raise ValueError('The requested search is incomplete and observed posting links remain unread with '
                 f'{remaining} decisions available. Open a different pending candidate, verify and score it if eligible. '
