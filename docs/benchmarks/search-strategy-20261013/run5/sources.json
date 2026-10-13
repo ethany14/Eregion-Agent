@@ -1,0 +1,210 @@
+{
+  "linkedin": {
+    "calls_used": 26,
+    "stopped": null,
+    "log": [
+      {
+        "tool": "search_jobs",
+        "arguments": {
+          "keywords": "junior data analyst",
+          "max_pages": 2,
+          "location": "New York, NY",
+          "experience_level": "entry"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "search_jobs",
+        "arguments": {
+          "keywords": "entry level data analyst",
+          "max_pages": 2,
+          "location": "New York, NY",
+          "experience_level": "entry"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "search_jobs",
+        "arguments": {
+          "keywords": "graduate data analyst",
+          "max_pages": 2,
+          "location": "New York, NY",
+          "experience_level": "entry"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "search_jobs",
+        "arguments": {
+          "keywords": "\"data analyst\"",
+          "max_pages": 2,
+          "location": "New York, NY",
+          "experience_level": "entry"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4460064421"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4440412319"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4466911826"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4459903232"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4414039859"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4469763828"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4432001930"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4460477929"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4471529335"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4478560774"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4469955024"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4471522054"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4470970017"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4468798039"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4474996157"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4469482809"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4470038515"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4474716117"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4454270471"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4455773393"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4471948762"
+        },
+        "outcome": "ok"
+      },
+      {
+        "tool": "get_job_details",
+        "arguments": {
+          "job_id": "4473022615"
+        },
+        "outcome": "ok"
+      }
+    ]
+  },
+  "treg": {
+    "operations": 0,
+    "attempts": 0,
+    "confirmed_micro": 0,
+    "unknown_held_micro": 0,
+    "complete": true,
+    "by_status": {}
+  }
+}

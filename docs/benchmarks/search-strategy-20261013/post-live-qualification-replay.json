@@ -1,0 +1,92 @@
+{
+  "note": "Offline only; same saved source text, no model scoring or network. Does not replace live acceptance.",
+  "qualified_source_records": 2,
+  "jobs": [
+    {
+      "url": "https://www.linkedin.com/jobs/view/4466911826/",
+      "title": "Compliance Data Analyst",
+      "checks": {
+        "role": {
+          "status": "met",
+          "quote": "Compliance Data Analyst",
+          "reason": "The requested occupational phrase must be evidenced by the posting title; scattered keywords do not establish the same role."
+        },
+        "location": {
+          "status": "met",
+          "quote": "New York City Metropolitan Area (On-site)",
+          "reason": "The requested place must be evidenced by this posting; US-remote does not prove the requested city."
+        },
+        "seniority": {
+          "status": "met",
+          "quote": "A financial services organization is seeking an entry-level professional to support AML transaction monitoring, case management, and screening technology. This role will assist with system analysis, scenario and threshold testing, UAT, validation, documentation, issue tracking, and ongoing optimization of AML technology.",
+          "reason": "Opening level is supported; explicit higher minimum overrides the title.",
+          "source_excerpts": [
+            {
+              "quote": "A financial services organization is seeking an entry-level professional to support AML transaction monitoring, case management, and screening technology. This role will assist with system analysis, scenario and threshold testing, UAT, validation, documentation, issue tracking, and ongoing optimization of AML technology.",
+              "start": 165,
+              "end": 487
+            },
+            {
+              "quote": "Requirements added by the job poster",
+              "start": 2120,
+              "end": 2156
+            }
+          ]
+        }
+      }
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/4469763828/",
+      "title": "Graduate Data Analyst",
+      "checks": {
+        "role": {
+          "status": "met",
+          "quote": "Graduate Data Analyst",
+          "reason": "The requested occupational phrase must be evidenced by the posting title; scattered keywords do not establish the same role."
+        },
+        "location": {
+          "status": "met",
+          "quote": "New York, NY (On-site)",
+          "reason": "The requested place must be evidenced by this posting; US-remote does not prove the requested city."
+        },
+        "seniority": {
+          "status": "met",
+          "quote": "Graduate Data Analyst",
+          "reason": "Opening level is supported; explicit higher minimum overrides the title.",
+          "source_excerpts": [
+            {
+              "quote": "adMarketplace is the largest global marketplace for Native Search advertising. For over 25 years, we’ve connected brands with consumers at the moment they express commercial intent beyond legacy search engines.",
+              "start": 12,
+              "end": 222
+            },
+            {
+              "quote": "adMarketplace is looking for a curious, analytical, and highly motivated Graduate Data Analyst to join our Measurement & Insights organization.",
+              "start": 888,
+              "end": 1031
+            },
+            {
+              "quote": "We care more about your analytical potential and ability to learn than having years of experience.",
+              "start": 2954,
+              "end": 3052
+            },
+            {
+              "quote": "You might be a recent graduate, completing your degree, or at the very beginning of your career.",
+              "start": 3057,
+              "end": 3153
+            },
+            {
+              "quote": "We do not expect graduate candidates to arrive knowing all of these technologies. That's part of what you'll learn here.",
+              "start": 4103,
+              "end": 4223
+            },
+            {
+              "quote": "adMarketplace has been named as one of the best places to work in New York City by Built In and Crain’s- the latter of which have recognized us the past three years straight! AMP is currently experiencing triple digit growth, and it’s never been a better time to join our team!",
+              "start": 4237,
+              "end": 4514
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
