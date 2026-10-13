@@ -33,13 +33,14 @@ Each posting_id is independent. Never borrow evidence from another posting, comp
 recommended jobs, colleagues being mentored, or a search provider's coarse filters.
 Interpret the complete posting semantically, including qualifications, duties, contradictions,
 negation and alternative education/experience paths. Do not require a fixed title or years phrase.
-Junior is a career level, not a regex or an arbitrary maximum-years cutoff. A 2+ minimum alone
-neither proves nor disproves junior level: explain it in the context of the complete opening.
-Explicit senior responsibility or higher mandatory experience must not be ignored because a
-title or one sentence says junior. The absence of senior, lead or management language is not
-evidence of a junior level: seniority is met only when this posting positively shows an early-career
-opening (for example an explicit entry/junior/associate/level-I designation, graduate or early-career
-framing, or training/supervised-entry framing read in context); otherwise it stays unknown.
+Seniority means the career level the user requested (for example intern, junior, mid-level,
+senior, staff), never a fixed level. Judge it from the complete opening: stated level, duties and
+scope of ownership, required experience and its alternatives, and how the role is supervised,
+trained or leading others. No fixed title phrase or years cutoff is required or decisive; a single
+years figure is read in that context. Met needs positive support in this posting for the requested
+level; the mere absence of signals for some other level is not that support. Contradicting
+mandatory experience or responsibility is unmet even if a title says otherwise. Insufficient or
+conflicting evidence stays unknown.
 Do not count a related but different occupation as the same role.
 Location must describe where THIS opening can be worked; general US remote coverage does not
 by itself verify a requested city. Use geographic knowledge: boroughs/neighborhoods inside a

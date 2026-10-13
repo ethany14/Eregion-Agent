@@ -151,7 +151,8 @@ def test_audit_retries_only_a_structurally_unusable_reply(monkeypatch):
     replies=[]
     def invoke(_model,schema,prompt,text):
         postings=json.loads(text)['postings']
-        value=response('Find junior data analyst jobs in New York.',postings)
+        from test_search_semantic_audit import audited
+        value=audited('Find junior data analyst jobs in New York.',postings)
         if not replies:value.decisions[0].posting_id='posting-0'   # malformed identity once
         replies.append(value);return value
     monkeypatch.setattr(model,'invoke_structured',invoke)
@@ -161,7 +162,8 @@ def test_audit_retries_only_a_structurally_unusable_reply(monkeypatch):
     assert len(replies)==2 and set(out)=={j['url'] for j in jobs}
     replies.clear()
     def always_bad(_model,schema,prompt,text):
-        value=response('x',json.loads(text)['postings']);value.decisions[0].posting_id='bad';replies.append(1);return value
+        from test_search_semantic_audit import audited
+        value=audited('x',json.loads(text)['postings']);value.decisions[0].posting_id='bad';replies.append(1);return value
     monkeypatch.setattr(model,'invoke_structured',always_bad)
     with pytest.raises(ValueError):audit.review('Find junior data analyst jobs in New York.',jobs)
     assert len(replies)==2   # bounded: never a third attempt
@@ -294,3 +296,20 @@ def test_only_a_never_established_connection_counts_as_zero_usage():
     assert not _never_sent(chained(httpx.ReadError('reset',request=request)))
     assert not _never_sent(chained(httpx.RemoteProtocolError('closed',request=request)))
     assert not _never_sent(RuntimeError('unknown'))
+
+
+def test_full_and_trimmed_prompts_share_one_eligibility_contract():
+    from eregion.runtime.career import prompt
+    from eregion.runtime.career.prompt import ELIGIBILITY_RULE, trim_prompt
+    assert ELIGIBILITY_RULE in prompt.SYSTEM and ELIGIBILITY_RULE in trim_prompt(prompt.SYSTEM)
+    for text in (prompt.SYSTEM, trim_prompt(prompt.SYSTEM)):
+        assert 'Unknown eligibility requires caveats' not in text and 'Unknown eligibility is a caveat' not in text
+        assert '{ELIGIBILITY_RULE}' not in text
+
+
+def test_seniority_policy_follows_the_requested_level_not_a_fixed_junior_rule():
+    from eregion.domain.search_qualification import POLICY
+    from evals.search_semantic_audit import PROMPT
+    for text in (POLICY, PROMPT):
+        assert 'early-career' not in text and 'Junior is a career level' not in text
+        assert 'requested' in text and 'years cutoff' in text

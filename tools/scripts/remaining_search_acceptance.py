@@ -68,7 +68,7 @@ def constraints(applicant, job):
     raise ValueError('Unknown original search case.')
 
 
-def evaluate_search(summary, applicant):
+def evaluate_search(summary, applicant, limits=None):
     from eregion.runtime.career.alerts import job_key
     failures = []
     def require(ok, reason):
@@ -82,8 +82,10 @@ def evaluate_search(summary, applicant):
         usage.get('unknown_usage_calls') == 0, 'incomplete_usage')
     main_input = sum(g.get('input_tokens', 0) for g in usage.get('groups', []) if g.get('purpose') == 'agent')
     require(bool([g for g in usage.get('groups', []) if g.get('purpose') == 'agent']), 'missing_main_usage')
-    require(main_input <= INPUT_LIMIT, 'main_input_budget')
-    require(usage.get('input_tokens', INPUT_LIMIT + 1) <= INPUT_LIMIT, 'total_input_budget')
+    # An explicitly recorded experiment profile may set the input cap; default unchanged.
+    input_limit = (limits or {}).get('input_tokens', INPUT_LIMIT)
+    require(main_input <= input_limit, 'main_input_budget')
+    require(usage.get('input_tokens', input_limit + 1) <= input_limit, 'total_input_budget')
     if summary.get('qualification_method')=='model':
         audit=summary.get('audit_usage') or {}
         require(audit.get('usage_complete') is True and not audit.get('pending')
@@ -98,7 +100,8 @@ def evaluate_search(summary, applicant):
     for job in summary.get('verified_jobs', []):
         if summary.get('qualification_method')=='model':
             from evals.search_semantic_audit import contract_checks
-            tests=contract_checks(job,summary.get('semantic_review') or {},summary.get('user_request',''))
+            tests=contract_checks(job,summary.get('semantic_review') or {},summary.get('user_request',''),
+                                  summary.get('audit_candidate_hash') or '')
         else:
             # Historical report compatibility only; new live runs use blind model review.
             tests = constraints(applicant, job)
@@ -120,7 +123,7 @@ def evaluate_search(summary, applicant):
     require(len(qualified) >= 2, 'fewer_than_two_verified_scored_qualifying_recommendations')
     return {'status': 'failed' if failures else 'passed', 'failures': failures, 'qualified_count': len(qualified),
         'main_input_tokens': main_input, 'total_input_tokens': usage.get('input_tokens'),
-        'limits': {'main_calls': CALL_LIMIT, 'main_input_tokens': INPUT_LIMIT, 'total_input_tokens': INPUT_LIMIT},
+        'limits': {'main_calls': CALL_LIMIT, 'main_input_tokens': input_limit, 'total_input_tokens': input_limit},
         'jobs': checked}
 
 

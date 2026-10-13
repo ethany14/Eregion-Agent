@@ -19,6 +19,7 @@ from .prompt import SYSTEM, APPLICATION_INSTRUCTION
 from eregion.runtime.browser.tools import BROWSER_TOOLS, BROWSER_NAMES, VISUAL_NAMES
 from .alerts import AlertConfig, job_key
 from .search_filters import FILTER_SCHEMA, FILTER_FIELDS, effective_filters, filter_cards
+from .prompt import ELIGIBILITY_RULE
 
 
 APP = {'application_id':TEXT}
@@ -323,10 +324,8 @@ class CareerHarness:
                 for h in state.get('history',[])[-4:]],
             'instruction':'Saved results by ID; scored is not recommended. Every scored job needs an outcome (decision_status): '
                 'recommend_job with caveats if it meets the requested role/location/seniority, or decide_job with the specific '
-                'exclusion or missing evidence; searching waits while any is pending. A low score from preferred/partial skills '
-                'does not prohibit a disclosed recommendation, but a clearly unmet mandatory qualification or eligibility that '
-                'depends on an unknown personal fact (specific nationality, program age) is exclude/needs_evidence, never a '
-                'quota filler. Use exact qualification_evidence; never guess years or auto-recommend unverified/'
+                'exclusion or missing evidence; searching waits while any is pending. '+ELIGIBILITY_RULE+
+                ' Use exact qualification_evidence; never guess years or auto-recommend unverified/'
                 'ineligible jobs. Final results list each read/scored URL and actual score.'}
 
         from .candidate_health import active_rejections

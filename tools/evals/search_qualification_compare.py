@@ -19,6 +19,7 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--source',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--levels',action='store_true',help='Also check a senior request; skip the saved replay.')
     args=parser.parse_args()
     if args.output.exists():raise FileExistsError(args.output)
     args.output.mkdir(parents=True)
@@ -49,6 +50,21 @@ def main():
             outputs=record_many(Repository(state),task,jobs)
             checked=[{'case':f[0],'expected':f[-1],'actual':r['qualified'],'assessment':r} for f,r in zip(fixtures,outputs)]
             (args.output/'gold-cases.json').write_text(json.dumps(checked,indent=2,ensure_ascii=False),encoding='utf-8')
+            if args.levels:
+                # The level is the user's, not a fixed junior rule: positive senior evidence
+                # qualifies a senior request; a junior posting or no level evidence does not.
+                senior_request='Find 5 current senior backend engineer positions in Chicago for my saved resume. Keep the role, seniority and location conditions.'
+                senior=[('senior_explicit','Senior Backend Engineer','We seek a senior backend engineer with 6+ years building distributed services who will lead design reviews and mentor engineers.',True),
+                    ('senior_by_duties','Backend Engineer','You will own the architecture of our payments platform, lead a team of four engineers and set technical direction. 7+ years of backend experience required.',True),
+                    ('junior_for_senior_request','Backend Engineer I','Entry-level backend engineer role for recent graduates; you will learn under close mentorship from senior staff.',False),
+                    ('no_level_evidence','Backend Engineer','Build APIs in Go and maintain our services.',False)]
+                senior_state={'task_id':task,'status':'running','goal':senior_request,'chat_revision':0,'messages':[]}
+                outs=record_many(Repository(senior_state),task,[{'url':f'https://example.com/senior/{c[0]}','title':c[1],
+                    'location':'Chicago, IL','description':c[2]} for c in senior])
+                checked+=[{'case':c[0],'expected':c[3],'actual':r['qualified'],'assessment':r} for c,r in zip(senior,outs)]
+                (args.output/'gold-cases.json').write_text(json.dumps(checked,indent=2,ensure_ascii=False),encoding='utf-8')
+                if any(c['actual']!=c['expected'] for c in checked):raise AssertionError('Model failed the hand-labelled semantic cases.')
+                return
             if any(c['actual']!=c['expected'] for c in checked):raise AssertionError('Model failed the hand-labelled semantic cases; replay not run.')
             captured=json.loads((args.source/'transcript.json').read_text(encoding='utf-8'))
             state['goal']=captured['goal']

@@ -19,7 +19,7 @@ from scripts.remaining_search_acceptance import evaluate_search
 pytestmark=pytest.mark.skipif(os.getenv('JOB_AGENT_LIVE_REMAINING')!='1',reason='Explicit paid real-model/public research check')
 
 
-def settle_live(service,task_id,output,applicant,timeout=600,*,semantic_review=False):
+def settle_live(service,task_id,output,applicant,timeout=600,*,semantic_review=False,limits=None):
     from eregion.runtime.provider_usage import UsageLedger
     started=time.monotonic()
     while time.monotonic()-started<timeout:
@@ -59,7 +59,16 @@ def settle_live(service,task_id,output,applicant,timeout=600,*,semantic_review=F
             os.environ.update(JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS='6',JOB_AGENT_TASK_MAX_INPUT_TOKENS='200000')
             urls={r['url'] for r in summary['recommendations']}
             with usage_scope(task_id=audit_id,ledger=UsageLedger(service.repository.sessions)):
-                summary['semantic_review']=review(summary['user_request'],[j for j in summary['verified_jobs'] if j['url'] in urls])
+                # The audit judges personal mandatory qualifications from the candidate's own
+                # facts (resume text + stated facts), never from production fit labels.
+                from evals.search_semantic_audit import candidate_hash
+                _,resume_text=service.harness.candidate()
+                facts=service.harness.fit_facts()
+                candidate=(resume_text or '')+('
+CANDIDATE-STATED FACTS
+'+json.dumps(facts,ensure_ascii=False,sort_keys=True) if facts else '')
+                summary['audit_candidate_hash']=candidate_hash(candidate)
+                summary['semantic_review']=review(summary['user_request'],[j for j in summary['verified_jobs'] if j['url'] in urls],candidate)
         except (Exception,TaskProviderBudgetExceeded) as exc:
             summary['semantic_review_error']=type(exc).__name__
         finally:
@@ -72,7 +81,7 @@ def settle_live(service,task_id,output,applicant,timeout=600,*,semantic_review=F
                 if k.startswith('semantic_review') or k.startswith('audit_')},ensure_ascii=False,indent=2),encoding='utf-8')
     (output/'summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps({k:v for k,v in summary.items() if k not in {'tool_evidence','verified_jobs'}},ensure_ascii=True),flush=True)
-    acceptance=evaluate_search(summary,applicant)
+    acceptance=evaluate_search(summary,applicant,limits)
     (output/'acceptance.json').write_text(json.dumps(acceptance,ensure_ascii=False,indent=2),encoding='utf-8')
     assert acceptance['status']=='passed',acceptance
     return state
