@@ -35,6 +35,9 @@ def view(state, recovery):
     for app in state.get('jobs', []):
         if app in evidence:
             continue
+        if any(q.get('application_id')==app and q.get('revision')==state.get('chat_revision',0)
+               and not q['qualified'] for q in state.get('candidate_qualifications',{}).values()):
+            continue
         in_progress.append({'stage': 'score', 'application_id': app,
                             'next': {'tool': 'score_job', 'arguments': {'application_id': app}}})
     for app, row in decided.items():
@@ -46,6 +49,11 @@ def view(state, recovery):
     unread = [c for c in recovery.get('pending_candidates', []) if job_key(c['url']) not in scored_keys]
     batch = unread[:BATCH_LIMIT]
     qualified = [r for r in state.get('recommendations', []) if not r.get('seniority_warning')]
+    from .qualification import assess
+    bodies = {job_key(j['url']): j for j in state.get('retrieved_jobs', {}).values() if j.get('url')}
+    if enabled():
+        qualified = [r for r in qualified if job_key(r.get('url', '')) in bodies
+                     and assess(state, bodies[job_key(r['url'])])['qualified']]
     target = recovery.get('requested_count') or 0
     reached = bool(target) and len(qualified) >= target
     return {'batch_limit': BATCH_LIMIT, 'detail_limit': DETAIL_LIMIT, 'requested': target,
@@ -53,7 +61,7 @@ def view(state, recovery):
             'in_progress': in_progress[:DETAIL_LIMIT * 2], 'next_unread': batch[:DETAIL_LIMIT],
             'deferred_unread': max(0, len(unread) - DETAIL_LIMIT),
             'instruction': ('Target reached: finish with the saved results.' if reached else
-                            'Finish in_progress items first, then read next_unread candidates one at a time. '
+                            'Finish in_progress items first, then process next_unread URLs with verify_and_score_jobs in a bounded batch. '
                             'Search again only when nothing actionable remains; deferred candidates are kept.')}
 
 

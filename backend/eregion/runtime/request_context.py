@@ -364,6 +364,10 @@ class ContextArchive:
             return summary
         if isinstance(result.get('jobs'),list):
             summary['jobs']=compact_resources('jobs',result['jobs'],self)
+        if isinstance(result.get('candidates'),list):
+            summary['candidates']=[{**{k:r[k] for k in ('url','title','status','application_id','error') if k in r},
+                'checks':{k:c['status'] for k,c in r.get('qualification',{}).get('checks',{}).items()}}
+                for r in result['candidates'][:8]]
         if result.get('job_detail'):summary['job_detail']=result['job_detail']
         if isinstance(result.get('regions'),list):
             summary['regions']=[{k:r[k] for k in ('ref','label','tag','text_length') if k in r}

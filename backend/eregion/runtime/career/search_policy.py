@@ -105,28 +105,6 @@ def recommendation_warning(policy,title,description=''):
             f'the opening level. Do not describe it as a {requested} match; it does not count toward the requested level.'}
 
 
-def workflow_triage(state, job):
-    """Pause automatic paid scoring on unverified requested constraints, not reject a vacancy."""
-    issues=[]
-    policy=constraints(state)
-    if policy and set(policy.get('levels',[])) & ENTRY_LEVELS:
-        try:
-            warning=recommendation_warning(policy,job.get('title',''),job.get('description',''))
-            if warning:issues.append(warning['message'])
-        except ValueError as exc:
-            issues.append(str(exc))
-    # Only extract a literal location from the user's explicit search sentence.
-    # Unsupported phrasing stays unknown; never use a model-generated query as authority.
-    request=next((m['text'] for m in reversed(state.get('messages',[])) if m.get('role')=='user'),state.get('goal',''))
-    location=re.search(r'\b(?:positions|jobs|roles)\s+in\s+([^.;!?\n]+?)(?=\s+(?:for|with|using)\b|[.;!?\n]|$)',request,re.I)
-    if location:
-        requested=' '.join(location[1].casefold().split())
-        observed=' '.join((job.get('location') or '').casefold().split())
-        if requested and requested not in observed:
-            issues.append(f'Requested location {location[1]!r} is not verified by posting location {job.get("location")!r}; remote coverage is not assumed.')
-    return issues
-
-
 ONLY_LINKEDIN = re.compile(r'\b(?:only|just|exclusively)\s+(?:(?:search|use|look|on|from|in|at)\s+){0,2}linked\s?in\b|'
                            r'\blinked\s?in\s+only\b|(?:只|仅)(?:在|用|从|搜|看)?\s*linked\s?in', re.I)
 NOT_ONLY_LINKEDIN = re.compile(r'\bnot\s+(?:only|just)\s+(?:(?:search|use|look|on|from|in|at)\s+){0,2}linked\s?in\b|'

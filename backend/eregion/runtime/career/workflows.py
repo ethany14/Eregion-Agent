@@ -13,6 +13,10 @@ RULE = ('\nFor a promising observed posting use verify_and_score to read, import
         'and qualification evidence. For a posting already read, use verify_and_score to reuse it, or '
         'dismiss_candidate with an exact source quote and reason if unsuitable. Finish started candidates before '
         'searching again. A progress message or plan is not completed candidate work.\n')
+RULE += ('For multi-job requests prefer verify_and_score_jobs with 4-8 observed URLs per call: it defers '
+         'unverified role/location/seniority without scoring and shares the scorer across qualified candidates. '
+         'Do not page through JD context first. After deciding scored results, continue a different candidate '
+         'batch or query; never keep proposing the same deferred URLs.\n')
 FALLBACK = 'Use read_job, import_job, then score_job individually; inspect saved progress first.'
 
 
@@ -68,8 +72,9 @@ def run(harness, task_id, args, call_id):
             completed.append('read_job')
             save(pending_step=None, retrieved_job=saved)
         if saved and harness.api_first():
-            from .search_policy import workflow_triage
-            issues=workflow_triage(repo.get(task_id),saved)
+            from .qualification import record as qualify
+            qualification=qualify(repo,task_id,saved)
+            issues=[c['reason'] for c in qualification['checks'].values() if c['status']!='met']
             if issues:
                 from .posting_brief import with_brief
                 detail={'error':'Verify requested constraints before spending on fit scoring.',

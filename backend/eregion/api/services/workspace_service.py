@@ -38,6 +38,17 @@ class WorkspaceAnalysisService:
         selected=getattr(self._fit_service,'uses_jev',None)
         return bool(selected and selected())
 
+    def _cached(self,current,snapshot_id,resume_text,candidate_facts):
+        key=(hashlib.sha256(json.dumps([snapshot_id,resume_text,candidate_facts,self.cache_signature()],
+             ensure_ascii=False).encode()).hexdigest() if callable(getattr(self._fit_service,'cache_signature',None)) else None)
+        lookup=getattr(self._workspace,'cached_fit_analysis',None)
+        cached=lookup(current.application_id,key) if key and callable(lookup) else None
+        if cached and self.uses_jev():
+            report=next((a.content for a in cached if a.artifact_type.value=='match_report'),{})
+            if report.get('algorithm')!='jev-only' or (report.get('valid_until') or 0)<=time.time():cached=None
+        if current.status in {ApplicationStatus.SAVED,ApplicationStatus.ANALYZING,ApplicationStatus.ANALYSIS_FAILED}:cached=None
+        return key,cached
+
     async def analyze(
         self,
         application_id: str,
@@ -59,16 +70,8 @@ class WorkspaceAnalysisService:
 
         # The persisted result belongs to exact inputs and model/prompt/schema
         # configuration, so a new chat or server process need not score it again.
-        cache_key = (hashlib.sha256(json.dumps([snapshot_id, resume_text, candidate_facts,
-            self.cache_signature()], ensure_ascii=False).encode()).hexdigest()
-            if callable(getattr(self._fit_service, 'cache_signature', None)) else None)
-        cache_lookup = getattr(self._workspace, 'cached_fit_analysis', None)
-        cached = cache_lookup(application_id, cache_key) if cache_key and callable(cache_lookup) else None
-        if cached and self.uses_jev():
-            report=next((a.content for a in cached if a.artifact_type.value=='match_report'),{})
-            if report.get('algorithm')!='jev-only' or (report.get('valid_until')or 0)<=time.time():
-                cached=None
-        if cached and current.status not in {ApplicationStatus.SAVED, ApplicationStatus.ANALYZING, ApplicationStatus.ANALYSIS_FAILED}:
+        cache_key,cached=self._cached(current,snapshot_id,resume_text,candidate_facts)
+        if cached:
             logger.info('Reused saved fit analysis: application=%s model_calls=0', application_id)
             report=next((a.content for a in cached if a.artifact_type.value=='match_report'),{})
             return current, None, report.get('analysis_status','completed'), cached
@@ -158,11 +161,21 @@ class WorkspaceAnalysisService:
             app=self._workspace.get_application(identifier)
             snapshot=self._workspace.current_snapshot(identifier)
             snapshots[identifier]=(app,snapshot)
-        jobs=[{'id':identifier,'source_version':snapshot.snapshot_id,'job_description':snapshot.cleaned_job_description}
-              for identifier,(app,snapshot)in snapshots.items()]
-        values=await self._fit_service.analyze_many(resume_text=resume_text,jobs=jobs,candidate_facts=candidate_facts)
         result={}
+        jobs=[]
+        for identifier,(app,snapshot) in snapshots.items():
+            _,cached=self._cached(app,snapshot.snapshot_id,resume_text,candidate_facts)
+            if cached:
+                report=next((a.content for a in cached if a.artifact_type.value=='match_report'),{})
+                result[identifier]=(app,None,report.get('analysis_status','completed'),cached)
+            else:
+                jobs.append({'id':identifier,'source_version':snapshot.snapshot_id,'job_description':snapshot.cleaned_job_description})
+        values=await self._fit_service.analyze_many(resume_text=resume_text,jobs=jobs,candidate_facts=candidate_facts) if jobs else {}
         for identifier,(app,snapshot)in snapshots.items():
+            if identifier in result:continue
+            from eregion.runtime.provider_usage import current_scope
+            guard=current_scope().get('provider_guard')
+            if guard:guard()
             result[identifier]=await self.analyze(identifier,snapshot_id=app.current_snapshot_id,
                 expected_version=app.version,resume_text=resume_text,candidate_facts=candidate_facts,_result=values[identifier])
         return result

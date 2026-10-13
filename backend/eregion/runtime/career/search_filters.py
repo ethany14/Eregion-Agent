@@ -35,6 +35,9 @@ def filter_cards(jobs, state):
     import re
     request = search_request(state)
     if request and request['words']:
-        kept.sort(key=lambda j: -len(request['words'] & set(re.findall(r'[a-z]+', (j.get('title') or '').lower()))))
+        from .qualification import request_fields
+        place=request_fields(state)['location'].casefold()
+        kept.sort(key=lambda j: (-len(request['words'] & set(re.findall(r'[a-z]+', (j.get('title') or '').lower()))),
+                                 -int(bool(place) and place in (j.get('location') or '').casefold())))
     return kept, {'excluded_count':len(excluded),'excluded':excluded,
                   'unknowns_retained':True,'qualification':'cards_only; JD verification still required'}

@@ -239,6 +239,8 @@ def summarize(rows):
 @contextmanager
 def provider_call(model, **sizes):
     scope = current_scope()
+    guard=scope.get('provider_guard')
+    if guard:guard()  # Includes nested worker requests copied from a task batch.
     ledger = scope.get('ledger')
     limits = task_limits() if scope.get('task_id') else {}
     started = time.monotonic()

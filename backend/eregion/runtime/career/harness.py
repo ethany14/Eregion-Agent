@@ -97,7 +97,8 @@ class CareerHarness:
         from eregion.runtime.request_options import enabled
         if enabled('VERIFY_AND_SCORE', default=self.api_first()):
             from .workflows import TOOL
-            tools = [*tools, TOOL]
+            from .batch_workflow import TOOL as BATCH_TOOL
+            tools = [*tools, TOOL, BATCH_TOOL]
         # Offer operations for resources that actually exist in this process.
         # browser_open remains available for independent research at any time.
         if not stable and (not self._browsing or not self._browsing.inspect(state['task_id'])):
@@ -109,12 +110,12 @@ class CareerHarness:
         if not stable and not configured_decisions().enabled:
             tools = [t for t in tools if t['function']['name'] != 'screen_jobs']
         if self.recommendation_run(state):
-            allowed=BROWSER_NAMES|{'dismiss_candidate','search_jobs','screen_jobs','read_job','import_job','verify_and_score','inspect_job','score_job','score_jobs','recommend_job','decide_job'}
+            allowed=BROWSER_NAMES|{'dismiss_candidate','search_jobs','screen_jobs','read_job','import_job','verify_and_score','verify_and_score_jobs','inspect_job','score_job','score_jobs','recommend_job','decide_job'}
             return [t for t in tools if t['function']['name'] in allowed]
         latest_text=latest['text'] if latest else state.get('goal','')
         positive=re.sub(r'\b(?:do not|don.t|never)\b[^.!?]*','',latest_text,flags=re.I)
         if search_request(state) and not re.search(r'\b(?:apply|submit|interview|tailor|letter|schedule|alert|write|draft|prepare|materials?|rewrite|update|create)\b',positive,re.I):
-            allowed=BROWSER_NAMES|{'dismiss_candidate','search_jobs','screen_jobs','read_job','import_job','verify_and_score','list_jobs','inspect_job','score_job','score_jobs','recommend_job','decide_job'}
+            allowed=BROWSER_NAMES|{'dismiss_candidate','search_jobs','screen_jobs','read_job','import_job','verify_and_score','verify_and_score_jobs','list_jobs','inspect_job','score_job','score_jobs','recommend_job','decide_job'}
             tools=[t for t in tools if t['function']['name'] in allowed]
         return tools
 
@@ -573,6 +574,11 @@ class CareerHarness:
         return {k:profile[k]for k in ('city','country')if profile.get(k)} or None
 
     def execute(self,task_id,name,args,*,call_id):
+        if name == 'verify_and_score_jobs':
+            from eregion.runtime.request_options import enabled
+            if not enabled('VERIFY_AND_SCORE',default=self.api_first()):raise ValueError('verify_and_score_jobs is disabled.')
+            from .batch_workflow import run
+            return run(self,task_id,args,call_id)
         if name == 'dismiss_candidate':
             from .candidate_health import dismiss
             return dismiss(self.repository, task_id, args)
@@ -656,6 +662,13 @@ class CareerHarness:
                 raise ValueError('A confirmed personal condition is not satisfied; this job cannot be recommended as eligible.')
             retrieved=next((j for j in state.get('retrieved_jobs',{}).values() if j.get('url') and job_key(j['url'])==job_key(job['url'])),None)
             if not retrieved:raise ValueError('Read the current posting before recommending it.')
+            if self.api_first():
+                from .qualification import record
+                qualification=record(self.repository,task_id,retrieved)
+                if not qualification['qualified']:
+                    return {'error':'Requested search constraints are not verified; this job cannot count as a recommendation.',
+                            'error_code':'qualification_needed','qualification':qualification,
+                            'next':'Use decide_job with needs_evidence or exclude. Do not claim it meets the requested conditions.'}
             from .search_policy import constraints, recommendation_warning
             policy=constraints(state)
             warning=recommendation_warning(policy,job['title'] or '',job.get('description') or '')
@@ -803,6 +816,8 @@ class CareerHarness:
             if len(valid)!=len(result.get('jobs') or []):
                 result['dropped_invalid_urls']=len(result.get('jobs') or [])-len(valid)
             result['jobs']=list({job_key(j['url']):j for j in valid}.values())
+            if api_first:
+                result['jobs'],_=filter_cards(result['jobs'],state)
             jobs = result.get('jobs', [])
             for error in result.get('errors',[]):
                 source=error.get('source')
@@ -1007,14 +1022,26 @@ class CareerHarness:
             if not identifiers or len(identifiers)>8 or len(set(identifiers))!=len(identifiers):
                 raise ValueError('Choose one to eight unique imported jobs.')
             for identifier in identifiers:self.require_link(state,'jobs',identifier)
+            versions={a:rt.workspace.get_application(a).version for a in identifiers}
+            if self.api_first():
+                from .qualification import record
+                qualifications=[record(self.repository,task_id,self.job_summary(a,detail=True)) for a in identifiers]
+                if any(not q['qualified'] for q in qualifications):
+                    return {'error':'Verify requested constraints before paid batch scoring.','error_code':'qualification_needed','qualifications':qualifications}
             _,text=self.candidate()
             if not text:raise ValueError('Attach a resume in this chat before comparing fit.')
             asyncio.run(self.analysis.analyze_many(identifiers,resume_text=text,candidate_facts=self.fit_facts()))
             fingerprints={a:self.analysis_fingerprint(text,rt.workspace.get_application(a).current_snapshot_id)for a in identifiers}
             self.repository.change(task_id,lambda s:{'analyses':{**s.get('analyses',{}),**fingerprints}})
             self.save_scored_evidence(task_id,identifiers)
-            return {'jobs':[self.job_summary(a)for a in identifiers]}
+            return {'jobs':[self.job_summary(a,detail=True)for a in identifiers],
+                    'no_new_evidence':all(rt.workspace.get_application(a).version==versions[a] for a in identifiers)}
         if name=='score_job':
+            if self.api_first():
+                from .qualification import record
+                qualification=record(self.repository,task_id,self.job_summary(args['application_id'],detail=True))
+                if not qualification['qualified']:
+                    return {'error':'Verify requested constraints before paid scoring.','error_code':'qualification_needed','qualification':qualification}
             saved,text = self.candidate()
             if not text:raise ValueError('Attach a resume in this chat before comparing fit.')
             app = rt.workspace.get_application(args['application_id'])

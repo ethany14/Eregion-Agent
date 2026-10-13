@@ -48,6 +48,8 @@ def recovery(state,*,saved_urls=()):
         for key,j in state.get(mapping,{}).items() if j.get('url') and tried.get(key)==revision}
     from .candidate_health import active_rejections
     excluded={job_key(j['url']) for j in active_rejections(state)}
+    from .qualification import deferred
+    excluded |= deferred(state)
     retrieved={job_key(j['url']) for j in state.get('retrieved_jobs',{}).values() if j.get('url')}
     from .source_health import active_sources, browser_source
     sources=active_sources(state)
