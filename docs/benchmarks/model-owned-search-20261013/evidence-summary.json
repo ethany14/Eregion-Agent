@@ -1,0 +1,510 @@
+{
+  "date": "2026-10-13",
+  "new_live_acceptance_run": false,
+  "cost_usd": null,
+  "historical_live": [
+    {
+      "name": "default-batch-20261013-main-6",
+      "head": "32c998c",
+      "seconds": 336.76,
+      "jobs": 7,
+      "recommendations": 4,
+      "status": "failed",
+      "failures": [
+        "loop_not_completed_cleanly",
+        "incomplete_usage",
+        "fewer_than_ten_verified_scored_qualifying_recommendations"
+      ],
+      "usage": {
+        "calls": 60,
+        "completed": 59,
+        "failed": 1,
+        "pending": 0,
+        "discarded": 0,
+        "retries": 0,
+        "input_tokens": 444635,
+        "output_tokens": 25780,
+        "unknown_usage_calls": 1,
+        "groups": [
+          {
+            "purpose": "agent",
+            "model": "muse-spark-1.3-contributor",
+            "calls": 24,
+            "input_tokens": 328962,
+            "output_tokens": 11049,
+            "unknown_usage_calls": 0,
+            "cached_input_tokens": 76477,
+            "reasoning_tokens": 7433,
+            "cache_hit_ratio": 0.2324797393011959,
+            "reasoning_share": 0.6727305638519323
+          },
+          {
+            "purpose": "jev:fit:extract_requirements",
+            "model": "jev-1.13.0",
+            "calls": 8,
+            "input_tokens": 69811,
+            "output_tokens": 9782,
+            "unknown_usage_calls": 1,
+            "cache_hit_ratio": null,
+            "reasoning_share": null
+          },
+          {
+            "purpose": "jev:fit:refine_extraction_yes_no",
+            "model": "jev-1.13.0",
+            "calls": 4,
+            "input_tokens": 12463,
+            "output_tokens": 1436,
+            "unknown_usage_calls": 0,
+            "cache_hit_ratio": null,
+            "reasoning_share": null
+          },
+          {
+            "purpose": "jev:fit:condition_category_yes_no",
+            "model": "jev-1.13.0",
+            "calls": 8,
+            "input_tokens": 8659,
+            "output_tokens": 1051,
+            "unknown_usage_calls": 0,
+            "cache_hit_ratio": null,
+            "reasoning_share": null
+          },
+          {
+            "purpose": "jev:fit:support_yes_no",
+            "model": "jev-1.13.0",
+            "calls": 5,
+            "input_tokens": 12985,
+            "output_tokens": 1772,
+            "unknown_usage_calls": 0,
+            "cache_hit_ratio": null,
+            "reasoning_share": null
+          },
+          {
+            "purpose": "jev:fit:focused_yes_no",
+            "model": "jev-1.13.0",
+            "calls": 4,
+            "input_tokens": 3661,
+            "output_tokens": 237,
+            "unknown_usage_calls": 0,
+            "cache_hit_ratio": null,
+            "reasoning_share": null
+          },
+          {
+            "purpose": "jev:fit:clarify_full_support_yes_no",
+            "model": "jev-1.13.0",
+            "calls": 4,
+            "input_tokens": 3725,
+            "output_tokens": 186,
+            "unknown_usage_calls": 0,
+            "cache_hit_ratio": null,
+            "reasoning_share": null
+          },
+          {
+            "purpose": "jev:fit:verify_citations_yes_no",
+            "model": "jev-1.13.0",
+            "calls": 3,
+            "input_tokens": 4369,
+            "output_tokens": 267,
+            "unknown_usage_calls": 0,
+            "cache_hit_ratio": null,
+            "reasoning_share": null
+          }
+        ],
+        "budget_input_tokens": 483218,
+        "cached_input_tokens": 76477,
+        "reasoning_tokens": 7433,
+        "cache_hit_ratio": 0.1719995052121403,
+        "reasoning_share": 0.2883242823894492,
+        "usage_complete": false,
+        "provider_attempts": 60
+      }
+    },
+    {
+      "name": "default-batch-20261013-main-7",
+      "head": "55d16bb",
+      "seconds": 579.6,
+      "jobs": 9,
+      "recommendations": 7,
+      "status": "failed",
+      "failures": [
+        "loop_not_completed_cleanly",
+        "fewer_than_ten_verified_scored_qualifying_recommendations"
+      ],
+      "usage": {
+        "calls": 60,
+        "completed": 60,
+        "failed": 0,
+        "pending": 0,
+        "discarded": 0,
+        "retries": 0,
+        "input_tokens": 532575,
+        "output_tokens": 40898,
+        "unknown_usage_calls": 0,
+        "groups": [
+          {
+            "purpose": "agent",
+            "model": "muse-spark-1.3-contributor",
+            "calls": 21,
+            "input_tokens": 338421,
+            "output_tokens": 18865,
+            "unknown_usage_calls": 0,
+            "cached_input_tokens": 67148,
+            "reasoning_tokens": 13578,
+            "cache_hit_ratio": 0.1984155829573224,
+            "reasoning_share": 0.7197455605618871
+          },
+          {
+            "purpose": "jev:fit:extract_requirements",
+            "model": "jev-1.13.0",
+            "calls": 9,
+            "input_tokens": 118321,
+            "output_tokens": 12982,
+            "unknown_usage_calls": 0,
+            "cache_hit_ratio": null,
+            "reasoning_share": null
+          },
+          {
+            "purpose": "jev:fit:refine_extraction_yes_no",
+            "model": "jev-1.13.0",
+            "calls": 5,
+            "input_tokens": 20598,
+            "output_tokens": 2483,
+            "unknown_usage_calls": 0,
+            "cache_hit_ratio": null,
+            "reasoning_share": null
+          },
+          {
+            "purpose": "jev:fit:condition_category_yes_no",
+            "model": "jev-1.13.0",
+            "calls": 7,
+            "input_tokens": 16527,
+            "output_tokens": 2066,
+            "unknown_usage_calls": 0,
+            "cache_hit_ratio": null,
+            "reasoning_share": null
+          },
+          {
+            "purpose": "jev:fit:support_yes_no",
+            "model": "jev-1.13.0",
+            "calls": 5,
+            "input_tokens": 22287,
+            "output_tokens": 3396,
+            "unknown_usage_calls": 0,
+            "cache_hit_ratio": null,
+            "reasoning_share": null
+          },
+          {
+            "purpose": "jev:fit:focused_yes_no",
+            "model": "jev-1.13.0",
+            "calls": 5,
+            "input_tokens": 6365,
+            "output_tokens": 479,
+            "unknown_usage_calls": 0,
+            "cache_hit_ratio": null,
+            "reasoning_share": null
+          },
+          {
+            "purpose": "jev:fit:clarify_full_support_yes_no",
+            "model": "jev-1.13.0",
+            "calls": 5,
+            "input_tokens": 5487,
+            "output_tokens": 343,
+            "unknown_usage_calls": 0,
+            "cache_hit_ratio": null,
+            "reasoning_share": null
+          },
+          {
+            "purpose": "jev:fit:verify_citations_yes_no",
+            "model": "jev-1.13.0",
+            "calls": 3,
+            "input_tokens": 4569,
+            "output_tokens": 284,
+            "unknown_usage_calls": 0,
+            "cache_hit_ratio": null,
+            "reasoning_share": null
+          }
+        ],
+        "budget_input_tokens": 532575,
+        "cached_input_tokens": 67148,
+        "reasoning_tokens": 13578,
+        "cache_hit_ratio": 0.1260817725203023,
+        "reasoning_share": 0.33199667465401733,
+        "usage_complete": true,
+        "provider_attempts": 60
+      }
+    }
+  ],
+  "semantic_probes": [
+    {
+      "name": "semantic-qualification-probe-20261013-1",
+      "seconds": 688.34,
+      "new_source_requests": 0,
+      "cost_usd": null,
+      "usage": {
+        "calls": 7,
+        "completed": 5,
+        "failed": 2,
+        "pending": 0,
+        "discarded": 0,
+        "retries": 0,
+        "input_tokens": 30301,
+        "output_tokens": 37796,
+        "unknown_usage_calls": 2,
+        "groups": [
+          {
+            "purpose": "search_qualification:SearchQualification",
+            "model": "muse-spark-1.3-contributor",
+            "calls": 7,
+            "input_tokens": 30301,
+            "output_tokens": 37796,
+            "unknown_usage_calls": 2,
+            "cached_input_tokens": 0,
+            "reasoning_tokens": 26746,
+            "cache_hit_ratio": 0.0,
+            "reasoning_share": 0.7076410202137793
+          }
+        ],
+        "budget_input_tokens": 130606,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 26746,
+        "cache_hit_ratio": 0.0,
+        "reasoning_share": 0.7076410202137793,
+        "usage_complete": false,
+        "provider_attempts": 7
+      },
+      "gold": [
+        {
+          "case": "graduate_paraphrase",
+          "expected": true,
+          "actual": true
+        },
+        {
+          "case": "senior_contradiction",
+          "expected": false,
+          "actual": false
+        },
+        {
+          "case": "colleagues_not_candidate",
+          "expected": false,
+          "actual": false
+        },
+        {
+          "case": "remote_not_city",
+          "expected": false,
+          "actual": false
+        },
+        {
+          "case": "adjacent_occupation",
+          "expected": false,
+          "actual": false
+        },
+        {
+          "case": "borough",
+          "expected": true,
+          "actual": true
+        },
+        {
+          "case": "negative_entry",
+          "expected": false,
+          "actual": false
+        },
+        {
+          "case": "not_fixed_english_phrase",
+          "expected": true,
+          "actual": true
+        }
+      ],
+      "saved_posting_count": 47,
+      "qualified_by_model": 4,
+      "has_unmet": 11,
+      "unknown_only": 32,
+      "unknown_dimension_count": 66
+    },
+    {
+      "name": "semantic-qualification-probe-20261013-2",
+      "seconds": 69.87,
+      "new_source_requests": 0,
+      "cost_usd": null,
+      "usage": {
+        "calls": 2,
+        "completed": 2,
+        "failed": 0,
+        "pending": 0,
+        "discarded": 0,
+        "retries": 0,
+        "input_tokens": 2495,
+        "output_tokens": 5759,
+        "unknown_usage_calls": 0,
+        "groups": [
+          {
+            "purpose": "search_qualification:SearchQualification",
+            "model": "muse-spark-1.3-contributor",
+            "calls": 2,
+            "input_tokens": 2495,
+            "output_tokens": 5759,
+            "unknown_usage_calls": 0,
+            "cached_input_tokens": 0,
+            "reasoning_tokens": 3846,
+            "cache_hit_ratio": 0.0,
+            "reasoning_share": 0.6678242750477513
+          }
+        ],
+        "budget_input_tokens": 2495,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 3846,
+        "cache_hit_ratio": 0.0,
+        "reasoning_share": 0.6678242750477513,
+        "usage_complete": true,
+        "provider_attempts": 2
+      },
+      "gold": [
+        {
+          "case": "graduate_paraphrase",
+          "expected": true,
+          "actual": true
+        },
+        {
+          "case": "senior_contradiction",
+          "expected": false,
+          "actual": false
+        },
+        {
+          "case": "colleagues_not_candidate",
+          "expected": false,
+          "actual": false
+        },
+        {
+          "case": "remote_not_city",
+          "expected": false,
+          "actual": false
+        },
+        {
+          "case": "adjacent_occupation",
+          "expected": false,
+          "actual": false
+        },
+        {
+          "case": "borough",
+          "expected": true,
+          "actual": false
+        },
+        {
+          "case": "negative_entry",
+          "expected": false,
+          "actual": false
+        },
+        {
+          "case": "not_fixed_english_phrase",
+          "expected": true,
+          "actual": true
+        }
+      ]
+    },
+    {
+      "name": "semantic-qualification-probe-20261013-3",
+      "seconds": 620.58,
+      "new_source_requests": 0,
+      "cost_usd": null,
+      "usage": {
+        "calls": 15,
+        "completed": 15,
+        "failed": 0,
+        "pending": 0,
+        "discarded": 0,
+        "retries": 0,
+        "input_tokens": 63285,
+        "output_tokens": 50353,
+        "unknown_usage_calls": 0,
+        "groups": [
+          {
+            "purpose": "search_qualification:SearchQualification",
+            "model": "muse-spark-1.3-contributor",
+            "calls": 15,
+            "input_tokens": 63285,
+            "output_tokens": 50353,
+            "unknown_usage_calls": 0,
+            "cached_input_tokens": 1265,
+            "reasoning_tokens": 28375,
+            "cache_hit_ratio": 0.019988938927075928,
+            "reasoning_share": 0.5635215379421286
+          }
+        ],
+        "budget_input_tokens": 63285,
+        "cached_input_tokens": 1265,
+        "reasoning_tokens": 28375,
+        "cache_hit_ratio": 0.019988938927075928,
+        "reasoning_share": 0.5635215379421286,
+        "usage_complete": true,
+        "provider_attempts": 15
+      },
+      "gold": [
+        {
+          "case": "graduate_paraphrase",
+          "expected": true,
+          "actual": true
+        },
+        {
+          "case": "senior_contradiction",
+          "expected": false,
+          "actual": false
+        },
+        {
+          "case": "colleagues_not_candidate",
+          "expected": false,
+          "actual": false
+        },
+        {
+          "case": "remote_not_city",
+          "expected": false,
+          "actual": false
+        },
+        {
+          "case": "adjacent_occupation",
+          "expected": false,
+          "actual": false
+        },
+        {
+          "case": "borough",
+          "expected": true,
+          "actual": true
+        },
+        {
+          "case": "negative_entry",
+          "expected": false,
+          "actual": false
+        },
+        {
+          "case": "not_fixed_english_phrase",
+          "expected": true,
+          "actual": true
+        },
+        {
+          "case": "talent_pool",
+          "expected": false,
+          "actual": false
+        },
+        {
+          "case": "optional_pool_link",
+          "expected": true,
+          "actual": true
+        }
+      ],
+      "saved_posting_count": 47,
+      "qualified_by_model": 9,
+      "has_unmet": 13,
+      "unknown_only": 25,
+      "unknown_dimension_count": 28
+    }
+  ],
+  "implementation_commit": "a37f6e4c48c2c4e2ace6e3b4b64b5f5bac6c7a36",
+  "offline_validation": {
+    "files": 38,
+    "passed": 615,
+    "skipped": 6,
+    "subtests_passed": 4,
+    "warnings": 1,
+    "seconds": 212.46,
+    "exit_code": 0,
+    "log": "offline-validation.txt",
+    "live_quality_acceptance": false
+  }
+}
