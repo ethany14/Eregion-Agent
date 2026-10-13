@@ -1,0 +1,162 @@
+[
+  {
+    "source": "tool_action",
+    "status": "completed",
+    "tool": "search_jobs",
+    "tool_call_id": "call_9be8b851-4ebc-47e4-b199-4434cd50b326",
+    "tool_execution_seconds": 23.297810399999435,
+    "persistence_seconds": 0.0011253000011492986,
+    "persistence_boundary": "intent_checkpoint",
+    "failed": false
+  },
+  {
+    "source": "tool_action",
+    "status": "completed",
+    "tool": "read_context",
+    "tool_call_id": "call_c81a5bb6-1996-41c3-ad2d-7f573b95783e",
+    "tool_execution_seconds": 0.00019309999697725289,
+    "persistence_seconds": 0.0020493000010901596,
+    "persistence_boundary": "intent_checkpoint",
+    "failed": false
+  },
+  {
+    "source": "tool_action",
+    "status": "completed",
+    "tool": "verify_and_score",
+    "tool_call_id": "call_872efe2a-152f-4c81-a0a0-4a3125c4609f",
+    "tool_execution_seconds": 5.107105800001591,
+    "persistence_seconds": 0.0026723000009951647,
+    "persistence_boundary": "intent_checkpoint",
+    "failed": false
+  },
+  {
+    "source": "tool_action",
+    "status": "completed",
+    "tool": "read_context",
+    "tool_call_id": "call_57b2d542-9187-41a5-9695-3b2e68d34d3e",
+    "tool_execution_seconds": 0.000829099997645244,
+    "persistence_seconds": 0.003671100002975436,
+    "persistence_boundary": "intent_checkpoint",
+    "failed": false
+  },
+  {
+    "source": "tool_action",
+    "status": "completed",
+    "tool": "read_context",
+    "tool_call_id": "call_339c54fb-c971-483d-8a36-2a19e63d8bd3",
+    "tool_execution_seconds": 0.0007306000006792601,
+    "persistence_seconds": 0.003333000000566244,
+    "persistence_boundary": "intent_checkpoint",
+    "failed": false
+  },
+  {
+    "source": "tool_action",
+    "status": "completed",
+    "tool": "recommend_job",
+    "tool_call_id": "call_5a163e78-8012-4015-b1bc-e76562801cb9",
+    "tool_execution_seconds": 0.3330822000025364,
+    "persistence_seconds": 0.004032499997265404,
+    "persistence_boundary": "intent_checkpoint",
+    "failed": false
+  },
+  {
+    "source": "tool_action",
+    "status": "completed",
+    "tool": "verify_and_score",
+    "tool_call_id": "call_e7708a60-e552-4c5f-83e4-efc2d7f1e764",
+    "tool_execution_seconds": 4.2963363000017125,
+    "persistence_seconds": 0.003771300001972122,
+    "persistence_boundary": "intent_checkpoint",
+    "failed": false
+  },
+  {
+    "source": "tool_action",
+    "status": "completed",
+    "tool": "recommend_job",
+    "tool_call_id": "call_e7e2db61-14ee-4baa-b903-bfed780015bc",
+    "tool_execution_seconds": 0.06597659999897587,
+    "persistence_seconds": 0.0050436000019544736,
+    "persistence_boundary": "intent_checkpoint",
+    "failed": false
+  },
+  {
+    "source": "tool_action",
+    "status": "completed",
+    "tool": "verify_and_score",
+    "tool_call_id": "call_7b07b1d7-bd12-435a-82b0-f4bf4d64ebdc",
+    "tool_execution_seconds": 4.126353600000584,
+    "persistence_seconds": 0.00488490000134334,
+    "persistence_boundary": "intent_checkpoint",
+    "failed": false
+  },
+  {
+    "source": "tool_action",
+    "status": "completed",
+    "tool": "decide_job",
+    "tool_call_id": "call_dd2752b9-f8d4-4b9e-a806-8b5fd907524b",
+    "tool_execution_seconds": 0.013942000001406996,
+    "persistence_seconds": 0.005220200000621844,
+    "persistence_boundary": "intent_checkpoint",
+    "failed": false
+  },
+  {
+    "source": "tool_action",
+    "status": "completed",
+    "tool": "verify_and_score",
+    "tool_call_id": "call_a715caf8-96eb-42c2-8019-30b8ec98e439",
+    "tool_execution_seconds": 3.8766524999991816,
+    "persistence_seconds": 0.00745190000088769,
+    "persistence_boundary": "intent_checkpoint",
+    "failed": false
+  },
+  {
+    "source": "tool_action",
+    "status": "completed",
+    "tool": "read_context",
+    "tool_call_id": "call_95a27580-8d48-45a0-8157-00a70ee83aad",
+    "tool_execution_seconds": 0.0001368000012007542,
+    "persistence_seconds": 0.014287400001194328,
+    "persistence_boundary": "intent_checkpoint",
+    "failed": false
+  },
+  {
+    "source": "tool_action",
+    "status": "completed",
+    "tool": "recommend_job",
+    "tool_call_id": "call_ac342ab6-ea97-4a79-a50a-8118bbddbf47",
+    "tool_execution_seconds": 0.036080800000490854,
+    "persistence_seconds": 0.007197499999165302,
+    "persistence_boundary": "intent_checkpoint",
+    "failed": false
+  },
+  {
+    "source": "tool_action",
+    "status": "completed",
+    "tool": "read_context",
+    "tool_call_id": "call_e2aab58c-554c-4e47-94a9-6190ca4c9da3",
+    "tool_execution_seconds": 0.0001334000007773284,
+    "persistence_seconds": 0.009603599999536527,
+    "persistence_boundary": "intent_checkpoint",
+    "failed": false
+  },
+  {
+    "source": "tool_action",
+    "status": "completed",
+    "tool": "verify_and_score",
+    "tool_call_id": "call_faaf06f8-b919-41a7-b758-d09f8aa04a04",
+    "tool_execution_seconds": 5.15299049999885,
+    "persistence_seconds": 0.005966600001556799,
+    "persistence_boundary": "intent_checkpoint",
+    "failed": false
+  },
+  {
+    "source": "tool_action",
+    "status": "completed",
+    "tool": "decide_job",
+    "tool_call_id": "call_9ee5ff0d-d95a-4aa1-98a2-f9f7dcf2881c",
+    "tool_execution_seconds": 0.026140500001929468,
+    "persistence_seconds": 0.009531299998343457,
+    "persistence_boundary": "intent_checkpoint",
+    "failed": false
+  }
+]

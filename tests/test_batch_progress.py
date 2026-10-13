@@ -66,3 +66,21 @@ def test_role_ranking_retains_unknown_candidates():
 def test_plan_repair_returns_exact_valid_shape():
     result=TaskHost._action_error(None,ToolArgumentsError('update_plan.steps[] must have type string.'))
     assert '"steps":["Verify candidates","Score matches"]' in result['next']
+
+
+def test_workflow_skips_paid_scoring_when_requested_location_unverified(career,monkeypatch):
+    monkeypatch.setenv('JOB_AGENT_JOB_API_FIRST','1')
+    c=career
+    c.repository.change(c.state['task_id'],goal='Find 15 current junior data analyst positions in New York.',messages=[])
+    result=execute(c,'verify_and_score',url='https://jobs.lever.co/example/abc123')
+    assert result['error_code']=='qualification_needed'
+    assert result['completed_steps']==['read_job']
+    assert c.repository.get(c.state['task_id'])['jobs']==[]
+    repeated=execute(c,'verify_and_score',url='https://jobs.lever.co/example/abc123')
+    assert repeated['no_new_evidence']
+
+
+def test_explicit_high_experience_overrides_junior_title():
+    from eregion.runtime.career.search_policy import recommendation_warning
+    warning=recommendation_warning({'levels':['junior'],'strict':False},'Junior Data Analyst','Requires 5 years of experience.')
+    assert warning['actual']=='senior'

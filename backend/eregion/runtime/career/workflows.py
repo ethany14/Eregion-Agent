@@ -67,6 +67,20 @@ def run(harness, task_id, args, call_id):
         elif saved and 'read_job' not in completed:
             completed.append('read_job')
             save(pending_step=None, retrieved_job=saved)
+        if saved and harness.api_first():
+            from .search_policy import workflow_triage
+            issues=workflow_triage(repo.get(task_id),saved)
+            if issues:
+                from .posting_brief import with_brief
+                detail={'error':'Verify requested constraints before spending on fit scoring.',
+                        'error_code':'qualification_needed','issues':issues,
+                        'completed_steps':list(completed),'failed_step':'qualification',
+                        'url':saved['url'],'title':saved.get('title'),'location':saved.get('location'),
+                        'triage_evidence':with_brief(saved)['triage_evidence'],
+                        'no_new_evidence':record.get('qualification_issues')==issues,
+                        'next':'Use the source evidence to dismiss_candidate if unsuitable. If more source evidence genuinely establishes eligibility, use the granular import/score tools; do not repeatedly retry verify_and_score or assume remote location coverage.'}
+                save(qualification_issues=issues,pending_step=None)
+                return detail
         # Import re-runs the shared candidate preflight and posting qualification,
         # even on resume. Workspace source/snapshot identity deduplicates effects.
         current = 'import_job'
