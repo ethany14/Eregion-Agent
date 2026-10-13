@@ -16,8 +16,12 @@ def source_limits(state,args=None):
     broad=query in {normalized(fields['role']),normalized(f"{fields['role']} in {fields['location']}")}
     # One broad LinkedIn call can page deep (one source call, ~9 s/page); 8 pages keeps
     # it inside the 120 s per-call deadline instead of repeating near-duplicate queries.
-    return {'calls':50 if large else 26,
-            'pages':8 if large and broad else 2 if (args or {}).get('limit',10)>10 else 1}
+    # The LinkedIn source budget is an explicit task/experiment setting, never raised implicitly.
+    import os
+    configured=os.getenv('JOB_AGENT_LINKEDIN_MAX_CALLS','').strip()
+    calls=int(configured) if configured.isdigit() and int(configured)>0 else 50 if large else 26
+    return {'calls':calls,
+            'pages':8 if large and broad else 4 if large else 2 if (args or {}).get('limit',10)>10 else 1}
 
 
 def variants(state,args):
@@ -32,7 +36,11 @@ def variants(state,args):
     # repeated it with extra keywords. Explicit early-career wording is ranked first.
     # The unquoted form also reaches equivalent titles that split the words
     # ('Analyst, Data Operations'); the model still judges the occupation from the JD.
-    queries=[f'"{role}" AND (junior OR "entry level" OR graduate OR "new grad")',f'"{role}"',role]
+    # The occupation head ('analyst') with explicit early-career words reaches equivalent
+    # titles whose posting states the level ('Junior Analyst, Data & Reporting').
+    head=role.split()[-1]
+    queries=[f'"{role}" AND (junior OR "entry level" OR graduate OR "new grad")',f'"{role}"',role,
+             f'"{head}" AND (junior OR "entry level" OR graduate OR "new grad" OR "early career")']
     aliases=[f'junior {role}',f'entry level {role}',f'graduate {role}',role,f'{role} in {place}',f'junior {role} in {place}',*queries]
     if normalized(args['query']) not in {normalized(q) for q in aliases}:
         return [args['query']]

@@ -315,6 +315,8 @@ def test_repeated_directory_search_pages_to_next_boards(career):
     import pytest
     mp = pytest.MonkeyPatch()
     mp.setattr(board_directory, 'load_directory', lambda path=None: rows)
+    from eregion.runtime.career import discovery as discovery_module
+    mp.setattr(discovery_module, 'DIRECTORY_FANOUT', 5)  # paging contract; the default covers all
     try:
         c.harness.discovery = Discovery()
         args = {'query': 'junior data analyst', 'location': 'New York, NY', 'use_directory': True}
@@ -327,3 +329,29 @@ def test_repeated_directory_search_pages_to_next_boards(career):
     assert searched == [f'ats:greenhouse:b{i}' for i in range(12)]
     assert first['directory_remaining'] == 7 and second['directory_remaining'] == 2 and third['directory_remaining'] == 0
     assert fourth['directory_searched'] == [] and 'note_exhausted' in fourth
+
+
+def test_default_directory_search_covers_every_matching_board_once(career):
+    from uuid import uuid4
+    from eregion.runtime.career import board_directory
+    from eregion.runtime.career.discovery import JobDiscovery, board_source
+    import pytest
+    c = career
+    base = {'platform': 'greenhouse', 'display_name': 'X', 'verified_at': __import__('datetime').date.today().isoformat(),
+            'verified_by': 'public_api_get', 'job_count_at_verification': 3, 'notes': 't', 'domains': ['data/analytics'],
+            'locations': ['New York, NY'], 'family_locations': {'data/analytics': ['New York, NY']}}
+    rows = [{**base, 'company': f'b{i}', 'source_url': f'https://job-boards.greenhouse.io/b{i}'} for i in range(12)]
+    searched = []
+    class Discovery(JobDiscovery):
+        def search(self, query, location='', boards=None, limit=10, excluded_hosts=(), excluded_sources=()):
+            searched.append(board_source(boards[0]))
+            return {'jobs': [], 'errors': [], 'sources_checked': [], 'skipped_sources': [], 'board_outcomes': []}
+    mp = pytest.MonkeyPatch()
+    mp.setattr(board_directory, 'load_directory', lambda path=None: rows)
+    try:
+        c.harness.discovery = Discovery()
+        first = c.harness.execute(c.state['task_id'], 'search_jobs',
+            {'query': 'junior data analyst', 'location': 'New York, NY', 'use_directory': True}, call_id=str(uuid4()))
+    finally:
+        mp.undo()
+    assert searched == [f'ats:greenhouse:b{i}' for i in range(12)] and first['directory_remaining'] == 0

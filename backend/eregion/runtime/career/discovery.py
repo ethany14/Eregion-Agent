@@ -190,6 +190,10 @@ class DiscoveryCancelled(ValueError):
     pass
 
 
+DIRECTORY_FANOUT = 40
+DIRECTORY_JOBS = 40
+
+
 class JobDiscovery:
     def __init__(self, *, transport=None, resolver=socket.getaddrinfo):
         self.transport,self.resolver = transport,resolver
@@ -267,7 +271,9 @@ class JobDiscovery:
         try:
             # Sequential fan-out deliberately keeps same-host traffic serial. The
             # instance limiter also bounds concurrent tasks sharing this client.
-            for board in boards[:5]:
+            # Every matching verified board (bounded): public board GETs are free and
+            # serial, while each extra directory round costs a model decision.
+            for board in boards[:DIRECTORY_FANOUT]:
                 if cancelled():
                     results['cancelled'] = True
                     break
@@ -289,9 +295,9 @@ class JobDiscovery:
                     invalid += 1
             if invalid:
                 results['dropped_invalid_urls'] = invalid
-            results['jobs'] = list(keyed.values())[:limit]
-            results['directory_searched'] = [board_source(b) for b in boards[:5]]
-            results['directory_remaining'] = max(0, len(boards) - 5)
+            results['jobs'] = list(keyed.values())[:max(limit, DIRECTORY_JOBS)]  # all boards' matches, bounded
+            results['directory_searched'] = [board_source(b) for b in boards[:DIRECTORY_FANOUT]]
+            results['directory_remaining'] = max(0, len(boards) - DIRECTORY_FANOUT)
             results['directory_matching'] = total
             if not boards:
                 results['no_new_evidence'] = True

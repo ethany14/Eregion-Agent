@@ -5610,5 +5610,278 @@
     "verified_by": "public_api_get",
     "job_count_at_verification": 239,
     "notes": "Verified by public board API GET; labels are discovery hints, not vacancies."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "hellofresh",
+    "display_name": "hellofresh",
+    "domains": [
+      "ML",
+      "backend",
+      "data/analytics",
+      "design"
+    ],
+    "locations": [
+      "Abbotsford, British Columbia, Canada",
+      "Amsterdam, North Holland, Netherlands",
+      "Amsterdam, North Holland, Netherlands; Berlin, Berlin, Germany; London, England, United Kingdom",
+      "Amsterdam, North Holland, Netherlands; Berlin, Berlin, Germany; London, England, United Kingdom; Paris, Paris, France",
+      "Auckland, Auckland Region, New Zealand",
+      "Aurora, Colorado, United States",
+      "Aurora, Colorado, United States; Aurora, IL, United States; Burr Ridge, IL, United States; Irving, TX, United States; Lake Zurich, Illinois, United States; Newark, NJ, United States; Phoenix, AZ, United States",
+      "Aurora, Colorado, United States; Aurora, IL, United States; Irving, TX, United States; Newark, NJ, United States; Phoenix, AZ, United States",
+      "Aurora, IL, United States",
+      "Aurora, IL, United States; Boulder, Colorado, United States; Irving, TX, United States; Newark, NJ, United States; Phoenix, AZ, United States",
+      "Aurora, IL, United States; Boulder, Colorado, United States; New York, NY, United States; Newark, NJ, United States; Phoenix, AZ, United States",
+      "Aurora, IL, United States; Goodyear, AZ, United States",
+      "Aurora, IL, United States; Goodyear, AZ, United States; Irving, TX, United States; New York, NY, United States; Newark, NJ, United States; Phoenix, AZ, United States",
+      "Aurora, IL, United States; Goodyear, Arizona, United States",
+      "Aurora, IL, United States; Irving, TX, United States; Newark, NJ, United States; Phoenix, AZ, United States",
+      "Barleben, Saxony-Anhalt, Germany",
+      "Berlin, Berlin, Germany",
+      "Bjuv, Skåne, Sweden",
+      "Bleiswijk, South Holland, Netherlands",
+      "Boulder, Colorado, United States; New York, NY, United States",
+      "Brisbane, Queensland, Australia",
+      "Calgary, Alberta, Canada",
+      "Chicago, Illinois, United States; Goodyear, AZ, United States; New York, NY, United States",
+      "Dallas, TX, United States",
+      "Derby, England, United Kingdom",
+      "Detroit, MI, United States",
+      "Dublin, Dublin, Ireland",
+      "Edmonton, Alberta, Canada",
+      "Etobicoke, Ontario, Canada",
+      "Fairfield, NJ, United States",
+      "Frankfurt am Main, Hesse, Germany",
+      "Gent, East Flanders, Belgium",
+      "Germany",
+      "Goodyear, AZ, United States",
+      "Goodyear, Arizona, United States",
+      "Hamburg, Hamburg, Germany",
+      "Hannover, Lower Saxony, Germany",
+      "Irving, TX, United States",
+      "Irving, TX, United States; Newark, NJ, United States",
+      "Irving, TX, United States; Newark, NJ, United States; Phoenix, AZ, United States",
+      "København, Capital RegionDenmark, Denmark",
+      "Lake Zurich, Illinois, United States",
+      "Lisses, Essonne, France",
+      "London, England, United Kingdom",
+      "Magdeburg, Saxony-Anhalt, Germany",
+      "Manila, Manila, Philippines",
+      "Melbourne, Victoria, Australia",
+      "Mississauga, Ontario, Canada",
+      "München, Bavaria, Germany",
+      "New York, NY, United States",
+      "New York, NY, United States; Newark, NJ, United States",
+      "New Zealand",
+      "Newark, NJ, United States",
+      "Palawan, Philippines",
+      "Paris, Paris, France",
+      "Perth, Western Australia, Australia",
+      "Philippines",
+      "Phoenix, AZ, United States",
+      "Schiller Park, IL, United States",
+      "St. Louis, MO, United States",
+      "Sydney, New South Wales, Australia",
+      "Toronto, Ontario, Canada",
+      "UK ",
+      "Verden, Niedersachsen, Germany",
+      "Warszawa, Masovian Voivodeship, Poland",
+      "Wrocław, Lower Silesian Voivodeship, Poland"
+    ],
+    "family_locations": {
+      "ML": [
+        "Berlin, Berlin, Germany",
+        "Manila, Manila, Philippines",
+        "Toronto, Ontario, Canada",
+        "Warszawa, Masovian Voivodeship, Poland"
+      ],
+      "backend": [
+        "Toronto, Ontario, Canada",
+        "Warszawa, Masovian Voivodeship, Poland"
+      ],
+      "data/analytics": [
+        "Barleben, Saxony-Anhalt, Germany",
+        "Berlin, Berlin, Germany",
+        "Boulder, Colorado, United States; New York, NY, United States",
+        "Derby, England, United Kingdom",
+        "Goodyear, AZ, United States",
+        "Manila, Manila, Philippines",
+        "New York, NY, United States; Newark, NJ, United States",
+        "Paris, Paris, France",
+        "Toronto, Ontario, Canada",
+        "Warszawa, Masovian Voivodeship, Poland"
+      ],
+      "design": [
+        "Aurora, IL, United States; Goodyear, AZ, United States; Irving, TX, United States; New York, NY, United States; Newark, NJ, United States; Phoenix, AZ, United States",
+        "Berlin, Berlin, Germany",
+        "Toronto, Ontario, Canada",
+        "Warszawa, Masovian Voivodeship, Poland"
+      ]
+    },
+    "source_url": "https://boards.greenhouse.io/hellofresh",
+    "verified_at": "2026-10-13",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 408,
+    "notes": "Added from a verified public API GET for NYC data/analytics coverage."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "komodohealth",
+    "display_name": "komodohealth",
+    "domains": [
+      "ML",
+      "backend",
+      "data/analytics"
+    ],
+    "locations": [
+      "Chennai, India",
+      "India",
+      "New York, NY",
+      "New York, New York",
+      "New York, New York ",
+      "United States",
+      "india"
+    ],
+    "family_locations": {
+      "ML": [
+        "Chennai, India",
+        "United States"
+      ],
+      "backend": [
+        "India",
+        "New York, New York",
+        "United States"
+      ],
+      "data/analytics": [
+        "New York, New York",
+        "New York, New York ",
+        "United States"
+      ]
+    },
+    "source_url": "https://boards.greenhouse.io/komodohealth",
+    "verified_at": "2026-10-13",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 29,
+    "notes": "Added from a verified public API GET for NYC data/analytics coverage."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "icapitalnetwork",
+    "display_name": "icapitalnetwork",
+    "domains": [
+      "ML",
+      "backend",
+      "data/analytics",
+      "design"
+    ],
+    "locations": [
+      "Abu Dhabi, United Arab Emirates",
+      "Boca Raton, Florida, United States",
+      "Colorado Springs, Colorado, United States",
+      "Colorado Springs, Colorado, United States; Des Moines, Iowa, United States; Salt Lake City, Utah, United States",
+      "Colorado Springs, Colorado, United States; Des Moines, Iowa, United States; Salt Lake City, Utah, United States; Toronto, Ontario, Canada",
+      "Colorado Springs, Colorado, United States; Salt Lake City, Utah, United States; Toronto, Ontario, Canada",
+      "Des Moines, Iowa, United States",
+      "Edinburgh, Scotland",
+      "Greenwich, Connecticut, United States",
+      "Greenwich, Connecticut, United States; New York, New York, United States",
+      "Greenwich, Connecticut, United States; Stamford, Connecticut, United States",
+      "Hong Kong, China",
+      "IN - Jaipur",
+      "Lisbon, Portugal",
+      "London, England",
+      "New York, New York, United States",
+      "Remote - Canada",
+      "Remote - United States",
+      "Salt Lake City, Utah, United States",
+      "Singapore, APAC",
+      "Stamford, Connecticut, United States",
+      "Tokyo, Japan",
+      "Toronto, Ontario, Canada",
+      "Zurich, Switzerland"
+    ],
+    "family_locations": {
+      "ML": [
+        "Hong Kong, China",
+        "IN - Jaipur",
+        "New York, New York, United States"
+      ],
+      "backend": [
+        "Greenwich, Connecticut, United States; New York, New York, United States",
+        "IN - Jaipur",
+        "Lisbon, Portugal",
+        "New York, New York, United States",
+        "Salt Lake City, Utah, United States"
+      ],
+      "data/analytics": [
+        "Boca Raton, Florida, United States",
+        "Colorado Springs, Colorado, United States",
+        "Des Moines, Iowa, United States",
+        "Edinburgh, Scotland",
+        "Greenwich, Connecticut, United States",
+        "Hong Kong, China",
+        "IN - Jaipur",
+        "Lisbon, Portugal",
+        "New York, New York, United States",
+        "Salt Lake City, Utah, United States",
+        "Stamford, Connecticut, United States",
+        "Toronto, Ontario, Canada",
+        "Zurich, Switzerland"
+      ],
+      "design": [
+        "Lisbon, Portugal",
+        "Salt Lake City, Utah, United States"
+      ]
+    },
+    "source_url": "https://boards.greenhouse.io/icapitalnetwork",
+    "verified_at": "2026-10-13",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 211,
+    "notes": "Added from a verified public API GET for NYC data/analytics coverage."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "janestreet",
+    "display_name": "janestreet",
+    "domains": [
+      "ML",
+      "backend",
+      "data/analytics"
+    ],
+    "locations": [
+      "Austin, Texas, United States",
+      "Chicago",
+      "Hong Kong, Hong Kong",
+      "London, England, United Kingdom",
+      "New York, New York, United States",
+      "Singapore"
+    ],
+    "family_locations": {
+      "ML": [
+        "Hong Kong, Hong Kong",
+        "London, England, United Kingdom",
+        "New York, New York, United States"
+      ],
+      "backend": [
+        "Hong Kong, Hong Kong",
+        "London, England, United Kingdom",
+        "New York, New York, United States",
+        "Singapore"
+      ],
+      "data/analytics": [
+        "Austin, Texas, United States",
+        "Chicago",
+        "Hong Kong, Hong Kong",
+        "London, England, United Kingdom",
+        "New York, New York, United States",
+        "Singapore"
+      ]
+    },
+    "source_url": "https://boards.greenhouse.io/janestreet",
+    "verified_at": "2026-10-13",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 229,
+    "notes": "Added from a verified public API GET for NYC data/analytics coverage."
   }
 ]

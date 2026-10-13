@@ -17,6 +17,12 @@ GOAL = ('Find 15 current junior data analyst positions in New York for my saved 
 FLAGS = {'JOB_AGENT_JOB_API_FIRST': '1', 'JOB_AGENT_TREG_ENABLED': '0',
          'JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS': '60',
          'JOB_AGENT_TASK_MAX_INPUT_TOKENS': '1000000'}
+# Explicit experiment profiles. "expanded" is the user-approved one-off experiment
+# (2026-10-13): LinkedIn 100, provider 100, input 1.5M, 1500 s; audit budget unchanged.
+PROFILES = {
+    'baseline': {'provider_attempts': 60, 'input_tokens': 1_000_000, 'deadline_seconds': 900, 'linkedin_calls': 50},
+    'expanded': {'provider_attempts': 100, 'input_tokens': 1_500_000, 'deadline_seconds': 1500, 'linkedin_calls': 100},
+}
 
 @pytest.mark.skipif(os.getenv('JOB_AGENT_LIVE_DEFAULT_BATCH') != '1', reason='Explicit paid live opt-in')
 def test_default_route_ten_to_fifteen(career, monkeypatch):
@@ -34,8 +40,13 @@ def test_default_route_ten_to_fifteen(career, monkeypatch):
 
     output = Path(os.environ['OPT_LIVE_OUTPUT'])
     assert not output.exists(), 'Never overwrite or automatically repeat a live sample'
+    profile_name = os.getenv('JOB_AGENT_LIVE_LIMITS', 'baseline')
+    limits = PROFILES[profile_name]
+    flags = {**FLAGS, 'JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS': str(limits['provider_attempts']),
+             'JOB_AGENT_TASK_MAX_INPUT_TOKENS': str(limits['input_tokens']),
+             'JOB_AGENT_LINKEDIN_MAX_CALLS': str(limits['linkedin_calls'])}
     output.mkdir(parents=True)
-    for key, value in FLAGS.items():
+    for key, value in flags.items():
         monkeypatch.setenv(key, value)
     config = load_mcp_runtime_config()
     assert len(config.servers) == 1 and config.servers[0].server_id == 'linkedin'
@@ -59,8 +70,8 @@ def test_default_route_ten_to_fifteen(career, monkeypatch):
     task = None
     (output/'invocation.json').write_text(json.dumps({
         'head':subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
-        'goal':GOAL, 'flags':FLAGS, 'minimum_qualified':10, 'target':15,
-        'mcp_call_limit':50, 'deadline_seconds':900, 'synthetic_candidate':True,
+        'goal':GOAL, 'flags':flags, 'limits_profile':profile_name, 'limits':limits, 'minimum_qualified':10, 'target':15,
+        'mcp_call_limit':limits['linkedin_calls'], 'deadline_seconds':limits['deadline_seconds'], 'synthetic_candidate':True,
         'audit_budget':{'provider_attempts':6,'input_tokens':200000},
         'cost_usd':None, 'cost_note':'Provider billing unavailable; attempt and token caps enforced.'
     }, indent=2), encoding='utf-8')
@@ -69,7 +80,8 @@ def test_default_route_ten_to_fifteen(career, monkeypatch):
         assert 'mcp__linkedin__search_jobs' in manager.public_tool_names
         task = service.start(GOAL, str(uuid4()))
         try:
-            settle_live(service, task['run_id'], output, 'analyst', timeout=900,semantic_review=True)
+            settle_live(service, task['run_id'], output, 'analyst', timeout=limits['deadline_seconds'],semantic_review=True,
+                        limits={'input_tokens':limits['input_tokens']})
         except AssertionError:
             if not (output/'acceptance.json').exists():
                 raise

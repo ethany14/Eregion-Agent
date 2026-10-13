@@ -16,7 +16,8 @@ GOAL='Find 15 current junior data analyst positions in New York for my saved res
 def test_variants_preserve_role_and_do_not_expand_other_requests():
     state={'goal':GOAL};args={'query':'junior data analyst','location':'New York'}
     assert variants(state,args)==['"data analyst" AND (junior OR "entry level" OR graduate OR "new grad")',
-                                 '"data analyst"','data analyst']
+                                 '"data analyst"','data analyst',
+                                 '"analyst" AND (junior OR "entry level" OR graduate OR "new grad" OR "early career")']
     assert variants({'goal':GOAL.replace('15','2')},args)==['junior data analyst']
     assert variants(state,{**args,'query':'data analyst at Example'})==['data analyst at Example']
 
@@ -145,25 +146,25 @@ def test_effective_query_cache_ignores_local_flags_and_default_filter(career,mon
     finally:manager.stop()
 
 
-def test_large_search_uses_three_distinct_queries_once(career,monkeypatch):
+def test_large_search_uses_four_distinct_queries_once(career,monkeypatch):
     c=career;fake,manager=setup(c,monkeypatch,{'search_jobs':result(SEARCH)})
     try:
         ask(c,GOAL+' Only search LinkedIn.')
         found=execute(c,'search_jobs',query='junior data analyst',location='New York',limit=20,work_type='onsite_or_hybrid')
-        assert len(fake.calls)==3 and len({args['keywords']for _,args,_ in fake.calls})==3
+        assert len(fake.calls)==4 and len({args['keywords']for _,args,_ in fake.calls})==4
         assert all(args['experience_level']=='entry' and args['location']=='New York'
                    and args['work_type']=='on_site,hybrid' for _,args,_ in fake.calls)
-        assert [args['max_pages'] for _,args,_ in fake.calls]==[2,8,8]
+        assert [args['max_pages'] for _,args,_ in fake.calls]==[4,8,8,4]
         assert c.repository.get(c.state['task_id'])['linkedin_mcp_state']['call_limit']==50
         again=execute(c,'search_jobs',query='entry level data analyst',location='New York',limit=20,use_directory=True,
                       work_type='onsite_or_hybrid')
-        assert again['no_new_evidence'] and len(fake.calls)==3 and len(found['jobs'])==2
+        assert again['no_new_evidence'] and len(fake.calls)==4 and len(found['jobs'])==2
         # City expansion defaults to onsite_or_hybrid, so omitting it reuses the cache.
         execute(c,'search_jobs',query='entry level data analyst',location='New York',limit=20)
-        assert len(fake.calls)==3
+        assert len(fake.calls)==4
         # An explicit remote request is a different upstream query, never a cached answer.
         execute(c,'search_jobs',query='entry level data analyst',location='New York',limit=20,work_type='remote')
-        assert len(fake.calls)==6 and fake.calls[-1][1]['work_type']=='remote'
+        assert len(fake.calls)==8 and fake.calls[-1][1]['work_type']=='remote'
     finally:manager.stop()
 
 
