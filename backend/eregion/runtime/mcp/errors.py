@@ -33,3 +33,7 @@ class McpCallTimeoutError(ToolTimeoutError):
 
 class McpToolCollisionError(McpIntegrationError):
     pass
+
+
+class McpAuthorizationRequired(McpStartupError):
+    """A remote server needs the user to sign in; tasks never open a sign-in themselves."""

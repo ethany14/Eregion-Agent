@@ -1,8 +1,9 @@
-"""MCP client abstraction and official-SDK stdio implementation."""
+"""MCP client abstraction and official-SDK stdio and streamable-HTTP implementations."""
 
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import subprocess
 from concurrent.futures import Future, TimeoutError as FutureTimeoutError
 from queue import Queue
@@ -115,7 +116,7 @@ class StdioMcpClient:
     def _thread_main(self) -> None:
         asyncio.run(self._serve())
 
-    async def _serve(self) -> None:
+    async def _open_transport(self, stack: contextlib.AsyncExitStack) -> Any:
         parameters = StdioServerParameters(
             command=self._config.command,
             args=list(self._config.args),
@@ -125,12 +126,16 @@ class StdioMcpClient:
         # Server stderr is deliberately discarded. It may contain credentials,
         # local paths, or protocol diagnostics and must not reach API errors or
         # persistent tool-call events.
-        transport = stdio_client(parameters, errlog=subprocess.DEVNULL)
+        return stdio_client(parameters, errlog=subprocess.DEVNULL)
+
+    async def _serve(self) -> None:
         try:
-            async with Client(
-                transport,
-                read_timeout_seconds=self._config.call_timeout_seconds,
-            ) as client:
+            async with contextlib.AsyncExitStack() as stack:
+                transport = await self._open_transport(stack)
+                client = await stack.enter_async_context(Client(
+                    transport,
+                    read_timeout_seconds=self._config.call_timeout_seconds,
+                ))
                 active: set[asyncio.Task[None]] = set()
                 self._connected = True
                 if not self._ready.done():
@@ -215,3 +220,51 @@ class StdioMcpClient:
                 completed.set_exception(McpDisconnectedError(
                     "The MCP server connection closed."
                 ))
+
+
+class HttpMcpClient(StdioMcpClient):
+    """The same single-thread client over a remote streamable-HTTP endpoint.
+
+    With oauth, the official SDK provider supplies and refreshes bearer tokens from the
+    encrypted per-server store. A task never starts an interactive sign-in: without a
+    usable token the connection fails with McpAuthorizationRequired, and the user signs
+    in once with tools/scripts/mcp_oauth_login.py.
+    """
+
+    async def _open_transport(self, stack: contextlib.AsyncExitStack) -> Any:
+        from mcp.client.streamable_http import create_mcp_http_client, streamable_http_client
+        auth = oauth_provider(self._config, interactive=False) if self._config.oauth else None
+        http = await stack.enter_async_context(create_mcp_http_client(auth=auth))
+        return streamable_http_client(self._config.url, http_client=http)
+
+
+def oauth_provider(config: McpStdioServerConfig, *, interactive: bool, redirect_handler=None, callback_handler=None):
+    from mcp.client.auth import OAuthClientProvider
+    from mcp.shared.auth import OAuthClientMetadata
+    from eregion.runtime.mcp.errors import McpAuthorizationRequired
+    from eregion.runtime.mcp.oauth_store import FileTokenStorage
+
+    async def refuse(*_: Any) -> Any:
+        raise McpAuthorizationRequired(
+            f"Sign in to '{config.server_id}' first (tools/scripts/mcp_oauth_login.py --server {config.server_id})."
+        )
+
+    metadata = OAuthClientMetadata(
+        client_name="Eregion job search (local)",
+        redirect_uris=[f"http://127.0.0.1:{config.oauth_redirect_port}/callback"],
+        grant_types=["authorization_code", "refresh_token"],
+        response_types=["code"],
+        token_endpoint_auth_method="none",
+        scope=" ".join(config.oauth_scopes) or None,
+    )
+    return OAuthClientProvider(
+        server_url=config.url,
+        client_metadata=metadata,
+        storage=FileTokenStorage(config.server_id),
+        redirect_handler=redirect_handler if interactive else refuse,
+        callback_handler=callback_handler if interactive else refuse,
+    )
+
+
+def create_client(config: McpStdioServerConfig) -> McpClient:
+    return HttpMcpClient(config) if config.transport == "streamable_http" else StdioMcpClient(config)

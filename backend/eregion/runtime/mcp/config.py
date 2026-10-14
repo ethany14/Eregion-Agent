@@ -1,4 +1,4 @@
-"""Trusted application configuration for stdio MCP servers."""
+"""Trusted application configuration for MCP servers: local stdio or remote streamable HTTP."""
 
 from __future__ import annotations
 
@@ -9,6 +9,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from eregion.paths import PROJECT_ROOT
 from typing import Any
+
+from typing import Literal
 
 from pydantic import Field, ValidationError, field_validator, model_validator
 
@@ -22,7 +24,14 @@ class McpStdioServerConfig(RuntimeModel):
     server_id: str
     enabled: bool = True
     required: bool = False
-    command: str
+    # stdio: a trusted local command. streamable_http: a remote https endpoint, optionally
+    # with OAuth (authorization code + PKCE; tokens are stored outside the repository).
+    transport: Literal["stdio", "streamable_http"] = "stdio"
+    command: str = ""
+    url: str | None = None
+    oauth: bool = False
+    oauth_scopes: list[str] = Field(default_factory=list)
+    oauth_redirect_port: int = Field(default=53682, ge=1024, le=65535)
     args: list[str] = Field(default_factory=list)
     cwd: Path | None = None
     env: dict[str, str] = Field(default_factory=dict, repr=False, exclude=True)
@@ -43,11 +52,8 @@ class McpStdioServerConfig(RuntimeModel):
 
     @field_validator("command")
     @classmethod
-    def nonempty_command(cls, value: str) -> str:
-        cleaned = value.strip()
-        if not cleaned:
-            raise ValueError("command must not be empty.")
-        return cleaned
+    def stripped_command(cls, value: str) -> str:
+        return value.strip()
 
     @field_validator("args")
     @classmethod
@@ -78,6 +84,15 @@ class McpStdioServerConfig(RuntimeModel):
     def coherent_filters(self) -> "McpStdioServerConfig":
         if self.tool_allowlist is not None and not self.read_only_tools <= self.tool_allowlist:
             raise ValueError("read_only_tools must be included in tool_allowlist.")
+        if self.transport == "stdio" and not self.command:
+            raise ValueError("command must not be empty.")
+        if self.transport == "streamable_http":
+            from urllib.parse import urlsplit
+            parts = urlsplit(self.url or "")
+            if parts.scheme != "https" or not parts.hostname or parts.username or parts.password:
+                raise ValueError("A remote MCP server needs a public https url.")
+        elif self.url or self.oauth:
+            raise ValueError("url and oauth apply only to streamable_http servers.")
         return self
 
 
@@ -97,7 +112,12 @@ class _McpFileServerConfig(RuntimeModel):
     server_id: str
     enabled: bool = True
     required: bool = False
-    command: str
+    transport: Literal["stdio", "streamable_http"] = "stdio"
+    command: str = ""
+    url: str | None = None
+    oauth: bool = False
+    oauth_scopes: list[str] = Field(default_factory=list)
+    oauth_redirect_port: int = Field(default=53682, ge=1024, le=65535)
     args: list[str] = Field(default_factory=list)
     cwd: Path | None = None
     env_var_names: dict[str, str] = Field(default_factory=dict)

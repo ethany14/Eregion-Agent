@@ -11,7 +11,7 @@ from typing import Any
 from pydantic import Field
 
 from eregion.runtime.mcp.adapter import McpAgentTool
-from eregion.runtime.mcp.client import McpClient, StdioMcpClient
+from eregion.runtime.mcp.client import McpClient, StdioMcpClient, create_client
 from eregion.runtime.mcp.config import McpRuntimeConfig, McpStdioServerConfig
 from eregion.runtime.mcp.errors import (
     McpCallTimeoutError,
@@ -47,7 +47,7 @@ class McpToolManager:
         *,
         config: McpRuntimeConfig,
         registry: ToolRegistry,
-        client_factory: Callable[[McpStdioServerConfig], McpClient] = StdioMcpClient,
+        client_factory: Callable[[McpStdioServerConfig], McpClient] = create_client,
         shutdown_timeout_seconds: float = 5.0,
     ) -> None:
         if shutdown_timeout_seconds <= 0:
