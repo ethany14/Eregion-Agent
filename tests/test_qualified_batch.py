@@ -60,7 +60,8 @@ def test_recommendation_rechecks_current_request(career,monkeypatch):
     result=execute(c,'verify_and_score_jobs',urls=[jobs[0]['url']])
     identifier=result['jobs'][0]['application_id']
     c.repository.change(c.state['task_id'],goal=GOAL.replace('New York','Boston'))
-    result=execute(c,'recommend_job',application_id=identifier,reason='Good Python fit',caveats='')
+    result=execute(c,'recommend_job',application_id=identifier,tier='priority',reason='Good Python fit',
+                   evidence=['Junior Data Analyst'],gaps=[],to_confirm=[],next_steps=['Apply.'],caveats='')
     assert result['error_code']=='qualification_needed'
     assert not c.repository.get(c.state['task_id']).get('recommendations')
 
@@ -178,14 +179,19 @@ def test_failed_source_does_not_manufacture_batch_progress(career,monkeypatch):
 def test_repeated_recommendation_is_reported_as_already_saved(career,monkeypatch):
     c=career;jobs=[posting(1)];prepare(c,monkeypatch,jobs)
     identifier=execute(c,'verify_and_score_jobs',urls=[jobs[0]['url']])['jobs'][0]['application_id']
-    first=execute(c,'recommend_job',application_id=identifier,reason='Python fit',caveats='')
-    again=execute(c,'recommend_job',application_id=identifier,reason='Python fit',caveats='')
+    args=dict(application_id=identifier,tier='priority',reason='Python fit',evidence=['Junior Data Analyst'],
+              gaps=[],to_confirm=[],next_steps=['Apply.'],caveats='')
+    first=execute(c,'recommend_job',**args)
+    again=execute(c,'recommend_job',**args)
     assert first['recommended'] and not first.get('already_recommended')
     assert again['already_recommended'] and again['no_new_evidence']
     state=c.repository.get(c.state['task_id'])
     assert len(state['recommendations'])==1
     snapshot=c.harness.observe(state)['recommended_jobs']
     assert snapshot==[{k:state['recommendations'][0][k] for k in ('application_id','title','company','url','match_score')}]
+    # A changed tier is a new decision, not a repeat.
+    moved=execute(c,'recommend_job',**{**args,'tier':'stretch','gaps':['SQL depth unclear']})
+    assert moved['recommendation']['tier']=='stretch' and not moved.get('already_recommended')
 
 
 def test_source_stop_mid_batch_keeps_already_read_postings(career,monkeypatch):

@@ -98,7 +98,11 @@ def evaluate_search(summary, applicant, limits=None):
     recommendations = {job_key(j['url']): j for j in summary.get('recommendations', []) if j.get('url')}
     seen, qualified, checked = set(), [], []
     for job in summary.get('verified_jobs', []):
-        if summary.get('qualification_method')=='model':
+        if summary.get('acceptance_version')=='tiered-recommendations-v1':
+            from evals.tiered_audit import contract_checks as tiered_checks
+            tests=tiered_checks(job,summary.get('semantic_review') or {},summary.get('user_request',''),
+                                summary.get('audit_candidate_hash') or '')
+        elif summary.get('qualification_method')=='model':
             from evals.search_semantic_audit import contract_checks
             tests=contract_checks(job,summary.get('semantic_review') or {},summary.get('user_request',''),
                                   summary.get('audit_candidate_hash') or '')
@@ -121,7 +125,23 @@ def evaluate_search(summary, applicant, limits=None):
             'location': job.get('location'), 'score': score, 'checks': tests})
         if all(tests.values()): qualified.append(key)
     require(len(qualified) >= 2, 'fewer_than_two_verified_scored_qualifying_recommendations')
-    return {'status': 'failed' if failures else 'passed', 'failures': failures, 'qualified_count': len(qualified),
+    extra = {}
+    if summary.get('acceptance_version') == 'tiered-recommendations-v1':
+        review = summary.get('semantic_review') or {}
+        counted = set(qualified)
+        by_tier = {}
+        for rec in recommendations.values():
+            tier = rec.get('tier') or 'untiered'
+            entry = by_tier.setdefault(tier, {'recommended': 0, 'counted': 0})
+            entry['recommended'] += 1
+            entry['counted'] += job_key(rec['url']) in counted
+        disagreements = [{'url': rec['url'], 'production_tier': rec.get('tier'),
+                          'audit_tier': (review.get(rec['url']) or {}).get('independent', {}).get('tier'),
+                          'presentation': (review.get(rec['url']) or {}).get('presentation')}
+                         for rec in recommendations.values()
+                         if (review.get(rec['url']) or {}).get('independent', {}).get('tier') != rec.get('tier')]
+        extra = {'acceptance_version': 'tiered-recommendations-v1', 'by_tier': by_tier, 'tier_disagreements': disagreements}
+    return {'status': 'failed' if failures else 'passed', 'failures': failures, 'qualified_count': len(qualified), **extra,
         'main_input_tokens': main_input, 'total_input_tokens': usage.get('input_tokens'),
         'limits': {'main_calls': CALL_LIMIT, 'main_input_tokens': input_limit, 'total_input_tokens': input_limit},
         'jobs': checked}

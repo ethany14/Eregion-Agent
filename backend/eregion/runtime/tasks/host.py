@@ -81,8 +81,7 @@ class TaskHost:
                 snapshot['completion_reason']=('The provider budget is nearly spent: no further paid search, reading or scoring. '
                     + ('Record decisions for already scored jobs if needed, then finish. ' if provider_remaining>2 else
                        'Finish now; the remaining call is only for correcting a rejected reply. ')
-                    + 'Final reply format: list every scored job (recommended, excluded or needs evidence, marked as such) '
-                      'with its URL and an explicit "Score <saved value>" in its own entry, then the honest shortfall.')
+                    + __import__('eregion.runtime.career.prompt',fromlist=['FINAL_FORMAT']).FINAL_FORMAT)
                 decisions=getattr(harness,'batch_decision_tools',set())-{'read_context','dismiss_candidate'}
                 from eregion.runtime.career.decisions import pending as undecided
                 open_decisions=bool(undecided(state)) if hasattr(harness,'job_summary') else True

@@ -19,11 +19,14 @@ from .prompt import SYSTEM, APPLICATION_INSTRUCTION
 from eregion.runtime.browser.tools import BROWSER_TOOLS, BROWSER_NAMES, VISUAL_NAMES
 from .alerts import AlertConfig, job_key
 from .search_filters import FILTER_SCHEMA, FILTER_FIELDS, effective_filters, filter_cards
-from .prompt import ELIGIBILITY_RULE
+from .prompt import RECOMMENDATION_RULE, FINAL_FORMAT
 
 
 APP = {'application_id':TEXT}
 ITEM = {'pack_id':TEXT,'item_id':TEXT}
+# One recommendation contract (docs/specs/tiered-recommendations-20261013.md).
+# The model chooses the tier; code checks only structure, citations and identity.
+TIERS = {'priority':'Priority match','stretch':'Worth trying (known gaps)','to_confirm':'Needs your confirmation'}
 JEV_STAGE_REQUESTS = 8          # measured: one shared request per Jev stage per batch
 MAIN_ROUTE_REQUESTS_PER_JOB = 5 # measured without Jev (claude-main-fit-probe-03)
 TOOLS = [
@@ -33,8 +36,17 @@ TOOLS = [
         {'message_id':TEXT,'alert_id':TEXT,'config':AlertConfig.model_json_schema()},['message_id','config']),
     function('set_job_alert_enabled','Pause or resume a daily search at the user\'s explicit request.',
         {'message_id':TEXT,'alert_id':TEXT,'enabled':{'type':'boolean'}}),
-    function('recommend_job','Recommend an actually read and scored job in this conversation, with fit reasons and uncertainties. Also adds it to the digest when this task was started by a schedule. No schedule is needed for a normal search.',
-        {**APP,'reason':TEXT,'caveats':TEXT}),
+    function('recommend_job','Present an actually read and scored job as an opportunity in one tier: priority, stretch or '
+        'to_confirm (see the tier rule). evidence: exact quotes from this posting supporting the reason. gaps: each '
+        'known skill/experience gap including required ones, with how hard it makes the application. to_confirm: '
+        'facts the user must confirm (GPA, nationality, visa/program status, license, start date). next_steps: '
+        'concrete actions. Also adds it to the digest when this task was started by a schedule.',
+        {**APP,'tier':{'type':'string','enum':list(TIERS)},'reason':TEXT,
+         'evidence':{'type':'array','minItems':1,'maxItems':4,'items':{'type':'string','maxLength':400}},
+         'gaps':{'type':'array','maxItems':10,'items':{'type':'string','maxLength':300}},
+         'to_confirm':{'type':'array','maxItems':8,'items':{'type':'string','maxLength':300}},
+         'next_steps':{'type':'array','minItems':1,'maxItems':5,'items':{'type':'string','maxLength':200}},
+         'caveats':TEXT},['application_id','tier','reason','evidence','gaps','to_confirm','next_steps']),
     function('search_jobs','API-first discovery through configured LinkedIn MCP and public company boards. Returns observed posting cards; process candidate_queue.next_unread with verify_and_score_jobs. Search again for new boards only after actionable candidates are processed. Optional boards contain platform and company board token.',
         {**FILTER_SCHEMA,'query':TEXT,'location':TEXT,'use_directory':{'type':'boolean','description':'Select fresh verified boards by role and location; prefer after blocked requested sources.'},'boards':{'type':'array','maxItems':5,'items':{'type':'object',
             'properties':{'platform':{'type':'string','enum':['greenhouse','lever','ashby','workday']},'company':TEXT,'host':TEXT,'site':TEXT},
@@ -325,8 +337,8 @@ class CareerHarness:
                 ('no_new_evidence','error','error_code','blocked','url','next') if isinstance(h.get('result'),dict) and k in h['result']}}
                 for h in state.get('history',[])[-4:]],
             'instruction':'Saved results by ID; scored is not recommended. Every scored job needs an outcome (decision_status): '
-                'recommend_job with caveats if it meets the requested role/location/seniority, or decide_job with the specific '
-                'exclusion or missing evidence; searching waits while any is pending. '+ELIGIBILITY_RULE+
+                'recommend_job with its tier if it meets the requested role/location/seniority, or decide_job with the specific '
+                'exclusion or missing evidence; searching waits while any is pending. '+RECOMMENDATION_RULE+
                 ' Use exact qualification_evidence; never guess years or auto-recommend unverified/'
                 'ineligible jobs. Final results list each read/scored URL and actual score.'}
 
@@ -404,6 +416,46 @@ class CareerHarness:
                 match_report=match.content if match else None)
         return result
 
+    @staticmethod
+    def recommendation_record(args,job,retrieved,qualification,interval):
+        """Structure and citation checks only; the tier and its meaning are the model's."""
+        from eregion.domain.jev_fit.resolve import locate
+        tier=args.get('tier')
+        if tier not in TIERS:raise ValueError('Choose tier: priority, stretch or to_confirm.')
+        reason=args.get('reason')
+        if not isinstance(reason,str) or not 1<=len(reason.strip())<=2000:raise ValueError('Give a concise recommendation reason.')
+        lists={k:[str(v).strip() for v in (args.get(k) or []) if str(v).strip()] for k in ('evidence','gaps','to_confirm','next_steps')}
+        # A tier is defined by what it discloses: a stretch names its gaps, a to_confirm
+        # opportunity names what the user must confirm. Contents stay the model's.
+        if tier=='stretch' and not lists['gaps']:raise ValueError('A stretch opportunity must list its specific gaps.')
+        if tier=='to_confirm' and not lists['to_confirm']:raise ValueError('A to_confirm opportunity must list what the user must confirm.')
+        if not lists['next_steps']:raise ValueError('Give at least one concrete next step.')
+        sources={'title':retrieved.get('title') or '','location':retrieved.get('location') or '',
+                 'description':retrieved.get('description') or ''}
+        evidence=[]
+        for quote in lists['evidence'][:4]:
+            found=None
+            for name,text in sources.items():
+                span=locate(quote,text)
+                if span is not None:found=(name,span);break
+            if not found:raise ValueError('Each evidence item must be an exact quote from this posting: '+quote[:120])
+            name,(a,b)=found;evidence.append({'source':name,'quote':sources[name][a:b]})
+        score=job['match_score']
+        if score is not None:
+            meaning=('Fit estimate 0-100 of the saved resume against this posting'
+                     +(' (Jev; unresolved items carry probability-weighted credit)' if job.get('score_algorithm')=='jev-only' else '')
+                     +'. It is not proof of eligibility.')
+        else:
+            meaning='No point score: unresolved requirements leave a bounded interval.' if interval else 'Score unavailable.'
+        payload={k:job[k] for k in ('application_id','title','company','location','url','match_score')}|{
+            'tier':tier,'tier_label':TIERS[tier],'reason':reason.strip(),'evidence':evidence,
+            'qualification_evidence':{f:(c.get('quote') or '')[:300] for f,c in (qualification.get('checks') or {}).items()},
+            'gaps':lists['gaps'],'to_confirm':lists['to_confirm'],'next_steps':lists['next_steps'],
+            'score_meaning':meaning,'verified_at':retrieved.get('read_at'),'caveats':str(args.get('caveats') or '')[:2000]}
+        if score is None:
+            payload.update(score_range=interval,analysis_status=job.get('analysis_status'))
+        return payload
+
     BRIEF_ITEMS = 10
     BRIEF_TEXT = 140
 
@@ -442,8 +494,9 @@ class CareerHarness:
                 'required_unresolved':listed(unresolved),
                 'needs_confirmation':listed(confirm),
                 'note':'Scoring is complete. Statuses come from the scorer: partial means some supporting evidence, not '
-                       'automatically disqualifying; decide with the posting and qualification evidence. For exact text or '
-                       'resume evidence of any item (listed, truncated or omitted) call inspect_job with requirement_ids.'}
+                       'automatically disqualifying. Use these items to choose the tier (priority, stretch, to_confirm) and '
+                       'to name gaps or items to confirm. For exact text or resume evidence of any item (listed, truncated '
+                       'or omitted) call inspect_job with requirement_ids.'}
 
     def requirement_details(self,application_id,requirement_ids):
         report=(self.job_summary(application_id,detail=True).get('match_report') or {})
@@ -726,7 +779,8 @@ class CareerHarness:
         if name=='recommend_job':
             identifier=args['application_id'];self.require_link(state,'jobs',identifier)
             saved_rec=next((r for r in state.get('recommendations',[]) if r.get('application_id')==identifier),None)
-            if saved_rec and saved_rec.get('match_score')==self.job_summary(identifier)['match_score']:
+            if (saved_rec and saved_rec.get('match_score')==self.job_summary(identifier)['match_score']
+                    and saved_rec.get('tier')==args.get('tier')):
                 return {'recommended':True,'already_recommended':True,'no_new_evidence':True,
                         'recommendation':{k:saved_rec[k] for k in ('application_id','title','url','match_score') if k in saved_rec},
                         'next':'Already saved with this score; do not repeat it. Continue with other candidates or finish.'}
@@ -756,12 +810,7 @@ class CareerHarness:
                 return {'error':'Requested search constraints are not verified; this job cannot count as a recommendation.',
                         'error_code':'qualification_needed','qualification':qualification,
                         'next':'Use decide_job with needs_evidence or exclude. Do not claim it meets the requested conditions.'}
-            if not isinstance(args['reason'],str) or not 1<=len(args['reason'])<=2000 or not isinstance(args['caveats'],str) or len(args['caveats'])>2000:
-                raise ValueError('Keep the recommendation reason and caveats concise.')
-            payload={k:job[k] for k in ('application_id','title','company','location','url','match_score')}|{'reason':args['reason'],'caveats':args['caveats']}
-            if job['match_score'] is None:
-                payload.update(score_range=interval,analysis_status=job.get('analysis_status'),
-                    caveats=('Unresolved qualifications: fit is an interval, not a point score. '+payload['caveats']).strip())
+            payload=self.recommendation_record(args,job,retrieved,qualification,interval)
             if recommendation:
                 result=self.alerts.add(recommendation['run_id'],payload)
                 if not result['added']:return result
@@ -1025,6 +1074,9 @@ class CareerHarness:
                 if job is None:job = self.discovery.job(args['url'])
             from .candidate_health import validate_and_record
             validate_and_record(self.repository,task_id,job,observed)
+            from datetime import UTC, datetime
+            # Verification time for the recommendation record (not part of the body hash).
+            job={**job,'read_at':job.get('read_at') or datetime.now(UTC).isoformat()}
             self.repository.change(task_id,lambda s:{'retrieved_jobs':dict(list({**s.get('retrieved_jobs',{}),job['url']:job,args['url']:job}.items())[-100:])})
             if job.get('source') in {'treg:crawl4ai.web.scrape','linkedin_mcp'} and turn:
                 self.repository.change(task_id,lambda s:{'successful_read_turns':dict(list({
@@ -1586,6 +1638,12 @@ class CareerHarness:
         missing=[r['url'] for r in evidence.values() if job_key(r['url']) not in urls]
         if missing:raise ValueError('Final search results must include each saved recommendation URL and its observed score, with risks '
             '(scored jobs that were excluded or need evidence are listed too, marked as such). Missing URLs: '+str(missing))
+        # The reply uses the same tier contract as the saved records (labels only;
+        # whether a tier is right is the model's and the audit's judgment).
+        absent=[TIERS[t] for t in dict.fromkeys(r.get('tier') for r in state.get('recommendations',[]))
+                if t in TIERS and TIERS[t].casefold() not in text.casefold()]
+        if absent:raise ValueError('Group the recommendations under their tier labels with counts; missing labels: '
+                                   +', '.join(absent)+'. '+FINAL_FORMAT)
         scores={}
         for url,values in reply_job_evidence(text).items():
             entry=scores.setdefault(job_key(url),{'scores':[],'ranges':[]})

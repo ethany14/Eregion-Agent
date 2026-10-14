@@ -119,7 +119,9 @@ def test_decision_reopens_when_the_user_request_changes(career):
 def test_recommended_job_is_not_pending_and_cannot_be_excluded(career):
     c = career
     app = _score_p2_style(c)
-    execute(c, 'recommend_job', application_id=app, reason='Junior evidence: 0-2 years; NYC.', caveats='Limited SQL fit.')
+    execute(c, 'recommend_job', application_id=app, tier='stretch', reason='Junior evidence: 0-2 years; NYC.',
+            evidence=[c.harness.job_summary(app)['title']], gaps=['Limited SQL fit.'], to_confirm=[],
+            next_steps=['Review the SQL requirement.'], caveats='Limited SQL fit.')
     from eregion.runtime.career.decisions import pending
     assert pending(c.repository.get(c.state['task_id'])) == []
     with pytest.raises(ValueError, match='already recommended'):
@@ -132,9 +134,11 @@ def test_no_progress_stop_delivers_saved_results_without_a_model_call(career):
     app = _score_p2_style(c)
     lines = terminal_delivery(c.repository.get(c.state['task_id']))
     assert len(lines) == 1 and 'Scored, not yet decided' in lines[0] and URL in lines[0]
-    execute(c, 'recommend_job', application_id=app, reason='Junior evidence: 0-2 years; NYC.', caveats='Limited SQL fit.')
+    execute(c, 'recommend_job', application_id=app, tier='stretch', reason='Junior evidence: 0-2 years; NYC.',
+            evidence=[c.harness.job_summary(app)['title']], gaps=['Limited SQL fit.'], to_confirm=[],
+            next_steps=['Review the SQL requirement.'], caveats='Limited SQL fit.')
     lines = terminal_delivery(c.repository.get(c.state['task_id']))
-    assert lines and lines[0].startswith('- Recommended: Data Analyst')
+    assert lines and lines[0].startswith('- Worth trying (known gaps): Data Analyst')
 
 
 def test_archived_workflow_result_keeps_decision_fields_inline():

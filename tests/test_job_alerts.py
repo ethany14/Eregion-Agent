@@ -70,7 +70,9 @@ def search_decision(s):
     if not s['jobs']:return 'import_job',{'url':url}
     job=s['jobs'][0]
     if 'score_job' not in history:return 'score_job',{'application_id':job['application_id']}
-    if 'recommend_job' not in history:return 'recommend_job',{'application_id':job['application_id'],'reason':'Your resume shows Python API experience.','caveats':'Confirm location and sponsorship.'}
+    if 'recommend_job' not in history:return 'recommend_job',{'application_id':job['application_id'],'tier':'priority',
+        'reason':'Your resume shows Python API experience.','evidence':[job['title']],'gaps':[],'to_confirm':[],
+        'next_steps':['Apply with the saved resume.'],'caveats':'Confirm location and sponsorship.'}
     return 'finish_task',{'text':'I found a verified Python role. Review the recommendation below.'}
 
 
@@ -145,7 +147,8 @@ def test_recommendation_requires_score_for_current_resume_and_retrieved_posting(
     url='https://jobs.lever.co/example/abc123'
     execute(c,'read_job',url=url)
     job=execute(c,'import_job',url=url)
-    args={'application_id':job['application_id'],'reason':'Matches Python experience.','caveats':''}
+    args={'application_id':job['application_id'],'tier':'priority','reason':'Matches Python experience.',
+          'evidence':[job['title']],'gaps':[],'to_confirm':[],'next_steps':['Apply.'],'caveats':''}
     with pytest.raises(ValueError,match='current resume'):execute(c,'recommend_job',**args)
     execute(c,'score_job',application_id=job['application_id'])
     saved,text=c.harness.candidate()

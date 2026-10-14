@@ -9,7 +9,9 @@ from eregion.runtime.tasks.loop import TEXT, function
 APP = {'application_id': TEXT}
 # Kept short: it is sent on every request. The rules live in known_results.instruction.
 TOOL = function('decide_job',
-    'Outcome for a scored job not recommended: exclude (specific unmet condition) or needs_evidence (what is missing).',
+    'Outcome for a scored job not presented as an opportunity: exclude (a hard qualification the user explicitly does '
+    'not meet, closed, duplicate, clearly unrelated, or violating the stated location/level) or needs_evidence (the '
+    'posting itself is too unclear to present). Unknown personal facts are a to_confirm recommendation, not this.',
     {**APP, 'decision': {'type': 'string', 'enum': ['exclude', 'needs_evidence']}, 'reason': TEXT, 'missing': TEXT},
     ['application_id', 'decision', 'reason'])
 DISCOVERY = {'search_jobs', 'screen_jobs'}
@@ -80,7 +82,8 @@ def terminal_delivery(state):
     evidence = state.get('scored_job_evidence') or {}
     lines = []
     for r in state.get('recommendations', []):
-        lines.append(f"- Recommended: {r.get('title')} — {r.get('company') or 'company not stated'} — "
+        label = r.get('tier_label') or 'Recommended'
+        lines.append(f"- {label}: {r.get('title')} — {r.get('company') or 'company not stated'} — "
                      f"{r.get('url')} — score {r.get('match_score')}")
     for app, row in statuses(state).items():
         if row['decision_status'] == 'recommended':

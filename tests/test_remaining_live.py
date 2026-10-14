@@ -19,7 +19,7 @@ from scripts.remaining_search_acceptance import evaluate_search
 pytestmark=pytest.mark.skipif(os.getenv('JOB_AGENT_LIVE_REMAINING')!='1',reason='Explicit paid real-model/public research check')
 
 
-def settle_live(service,task_id,output,applicant,timeout=600,*,semantic_review=False,limits=None):
+def settle_live(service,task_id,output,applicant,timeout=600,*,semantic_review=False,limits=None,acceptance_version=None):
     from eregion.runtime.provider_usage import UsageLedger
     started=time.monotonic()
     while time.monotonic()-started<timeout:
@@ -66,7 +66,13 @@ def settle_live(service,task_id,output,applicant,timeout=600,*,semantic_review=F
                 facts=service.harness.fit_facts()
                 candidate=(resume_text or '')+('\nCANDIDATE-STATED FACTS\n'+json.dumps(facts,ensure_ascii=False,sort_keys=True) if facts else '')
                 summary['audit_candidate_hash']=candidate_hash(candidate)
-                summary['semantic_review']=review(summary['user_request'],[j for j in summary['verified_jobs'] if j['url'] in urls],candidate)
+                audited=[j for j in summary['verified_jobs'] if j['url'] in urls]
+                if acceptance_version=='tiered-recommendations-v1':
+                    from evals.tiered_audit import review as tiered_review
+                    summary['acceptance_version']=acceptance_version
+                    summary['semantic_review']=tiered_review(summary['user_request'],audited,summary['recommendations'],candidate)
+                else:
+                    summary['semantic_review']=review(summary['user_request'],audited,candidate)
         except (Exception,TaskProviderBudgetExceeded) as exc:
             summary['semantic_review_error']=type(exc).__name__
         finally:

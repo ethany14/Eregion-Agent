@@ -265,9 +265,13 @@ class ScriptedModel:
                 self.failures.append('Imported job missing')
                 raise AssertionError(step['application_url'])
             args['application_id'] = target['application_id']
+            if name == 'recommend_job' and 'tier' not in args:
+                # Historical recordings predate the tier contract (tiered-recommendations-v1).
+                args.update(tier='priority', evidence=[target['title']], gaps=[], to_confirm=[],
+                            next_steps=['Review the posting and apply if interested.'])
         if name == 'finish_task' and step.get('render_final'):
             jobs = snapshot['jobs']
-            lines = [step['render_final']]
+            lines = [step['render_final'], 'Priority match']
             for job in jobs:
                 lines.append(f"\n{job['title']}\n{job['url']}\nScore: {job['match_score']}/100")
             args['text'] = '\n'.join(lines)

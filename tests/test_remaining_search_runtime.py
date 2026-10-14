@@ -119,7 +119,9 @@ def test_production_recommendation_allows_disclosed_low_fit_but_blocks_known_ine
     c.runtime.workspace.create_artifact(identifier,artifact_type=ArtifactType.MATCH_REPORT,
         content=report,evidence_ids=[],created_by='synthetic-score-provider',
         expected_version=c.runtime.workspace.get_application(identifier).version)
-    args=dict(application_id=identifier,reason='Verified opening, limited skill fit.',
+    args=dict(application_id=identifier,tier='stretch',reason='Verified opening, limited skill fit.',
+        evidence=[job['title']],gaps=['SQL and pipeline experience unresolved.'],to_confirm=[],
+        next_steps=['Assess the SQL requirement.'],
         caveats='Score 43.45; SQL and pipeline experience unresolved. Confirm work authorization.')
     if known_ineligible:
         with pytest.raises(ValueError,match='condition is not satisfied'):execute(c,'recommend_job',**args)

@@ -62,8 +62,13 @@ export function renderCareerResults({container,item,el,button,send,review,busy=f
     if(unmet.length)card.append(el('p',`Unmet conditions: ${unmet.map(c=>c.requirement).join('; ')}.`,'gaps'));
     const recommendation=item.recommendations?.find(r=>r.application_id===job.application_id);
     if(recommendation){
+      // Same tier contract as the saved record: priority / stretch / to_confirm.
       const why=el('div','','recommendation-reason');
-      why.append(el('p','Why this role','eyebrow'),el('p',recommendation.reason));
+      why.append(el('p',recommendation.tier_label||'Why this role','eyebrow'),el('p',recommendation.reason));
+      if(recommendation.gaps?.length)why.append(el('p',`Gaps: ${recommendation.gaps.join('; ')}.`,'gaps'));
+      if(recommendation.to_confirm?.length)why.append(el('p',`To confirm: ${recommendation.to_confirm.join('; ')}.`,'gaps'));
+      if(recommendation.next_steps?.length)why.append(el('p',`Next step: ${recommendation.next_steps[0]}`,'sub'));
+      if(recommendation.score_meaning)why.append(el('p',recommendation.score_meaning,'sub'));
       if(recommendation.caveats)why.append(el('p',recommendation.caveats,'sub'));
       card.append(why);
     }
