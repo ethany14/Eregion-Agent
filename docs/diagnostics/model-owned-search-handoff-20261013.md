@@ -391,6 +391,7 @@ v1 回放（同一 expanded-02 样本，实验账本 `tiered-replay-01`：24 次
 - 实时测试使用不带数量的开放请求；首个结果用时、LinkedIn 调用、重复读取与重复评分作为报告指标。v1 及更早结论原样保留。
 - **生产修正：** `search_request` 原先只认带数字的请求。不带数字时，候选队列、工具范围、最终回复 URL/分数核验都会失效。现在数字可选，未写数字时分页规模与完成门不变。
 - 速度与 token 评价口径在测试前写入规格 6.4。
+- 实时验收测试改名为 `tests/test_default_route_batch_live.py::test_default_route_search`（第 7 节命令中的旧名 `test_default_route_ten_to_fifteen` 已不存在）；`JOB_AGENT_LIVE_ACCEPTANCE` 默认 `tiered-recommendations-v2`，`JOB_AGENT_LIVE_LIMITS=expanded` 选扩额档。
 
 ### 11.4 v2 定向回放（实验账本 `tiered-v2-01`，3 次合计 34 次调用、757,574 / 89,285 token、0 未知、0 重试）
 
