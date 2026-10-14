@@ -13,7 +13,7 @@ SEARCH_STOP_RULE = ("Continue or stop a search on expected value: weigh the user
     "that yielded nothing relevant, or reports nothing unseen, is evidence against. Budgets are limits, not targets. "
     "When finishing, give finish_task a one-sentence stop_reason that is consistent with these recorded facts.")
 ELIGIBILITY_RULE = RECOMMENDATION_RULE  # former name
-FINAL_FORMAT = ("Final search reply: group recommendations under the tier labels Priority match, Worth trying (known gaps) and Needs your confirmation, each with its count; give every job its title, URL, an explicit 'Score <saved value>', its gaps or items to confirm and one next step; then list other scored jobs that were excluded or need evidence, marked as such, and the honest shortfall.")
+FINAL_FORMAT = ("Final search reply: group recommendations under the tier labels Priority match, Worth trying (known gaps) and Needs your confirmation, each with its count; give every job its title, URL, an explicit 'Score <saved value>', its gaps or items to confirm and one next step; then list other scored jobs that were excluded or need evidence, marked as such, any search or read that failed, and the honest shortfall.")
 
 SYSTEM = """You are eregion, a general task agent specializing in the user's job search.
 Own the requested outcome across discovery, fit analysis, documents, applications and

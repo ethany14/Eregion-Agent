@@ -448,3 +448,20 @@ def test_yield_by_source_counts_cards_reads_qualifications_and_recommendations()
              'candidate_qualifications': {'a': {'url': li, 'qualified': True}}, 'recommendations': [{'url': li}]}
     assert yields(state) == {'linkedin': {'cards': 1, 'read': 1, 'qualified': 1, 'recommended': 1},
                              'company_boards': {'cards': 1, 'read': 0, 'qualified': 0, 'recommended': 0}}
+
+
+def test_a_linkedin_page_depth_never_reaches_the_board_apis(career, monkeypatch):
+    # Real discovery signatures: an unexpected keyword is a TypeError, as in acceptance tiered-v3-01.
+    c = career
+    monkeypatch.setenv('JOB_AGENT_JOB_API_FIRST', '1'); monkeypatch.setenv('JOB_AGENT_TREG_ENABLED', '0')
+    c.repository.change(c.state['task_id'], goal=GOAL, messages=[{'role': 'user', 'text': GOAL, 'id': 'm1'}])
+    empty = {'jobs': [], 'errors': [], 'sources_checked': [], 'skipped_sources': [], 'board_outcomes': []}
+    def search_directory(query, location='', limit=10, *, cancelled=lambda: False, excluded_hosts=(),
+                         excluded_sources=(), skip=()):
+        return dict(empty, directory=True, directory_searched=[], directory_remaining=0, directory_matching=0)
+    def search(query, location='', boards=None, limit=10, excluded_hosts=(), excluded_sources=()):
+        return dict(empty)
+    monkeypatch.setattr(c.harness.discovery, 'search_directory', search_directory, raising=False)
+    monkeypatch.setattr(c.harness.discovery, 'search', search, raising=False)
+    result = execute(c, 'search_jobs', query='data analyst', location='New York, NY', pages=3, limit=20)
+    assert not result.get('error'), result

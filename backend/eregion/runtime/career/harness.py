@@ -871,7 +871,9 @@ class CareerHarness:
             from .source_health import blocked_hosts as persistent_blocked_hosts
             blocked_hosts=persistent_blocked_hosts(state)
             filters=effective_filters(state,args)
-            search_args={k:v for k,v in args.items() if k not in FILTER_FIELDS}
+            # pages is a LinkedIn depth choice; board APIs never receive it
+            # (acceptance tiered-v3-01: a TypeError here ended the search).
+            search_args={k:v for k,v in args.items() if k not in FILTER_FIELDS and k!='pages'}
             if blocked_hosts:search_args['excluded_hosts']=blocked_hosts
             use_directory = search_args.pop('use_directory', False)
             if use_directory and args.get('boards'): raise ValueError('Choose directory selection or explicit boards.')

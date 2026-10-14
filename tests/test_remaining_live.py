@@ -38,8 +38,13 @@ def run_facts(service,state,summary):
         'scored_without_outcome':[j['url'] for j in scored if j.get('application_id') not in decided],
         'recommended_by_tier':dict(Counter(r.get('tier') for r in summary['recommendations'])),
         'stalled_candidates':[{'target':k,**v} for k,v in stalled(state).items()],
-        'searches':coverage(state).get('searches'),'budget_remaining':service.harness.search_budget(state),
+        'searches':coverage(state).get('searches'),'budget_remaining':summary.get('budget_remaining'),
         'stop_reason':state.get('stop_reason'),
+        # Every tool action of this turn that failed, so a reply cannot silently omit one.
+        'failed_actions':[{'tool':h['tool'],'arguments':{k:v for k,v in (h.get('arguments') or {}).items() if k!='text'},
+                           **{k:h['result'][k] for k in ('error','error_code') if k in h['result']}}
+                          for h in state.get('history',[]) if isinstance(h.get('result'),dict) and h['result'].get('error')
+                          and h.get('chat_revision',state.get('chat_revision',0))==state.get('chat_revision',0)][-12:],
         'qualification_outcomes':dict(Counter('qualified' if q.get('qualified') else 'deferred'
                                               for q in (state.get('candidate_qualifications') or {}).values()))}
 
@@ -64,6 +69,9 @@ def settle_live(service,task_id,output,applicant,timeout=600,*,semantic_review=F
     summary['job_decisions']=state.get('job_decisions') or {}
     from datetime import datetime,timezone
     from scripts.remaining_search_acceptance import run_metrics
+    # Under the run's own task limits: the audit below switches them to its own cap, and
+    # computing it there reported a negative budget (tiered-v3-01 audit).
+    summary['budget_remaining']=service.harness.search_budget(state)
     summary['metrics']=run_metrics(state,state.get('updated_at') or datetime.now(timezone.utc).isoformat(),
                                    service.runtime.workspace)
     summary['schedules']=len(service.harness.alerts.list())

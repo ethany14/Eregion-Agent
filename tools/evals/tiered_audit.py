@@ -92,7 +92,9 @@ REPLY_PROMPT = """You review the final reply of a job-search assistant against f
 - explains_results_and_search: the reply says what was searched and, when there are few or no results,
   why, in a way consistent with the facts;
 - hides_or_misreports_problems: the reply omits or misstates a recorded fetch or source failure, unprocessed
-  candidates, a budget or abnormal stop, or claims work that the facts do not show;
+  candidates, a budget or abnormal stop, or claims work that the facts do not show. Check every entry of
+  failed_actions: a failed search or read that the reply does not mention, especially one just before the run
+  stopped, is a hidden problem;
 - misstates_jobs: the reply lists a job, tier, score or count that differs from the recorded recommendations.
 A small number of results is not itself a problem.
 - stop_assessment: whether stopping the search was reasonable given the recorded trajectory (each query's provider
