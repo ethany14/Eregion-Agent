@@ -1,6 +1,7 @@
 """Persist model-owned search judgments; validate identity, citations and freshness."""
 import hashlib
 import json
+import os
 import re
 from .alerts import job_key
 from .search_policy import LEVELS
@@ -15,6 +16,24 @@ GROUP_SIZE=6
 
 
 NEAR_FIELDS={'location','seniority'}
+SECOND_OPINION_FIELDS=('role','location','seniority')
+# More inclusive first: the reviewer preferred seeing a borderline opening (with the
+# difference stated) to losing it (handoff 12.18).
+INCLUSION={'unmet':0,'unknown':1,'near':2,'met':3,'not_requested':3}
+
+
+def needs_second_opinion(checks):
+    return any(checks[f]['status'] in {'unknown','near','unmet'} for f in SECOND_OPINION_FIELDS if f in checks)
+
+
+def merge_opinions(first,second):
+    """Per field keep the more inclusive of two verified verdicts on the same posting."""
+    merged=dict(first)
+    for f in SECOND_OPINION_FIELDS:
+        a,b=first.get(f),second.get(f)
+        if a and b and INCLUSION.get(b['status'],-1)>INCLUSION.get(a['status'],-1):
+            merged[f]={**b,'second_opinion':True,'first_status':a['status']}
+    return merged
 
 def user_request(state):
     # Preserve the original request and subsequent human corrections, not model plans.
@@ -149,18 +168,40 @@ def record_many(repository,task_id,jobs):
                 ids=[d.posting_id for d in response.decisions]
                 if len(ids)!=len(group) or set(ids)!={str(i) for i in range(len(group))}:
                     raise ResponseFormatError('Qualification response identities do not match the supplied batch.')
-                return {d.posting_id:d for d in response.decisions},None
+                first={d.posting_id:d for d in response.decisions}
+                return first,None,second_opinion(group,postings,first)
             except (TaskProviderBudgetExceeded,LoopStop):raise
             except Exception as exc:
                 error=type(exc).__name__
                 if not recoverable_failure(exc):break   # auth, config or program errors: no retry
-        return {},error
-    def save(group,decisions,error):
+        return {},error,{}
+    def second_opinion(group,postings,first):
+        """One more judgment for postings whose role, location or seniority came back
+        borderline (unknown, near or unmet): the same reasoning model at temperature 0 gave
+        different verdicts on identical input across calls (handoff 12.19). Applied to every
+        borderline posting, whatever the first verdict; a failure keeps the first verdict."""
+        if os.getenv('JOB_AGENT_QUALIFICATION_SECOND_OPINION','1')!='1':return {}
+        borderline=[i for i,job in enumerate(group) if needs_second_opinion(verified_checks(first[str(i)],request,job))]
+        if not borderline:return {}
+        subset=[{**postings[i],'posting_id':str(n)} for n,i in enumerate(borderline)]
+        try:
+            check()
+            with usage_scope(provider_guard=check,purpose='search_qualification_second_opinion'):
+                response=judge(request,subset)
+            ids=[d.posting_id for d in response.decisions]
+            if len(ids)!=len(subset) or set(ids)!={str(n) for n in range(len(subset))}:return {}
+            return {str(borderline[int(d.posting_id)]):d for d in response.decisions}
+        except (TaskProviderBudgetExceeded,LoopStop):raise
+        except Exception:
+            return {}
+    def save(group,decisions,error,seconds=None):
         check()
         outputs={}
         for i,job in enumerate(group):
             checks=verified_checks(decisions[str(i)],request,job) if error is None else {
                 f:{'status':'unknown','quote':'','reason':'Semantic assessment unavailable: '+error,'evidence':[]} for f in FIELDS}
+            if error is None and (seconds or {}).get(str(i)) is not None:
+                checks=merge_opinions(checks,verified_checks(seconds[str(i)],request,job))
             outputs[job_key(job['url'])]=result(state,job,checks,method='model_unavailable' if error else 'model_with_verified_quotes',
                                                  conditions=verified_conditions(decisions[str(i)],job) if error is None else ())
         repository.change(task_id,lambda s:{'candidate_qualifications':dict(list({

@@ -602,3 +602,31 @@ def test_v6_turns_audit_judgments_into_findings_but_keeps_structural_failures():
     unscored = evaluate_search(_v2_summary({**job, 'retrieved': False}, [rec], review, HONEST,
                                            version='tiered-recommendations-v6'), 'analyst')
     assert unscored['failures'] == ['structural_error:' + job['url']]
+
+
+def test_a_borderline_verdict_gets_one_second_opinion_and_the_more_inclusive_one_is_kept(career, monkeypatch):
+    from eregion.runtime.career import qualification as q
+    from test_semantic_search_qualification import response
+    monkeypatch.setenv('JOB_AGENT_QUALIFICATION_SECOND_OPINION', '1')
+    calls = []
+    def judge(request, postings):
+        calls.append(len(postings))
+        value = response(request, postings)
+        if len(calls) == 1:                      # first opinion: location judged unknown
+            value.decisions[0].location.status = 'unknown'
+        return value
+    c = career
+    monkeypatch.setattr(q, 'judge', judge)
+    job = posting(1, description=DESCRIPTION)
+    prepare(c, monkeypatch, [job])
+    result = execute(c, 'verify_and_score_jobs', urls=[job['url']])
+    assert calls == [1, 1] and result['qualified_count'] == 1
+    saved = next(iter(c.repository.get(c.state['task_id'])['candidate_qualifications'].values()))
+    assert saved['checks']['location']['second_opinion'] and saved['checks']['location']['first_status'] == 'unknown'
+
+
+def test_merge_never_downgrades_a_verdict():
+    from eregion.runtime.career.qualification import merge_opinions
+    met = {'status': 'met', 'reason': 'a'}; unmet = {'status': 'unmet', 'reason': 'b'}
+    assert merge_opinions({'role': met}, {'role': unmet})['role'] is met
+    assert merge_opinions({'role': unmet}, {'role': met})['role']['status'] == 'met'

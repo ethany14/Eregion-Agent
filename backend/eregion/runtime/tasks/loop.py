@@ -88,7 +88,9 @@ class TaskModel:
     def invoke(self, messages, tools):
         # Per-reply output bound. A complete 10-15 job final report (URL, score and
         # risk per job) plus reasoning was cut off at 2400 in live runs.
-        return self.model.bind_tools(tools).invoke(messages, timeout=self.timeout, max_tokens=4000)
+        # Raised from 4000: a reply deciding several jobs with tiered gap lists was cut off
+        # twice in a row (tier-check-01 student replay); only generated tokens are billed.
+        return self.model.bind_tools(tools).invoke(messages, timeout=self.timeout, max_tokens=8000)
 
 
 class TaskLoop:

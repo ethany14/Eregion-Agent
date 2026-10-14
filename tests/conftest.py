@@ -38,6 +38,10 @@ def _offline_isolation(monkeypatch):
     # provider (agent_runtime/analysis_cache.warm_resume); it must never run in tests.
     # A test that exercises warmup sets JOB_AGENT_ANALYSIS_WARMUP=1 explicitly.
     monkeypatch.setenv('JOB_AGENT_ANALYSIS_WARMUP', '0')
+    if not LIVE:
+        # Offline tests count qualification calls; the borderline second opinion is
+        # exercised by its own test, which enables it explicitly. Live runs use the default.
+        monkeypatch.setenv('JOB_AGENT_QUALIFICATION_SECOND_OPINION', '0')
     if LIVE:
         yield
         return
