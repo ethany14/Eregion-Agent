@@ -695,3 +695,27 @@ DraftKings 的问题：岗位要求“接触机器学习、回归方法与模型
 1. 停止仍由模型决定。回复必须写明尚未覆盖的部分，并给出可直接执行的继续选项，例如“该查询还有约 270 条未看结果，可回复‘继续搜索’读取后续页面，约 2–3 分钟”。剩余数量等事实由代码从 `search_coverage` 给出，结构检查只核对这些数字与记录一致。
 2. 停止合理性只作改进建议，不再单次判失败；用户明确要求“尽量全面”时除外。是否继续交给用户，而不是交给不稳定的单次审计。
 3. 其余实质错误条件不变。
+
+### 12.11 招聘板 API 有效性、v4 实施与 Indeed MCP 评估（2026-10-14）
+
+**招聘板（`b47ee76`、`3e07335`）。** v3-04 中 34 个看板只得到 7 张卡片、0 个合格，原因有三：
+
+1. **读取失败。** Greenhouse 的 `absolute_url` 常指向公司自己的页面（`stripe.com/jobs/search?gh_jid=…`），无法作为单一岗位正文读取，7 张卡片中有 3 张因此失败。现在卡片使用规范的 Greenhouse 岗位地址，通过公开 API 读取；公司页面保留为 `apply_url`。以 Stripe 实测：可读出完整正文（3,458 字符）。
+2. **地点解析过窄。** 只认 “城市, 州” 格式，导致 “New York City (NYC), New York, United States”、“New York, US”、“Chicago or New York”、“New York City Office” 等卡片在交给模型之前就被丢弃。现在拆分多地点字符串、去掉括号别名，并接受用国家代替州。负例（Newark NJ、York PA、加拿大的 New York、Remote US）仍不匹配。最终地点仍由模型的资格判断决定。
+3. **目录覆盖偏窄。** 75 个以科技公司为主。新增 `tools/scripts/expand_board_directory.py`：只有公开 Greenhouse/Lever/Ashby API 返回在列岗位的看板才加入，职能与地点取自实时列表。试了 69 家纽约雇主，验证通过 32 家（目录 75 → 107）。纽约数据/分析搜索可选看板 34 → 51；单次搜索最多查 40 个，其余作为“剩余看板”交给模型决定是否继续。
+
+**v4（`22a416a`，规格第 8 节）。** 定向验证（实验账本 `v4-check-01`：5 次调用，82,560 / 5,274 token，0 未知）：
+- 两次停止回放的最终回复都按记录写明剩余（“388 LinkedIn results remain unseen … reply ‘search more’”）。
+- 两次 “search more” 追问回放都立即继续：一次同一查询翻到 3 页，一次换措辞（“entry level data analyst”，3 页）。
+
+**离线回归（`22a416a`）：** 919 passed / 13 skipped / 5 failed。5 个均在改动前即失败：`test_job_alerts` ×2、`test_general_repairs` ×2、`test_search_filters` ×1（已在未改动代码上确认）。
+
+**Indeed MCP（只读评估，未安装、未登录）。**
+- 官方文档：远程 MCP，地址 `https://mcp.indeed.com/claude/mcp`，需用户以 Indeed 账户登录；文档写明目前只作为 Claude 连接器提供，处于 beta，受 Indeed 服务条款约束。第三方目录称也可装到 Claude Code、Codex、Cursor。
+- 公开 OAuth 元数据（无凭据读取）：
+  - 资源授权服务器为 `secure.indeed.com`；
+  - scope 包括 `job_seeker.jobs.search`、`job_seeker.company.details.read`、`job_seeker.profile.read`、`offline_access`；
+  - 支持动态客户端注册（`/oauth/v2/register`）、PKCE S256 与公开客户端。
+  - 技术上可以由我们的应用作为 OAuth 客户端接入。
+- 本应用的 MCP 管理器只支持本地 stdio 服务器，接入需要新增远程 HTTP 传输、OAuth 登录（由用户本人在浏览器中完成）、令牌安全保存、Indeed 来源适配（搜索、详情 → 候选与正文）及其预算与账本。
+- 是否符合 Indeed 条款（端点路径为 `/claude/mcp`）需要你确认。
