@@ -784,3 +784,15 @@ DraftKings 的问题：岗位要求“接触机器学习、回归方法与模型
   - 仍有一处：Gap Pricing 两次都没写必需的“1–3 年定价分析经验”。第一次被判实质错误，第二次审计接受（认为 stretch 已足够保守）。
 - **用量：** 实验账本 `v5-check-01`，15 次调用，299,760 / 44,068 token，0 未知。
 - **尚未进行 v5 完整验收。**
+
+### 12.15 Indeed MCP：登录成功，但服务端拒绝本应用（2026-10-14）
+
+- 用户本人在浏览器完成登录。令牌已加密保存（`%LOCALAPPDATA%/Eregion/mcp-oauth/indeed.bin`），授予的 scope 为 `offline_access job_seeker.profile.read job_seeker.company.details.read job_seeker.jobs.search`，带 refresh token。
+- 用该令牌向 `https://mcp.indeed.com/claude/mcp` 发送 MCP `initialize`，两个协议版本都返回 **HTTP 403 `{"error":"invalid_client","error_description":"Client not allowed"}`**。
+- **结论：** Indeed 允许任意应用注册和登录，但 MCP 端点只接受其许可名单内的客户端（如 Claude）。这是 Indeed 的访问策略，不是技术缺陷；不应伪装成被许可的客户端去绕过。
+- 远程 HTTP + OAuth 的 MCP 支持（`ca9af85`）保留，可用于其他开放的远程 MCP。
+- **可选做法：**
+  - 向 Indeed 申请合作或客户端许可；
+  - 在 Claude Desktop/claude.ai 中以连接器形式个人使用 Indeed，但不接入 Eregion；
+  - 放弃这一来源。
+- **本地令牌与 Indeed 上的两个客户端注册记录待清理：** 可删除本地文件，并在 Indeed 账户设置中撤销授权。
