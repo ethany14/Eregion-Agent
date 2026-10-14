@@ -341,3 +341,36 @@ def test_saved_recommendations_stay_inline_when_the_observation_is_compacted():
     value = json.loads(messages[-1].content)
     assert value['recommended_jobs'] == saved
     assert 'context_ref' in value['previous_recommendations']
+
+
+def test_each_recommendation_must_sit_under_its_saved_tier_label(career, monkeypatch):
+    c = career
+    job, result = scored(c, monkeypatch)
+    app = result['jobs'][0]['application_id']
+    execute(c, 'recommend_job', **args(app, 'to_confirm', to_confirm=['GPA is not stated.']))
+    state = c.repository.get(c.state['task_id'])
+    score = result['jobs'][0]['match_score']
+    body = '\n'.join(['- Junior Data Analyst', '  ' + job['url'], f'  Score {score}', ''])
+    swapped = 'Priority match (1)\n' + body + 'Needs your confirmation (0)\n'
+    with pytest.raises(ValueError, match='misplaced'):
+        c.harness.validate_completion(state, swapped)
+    c.harness.validate_completion(state, 'Priority match (0)\nNeeds your confirmation (1)\n' + body)
+
+
+def test_one_posting_source_failure_does_not_fail_the_batch(career, monkeypatch):
+    import httpx
+    from test_qualified_batch import posting, prepare
+    c = career
+    good, bad = posting(1, description=DESCRIPTION), posting(2, description=DESCRIPTION)
+    prepare(c, monkeypatch, [good, bad])
+    original = c.harness.discovery.job
+    def read(url):
+        if url == bad['url']:
+            request = httpx.Request('GET', url)
+            raise httpx.HTTPStatusError('404', request=request, response=httpx.Response(404, request=request))
+        return original(url)
+    monkeypatch.setattr(c.harness.discovery, 'job', read)
+    result = execute(c, 'verify_and_score_jobs', urls=[good['url'], bad['url']])
+    assert not result.get('error') and len(result['jobs']) == 1
+    failed = next(i for i in result['candidates'] if i['url'] == bad['url'])
+    assert failed['status'] == 'source_error'

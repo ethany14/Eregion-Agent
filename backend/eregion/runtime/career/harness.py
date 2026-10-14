@@ -1651,6 +1651,20 @@ class CareerHarness:
                 if t in TIERS and TIERS[t].casefold() not in text.casefold()]
         if absent:raise ValueError('Group the recommendations under their tier labels with counts; missing labels: '
                                    +', '.join(absent)+'. '+FINAL_FORMAT)
+        # Structure only: each saved recommendation appears under its own saved tier label
+        # (acceptance tiered-v2-01 listed a to_confirm job under Priority match).
+        folded=text.casefold()
+        labels=sorted((m.start(),tier) for tier,label in TIERS.items() for m in re.finditer(re.escape(label.casefold()),folded))
+        placed={}
+        for match in re.finditer(r'https://[^\s<>"\]]+',text):
+            try:key=job_key(match[0].rstrip('.,;!?)'))
+            except ValueError:continue
+            under=next((tier for start,tier in reversed(labels) if start<match.start()),None)
+            placed.setdefault(key,set()).add(under)
+        misplaced=[f"{r['url']} (saved as {TIERS[r['tier']]})" for r in state.get('recommendations',[])
+                   if r.get('url') and r.get('tier') in TIERS and r['tier'] not in placed.get(job_key(r['url']),set())]
+        if misplaced:raise ValueError('List each recommendation under its saved tier label; misplaced: '
+                                      +'; '.join(misplaced)+'. '+FINAL_FORMAT)
         scores={}
         for url,values in reply_job_evidence(text).items():
             entry=scores.setdefault(job_key(url),{'scores':[],'ranges':[]})

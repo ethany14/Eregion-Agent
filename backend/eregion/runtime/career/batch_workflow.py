@@ -1,4 +1,5 @@
 """Bounded sequential acquisition + existing shared scorer, inside the task owner."""
+import httpx
 from eregion.runtime.tasks.loop import function, TEXT
 from eregion.runtime.core.engine import LoopStop
 from eregion.runtime.provider_usage import usage_scope, TaskProviderBudgetExceeded
@@ -52,8 +53,10 @@ def run(harness,task_id,args,call_id):
                     item={'url':url,'title':job.get('title'),'status':'read'}
                     items.append(item);ready_items.append(item)
                     save(pending=None)
-                except (ValueError,LookupError) as exc:
-                    items.append({'url':url,'status':'source_error','error':str(exc)[:400]});save(pending=None)
+                except (ValueError,LookupError,httpx.HTTPError) as exc:
+                    # One posting's source failure (e.g. a board API 404) stays with that
+                    # posting; it used to fail the whole batch (tiered-v2 acceptance 01).
+                    items.append({'url':url,'status':'source_error','error':(str(exc) or type(exc).__name__)[:400]});save(pending=None)
                 except LinkedInSourceStopped as exc:
                     # The source (e.g. its call budget) stopped: keep processing postings
                     # already read instead of discarding the whole batch.
