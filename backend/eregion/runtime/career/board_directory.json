@@ -5883,5 +5883,1523 @@
     "verified_by": "public_api_get",
     "job_count_at_verification": 229,
     "notes": "Added from a verified public API GET for NYC data/analytics coverage."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "glossier",
+    "display_name": "Glossier",
+    "domains": [],
+    "locations": [
+      "Atlanta, GA",
+      "Brooklyn, NY",
+      "Dallas, TX",
+      "Las Vegas, NV",
+      "London, UK",
+      "Los Angeles, CA",
+      "New York, NY",
+      "Philadelphia, PA",
+      "Seattle, WA",
+      "Washington, DC"
+    ],
+    "family_locations": {},
+    "source_url": "https://job-boards.greenhouse.io/glossier",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 22,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "renttherunway",
+    "display_name": "Rent the Runway",
+    "domains": [
+      "data/analytics"
+    ],
+    "locations": [
+      "Arlington, TX",
+      "Arlington, TX; Secaucus, NJ",
+      "Brooklyn, NY (Rent the Runway HQ)",
+      "Galway, Ireland",
+      "Secaucus, NJ",
+      "US & Ireland"
+    ],
+    "family_locations": {
+      "data/analytics": [
+        "Brooklyn, NY (Rent the Runway HQ)"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/renttherunway",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 25,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "zola",
+    "display_name": "Zola",
+    "domains": [],
+    "locations": [
+      "New York"
+    ],
+    "family_locations": {},
+    "source_url": "https://job-boards.greenhouse.io/zola",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 5,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "ashby",
+    "company": "lemonade",
+    "display_name": "Lemonade",
+    "domains": [
+      "ML",
+      "backend",
+      "data/analytics",
+      "design"
+    ],
+    "locations": [
+      "EU",
+      "NYC",
+      "Remote",
+      "TLV"
+    ],
+    "family_locations": {
+      "ML": [
+        "TLV"
+      ],
+      "backend": [
+        "EU",
+        "TLV"
+      ],
+      "data/analytics": [
+        "NYC",
+        "Remote",
+        "TLV"
+      ],
+      "design": [
+        "TLV"
+      ]
+    },
+    "source_url": "https://jobs.ashbyhq.com/lemonade",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 40,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "ashby",
+    "company": "headway",
+    "display_name": "Headway",
+    "domains": [
+      "backend",
+      "data/analytics",
+      "design"
+    ],
+    "locations": [
+      "New York City",
+      "New York, NY",
+      "Remote",
+      "Remote - New York"
+    ],
+    "family_locations": {
+      "backend": [
+        "New York City",
+        "New York, NY",
+        "Remote"
+      ],
+      "data/analytics": [
+        "New York City",
+        "New York, NY",
+        "Remote"
+      ],
+      "design": [
+        "New York City",
+        "New York, NY"
+      ]
+    },
+    "source_url": "https://jobs.ashbyhq.com/headway",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 86,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "flatironhealth",
+    "display_name": "Flatiron Health",
+    "domains": [
+      "backend"
+    ],
+    "locations": [
+      "Berlin office",
+      "Durham office",
+      "London office",
+      "NY office",
+      "NY office ",
+      "NY office OR Remote - US",
+      "NY office or Durham office",
+      "NY office or Remote-US ",
+      "Tokyo office",
+      "千葉県　柏市",
+      "東京",
+      "東京 "
+    ],
+    "family_locations": {
+      "backend": [
+        "Berlin office",
+        "London office",
+        "NY office",
+        "NY office "
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/flatironhealth",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 23,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "lever",
+    "company": "ro",
+    "display_name": "Ro",
+    "domains": [
+      "backend",
+      "data/analytics"
+    ],
+    "locations": [
+      "Boynton Beach, FL",
+      "Los Angeles, CA",
+      "New York, NY",
+      "New York, NY or Remote",
+      "Romeoville, IL",
+      "United States (Remote)"
+    ],
+    "family_locations": {
+      "backend": [
+        "New York, NY"
+      ],
+      "data/analytics": [
+        "New York, NY"
+      ]
+    },
+    "source_url": "https://jobs.lever.co/ro",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 54,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "yext",
+    "display_name": "Yext",
+    "domains": [
+      "backend"
+    ],
+    "locations": [
+      "All Locations",
+      "Berlin, Germany",
+      "Budapest, Hungary",
+      "Cologne, Germany",
+      "Hyderabad, India",
+      "London, UK",
+      "London, UK ",
+      "Munich, Germany",
+      "New York, NY",
+      "Paris, France",
+      "Remote - US",
+      "Washington, D.C."
+    ],
+    "family_locations": {
+      "backend": [
+        "London, UK",
+        "New York, NY",
+        "Washington, D.C."
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/yext",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 21,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "taboola",
+    "display_name": "Taboola",
+    "domains": [
+      "backend",
+      "data/analytics"
+    ],
+    "locations": [
+      "Amsterdam, Netherlands",
+      "Bangkok, Thailand",
+      "Berlin, Germany; Düsseldorf, Germany; Munich, Germany",
+      "Budapest, Hungary",
+      "Gurugram, India",
+      "Istanbul, Turkey",
+      "London, United Kingdom",
+      "Los Angeles, California, United States",
+      "Mexico City, Mexico",
+      "Montréal, Quebec, Canada",
+      "Mumbai, India",
+      "New York City (NYC), New York, United States",
+      "Paris, France",
+      "Seoul, South Korea",
+      "Shenzhen, China",
+      "Sydney, Australia",
+      "São Paulo, Brazil",
+      "Taipei, Taiwan",
+      "Tel Aviv, Israel",
+      "Tokyo, Japan",
+      "Toronto, Ontario, Canada",
+      "Warsaw, Poland"
+    ],
+    "family_locations": {
+      "backend": [
+        "Budapest, Hungary",
+        "Los Angeles, California, United States",
+        "New York City (NYC), New York, United States",
+        "Taipei, Taiwan",
+        "Tel Aviv, Israel"
+      ],
+      "data/analytics": [
+        "Budapest, Hungary",
+        "Los Angeles, California, United States",
+        "New York City (NYC), New York, United States",
+        "Tel Aviv, Israel"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/taboola",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 87,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "axios",
+    "display_name": "Axios",
+    "domains": [
+      "backend"
+    ],
+    "locations": [
+      "Arlington, VA",
+      "Denver, CO",
+      "Miami, FL",
+      "Remote",
+      "Remote (DC Preferred)",
+      "Remote; Charlotte, NC preferred",
+      "Reporter, Gulf Region - Middle East (Remote)",
+      "Washington D.C.",
+      "Washington DC",
+      "Washington DC or NYC",
+      "Washington DC preferred, East Coast required",
+      "Washington, DC Metro Area or NYC Metro Area"
+    ],
+    "family_locations": {
+      "backend": [
+        "Remote"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/axios",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 36,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "voxmedia",
+    "display_name": "Vox Media",
+    "domains": [],
+    "locations": [
+      "NYC or DC",
+      "New York, NY",
+      "New York, New York",
+      "Remote (US Only)"
+    ],
+    "family_locations": {},
+    "source_url": "https://job-boards.greenhouse.io/voxmedia",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 16,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "charliehealth",
+    "display_name": "Charlie Health",
+    "domains": [
+      "backend",
+      "data/analytics"
+    ],
+    "locations": [
+      "(Remote, California)",
+      "Abilene, TX",
+      "Adirondacks, NY",
+      "Akron, OH",
+      "Albany, NY",
+      "Albuquerque, NM",
+      "Angola, IN",
+      "Augusta, GA",
+      "Austin, TX",
+      "Bakersfield, California",
+      "Bakersfield, California, USA",
+      "Baltimore County, MD",
+      "Beaumont, TX",
+      "Beaverton, Oregon",
+      "Bend, OR",
+      "Bend, Oregon",
+      "Billings, MT",
+      "Boise, ID",
+      "Boulder, CO",
+      "Brevard County, FL",
+      "Bronx, NY",
+      "Brownsville/Harlingen, TX",
+      "Burleson, TX",
+      "Central Maryland, MD",
+      "Champaign / Danville / Decatur, IL",
+      "Cheyenne, WY",
+      "Chicago, IL",
+      "Cleveland, OH",
+      "Colorado Springs, CO",
+      "Columbia County, MO",
+      "Columbus, OH",
+      "Corvallis, Oregon",
+      "Dallas, TX",
+      "Denver, CO",
+      "Detroit, MI",
+      "Durango, CO",
+      "El Paso, TX",
+      "Eugene, OR",
+      "Eugene, Oregon",
+      "Fort Bend, TX",
+      "Fort Lauderdale, FL",
+      "Fort Myers, FL",
+      "Fort Worth, TX",
+      "Grand Junction, CO",
+      "Greater Buffalo, NY",
+      "Greater Columbus, GA",
+      "Greater Orlando Area, FL",
+      "Greater Orlando, FL",
+      "Greater Phoenix, AZ",
+      "Greenville, SC",
+      "Gresham, Oregon",
+      "Hillsboro, Oregon",
+      "Houston, TX",
+      "Idaho Falls / Pocatello, ID",
+      "Ithaca, NY",
+      "Jackson & Calhoun County, MI",
+      "Jacksonville, FL",
+      "Katy, TX",
+      "Kings County, NY",
+      "Las Vegas, NV",
+      "Levittown, New York",
+      "Lincoln Park, New Jersey",
+      "Long Island, NY",
+      "Los Angeles, CA",
+      "Lubbock, TX",
+      "Luzerne County, PA",
+      "Manhattan, NY",
+      "Mankato, MN",
+      "Marietta, OH",
+      "Massachusetts, Connecticut, Vermont, Upstate New York ",
+      "Massillon, OH",
+      "McAllen, TX",
+      "Medford, Oregon",
+      "Miami, FL",
+      "Michigan, USA",
+      "Midland, TX",
+      "Millcreek, Utah, United States",
+      "Missouri, Nebraska, Kansas, Iowa",
+      "Mohave County, AZ",
+      "Montana, Idaho, Wyoming, Utah, Colorado",
+      "Montgomery County, MD",
+      "Nashville, TN",
+      "New Orleans, LA",
+      "New York, NY",
+      "New York, New York, United States, Remote",
+      "Newark, DE",
+      "Norfolk, VA",
+      "North Texas, Oklahoma, New Mexico ",
+      "Northern California ",
+      "Northern Idaho, ID",
+      "Northern Virginia, VA",
+      "Ocala, FL",
+      "Oregon",
+      "Palm Beach County, FL",
+      "Panama City Beach, FL",
+      "Peabody, Massachusetts",
+      "Pennsylvania, Maryland, Delaware, Southern New Jersey, West Virginia",
+      "Portland, ME",
+      "Portland, Oregon",
+      "Prince George's County, MD",
+      "Queens, NY",
+      "Raleigh, NC",
+      "Remote",
+      "Remote, AL",
+      "Remote, AZ",
+      "Remote, Arizona",
+      "Remote, Colorado",
+      "Remote, FL",
+      "Remote, GA",
+      "Remote, Georgia",
+      "Remote, IN",
+      "Remote, KY",
+      "Remote, LA",
+      "Remote, MD",
+      "Remote, MI",
+      "Remote, MS",
+      "Remote, Maryland",
+      "Remote, Montana",
+      "Remote, NC",
+      "Remote, NV",
+      "Remote, OH",
+      "Remote, Oklahoma",
+      "Remote, Oregon",
+      "Remote, PA",
+      "Remote, SC",
+      "Remote, TN",
+      "Remote, TX",
+      "Remote, United States",
+      "Remote, VA",
+      "Remote, WA",
+      "Remote, Washington",
+      "Remote, Wisconsin",
+      "Richmond, Virginia",
+      "Riverside, CA",
+      "Rochester, NY",
+      "Rockwall/Mesquite, TX",
+      "Sacramento, CA",
+      "Salem, Oregon",
+      "San Antonio, TX",
+      "Santa Fe, NM",
+      "Sarasota, FL",
+      "Schuylkill County/Columbia County, PA",
+      "Seattle, WA",
+      "Sedona/Cottonwood, AZ",
+      "Shelby County, OH",
+      "Snohomish, WA",
+      "South Houston / Galveston, TX",
+      "Southern Maryland / Washington, DC",
+      "Southern Washington, WA",
+      "Spokane, WA",
+      "Springfield, MO",
+      "Springfield, OH",
+      "Springfield, Oregon",
+      "St. Petersburg, FL",
+      "Syracuse, NY",
+      "Tallahassee, FL",
+      "Texas, Louisiana ",
+      "Texas, USA",
+      "The Woodlands, TX",
+      "Toledo, OH",
+      "Traverse City, MI",
+      "Tucson, AZ",
+      "United States",
+      "Utica, NY",
+      "Washington, Oregon, Alaska",
+      "Waxahachie, TX",
+      "Weld County, CO",
+      "Wesley Chapel, FL",
+      "West Madison, WI",
+      "West Palm Beach, FL",
+      "Westchester County, NY",
+      "Westchester, NY",
+      "Western Wisconsin, WI",
+      "White Mountains, AZ",
+      "Williamsburg, VA",
+      "York County, PA"
+    ],
+    "family_locations": {
+      "backend": [
+        "New York, NY",
+        "Remote, United States"
+      ],
+      "data/analytics": [
+        "New York, NY",
+        "Remote, United States"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/charliehealth",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 252,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "ashby",
+    "company": "paxos",
+    "display_name": "Paxos",
+    "domains": [
+      "backend"
+    ],
+    "locations": [
+      "New York - Hybrid",
+      "Remote - India",
+      "Remote - NYC, New York",
+      "Remote - San Francisco, California",
+      "Remote - United States",
+      "Remote - United States (East Coast)",
+      "Singapore - Hybrid",
+      "Tel Aviv - Hybrid"
+    ],
+    "family_locations": {
+      "backend": [
+        "Remote - India",
+        "Remote - United States (East Coast)"
+      ]
+    },
+    "source_url": "https://jobs.ashbyhq.com/paxos",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 19,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "ashby",
+    "company": "nerdwallet",
+    "display_name": "NerdWallet",
+    "domains": [
+      "ML",
+      "backend"
+    ],
+    "locations": [
+      "NerdWallet Canada",
+      "NerdWallet US",
+      "New York, NY",
+      "Scottsdale, Arizona"
+    ],
+    "family_locations": {
+      "ML": [
+        "NerdWallet Canada",
+        "NerdWallet US"
+      ],
+      "backend": [
+        "NerdWallet Canada",
+        "NerdWallet US"
+      ]
+    },
+    "source_url": "https://jobs.ashbyhq.com/nerdwallet",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 20,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "ashby",
+    "company": "acorns",
+    "display_name": "Acorns",
+    "domains": [
+      "data/analytics"
+    ],
+    "locations": [
+      "Remote"
+    ],
+    "family_locations": {
+      "data/analytics": [
+        "Remote"
+      ]
+    },
+    "source_url": "https://jobs.ashbyhq.com/acorns",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 8,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "ashby",
+    "company": "plaid",
+    "display_name": "Plaid",
+    "domains": [
+      "ML",
+      "backend",
+      "data/analytics"
+    ],
+    "locations": [
+      "London Office",
+      "New York City Office",
+      "Raleigh Office",
+      "Remote United States",
+      "San Francisco HQ",
+      "Seattle Office"
+    ],
+    "family_locations": {
+      "ML": [
+        "New York City Office",
+        "San Francisco HQ",
+        "Seattle Office"
+      ],
+      "backend": [
+        "New York City Office",
+        "San Francisco HQ",
+        "Seattle Office"
+      ],
+      "data/analytics": [
+        "New York City Office",
+        "San Francisco HQ",
+        "Seattle Office"
+      ]
+    },
+    "source_url": "https://jobs.ashbyhq.com/plaid",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 122,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "everlane",
+    "display_name": "Everlane",
+    "domains": [
+      "design"
+    ],
+    "locations": [
+      "Austin, TX",
+      "Boston, MA",
+      "Brooklyn, NY",
+      "Georgetown, Washington, DC",
+      "King of Prussia, PA",
+      "Los Angeles, CA",
+      "Manhattan, NY",
+      "Palo Alto, CA",
+      "San Francisco, CA",
+      "Seattle, WA",
+      "Tysons, VA",
+      "Work From Home"
+    ],
+    "family_locations": {
+      "design": [
+        "Los Angeles, CA"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/everlane",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 39,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "harrys",
+    "display_name": "Harry's",
+    "domains": [
+      "data/analytics",
+      "design"
+    ],
+    "locations": [
+      "Bentonville, AR",
+      "London, UK",
+      "New York, NY"
+    ],
+    "family_locations": {
+      "data/analytics": [
+        "Bentonville, AR",
+        "New York, NY"
+      ],
+      "design": [
+        "New York, NY"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/harrys",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 16,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "kargo",
+    "display_name": "Kargo",
+    "domains": [],
+    "locations": [
+      "Location: Atlanta or Remote",
+      "Location: San Francisco",
+      "Location: San Francisco or Atlanta",
+      "Location: San Francisco or Remote",
+      "Locations: San Francisco",
+      "Locations: San Francisco or Remote (East Coast)"
+    ],
+    "family_locations": {},
+    "source_url": "https://job-boards.greenhouse.io/kargo",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 13,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "jumptrading",
+    "display_name": "Jump Trading",
+    "domains": [
+      "ML",
+      "backend",
+      "data/analytics",
+      "design"
+    ],
+    "locations": [
+      "Amsterdam",
+      "Bristol",
+      "Chicago",
+      "Chicago or New York",
+      "Chicago, IL",
+      "Chicago, New York",
+      "Chicago, New York, London",
+      "Chicago, New York, London or Bristol",
+      "Chicago; New York",
+      "GIFT City",
+      "Hong Kong",
+      "Hong Kong or Singapore",
+      "Hong Kong, Singapore, Shanghai or Sydney",
+      "Hong Kong; Shanghai",
+      "Hong Kong; Shanghai; Singapore",
+      "London",
+      "London ",
+      "London, New York",
+      "London; Amsterdam",
+      "London; Paris",
+      "Mumbai",
+      "Mumbai ",
+      "New York",
+      "New York ",
+      "New York or Chicago",
+      "New York, Chicago",
+      "Shanghai",
+      "Shanghai or Hong Kong",
+      "Shanghai, Singapore, Hong Kong",
+      "Singapore",
+      "Singapore, Hong Kong ",
+      "Singapore, Hong Kong, Shanghai",
+      "Sydney",
+      "Sydney and Mumbai",
+      "Sydney or Singapore"
+    ],
+    "family_locations": {
+      "ML": [
+        "Chicago; New York",
+        "Hong Kong; Shanghai; Singapore",
+        "London",
+        "Singapore"
+      ],
+      "backend": [
+        "Chicago",
+        "Hong Kong",
+        "Hong Kong; Shanghai",
+        "London",
+        "Mumbai",
+        "New York, Chicago",
+        "Shanghai",
+        "Shanghai or Hong Kong",
+        "Singapore",
+        "Singapore, Hong Kong, Shanghai"
+      ],
+      "data/analytics": [
+        "Chicago",
+        "Chicago or New York",
+        "Chicago, IL",
+        "Hong Kong",
+        "London",
+        "Mumbai ",
+        "New York or Chicago",
+        "Singapore"
+      ],
+      "design": [
+        "Chicago",
+        "London"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/jumptrading",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 104,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "clearstreet",
+    "display_name": "Clear Street",
+    "domains": [
+      "ML",
+      "backend",
+      "data/analytics",
+      "design"
+    ],
+    "locations": [
+      "Anywhere",
+      "Chicago, IL",
+      "London, UK",
+      "New York",
+      "New York, NY",
+      "New York, NY ",
+      "Remote",
+      "Umeå, Sweden",
+      "Umeå, Västerbotten, Sweden"
+    ],
+    "family_locations": {
+      "ML": [
+        "Remote"
+      ],
+      "backend": [
+        "Chicago, IL",
+        "London, UK",
+        "New York, NY",
+        "Remote",
+        "Umeå, Sweden",
+        "Umeå, Västerbotten, Sweden"
+      ],
+      "data/analytics": [
+        "New York, NY",
+        "Remote"
+      ],
+      "design": [
+        "Remote"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/clearstreet",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 46,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "current",
+    "display_name": "Current",
+    "domains": [],
+    "locations": [
+      "Remote (US)",
+      "new york "
+    ],
+    "family_locations": {},
+    "source_url": "https://job-boards.greenhouse.io/current",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 8,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "payoneer",
+    "display_name": "Payoneer",
+    "domains": [
+      "ML",
+      "backend",
+      "data/analytics"
+    ],
+    "locations": [
+      "Bangalore, India",
+      "Buenos Aires, Argentina",
+      "Dublin, Ireland",
+      "Guangzhou, China",
+      "Gurugram, India",
+      "Herzliya, Tel Aviv District, Israel",
+      "Hong Kong, Hong Kong",
+      "Lahore, Pakistan",
+      "London, UK",
+      "Manila, Philippines",
+      "Mexico City, Mexico",
+      "New York, US",
+      "Remote, Poland",
+      "Remote, US",
+      "Sao Paulo, Brazil",
+      "Seoul, South Korea",
+      "Shanghai, China",
+      "Shenzhen, China"
+    ],
+    "family_locations": {
+      "ML": [
+        "Gurugram, India",
+        "Herzliya, Tel Aviv District, Israel",
+        "Shanghai, China"
+      ],
+      "backend": [
+        "Gurugram, India",
+        "Herzliya, Tel Aviv District, Israel"
+      ],
+      "data/analytics": [
+        "Gurugram, India",
+        "Herzliya, Tel Aviv District, Israel",
+        "Hong Kong, Hong Kong"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/payoneer",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 100,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "riskified",
+    "display_name": "Riskified",
+    "domains": [
+      "ML",
+      "backend",
+      "data/analytics"
+    ],
+    "locations": [
+      "Lisbon",
+      "Melbourne",
+      "New York",
+      "New York; Remote",
+      "Sao Paulo",
+      "Shanghai",
+      "Tel Aviv",
+      "Tokyo"
+    ],
+    "family_locations": {
+      "ML": [
+        "Lisbon"
+      ],
+      "backend": [
+        "Lisbon"
+      ],
+      "data/analytics": [
+        "Lisbon",
+        "Tel Aviv"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/riskified",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 27,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "via",
+    "display_name": "Via",
+    "domains": [
+      "ML",
+      "backend",
+      "data/analytics",
+      "design"
+    ],
+    "locations": [
+      "Amsterdam; Paris; London",
+      "Baton Rogue, LA",
+      "Baton Rouge, LA",
+      "Benton Harbor, MI ",
+      "Berlin",
+      "Berlin, Germany",
+      "Chicago (Flexible Location)",
+      "Dallas (Flexible Location)",
+      "Dallas - Fort Worth, TX ",
+      "Dallas-Fort Worth, TX",
+      "Dallas-Fort Worth, Texas",
+      "Detroit (Flexible Location)",
+      "Elmira, NY ",
+      "Fort Worth, TX",
+      "Fort Worth, TX ",
+      "Frankfurt region",
+      "Green Bay",
+      "London",
+      "London, UK",
+      "Los Angeles",
+      "Los Angeles, CA ",
+      "Los Angeles, CA; Bay Area, CA",
+      "Miami Florida; Atlanta Georgia",
+      "Milwaukee, WI; Madison, WI; Appleton, WI",
+      "Mobile, AL",
+      "Montgomery",
+      "Montgomery, AL",
+      "Montgomery, Alabama",
+      "Mountain View, CA ",
+      "New Jersey",
+      "New York",
+      "New York ",
+      "New York City",
+      "New York City ",
+      "New York City, San Francisco",
+      "New York City; San Francisco",
+      "New York, NY",
+      "New York, New York",
+      "Paris",
+      "Park City, UT",
+      "Prescott, Phoenix AZ",
+      "Remote - Central US",
+      "Remote - England",
+      "Remote - Germany",
+      "Remote - Western US",
+      "Rochester, MN",
+      "Rochester, MN ",
+      "Sacramento, CA ",
+      "Sacramento, CA; San Jose, CA; Santa Rosa, CA ",
+      "Sacramento, California, United States",
+      "San Francisco",
+      "San Francisco, CA ; Los Angeles, CA ; Seattle, WA",
+      "Sarasota, FL ",
+      "Seattle",
+      "Seattle,Tacoma, Federal Way",
+      "Sioux Falls",
+      "Sioux Falls, SD",
+      "Sioux Falls, SD ",
+      "Southern Connecticut; Stamford, New Haven, Norwalk",
+      "St. Louis, MO",
+      "Tacoma, WA",
+      "Tel Aviv",
+      "Tokyo",
+      "Tokyo, Japan",
+      "Toronto",
+      "Tulare, CA",
+      "Tulare, CA ",
+      "Tulare, California",
+      "US East Coast",
+      "Vancouver, British Columbia",
+      "West Palm Beach, FL",
+      "West Palm Beach, Florida",
+      "West and Central US"
+    ],
+    "family_locations": {
+      "ML": [
+        "Frankfurt region",
+        "New York City",
+        "New York, New York",
+        "Tel Aviv"
+      ],
+      "backend": [
+        "New York",
+        "New York ",
+        "New York City, San Francisco",
+        "New York, NY",
+        "Tel Aviv"
+      ],
+      "data/analytics": [
+        "Frankfurt region",
+        "Tel Aviv"
+      ],
+      "design": [
+        "New York City"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/via",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 167,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "nextdoor",
+    "display_name": "Nextdoor",
+    "domains": [
+      "backend",
+      "data/analytics"
+    ],
+    "locations": [
+      "Chicago, IL",
+      "Dallas, TX",
+      "Detroit, MI",
+      "Los Angeles, CA",
+      "New York, NY",
+      "San Francisco, CA",
+      "US Remote"
+    ],
+    "family_locations": {
+      "backend": [
+        "Dallas, TX",
+        "San Francisco, CA",
+        "US Remote"
+      ],
+      "data/analytics": [
+        "US Remote"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/nextdoor",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 21,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "attentive",
+    "display_name": "Attentive",
+    "domains": [
+      "ML",
+      "backend",
+      "data/analytics"
+    ],
+    "locations": [
+      "London",
+      "New York, NY",
+      "San Francisco, CA",
+      "Sydney",
+      "United States"
+    ],
+    "family_locations": {
+      "ML": [
+        "New York, NY",
+        "San Francisco, CA"
+      ],
+      "backend": [
+        "New York, NY",
+        "San Francisco, CA",
+        "United States"
+      ],
+      "data/analytics": [
+        "San Francisco, CA",
+        "United States"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/attentive",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 28,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "bark",
+    "display_name": "BARK",
+    "domains": [],
+    "locations": [
+      "New York"
+    ],
+    "family_locations": {},
+    "source_url": "https://job-boards.greenhouse.io/bark",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 1,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "betterhelp",
+    "display_name": "BetterHelp",
+    "domains": [],
+    "locations": [
+      "Alabama - Remote",
+      "Alabama; Alaska; Arizona; Arkansas; California; Colorado; Connecticut; Delaware; District of Columbia; Florida; Georgia; Hawaii; Idaho; Illinois; Indiana; Iowa; Kansas; Kentucky; Louisiana; Maine; Maryland; Massachusetts; Michigan; Minnesota; Mississippi; Missouri; Montana; Nebraska; Nevada; New Hampshire; New Jersey; New Mexico; New York; North Carolina; North Dakota; Ohio; Oklahoma; Oregon; Pennsylvania; Rhode Island; South Carolina; South Dakota; Tennessee; Texas; Utah; Vermont; Virginia; Washington; West Virginia; Wisconsin; Wyoming",
+      "Arizona",
+      "Arkansas - Remote",
+      "California",
+      "DC - Remote",
+      "Deutschland",
+      "District of Columbia",
+      "Florida - Remote",
+      "Georgia",
+      "Georgia - Remote",
+      "Illinois - Remote",
+      "Indiana",
+      "Iowa - Remote",
+      "Louisiana - Remote",
+      "Maryland",
+      "Maryland - Remote",
+      "Massachusetts - Remote",
+      "Michigan - Remote",
+      "Montana - Remote",
+      "Nebraska - Remote",
+      "Netherlands - Remote",
+      "Nevada - Remote",
+      "New Hampshire - Remote",
+      "New Jersey - Remote",
+      "New York",
+      "New York - Remote",
+      "North Carolina",
+      "Ohio",
+      "Pennsylvania",
+      "Pennsylvania- Remote",
+      "Tennessee - Remote",
+      "Texas - Remote",
+      "United States - Remote",
+      "Utah - Remote",
+      "Vermont - Remote",
+      "Washington",
+      "Wyoming"
+    ],
+    "family_locations": {},
+    "source_url": "https://job-boards.greenhouse.io/betterhelp",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 164,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "thetradedesk",
+    "display_name": "The Trade Desk",
+    "domains": [
+      "backend",
+      "data/analytics",
+      "design"
+    ],
+    "locations": [
+      "Bellevue",
+      "Bellevue; Denver; Irvine; Los Angeles; New York; San Francisco; San Jose",
+      "Bellevue; New York; San Francisco; Seattle",
+      "Bellevue; San Francisco; San Jose",
+      "Bellevue; Seattle",
+      "Boulder",
+      "Chicago",
+      "Chicago; Detroit",
+      "Chicago; Detroit; Los Angeles; New York",
+      "Chicago; Irvine; Los Angeles; New York; San Francisco; San Jose",
+      "Chicago; Irvine; Los Angeles; New York; San Francisco; San Jose; Seattle; Ventura",
+      "Chicago; New York",
+      "Denver",
+      "Hamburg",
+      "Irvine",
+      "Irvine; Los Angeles; San Francisco; San Jose",
+      "London",
+      "Los Angeles",
+      "Los Angeles; San Francisco",
+      "Los Angeles; Seattle",
+      "New York",
+      "New York; San Francisco",
+      "San Francisco",
+      "San Jose",
+      "Seattle",
+      "Seoul",
+      "Shanghai",
+      "Shanghai; Singapore; Sydney",
+      "Singapore",
+      "Sydney",
+      "Tokyo",
+      "Ventura",
+      "Washington DC"
+    ],
+    "family_locations": {
+      "backend": [
+        "Bellevue",
+        "Boulder",
+        "London",
+        "New York",
+        "San Jose",
+        "Seattle"
+      ],
+      "data/analytics": [
+        "Bellevue; Denver; Irvine; Los Angeles; New York; San Francisco; San Jose",
+        "Chicago; Irvine; Los Angeles; New York; San Francisco; San Jose",
+        "Irvine",
+        "New York",
+        "Ventura"
+      ],
+      "design": [
+        "London",
+        "New York"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/thetradedesk",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 103,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "pubmatic",
+    "display_name": "PubMatic",
+    "domains": [
+      "ML",
+      "backend",
+      "data/analytics",
+      "design"
+    ],
+    "locations": [
+      "Bangalore, IN ",
+      "Bangalore, IN ; Pune, IN; Remote",
+      "Bogotá, Colombia; Mexico City, MX",
+      "Chicago, IL",
+      "Chicago, IL; New York, US",
+      "Gurugram, IN",
+      "Hamburg, DE",
+      "London, GB",
+      "Melbourne,  AU",
+      "Mexico City, MX",
+      "Mumbai, IN",
+      "New York, US",
+      "New York, US; Redwood City, US",
+      "Paris, FR",
+      "Pune, IN",
+      "Pune, IN; Remote",
+      "Redwood City, US",
+      "Remote",
+      "Singapore, SG",
+      "Stockholm, SE"
+    ],
+    "family_locations": {
+      "ML": [
+        "Gurugram, IN",
+        "Pune, IN"
+      ],
+      "backend": [
+        "Bangalore, IN ; Pune, IN; Remote",
+        "Gurugram, IN",
+        "Pune, IN",
+        "Redwood City, US"
+      ],
+      "data/analytics": [
+        "New York, US",
+        "Pune, IN",
+        "Redwood City, US"
+      ],
+      "design": [
+        "Pune, IN"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/pubmatic",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 84,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "lever",
+    "company": "veeva",
+    "display_name": "Veeva Systems",
+    "domains": [
+      "ML",
+      "backend",
+      "data/analytics"
+    ],
+    "locations": [
+      "Australia - Melbourne",
+      "Austria - Vienna",
+      "Belgium - Brussels",
+      "Brazil - São Paulo",
+      "California - Los Angeles",
+      "California - Pleasanton",
+      "California - San Diego",
+      "California - San Francisco",
+      "Canada - Toronto",
+      "China - Beijing",
+      "China - Chengdu",
+      "China - Dalian",
+      "China - Shanghai",
+      "China - Suzhou",
+      "Croatia - Zagreb",
+      "Denmark - Copenhagen",
+      "France - Paris",
+      "Georgia - Atlanta",
+      "Germany - Berlin",
+      "Germany - Cologne",
+      "Germany - Frankfurt",
+      "Germany - Munich",
+      "Hungary - Budapest",
+      "Idaho - Boise",
+      "Illinois - Chicago",
+      "India - Bengaluru",
+      "India - Delhi",
+      "India - Hyderabad",
+      "India - Mumbai",
+      "Indiana - Indianapolis",
+      "Ireland - Dublin",
+      "Israel - Kiryat Ono",
+      "Italy - Milan",
+      "Japan - Hiroshima",
+      "Japan - Osaka",
+      "Japan - Tokyo",
+      "Massachusetts - Boston",
+      "Mexico - Mexico City",
+      "Minnesota - Minneapolis",
+      "Missouri - Kansas City",
+      "New Jersey - Lyndhurst",
+      "New Jersey - Newark",
+      "New Jersey - Princeton",
+      "New York - Manhattan",
+      "New York - New York City",
+      "North Carolina - Raleigh",
+      "Ohio - Columbus",
+      "Pennsylvania - Philadelphia",
+      "Pennsylvania - Radnor",
+      "Poland - Cracow",
+      "Poland - Warsaw",
+      "Poland - Wroclaw",
+      "Portugal - Lisbon",
+      "Singapore - Singapore",
+      "South Korea - Busan",
+      "South Korea - Seoul",
+      "Spain - Barcelona",
+      "Sweden - Stockholm",
+      "Switzerland - Basel",
+      "Switzerland - Bern",
+      "Switzerland - Zürich",
+      "Taiwan - Taipei",
+      "Tennessee - Nashville",
+      "Texas - Austin",
+      "Texas - Dallas",
+      "United Kingdom - Cambridge",
+      "United Kingdom - London",
+      "United States",
+      "Utah - Salt Lake City",
+      "Washington - DC",
+      "Wisconsin - Madison"
+    ],
+    "family_locations": {
+      "ML": [
+        "California - Pleasanton",
+        "Canada - Toronto",
+        "China - Beijing",
+        "China - Chengdu",
+        "China - Shanghai",
+        "Massachusetts - Boston",
+        "Missouri - Kansas City",
+        "North Carolina - Raleigh"
+      ],
+      "backend": [
+        "California - Pleasanton",
+        "California - San Francisco",
+        "Canada - Toronto",
+        "China - Beijing",
+        "Croatia - Zagreb",
+        "Georgia - Atlanta",
+        "Germany - Berlin",
+        "Hungary - Budapest",
+        "Illinois - Chicago",
+        "India - Hyderabad",
+        "Massachusetts - Boston",
+        "Missouri - Kansas City",
+        "New York - New York City",
+        "North Carolina - Raleigh",
+        "Ohio - Columbus",
+        "Pennsylvania - Philadelphia",
+        "Poland - Cracow",
+        "Spain - Barcelona",
+        "United Kingdom - London",
+        "Washington - DC",
+        "Wisconsin - Madison"
+      ],
+      "data/analytics": [
+        "Brazil - São Paulo",
+        "California - San Francisco",
+        "Canada - Toronto",
+        "China - Dalian",
+        "China - Shanghai",
+        "Croatia - Zagreb",
+        "Denmark - Copenhagen",
+        "France - Paris",
+        "Germany - Berlin",
+        "Hungary - Budapest",
+        "India - Bengaluru",
+        "India - Hyderabad",
+        "Israel - Kiryat Ono",
+        "Massachusetts - Boston",
+        "Mexico - Mexico City",
+        "Missouri - Kansas City",
+        "New Jersey - Lyndhurst",
+        "New Jersey - Newark",
+        "New York - New York City",
+        "North Carolina - Raleigh",
+        "Ohio - Columbus",
+        "Pennsylvania - Philadelphia",
+        "Portugal - Lisbon",
+        "South Korea - Busan",
+        "South Korea - Seoul",
+        "Spain - Barcelona",
+        "Sweden - Stockholm",
+        "Tennessee - Nashville",
+        "United Kingdom - Cambridge",
+        "United Kingdom - London",
+        "Wisconsin - Madison"
+      ]
+    },
+    "source_url": "https://jobs.lever.co/veeva",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 942,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
   }
 ]

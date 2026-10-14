@@ -374,3 +374,14 @@ def test_greenhouse_card_on_a_company_site_keeps_the_readable_board_identity():
         assert body['title'] == 'Junior Data Analyst' and 'SQL' in body['description']
     finally:
         d.close()
+
+
+@pytest.mark.parametrize('observed,expected', [
+    ('New York City (NYC), New York, United States', True), ('New York City Office', True), ('Chicago or New York', True),
+    ('New York, US', True), ('New York - New York City', True), ('Bellevue; New York; San Jose', True),
+    ('Newark, NJ', False), ('York, PA', False), ('New York, Ontario, Canada', False), ('Brooklyn Park, MN', False),
+    ('Remote, US', False)])
+def test_board_location_strings_in_common_shapes(observed, expected):
+    # Board cards with these shapes were dropped before the model ever saw them (tiered-v3-04).
+    from eregion.runtime.career.discovery import location_matches
+    assert location_matches('New York, NY', observed) is expected

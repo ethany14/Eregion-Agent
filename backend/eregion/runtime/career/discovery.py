@@ -27,15 +27,20 @@ def location_matches(requested, observed):
         return US_STATES.get(value,value if value in US_STATES.values() else None)
     def city(value):return {'new york city':'new york','nyc':'new york'}.get(value.strip(),value.strip())
     if len(parts)<2 or not state(parts[1]):return requested in observed
-    for address in observed.split(';'):
-        candidate=[p.strip() for p in address.split(',')]
+    countries={'us','usa','united states','united states of america'}
+    # Boards list several places in one string ('Chicago or New York', 'New York - New York
+    # City', 'A; B'); parenthetical aliases ('New York City (NYC)') are dropped. This is a
+    # retrieval filter: the model's qualification still judges the posting's own location.
+    for address in re.split(r';|\s+or\s+|\s+\|\s+|\s+/\s+|\s+-\s+',re.sub(r'\([^)]*\)','',observed)):
+        candidate=[p.strip() for p in address.split(',') if p.strip()]
+        if not candidate:continue
         # A bare matching city is a candidate, not proof of its state. Preserve
         # the source location unchanged for the final posting/eligibility check.
         if len(candidate)<2:
-            if city(parts[0])==city(candidate[0]):return True
+            if city(parts[0])==city(candidate[0]) or re.search(r'\b'+re.escape(city(parts[0]))+r'\b',city(candidate[0])):return True
             continue
-        if len(candidate)>2 and candidate[2] not in {'us','usa','united states','united states of america'}:continue
-        if city(parts[0])==city(candidate[0]) and state(parts[1])==state(candidate[1]):return True
+        if len(candidate)>2 and candidate[2] not in countries:continue
+        if city(parts[0])==city(candidate[0]) and (state(parts[1])==state(candidate[1]) or candidate[1] in countries):return True
     return False
 
 
