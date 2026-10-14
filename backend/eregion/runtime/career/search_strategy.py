@@ -11,7 +11,8 @@ def normalized(text):
 def source_limits(state,args=None):
     from .search_recovery import search_request
     request=search_request(state)
-    large=bool(request and request['count']>=10)
+    # Sizing is unchanged for a request without a stated number (count None): default pages.
+    large=bool(request and request['count'] is not None and request['count']>=10)
     fields=request_fields(state);query=normalized((args or {}).get('query'))
     broad=query in {normalized(fields['role']),normalized(f"{fields['role']} in {fields['location']}")}
     # One broad LinkedIn call can page deep (one source call, ~9 s/page); 8 pages keeps
@@ -29,7 +30,7 @@ def variants(state,args):
     request=search_request(state)
     role=request_fields(state)['role']
     levels=set(constraints(state).get('levels',[]))
-    if not request or request['count']<10 or not role or not levels or not levels<={'junior','new_grad'}:
+    if not request or request['count'] is None or request['count']<10 or not role or not levels or not levels<={'junior','new_grad'}:
         return [args['query']]
     place=request_fields(state)['location']
     # The provider level filter already scopes the broad query; '"role" in place' only

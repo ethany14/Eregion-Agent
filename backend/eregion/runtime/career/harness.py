@@ -1614,7 +1614,8 @@ class CareerHarness:
         cap=task_limits().get('provider_attempts')
         if cap and cap>2*REPLY_RESERVE and state.get('task_id'):
             remaining=min(remaining,cap-UsageLedger(self.repository.sessions).summary(task_id=state['task_id'])['calls'])
-        if pending and pending['recommended_count']<pending['requested_count'] and pending['pending_candidates'] and remaining>3:
+        if (pending and pending['requested_count'] and pending['recommended_count']<pending['requested_count']
+                and pending['pending_candidates'] and remaining>3):
             raise ValueError('The requested search is incomplete and observed posting links remain unread with '
                 f'{remaining} decisions available. Open a different pending candidate, verify and score it if eligible '
                 '(a shortfall is reported honestly; never recommend a mandatory-gap job to close it). '

@@ -7,10 +7,12 @@ from .alerts import job_key
 
 def search_request(state):
     latest=next((m['text'] for m in reversed(state.get('messages',[])) if m.get('role')=='user'),state.get('goal',''))
-    match=re.search(r'\bfind\s+(one|two|three|four|\d+)\s+(?:current\s+)?(.+?)\s+(?:positions|jobs|roles)\b',latest,re.I)
+    # The number is optional: an open request ('find current X positions') is still a
+    # search; count is None and nothing waits for a quota.
+    match=re.search(r'\bfind\s+(?:(one|two|three|four|\d+)\s+)?(?:current\s+)?(.{1,80}?)\s+(?:positions|jobs|roles)\b',latest,re.I)
     if not match:return None
-    count={'one':1,'two':2,'three':3,'four':4}.get(match[1].lower())
-    count=count if count is not None else int(match[1])
+    count=None if match[1] is None else {'one':1,'two':2,'three':3,'four':4}.get(match[1].lower())
+    if count is None and match[1] is not None:count=int(match[1])
     words=set(re.findall(r'[a-z]+',match[2].lower()))-{
         'senior','junior','entry','level','remote','in','new','york','us','current','the','and','or'}
     return {'count':count,'words':words}

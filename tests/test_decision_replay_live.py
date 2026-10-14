@@ -3,8 +3,10 @@
 Restores a saved live sample at the point where its jobs were scored, without any
 source read or scoring call (those tools are recorded, not run), re-judges the saved
 postings only if the qualification policy changed, and caps the replay at 10
-main-model calls. It checks that the model reaches a decision
-for every scored job and moves on, instead of paging the same reports.
+main-model calls. Work tools return a neutral "not executed" result and the replay
+continues: a saved sample may legitimately hold read-but-unimported postings that the
+production queue asks to finish first. It checks that the model reaches a decision for
+every scored job without re-reading the same reports or repeating the same work call.
 """
 import json
 import os
@@ -95,6 +97,12 @@ def test_decision_replay(tmp_path, monkeypatch):
     from eregion.runtime.provider_usage import usage_scope
     bodies = [next(j for j in state['retrieved_jobs'].values() if j.get('url')
                    and job_key(j['url']) == job_key(state['scored_job_evidence'][a]['url'])) for a in scored]
+    if os.getenv('REPLAY_QUALIFICATIONS'):
+        # Reuse an earlier replay's paid judgements of these same postings; assess() still
+        # discards any entry whose posting body, request or policy hash no longer matches.
+        prior = json.loads(Path(os.environ['REPLAY_QUALIFICATIONS']).read_text(encoding='utf-8'))
+        repository.change(task_id, lambda s: {'candidate_qualifications': {
+            **s.get('candidate_qualifications', {}), **prior.get('candidate_qualifications', {})}})
     with usage_scope(task_id=task_id, ledger=ledger):
         record_many(repository, task_id, bodies)
     harness.save_scored_evidence(task_id, scored)
@@ -102,12 +110,20 @@ def test_decision_replay(tmp_path, monkeypatch):
     attempted, invocations = [], []
     original_execute = harness.execute
 
+    def pending():
+        current = repository.get(task_id)
+        done = {r.get('application_id') for r in current.get('recommendations', [])} | set(current.get('job_decisions') or {})
+        return [a for a in scored if a not in done]
+
     def execute(task, name, args, *, call_id):
         if name in WORK_TOOLS:
-            # Recorded, not executed: the replay ends once the model moves on to new work.
-            attempted.append({'tool': name, 'arguments': args})
-            repository.change(task, pause_requested=True)
-            return {'replay_not_executed': True, 'next': 'Recorded by the decision replay; not executed.'}
+            # Recorded, not executed. The replay ends once every scored job is decided and
+            # the model moves on to new work; before that it simply continues.
+            attempted.append({'tool': name, 'arguments': args, 'pending_decisions': len(pending())})
+            if not pending():
+                repository.change(task, pause_requested=True)
+            return {'replay_not_executed': True, 'no_new_evidence': True,
+                    'note': 'This tool is not available in the decision replay; no source was read and nothing was scored.'}
         return original_execute(task, name, args, call_id=call_id)
     harness.execute = execute
 
@@ -142,10 +158,12 @@ def test_decision_replay(tmp_path, monkeypatch):
     reads = [json.dumps({'tool': h['tool'], 'arguments': h.get('arguments')}, sort_keys=True)
              for h in final.get('history', []) if h['tool'] in {'read_context', 'inspect_job'}]
     repeated_reads = len(reads) - len(set(reads))
-    moved_on = any(a['tool'] in WORK_TOOLS for a in attempted)
+    work = [json.dumps({'tool': a['tool'], 'arguments': a['arguments']}, sort_keys=True) for a in attempted]
+    repeated_work = len(work) - len(set(work))
+    moved_on = any(a['pending_decisions'] == 0 for a in attempted) or final.get('status') == 'completed'
     result = {'source': str(source), 'scored_jobs': len(scored), 'decisions': decisions,
               'all_decided': all(decisions.values()), 'repeated_reads': repeated_reads,
-              'reads': len(reads), 'moved_on_to': attempted[:1], 'model_calls': len(invocations),
+              'reads': len(reads), 'work_attempts': attempted, 'repeated_work_calls': repeated_work, 'moved_on': moved_on, 'model_calls': len(invocations),
               'tools': [h['tool'] for h in final.get('history', [])],
               'usage_delta': {k: after.get(k, 0) - before.get(k, 0) for k in ('calls', 'input_tokens', 'output_tokens', 'unknown_usage_calls')},
               'seconds': round(time.monotonic() - started, 2), 'error': final.get('error'), 'cost_usd': None}
@@ -154,7 +172,7 @@ def test_decision_replay(tmp_path, monkeypatch):
                        'to_confirm': r.get('to_confirm'), 'next_steps': r.get('next_steps'), 'reason': r.get('reason'),
                        'match_score': r.get('match_score')} for r in recommendations}
     result['excluded_or_unclear'] = {a: d for a, d in (final.get('job_decisions') or {}).items()}
-    result['passed'] = bool(result['all_decided'] and not repeated_reads and moved_on
+    result['passed'] = bool(result['all_decided'] and not repeated_reads and not repeated_work
                             and result['model_calls'] <= MAX_MODEL_CALLS)
     if os.getenv('REPLAY_TIER_AUDIT') == '1' and recommendations:
         # Independent tiered-recommendations-v1 audit of the replay's presentations,

@@ -1,4 +1,4 @@
-"""tiered-recommendations-v1 contract: the model chooses the tier; code checks structure,
+"""Tiered-recommendation contract: the model chooses the tier; code checks structure,
 citations, identity and known-ineligible conditions only (docs/specs/tiered-recommendations-20261013.md)."""
 import pytest
 from test_career_flow import career, execute
@@ -205,3 +205,105 @@ def test_posting_conditions_are_quoted_from_the_posting_and_reach_the_decision(c
     assert conditions == [{'source': 'description', 'quote': 'Required: Bachelor degree with a minimum 3.0 GPA.'}]
     state = c.repository.get(c.state['task_id'])
     assert state['scored_job_evidence'][result['jobs'][0]['application_id']]['posting_conditions'] == conditions
+
+
+# tiered-recommendations-v2: no count threshold; only substantive errors fail.
+def _v2_summary(job, recs, review, reply, decisions=None, final=None):
+    from evals.tiered_audit import ACCEPTANCE_VERSION
+    final = final if final is not None else ''.join(f"{r['url']} Score {r['match_score']}\n" for r in recs)
+    return {'status': 'completed', 'calls': 10, 'acceptance_version': ACCEPTANCE_VERSION,
+            'usage': {'usage_complete': True, 'pending': 0, 'unknown_usage_calls': 0, 'input_tokens': 1000,
+                      'groups': [{'purpose': 'agent', 'input_tokens': 1000}]},
+            'qualification_method': 'model', 'audit_usage': {'usage_complete': True, 'pending': 0, 'calls': 3,
+                                                             'input_tokens': 5000},
+            'final': final, 'recommendations': recs, 'verified_jobs': [job], 'job_decisions': decisions or {},
+            'semantic_review': review, 'user_request': GOAL, 'audit_candidate_hash': 'c', 'reply_review': reply}
+
+
+HONEST = {'explains_results_and_search': True, 'hides_or_misreports_problems': False, 'misstates_jobs': False}
+CLEAN = {'tier_reasonable': False, 'gaps_and_conditions_disclosed': True, 'unknown_presented_as_met': False,
+         'ineligible_presented_as_applicable': False, 'score_used_as_eligibility_proof': False,
+         'known_conflict_hidden': False, 'unsupported_claim': False, 'minor_omissions': ['Looker not mentioned']}
+
+
+def _v2_job():
+    job = posting(1, description=DESCRIPTION)
+    return {**job, 'application_id': 'a1', 'match_score': 71.5, 'retrieved': True, 'disqualified': False}
+
+
+def test_v2_one_clean_result_passes_and_tier_disagreement_is_only_reported():
+    from scripts.remaining_search_acceptance import evaluate_search
+    job = _v2_job()
+    rec = {'application_id': 'a1', 'url': job['url'], 'match_score': 71.5, 'tier': 'stretch', 'title': job['title']}
+    result = evaluate_search(_v2_summary(job, [rec], _audit_row(job, GOAL, 'to_confirm', CLEAN), HONEST), 'analyst')
+    assert result['status'] == 'passed', result['failures']
+    assert result['shown_count'] == 1 and result['by_tier'] == {'stretch': {'shown': 1, 'clean': 1}}
+    assert result['tier_disagreements'] == [{'url': job['url'], 'tier': 'stretch', 'audit_tier': 'to_confirm'}]
+    assert result['jobs'][0]['minor_omissions'] == ['Looker not mentioned']
+
+
+def test_v2_zero_results_pass_only_with_an_honest_explanation():
+    from scripts.remaining_search_acceptance import evaluate_search
+    job = {**_v2_job(), 'match_score': None}
+    assert evaluate_search(_v2_summary(job, [], {}, HONEST, final='Searched LinkedIn and boards; none fit.'),
+                           'analyst')['status'] == 'passed'
+    hidden = {**HONEST, 'hides_or_misreports_problems': True}
+    assert evaluate_search(_v2_summary(job, [], {}, hidden), 'analyst')['failures'] == \
+        ['final_reply_not_honest_or_unexplained']
+
+
+@pytest.mark.parametrize('flag', ['unknown_presented_as_met', 'known_conflict_hidden', 'unsupported_claim',
+                                  'ineligible_presented_as_applicable', 'score_used_as_eligibility_proof'])
+def test_v2_substantive_presentation_errors_fail(flag):
+    from scripts.remaining_search_acceptance import evaluate_search
+    job = _v2_job()
+    rec = {'application_id': 'a1', 'url': job['url'], 'match_score': 71.5, 'tier': 'stretch'}
+    review = _audit_row(job, GOAL, 'stretch', {**CLEAN, flag: True})
+    assert evaluate_search(_v2_summary(job, [rec], review, HONEST), 'analyst')['failures'] == ['substantive_error:' + job['url']]
+
+
+def test_v2_scored_job_without_outcome_fails():
+    from scripts.remaining_search_acceptance import evaluate_search
+    result = evaluate_search(_v2_summary(_v2_job(), [], {}, HONEST), 'analyst')
+    assert result['failures'] == ['scored_jobs_without_outcome']
+    assert result['scored_without_outcome'][0]['application_id'] == 'a1'
+    decided = evaluate_search(_v2_summary(_v2_job(), [], {}, HONEST, decisions={'a1': {'decision': 'exclude'}}), 'analyst')
+    assert decided['status'] == 'passed'
+
+
+def test_v2_request_conflict_found_by_the_audit_fails():
+    from scripts.remaining_search_acceptance import evaluate_search
+    job = _v2_job()
+    rec = {'application_id': 'a1', 'url': job['url'], 'match_score': 71.5, 'tier': 'priority'}
+    review = _audit_row(job, GOAL, 'priority', CLEAN)
+    review[job['url']]['checks']['location'] = {'status': 'unmet', 'citation_valid': True}
+    assert evaluate_search(_v2_summary(job, [rec], review, HONEST), 'analyst')['status'] == 'failed'
+    review[job['url']]['checks']['location'] = {'status': 'unknown', 'citation_valid': False}
+    assert evaluate_search(_v2_summary(job, [rec], review, HONEST), 'analyst')['status'] == 'passed'
+
+
+def test_an_open_request_without_a_number_is_still_a_search_with_no_quota():
+    from eregion.runtime.career.search_recovery import search_request
+    from eregion.runtime.career.search_strategy import source_limits
+    text = 'Find current junior data analyst positions in New York for my saved resume.'
+    state = {'goal': text, 'messages': [{'role': 'user', 'text': text}]}
+    assert search_request(state) == {'count': None, 'words': {'data', 'analyst'}}
+    # Recognised as a search, but sizing is unchanged: no quota and no extra paging.
+    assert source_limits(state, {'query': 'junior data analyst'})['pages'] == 1
+    counted = {'goal': 'Find 3 data analyst jobs', 'messages': [{'role': 'user', 'text': 'Find 3 data analyst jobs'}]}
+    assert search_request(counted)['count'] == 3
+
+
+def test_run_metrics_report_first_result_time_and_repeated_reads():
+    from scripts.remaining_search_acceptance import run_metrics
+    state = {'created_at': '2026-10-13T10:00:00+00:00', 'jobs': [],
+             'history': [{'tool': 'read_context', 'arguments': {'ref': 'x'}, 'at': '2026-10-13T10:01:00+00:00'},
+                         {'tool': 'read_context', 'arguments': {'ref': 'x'}, 'at': '2026-10-13T10:02:00+00:00'},
+                         {'tool': 'recommend_job', 'result': {'recommendation': {}}, 'at': '2026-10-13T10:03:30+00:00'}],
+             'linkedin_mcp_state': {'calls_used': 3, 'log': [
+                 {'tool': 'search_jobs', 'arguments': {'keywords': 'a'}, 'outcome': 'ok'},
+                 {'tool': 'get_job_details', 'arguments': {'job_id': '1'}, 'outcome': 'ok'},
+                 {'tool': 'get_job_details', 'arguments': {'job_id': '1'}, 'outcome': 'ok'}]}}
+    m = run_metrics(state, '2026-10-13T10:05:00+00:00')
+    assert m['seconds_to_first_recommendation'] == 210.0 and m['total_seconds'] == 300.0
+    assert m['repeated_context_reads'] == 1 and m['repeated_linkedin_detail_reads'] == 1 and m['linkedin_searches'] == 1

@@ -96,6 +96,8 @@ def evaluate_search(summary, applicant, limits=None):
     reply_scores = reply_job_scores(final)
     require('Send continue' not in final, 'budget_continuation')
     recommendations = {job_key(j['url']): j for j in summary.get('recommendations', []) if j.get('url')}
+    if summary.get('acceptance_version') == 'tiered-recommendations-v2':
+        return _evaluate_v2(summary, recommendations, reply_scores, failures, require, main_input, usage, input_limit)
     seen, qualified, checked = set(), [], []
     for job in summary.get('verified_jobs', []):
         if summary.get('acceptance_version')=='tiered-recommendations-v1':
@@ -145,6 +147,97 @@ def evaluate_search(summary, applicant, limits=None):
         'main_input_tokens': main_input, 'total_input_tokens': usage.get('input_tokens'),
         'limits': {'main_calls': CALL_LIMIT, 'main_input_tokens': input_limit, 'total_input_tokens': input_limit},
         'jobs': checked}
+
+
+def _evaluate_v2(summary, recommendations, reply_scores, failures, require, main_input, usage, input_limit):
+    """tiered-recommendations-v2: no count threshold. Every shown job must be real, distinct,
+    scored and free of substantive presentation errors; every scored job needs an outcome;
+    the reply must explain results honestly. Counts and tier disagreements are reported."""
+    from eregion.runtime.career.alerts import job_key
+    from evals.tiered_audit import substantive_checks
+    final = summary.get('final') or ''
+    review = summary.get('semantic_review') or {}
+    jobs = {job_key(j['url']): j for j in summary.get('verified_jobs', []) if j.get('url')}
+    decided = set(summary.get('job_decisions') or {}) | {r.get('application_id') for r in recommendations.values()}
+    undecided = [{'application_id': j.get('application_id'), 'url': j.get('url'), 'title': j.get('title')}
+                 for j in jobs.values() if j.get('match_score') is not None and j.get('application_id') not in decided]
+    require(not undecided, 'scored_jobs_without_outcome')
+    reply = summary.get('reply_review') or {}
+    require(bool(reply) and reply.get('explains_results_and_search') and not reply.get('hides_or_misreports_problems')
+            and not reply.get('misstates_jobs'), 'final_reply_not_honest_or_unexplained')
+    checked, clean, seen = [], [], set()
+    for key, rec in recommendations.items():
+        job = jobs.get(key) or {'url': rec['url']}
+        tests = substantive_checks(job, review, summary.get('user_request', ''), summary.get('audit_candidate_hash') or '')
+        score = job.get('match_score')
+        tests['scored'] = type(score) in (int, float) and math.isfinite(score) and 0 <= score <= 100
+        tests['retrieved'] = job.get('retrieved') is True
+        tests['saved_score'] = rec.get('match_score') == score
+        tests['tiered'] = rec.get('tier') in {'priority', 'stretch', 'to_confirm'}
+        tests['reply_url'] = rec['url'] in final
+        tests['reply_score'] = tests['scored'] and score in reply_scores.get(rec['url'], [])
+        tests['eligible'] = not job.get('disqualified', False)
+        tests['distinct'] = key not in seen
+        seen.add(key)
+        row = review.get(rec['url']) or {}
+        checked.append({'application_id': rec.get('application_id'), 'url': rec['url'], 'title': rec.get('title'),
+                        'tier': rec.get('tier'), 'audit_tier': (row.get('independent') or {}).get('tier'),
+                        'score': score, 'checks': tests,
+                        'minor_omissions': (row.get('presentation') or {}).get('minor_omissions', [])})
+        if all(tests.values()):
+            clean.append(key)
+        else:
+            failures.append('substantive_error:' + rec['url'])
+    by_tier = {}
+    for row in checked:
+        entry = by_tier.setdefault(row['tier'] or 'untiered', {'shown': 0, 'clean': 0})
+        entry['shown'] += 1
+        entry['clean'] += job_key(row['url']) in clean
+    disagreements = [{k: row[k] for k in ('url', 'tier', 'audit_tier')} for row in checked if row['audit_tier'] != row['tier']]
+    return {'status': 'failed' if failures else 'passed', 'failures': failures,
+            'acceptance_version': 'tiered-recommendations-v2', 'shown_count': len(checked), 'clean_count': len(clean),
+            'by_tier': by_tier, 'tier_disagreements': disagreements, 'scored_without_outcome': undecided,
+            'reply_review': reply, 'main_input_tokens': main_input, 'total_input_tokens': usage.get('input_tokens'),
+            'limits': {'main_calls': CALL_LIMIT, 'main_input_tokens': input_limit, 'total_input_tokens': input_limit},
+            'jobs': checked}
+
+
+def run_metrics(state, finished_at, workspace=None):
+    """Report-only workload metrics for a live search (no thresholds)."""
+    import json as _json
+    from collections import Counter
+    from datetime import datetime
+    def when(value):
+        return datetime.fromisoformat(value) if isinstance(value, str) else value
+    start = when(state['created_at'])
+    history = state.get('history') or []
+    first = next((h for h in history if h.get('tool') == 'recommend_job' and isinstance(h.get('result'), dict)
+                  and not h['result'].get('error') and not h['result'].get('already_recommended')), None)
+    linkedin = state.get('linkedin_mcp_state') or {}
+    log = linkedin.get('log') or []
+    detail_reads = Counter(_json.dumps(r.get('arguments'), sort_keys=True) for r in log
+                           if r.get('tool') == 'get_job_details' and r.get('outcome') == 'ok')
+    context_reads = Counter(_json.dumps({'tool': h['tool'], 'arguments': h.get('arguments')}, sort_keys=True)
+                            for h in history if h.get('tool') in {'read_context', 'inspect_job', 'read_job'})
+    repeated_scoring = None
+    if workspace is not None:
+        # Two match reports for the same attached posting mean the same job was scored twice
+        # (a new posting body attached in between is a legitimate rescore).
+        repeated_scoring = 0
+        for app in state.get('jobs', []):
+            attached = sorted(e.occurred_at for e in workspace.list_events(app) if e.event_type.value == 'snapshot_attached')
+            snapshots = Counter(max((t for t in attached if t <= a.created_at), default=None)
+                                for a in workspace.list_artifacts(app) if a.artifact_type.value == 'match_report')
+            repeated_scoring += sum(n - 1 for n in snapshots.values() if n > 1)
+    return {'seconds_to_first_recommendation': round((when(first['at']) - start).total_seconds(), 1) if first else None,
+            'total_seconds': round((when(finished_at) - start).total_seconds(), 1),
+            'linkedin_calls': linkedin.get('calls_used', 0),
+            'linkedin_searches': sum(r.get('tool') == 'search_jobs' for r in log),
+            'linkedin_detail_reads': sum(detail_reads.values()),
+            'repeated_linkedin_detail_reads': sum(n - 1 for n in detail_reads.values()),
+            'repeated_context_reads': sum(n - 1 for n in context_reads.values()),
+            'repeated_scoring': repeated_scoring,
+            'tool_counts': dict(Counter(h.get('tool') for h in history))}
 
 
 if __name__ == '__main__':

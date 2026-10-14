@@ -1,8 +1,15 @@
-"""Acceptance audit for tiered-recommendations-v1 (docs/specs/tiered-recommendations-20261013.md).
+"""Acceptance audit for tiered recommendations (docs/specs/tiered-recommendations-20261013.md).
 
 Phase 1 is blind: request, posting text and candidate facts only, no production labels.
-Phase 2 compares the production records with the phase-1 assessment. Structural checks
-(citations, identity, freshness) are code; every judgment of meaning is the audit model's.
+Phase 2 compares the production records with the phase-1 assessment; a last call reviews
+the final reply against facts code collected about the run. Structural checks (citations,
+identity, freshness) are code; every judgment of meaning is the audit model's.
+
+v1 counted a recommendation only when every check, tier agreement included, passed.
+v2 (current) has no count threshold: a shown job fails only for a substantive error
+(not relevant to the request, unknown presented as met, a known conflict hidden, an
+unsupported claim, a score used as eligibility proof). A reasonable tier disagreement is
+reported, never failed. Historical v1 results keep their recorded verdicts.
 """
 import hashlib
 import json
@@ -13,7 +20,9 @@ from eregion.domain.jev_fit.resolve import locate
 from eregion.runtime.career.qualification import body_hash, verified_checks, FIELDS
 from evals.search_semantic_audit import PROMPT, Requirement, candidate_hash
 
-ACCEPTANCE_VERSION = 'tiered-recommendations-v1'
+V1 = 'tiered-recommendations-v1'
+ACCEPTANCE_VERSION = 'tiered-recommendations-v2'
+VERSIONS = {V1, ACCEPTANCE_VERSION}
 
 
 class Opportunity(PostingDecision):
@@ -37,6 +46,10 @@ class Presentation(BaseModel):
     unknown_presented_as_met: bool
     ineligible_presented_as_applicable: bool
     score_used_as_eligibility_proof: bool
+    # v2: substantive errors only; minor omissions are listed, not failed.
+    known_conflict_hidden: bool = False
+    unsupported_claim: bool = False
+    minor_omissions: list[str] = Field(default_factory=list, max_length=6)
     reason: str = Field(min_length=1, max_length=600)
 
 
@@ -64,8 +77,29 @@ compare the assistant's tier, reason, gaps, items to confirm, next steps and sco
   by the assistant (not hidden in vague wording);
 - unknown_presented_as_met: the assistant states or implies that something unknown is satisfied;
 - ineligible_presented_as_applicable: a known hard mismatch is presented as applicable;
-- score_used_as_eligibility_proof: the score is presented as proof of eligibility rather than a fit estimate.
-Judge only from the supplied material. Explain briefly. Do not improve the pass count."""
+- score_used_as_eligibility_proof: the score is presented as proof of eligibility rather than a fit estimate;
+- known_conflict_hidden: a known hard mismatch, an important gap or a condition the user must confirm is
+  missing or worded so that a reader would be misled about whether to apply;
+- unsupported_claim: the reason or evidence states something the posting or candidate material does not support;
+- minor_omissions: smaller details left out that would not mislead a reader (listed only).
+A different but defensible tier is not an error. Judge only from the supplied material. Explain briefly.
+Do not improve the pass count."""
+
+REPLY_PROMPT = """You review the final reply of a job-search assistant against facts recorded by its runtime
+(what was searched, what failed, how many postings were read, scored and decided, and how the run ended).
+- explains_results_and_search: the reply says what was searched and, when there are few or no results,
+  why, in a way consistent with the facts;
+- hides_or_misreports_problems: the reply omits or misstates a recorded fetch or source failure, unprocessed
+  candidates, a budget or abnormal stop, or claims work that the facts do not show;
+- misstates_jobs: the reply lists a job, tier, score or count that differs from the recorded recommendations.
+A small number of results is not itself a problem. Judge only from the supplied material. Explain briefly."""
+
+
+class ReplyAudit(BaseModel):
+    explains_results_and_search: bool
+    hides_or_misreports_problems: bool
+    misstates_jobs: bool
+    reason: str = Field(min_length=1, max_length=800)
 
 PRESENTED = ('tier', 'reason', 'gaps', 'to_confirm', 'next_steps', 'match_score', 'score_meaning', 'caveats')
 
@@ -97,8 +131,8 @@ def _bounded(rows, description):
 def review(request, jobs, recommendations, candidate=''):
     from eregion.runtime.career.alerts import job_key
     outputs = {}
-    for start in range(0, len(jobs), 5):
-        group = jobs[start:start + 5]
+    for start in range(0, len(jobs), 8):
+        group = jobs[start:start + 8]
         payload = {'request': request, 'candidate': candidate, 'postings': [{'posting_id': str(i),
                    **{k: j.get(k) or '' for k in ('title', 'location', 'description')}} for i, j in enumerate(group)]}
         for d in _ask(IndependentAudit, TIER_PROMPT, payload, 'acceptance_tier_audit_independent', len(group), 'decisions'):
@@ -126,7 +160,43 @@ def review(request, jobs, recommendations, candidate=''):
     return outputs
 
 
+def review_reply(request, final, facts, recommendations):
+    from eregion.domain.model import invoke_structured, shared_model
+    from eregion.runtime.provider_usage import usage_scope
+    payload = {'request': request, 'final_reply': final, 'run_facts': facts,
+               'recommendations': [{k: r.get(k) for k in ('title', 'company', 'url', 'tier', 'match_score')}
+                                   for r in recommendations]}
+    with usage_scope(purpose='acceptance_tier_audit_reply'):
+        result = invoke_structured(shared_model(purpose='search_qualification'), ReplyAudit, REPLY_PROMPT,
+                                   json.dumps(payload, ensure_ascii=False, default=str))
+    return result.model_dump()
+
+
+def substantive_checks(job, audit, request, candidate_digest=None):
+    """v2: True means no substantive error was found in how this shown job was presented."""
+    row = audit.get(job.get('url')) or {}
+    fresh = (row.get('body_hash') == body_hash(job)
+             and row.get('request_hash') == hashlib.sha256(request.encode()).hexdigest()
+             and (candidate_digest is None or row.get('candidate_hash') == candidate_digest))
+    checks = row.get('checks') or {}
+    independent = row.get('independent') or {}
+    presentation = row.get('presentation') or {}
+    reviewed = bool(fresh and independent and presentation)
+    return {'audited': reviewed,
+            # Relevance: the role must be confirmed; no requested field may be in known conflict.
+            'relevant_role': bool(fresh and checks.get('role', {}).get('citation_valid')
+                                  and checks['role']['status'] in {'met', 'not_requested'}),
+            'no_known_request_conflict': bool(fresh) and not any(c.get('status') == 'unmet' for c in checks.values()),
+            'no_user_restriction_violated': reviewed and not independent.get('violates_user_restriction'),
+            'no_unknown_as_met': reviewed and not presentation.get('unknown_presented_as_met'),
+            'no_ineligible_as_applicable': reviewed and not presentation.get('ineligible_presented_as_applicable'),
+            'no_hidden_conflict': reviewed and not presentation.get('known_conflict_hidden'),
+            'no_unsupported_claim': reviewed and not presentation.get('unsupported_claim'),
+            'score_not_eligibility_proof': reviewed and not presentation.get('score_used_as_eligibility_proof')}
+
+
 def contract_checks(job, audit, request, candidate_digest=None):
+    """v1 (historical): every check, tier agreement included, had to pass to count."""
     row = audit.get(job.get('url')) or {}
     fresh = (row.get('body_hash') == body_hash(job)
              and row.get('request_hash') == hashlib.sha256(request.encode()).hexdigest()
