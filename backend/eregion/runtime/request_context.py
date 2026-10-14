@@ -705,7 +705,10 @@ def prepare_request(prompt, tools, window, snapshot, archive, *, max_chars=64000
     if size > max_chars:
         # Completed/auxiliary results can be read; live application fields,
         # candidate facts, pending questions, observation IDs and browser state stay exact.
-        for key in ('previous_recommendations', 'recommended_jobs', 'interviews', 'materials', 'jobs', 'job_alerts'):
+        # recommended_jobs is already the compact identity/URL/score list the final answer
+        # needs; behind a ref the model re-read it or re-recommended saved jobs (replays
+        # tiered-v2-01/02), so it stays inline.
+        for key in ('previous_recommendations', 'interviews', 'materials', 'jobs', 'job_alerts'):
             if key not in live or len(encoded(live[key])) <= 600: continue
             before = len(encoded(live[key]))
             live[key] = compact_resources(key,live[key],archive) if key in {'interviews','materials','jobs'} and isinstance(live[key],list) else archive.reference(live[key],preview=200)

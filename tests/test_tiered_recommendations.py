@@ -327,3 +327,17 @@ def test_an_item_attempted_without_progress_is_stalled_not_repeated_and_decision
     assert not stalled(state)
     state['history'].pop(); state['chat_revision'] = 1
     assert not stalled(state)
+
+
+def test_saved_recommendations_stay_inline_when_the_observation_is_compacted():
+    import json
+    from eregion.runtime.request_context import ContextArchive, prepare_request
+    from eregion.runtime.core.context import ConversationWindow
+    saved = [{'application_id': f'a{i}', 'title': f'Data Analyst {i}', 'company': 'Example',
+              'url': f'https://www.linkedin.com/jobs/view/{i}/', 'match_score': 50 + i} for i in range(8)]
+    snapshot = {'recommended_jobs': saved, 'previous_recommendations': [{'note': 'x' * 4000}],
+                'jobs': [{'application_id': 'b', 'title': 'T', 'description': 'y' * 12000}]}
+    messages, _ = prepare_request('system', [], ConversationWindow(), snapshot, ContextArchive(), max_chars=6000)
+    value = json.loads(messages[-1].content)
+    assert value['recommended_jobs'] == saved
+    assert 'context_ref' in value['previous_recommendations']
