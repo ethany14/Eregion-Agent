@@ -1,8 +1,9 @@
 """Explicit paid decision replay: the real main model decides already scored jobs.
 
 Restores a saved live sample at the point where its jobs were scored, without any
-source read, qualification or scoring call (those tools are recorded, not run), and
-caps the replay at 10 main-model calls. It checks that the model reaches a decision
+source read or scoring call (those tools are recorded, not run), re-judges the saved
+postings only if the qualification policy changed, and caps the replay at 10
+main-model calls. It checks that the model reaches a decision
 for every scored job and moves on, instead of paging the same reports.
 """
 import json
@@ -58,10 +59,6 @@ def test_decision_replay(tmp_path, monkeypatch):
     repository = TaskRepository(db.session_factory)
     applications = ApplicationLoop(ApplyRepository(db.session_factory), browser_factory=lambda url: None)
 
-    def no_paid_semantics(*_, **__):
-        raise AssertionError('Decision replay must not call qualification or scoring.')
-    monkeypatch.setattr(qualification, 'judge', no_paid_semantics)
-
     # Same scorer configuration as the live sample, so its saved scores stay current;
     # scoring itself is never executed here.
     from dataclasses import replace
@@ -83,6 +80,24 @@ def test_decision_replay(tmp_path, monkeypatch):
     repository.change(task_id, recommendations=[], job_decisions={}, error=None, status='queued', pause_requested=False,
                       progress_guard={}, loop_runtime=None, history=[], input_request=None, wait=None,
                       messages=[m for m in state['messages'] if m.get('role') == 'user'])
+
+    ledger = UsageLedger(db.session_factory)
+    before = ledger.summary(task_id=task_id)
+    # The sample's recorded spend is history; the replay's own spend is bounded by the
+    # 10-model-call cap and the shared experiment ledger, not by what the sample used.
+    monkeypatch.setenv('JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS', str(before['calls'] + 40))
+    monkeypatch.setenv('JOB_AGENT_TASK_MAX_INPUT_TOKENS', str(before.get('budget_input_tokens', before['input_tokens']) + 1_500_000))
+    # Re-judge the scored postings when the qualification policy changed since the sample
+    # (metered, bounded), so requirements and posting conditions are current. Saved scores
+    # are reused; nothing is fetched or scored again.
+    from eregion.runtime.career.alerts import job_key
+    from eregion.runtime.career.qualification import record_many
+    from eregion.runtime.provider_usage import usage_scope
+    bodies = [next(j for j in state['retrieved_jobs'].values() if j.get('url')
+                   and job_key(j['url']) == job_key(state['scored_job_evidence'][a]['url'])) for a in scored]
+    with usage_scope(task_id=task_id, ledger=ledger):
+        record_many(repository, task_id, bodies)
+    harness.save_scored_evidence(task_id, scored)
 
     attempted, invocations = [], []
     original_execute = harness.execute
@@ -107,12 +122,6 @@ def test_decision_replay(tmp_path, monkeypatch):
             invocations.append(time.monotonic())
             return self.model.invoke(messages, tools)
 
-    ledger = UsageLedger(db.session_factory)
-    before = ledger.summary(task_id=task_id)
-    # The sample's recorded spend is history; the replay's own spend is bounded by the
-    # 10-model-call cap and the shared experiment ledger, not by what the sample used.
-    monkeypatch.setenv('JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS', str(before['calls'] + 40))
-    monkeypatch.setenv('JOB_AGENT_TASK_MAX_INPUT_TOKENS', str(before.get('budget_input_tokens', before['input_tokens']) + 1_500_000))
     service = CareerService(runtime, applications, harness=harness, model_factory=Counted, start_alert_scheduler=False)
     started = time.monotonic()
     try:

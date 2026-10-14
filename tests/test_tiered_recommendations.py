@@ -184,3 +184,24 @@ def test_production_and_audit_share_one_set_of_tier_definitions():
     from evals.tiered_audit import TIER_PROMPT
     assert TIER_DEFINITIONS in RECOMMENDATION_RULE and TIER_DEFINITIONS in TIER_PROMPT
     assert "a GPA the resume does not state is to_confirm" in TIER_DEFINITIONS
+
+
+def test_posting_conditions_are_quoted_from_the_posting_and_reach_the_decision(career, monkeypatch):
+    from eregion.runtime.career import qualification as q
+    from eregion.domain.search_qualification import SourceQuote
+    from test_semantic_search_qualification import response
+    def judge(request, postings):
+        value = response(request, postings)
+        value.decisions[0].candidate_conditions = [
+            SourceQuote(source='description', quote='Required: Bachelor degree with a minimum 3.0 GPA.'),
+            SourceQuote(source='description', quote='Must be under 28 years old.')]   # not in this posting
+        return value
+    c = career
+    monkeypatch.setattr(q, 'judge', judge)
+    job = posting(1, description=DESCRIPTION)
+    prepare(c, monkeypatch, [job])
+    result = execute(c, 'verify_and_score_jobs', urls=[job['url']])
+    conditions = result['jobs'][0]['posting_conditions']
+    assert conditions == [{'source': 'description', 'quote': 'Required: Bachelor degree with a minimum 3.0 GPA.'}]
+    state = c.repository.get(c.state['task_id'])
+    assert state['scored_job_evidence'][result['jobs'][0]['application_id']]['posting_conditions'] == conditions

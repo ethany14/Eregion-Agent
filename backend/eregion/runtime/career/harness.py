@@ -701,6 +701,10 @@ class CareerHarness:
             q=assess(state,self.job_summary(identifier,detail=True))
             row['qualification_evidence']=[{'field':field,**quote}
                 for field,item in q['checks'].items() for quote in item.get('evidence',[])][:8]
+            # The posting's own conditions on the candidate (GPA, nationality, cohort...),
+            # quoted by the qualification model, so tiering never depends on what the
+            # fit scorer happened to mark as unresolved.
+            row['posting_conditions']=q.get('candidate_conditions',[])
         self.repository.change(task_id,lambda s:{'scored_job_evidence':{**s.get('scored_job_evidence',{}),**results}})
 
     def fit_facts(self):
@@ -1175,7 +1179,9 @@ class CareerHarness:
             fingerprints={a:self.analysis_fingerprint(text,rt.workspace.get_application(a).current_snapshot_id)for a in identifiers}
             self.repository.change(task_id,lambda s:{'analyses':{**s.get('analyses',{}),**fingerprints}})
             self.save_scored_evidence(task_id,identifiers)
-            return {'jobs':[self.job_summary(a,detail=True)for a in identifiers],
+            evidence=self.repository.get(task_id).get('scored_job_evidence',{})
+            return {'jobs':[{**self.job_summary(a,detail=True),'posting_conditions':evidence.get(a,{}).get('posting_conditions',[])}
+                            for a in identifiers],
                     **({'unscored_for_budget':deferred,'budget_note':'Imported and qualified but not scored: the '
                         'remaining provider attempts could not complete their scoring. Not recommendations.'} if deferred else {}),
                     'no_new_evidence':all(rt.workspace.get_application(a).version==versions[a] for a in identifiers)}

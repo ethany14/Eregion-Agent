@@ -21,6 +21,10 @@ class PostingDecision(BaseModel):
     location: ConstraintDecision
     seniority: ConstraintDecision
     vacancy: ConstraintDecision
+    candidate_conditions: list[SourceQuote] = Field(default_factory=list, max_length=8, description=(
+        'Exact quotes of every condition this posting places on the candidate personally: degree level, GPA, '
+        'citizenship or nationality, age, visa or program status, license, clearance, graduation date or cohort, '
+        'start date or availability, work authorization. Extraction only; never a judgment of the candidate.'))
 
 
 class SearchQualification(BaseModel):
@@ -56,6 +60,9 @@ For met or unmet, provide concise exact quotes from this posting's title, locati
 that support the conclusion, and explain why. Unknown may cite evidence but must identify what
 is missing. Missing information is unknown, not an invented qualification.
 Do not judge the applicant or recommend anything here. Personal fit is scored separately by Jev.
+Separately quote in candidate_conditions every condition the posting places on the candidate personally
+(degree level, GPA, citizenship or nationality, age, visa or program status, license, clearance, graduation
+date or cohort, start date or availability, work authorization), so they can be confirmed later.
 Return exactly one decision per supplied posting_id, including all four dimensions.'''
 
 

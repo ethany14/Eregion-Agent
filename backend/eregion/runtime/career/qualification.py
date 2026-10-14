@@ -56,7 +56,17 @@ def assess(state,job):
                                'evidence':[]} for f in FIELDS},method='not_assessed')
 
 
-def result(state,job,checks,*,method='model_with_verified_quotes'):
+def verified_conditions(decision,job):
+    """Posting conditions on the candidate, kept only when quoted verbatim from this posting."""
+    kept=[]
+    for quote in getattr(decision,'candidate_conditions',None) or []:
+        original=job.get(quote.source) or ''
+        span=locate(quote.quote,original)
+        if span is not None:kept.append({'source':quote.source,'quote':original[span[0]:span[1]]})
+    return kept[:8]
+
+
+def result(state,job,checks,*,method='model_with_verified_quotes',conditions=()):
     unresolved=[k for k,v in checks.items() if v['status']=='unknown']
     qualified=all(c['status'] in {'met','not_requested'} for c in checks.values())
     return {'url':job['url'],'revision':state.get('chat_revision',0),'body_hash':body_hash(job),
@@ -64,6 +74,7 @@ def result(state,job,checks,*,method='model_with_verified_quotes'):
             **({'application_id':job['application_id']} if job.get('application_id') else {}),
             'requested':request_fields(state),'checks':checks,'qualified':qualified,
             'status':'qualified' if qualified else 'needs_evidence',
+            'candidate_conditions':list(conditions),
             'review':{'method':method,'unresolved':unresolved,
                       'next':'Reuse this assessment for unchanged inputs. New source evidence or user corrections can resolve unknowns.'},
             'interpretation':'Search constraints only; scoring must still check personal eligibility.'}
@@ -139,7 +150,8 @@ def record_many(repository,task_id,jobs):
         for i,job in enumerate(group):
             checks=verified_checks(decisions[str(i)],request,job) if error is None else {
                 f:{'status':'unknown','quote':'','reason':'Semantic assessment unavailable: '+error,'evidence':[]} for f in FIELDS}
-            outputs[job_key(job['url'])]=result(state,job,checks,method='model_unavailable' if error else 'model_with_verified_quotes')
+            outputs[job_key(job['url'])]=result(state,job,checks,method='model_unavailable' if error else 'model_with_verified_quotes',
+                                                 conditions=verified_conditions(decisions[str(i)],job) if error is None else ())
         repository.change(task_id,lambda s:{'candidate_qualifications':dict(list({
             **s.get('candidate_qualifications',{}),**outputs}.items())[-100:])})
     # Independent groups are judged concurrently (bounded) to keep a large batch
