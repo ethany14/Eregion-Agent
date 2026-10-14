@@ -1,5 +1,6 @@
 """Shared model timing and safe failure classification, independent of a provider."""
 from dataclasses import dataclass
+import httpcore
 import httpx
 
 
@@ -37,20 +38,28 @@ def retry_after(error):
 
 def model_failure(error):
     """Follow adapter causes without exposing provider bodies or credentials."""
-    seen = set()
-    while error.__cause__ is not None and id(error) not in seen:
-        seen.add(id(error))
-        error = error.__cause__
-    name = type(error).__name__
-    status = getattr(error, "status_code", None)
-    status = status if isinstance(status, int) else None
-    if isinstance(error, TimeoutError) or "timeout" in name.casefold():
-        return ModelFailure("model_timeout", True, name, status)
+    # Classify across the whole cause chain: the root may be a transport class of
+    # another library (httpcore.ConnectError under OpenAIConnectionError) that the
+    # root alone does not identify (acceptance tiered-v3-03 stopped on one).
+    chain, seen = [], set()
+    while error is not None and id(error) not in seen:
+        seen.add(id(error)); chain.append(error); error = error.__cause__
+    root = chain[-1]
+    name = type(root).__name__
+    def status_of(item):
+        value = getattr(item, "status_code", None)
+        return value if isinstance(value, int) else None
+    status = next((status_of(item) for item in reversed(chain) if status_of(item) is not None), None)
+    names = [type(item).__name__.casefold() for item in chain]
     if status == 402:
         return ModelFailure("model_payment_required", False, name, status)
     if status == 429:
-        return ModelFailure("model_rate_limited", True, name, status, retry_after(error))
-    if isinstance(error, (ConnectionError,httpx.NetworkError,httpx.ProxyError)) or "connection" in name.casefold() or (status and status >= 500):
+        return ModelFailure("model_rate_limited", True, name, status, retry_after(next(i for i in chain if status_of(i) == 429)))
+    if any(isinstance(item, TimeoutError) for item in chain) or any("timeout" in n for n in names):
+        return ModelFailure("model_timeout", True, name, status)
+    transport = (ConnectionError, httpx.NetworkError, httpx.ProxyError, httpcore.NetworkError, httpcore.ProxyError)
+    if (any(isinstance(item, transport) for item in chain) or any("connection" in n for n in names)
+            or (status and status >= 500)):
         return ModelFailure("model_unavailable", True, name, status)
     return ModelFailure("model_error", False, name, status)
 

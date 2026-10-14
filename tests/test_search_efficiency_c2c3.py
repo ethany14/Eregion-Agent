@@ -365,3 +365,26 @@ def test_only_transport_or_format_failures_are_retried(career,monkeypatch,error,
     monkeypatch.setattr(q,'judge',judge)
     result=q.record_many(repo,tid,[job(1)])[0]
     assert len(calls)==(2 if retried else 1) and result['review']['method']=='model_unavailable'
+
+
+def _chained(outer, inner):
+    try:
+        try:
+            raise inner
+        except Exception as cause:
+            raise outer from cause
+    except Exception as error:
+        return error
+
+
+def test_a_connect_error_under_the_provider_error_is_retryable_but_program_errors_are_not():
+    import httpcore, httpx, openai
+    from eregion.runtime.model_runtime import model_failure, recoverable_failure
+    request = httpx.Request('POST', 'https://example.invalid/v1/chat/completions')
+    # The live chain of acceptance tiered-v3-03: OpenAI connection error over httpcore.ConnectError.
+    error = _chained(openai.APIConnectionError(request=request), httpcore.ConnectError('All connection attempts failed'))
+    failure = model_failure(error)
+    assert failure.code == 'model_unavailable' and failure.retryable and recoverable_failure(error)
+    assert not model_failure(_chained(RuntimeError('x'), ValueError('bad argument'))).retryable
+    auth = openai.AuthenticationError('denied', response=httpx.Response(401, request=request), body=None)
+    assert not model_failure(auth).retryable and not recoverable_failure(auth)
