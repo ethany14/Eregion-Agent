@@ -5,8 +5,23 @@ from urllib.parse import parse_qs, urlsplit
 from .alerts import job_key
 
 
+SEARCH_WORK={'search_jobs','screen_jobs','read_job','verify_and_score','verify_and_score_jobs'}
+
+
 def search_request(state):
-    latest=next((m['text'] for m in reversed(state.get('messages',[])) if m.get('role')=='user'),state.get('goal',''))
+    users=[m['text'] for m in state.get('messages',[]) if m.get('role')=='user'] or [state.get('goal','')]
+    found=_parse(users[-1])
+    if found is None:
+        # A follow-up such as 'search more' continues the conversation's earlier search,
+        # but only once this turn actually does search work (structure, not wording), so
+        # an unrelated follow-up question is not forced into the search-reply contract.
+        revision=state.get('chat_revision',0)
+        if any(h.get('tool') in SEARCH_WORK and h.get('chat_revision',revision)==revision for h in state.get('history',[])):
+            found=next((r for r in map(_parse,reversed(users[:-1])) if r is not None),None)
+    return found
+
+
+def _parse(latest):
     # The number is optional: an open request ('find current X positions') is still a
     # search; count is None and nothing waits for a quota.
     match=re.search(r'\bfind\s+(?:(one|two|three|four|\d+)\s+)?(?:current\s+)?(.{1,80}?)\s+(?:positions|jobs|roles)\b',latest,re.I)

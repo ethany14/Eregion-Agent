@@ -94,10 +94,25 @@ def searches(state):
                            'matching':result.get('directory_matching')}
         linked=result.get('linkedin_mcp') or {}
         variants=linked.get('query_variants') or ([linked] if linked else [])
-        row['linkedin']=[{**{k:(v.get('request') or {}).get(k) for k in ('query','pages','cards')},'status':v.get('status'),
-                          'reported_total':v.get('total'),'cached':bool(v.get('cached'))} for v in variants]
+        row['linkedin']=[linkedin_row(v) for v in variants]
         rows.append(row)
     return rows
+
+
+def linkedin_row(result):
+    request=result.get('request') or {}
+    total,cards=result.get('total'),request.get('cards')
+    return {**{k:request.get(k) for k in ('query','location','pages','cards')},'status':result.get('status'),
+            'reported_total':total,'cached':bool(result.get('cached')),
+            # Arithmetic only: what the provider reports beyond the cards already returned.
+            'unseen':max(0,total-cards) if isinstance(total,int) and isinstance(cards,int) else None}
+
+
+def linkedin_queries(state):
+    """Every recorded LinkedIn query, including earlier turns, so a follow-up such as
+    'search more' can continue the same query deeper instead of starting over."""
+    return [linkedin_row(r) for r in list((state.get('linkedin_mcp_search_cache') or {}).values())[-8:]
+            if r.get('request')]
 
 
 def yields(state):
@@ -122,7 +137,7 @@ def coverage(state):
     sources=active_sources(state)
     blocked=[source for source,item in sources.items() if item.get('blocked')]
     return {'blocked_sources':blocked[-8:],'blocked_count':len(blocked),'exhausted_sources':[source for source,item in sources.items() if item.get('empty_count',0)>=2][-8:],
-        'searches':searches(state),'yield_by_source':yields(state),
+        'searches':searches(state),'yield_by_source':yields(state),'linkedin_queries':linkedin_queries(state),
         'instruction':'Disclose source access limitations once to the user. These failures do not establish absence of vacancies. Public detail reading and switching sources are already authorized.'}
 
 

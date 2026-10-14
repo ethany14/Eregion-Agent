@@ -89,10 +89,15 @@ def test_stop_replay(tmp_path, monkeypatch):
     # Remove only the final reply and its finish step; keep the search trajectory.
     history = [h for h in state['history'] if h['tool'] != 'finish_task']
     messages = [m for m in state['messages'] if m.get('role') == 'user']
+    if os.getenv('STOP_FOLLOW_UP'):
+        # The recorded reply stays; the user then asks to continue (a new user turn).
+        history = state['history']
+        messages = [*state['messages'], {'role': 'user', 'text': os.environ['STOP_FOLLOW_UP'], 'id': 'follow-up-1'}]
     repository.change(task_id, search_request_cache=state['search_request_cache'], history=history, messages=messages,
                       linkedin_mcp_state=state['linkedin_mcp_state'],
                       status='queued', error=None, pause_requested=False, progress_guard={}, loop_runtime=None,
-                      input_request=None, wait=None, stop_reason=None)
+                      input_request=None, wait=None, stop_reason=None,
+                      chat_revision=state.get('chat_revision', 0) + (1 if os.getenv('STOP_FOLLOW_UP') else 0))
 
     attempted, invocations = [], []
     original_execute = harness.execute

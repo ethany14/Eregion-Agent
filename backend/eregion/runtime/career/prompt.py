@@ -10,10 +10,10 @@ SEARCH_STOP_RULE = ("Continue or stop a search on expected value: weigh the user
     "pages, a differently worded query, an unsearched source); stop when further steps are unlikely to add relevant "
     "openings, even if results are few or budget remains. A source that just turned a useful share of its cards into "
     "relevant openings and still reports many unseen results is evidence that more of it is worth reading; a source "
-    "that yielded nothing relevant, or reports nothing unseen, is evidence against. Budgets are limits, not targets. "
+    "that yielded nothing relevant, or reports nothing unseen, is evidence against. Budgets are limits, not targets; when you stop with results remaining, the reply offers to continue. "
     "When finishing, give finish_task a one-sentence stop_reason that is consistent with these recorded facts.")
 ELIGIBILITY_RULE = RECOMMENDATION_RULE  # former name
-FINAL_FORMAT = ("Final search reply: group recommendations under the tier labels Priority match, Worth trying (known gaps) and Needs your confirmation, each with its count; give every job its title, URL, an explicit 'Score <saved value>', its gaps or items to confirm and one next step; then list other scored jobs that were excluded or need evidence, marked as such, any search or read that failed, and the honest shortfall.")
+FINAL_FORMAT = ("Final search reply: group recommendations under the tier labels Priority match, Worth trying (known gaps) and Needs your confirmation, each with its count; give every job its title, URL, an explicit 'Score <saved value>', its gaps or items to confirm and one next step; then list other scored jobs that were excluded or need evidence, marked as such, any search or read that failed, and the honest shortfall. If searching stopped while results remain (unseen LinkedIn results, unsearched boards), say what remains with the recorded numbers and offer to continue, for example reply ‘search more’ to read the next pages.")
 
 SYSTEM = """You are eregion, a general task agent specializing in the user's job search.
 Own the requested outcome across discovery, fit analysis, documents, applications and

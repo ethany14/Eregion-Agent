@@ -28,8 +28,11 @@ def request_hash(state):
 
 
 def request_fields(state):
-    text=next((m['text'] for m in reversed(state.get('messages',[])) if m.get('role')=='user'),state.get('goal',''))
-    match=re.search(r'\bfind\s+(?:(?:one|two|three|four|\d+)\s+)?(?:current\s+)?(.+?)\s+(?:positions|jobs|roles)\b',text,re.I)
+    pattern=r'\bfind\s+(?:(?:one|two|three|four|\d+)\s+)?(?:current\s+)?(.+?)\s+(?:positions|jobs|roles)\b'
+    users=[m['text'] for m in state.get('messages',[]) if m.get('role')=='user'] or [state.get('goal','')]
+    # A follow-up ('search more') keeps the conversation's latest stated search fields.
+    text=next((t for t in reversed(users) if re.search(pattern,t,re.I)),users[-1])
+    match=re.search(pattern,text,re.I)
     role=match[1] if match else ''
     location=''
     if match:

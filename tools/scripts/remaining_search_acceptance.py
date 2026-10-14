@@ -96,7 +96,8 @@ def evaluate_search(summary, applicant, limits=None):
     reply_scores = reply_job_scores(final)
     require('Send continue' not in final, 'budget_continuation')
     recommendations = {job_key(j['url']): j for j in summary.get('recommendations', []) if j.get('url')}
-    if summary.get('acceptance_version') in {'tiered-recommendations-v2', 'tiered-recommendations-v3'}:
+    if summary.get('acceptance_version') in {'tiered-recommendations-v2', 'tiered-recommendations-v3',
+                                             'tiered-recommendations-v4'}:
         return _evaluate_v2(summary, recommendations, reply_scores, failures, require, main_input, usage, input_limit)
     seen, qualified, checked = set(), [], []
     for job in summary.get('verified_jobs', []):
@@ -169,6 +170,13 @@ def _evaluate_v2(summary, recommendations, reply_scores, failures, require, main
     if version == 'tiered-recommendations-v3':
         # A clearly premature stop fails; a borderline one is an improvement suggestion only.
         require(reply.get('stop_assessment') != 'premature', 'search_stopped_prematurely')
+    if version == 'tiered-recommendations-v4':
+        # The stop itself is the model's choice and advisory here, unless the user asked for
+        # an exhaustive search; what remains must be stated accurately with a way to continue.
+        require(not (reply.get('user_asked_exhaustive') and reply.get('stop_assessment') == 'premature'),
+                'search_stopped_prematurely')
+        require(reply.get('continuation_stated', True) and reply.get('continuation_accurate', True),
+                'continuation_missing_or_inaccurate')
     checked, clean, seen = [], [], set()
     for key, rec in recommendations.items():
         job = jobs.get(key) or {'url': rec['url']}
@@ -202,7 +210,9 @@ def _evaluate_v2(summary, recommendations, reply_scores, failures, require, main
             'acceptance_version': version, 'shown_count': len(checked), 'clean_count': len(clean),
             'by_tier': by_tier, 'tier_disagreements': disagreements, 'scored_without_outcome': undecided,
             'stop_assessment': reply.get('stop_assessment'), 'stop_review': reply.get('stop_review'),
-            'improvement_suggestions': ([reply.get('stop_review')] if reply.get('stop_assessment') == 'borderline' else []),
+            'improvement_suggestions': ([reply.get('stop_review')] if reply.get('stop_assessment') == 'borderline'
+                                        or (version == 'tiered-recommendations-v4' and reply.get('stop_assessment') == 'premature')
+                                        else []),
             'reply_review': reply, 'main_input_tokens': main_input, 'total_input_tokens': usage.get('input_tokens'),
             'limits': {'main_calls': CALL_LIMIT, 'main_input_tokens': input_limit, 'total_input_tokens': input_limit},
             'jobs': checked}

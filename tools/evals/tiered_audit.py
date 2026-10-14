@@ -23,8 +23,12 @@ from evals.search_semantic_audit import PROMPT, Requirement, candidate_hash
 V1 = 'tiered-recommendations-v1'
 V2 = 'tiered-recommendations-v2'
 # v3 = v2 plus a judgment of whether the search stopped at a reasonable point.
-ACCEPTANCE_VERSION = 'tiered-recommendations-v3'
-VERSIONS = {V1, V2, ACCEPTANCE_VERSION}
+V3 = 'tiered-recommendations-v3'
+# v4 = the model still decides when to stop; the reply must state accurately what remains
+# and offer to continue. Stop reasonableness is advisory unless the user asked for an
+# exhaustive search (one audit call proved too inconsistent to pass or fail a run on).
+ACCEPTANCE_VERSION = 'tiered-recommendations-v4'
+VERSIONS = {V1, V2, V3, ACCEPTANCE_VERSION}
 
 
 class Opportunity(PostingDecision):
@@ -103,6 +107,10 @@ A small number of results is not itself a problem.
   sound reason; borderline = a further step was plausible but its value was uncertain (an improvement suggestion);
   reasonable = further steps were unlikely to add relevant openings. Unused budget alone is not a reason to continue,
   and one search can be enough. Cite the specific facts in stop_review.
+- user_asked_exhaustive: the user explicitly asked for an exhaustive or as-complete-as-possible search.
+- continuation_stated: when the facts show results remaining (unseen LinkedIn results, unsearched boards or
+  unread candidates), the reply says what remains and offers a way to continue; true when nothing remains.
+- continuation_accurate: what the reply says remains agrees with the recorded numbers (rounding is fine).
 Judge only from the supplied material. Explain briefly."""
 
 
@@ -112,6 +120,9 @@ class ReplyAudit(BaseModel):
     misstates_jobs: bool
     stop_assessment: Literal['reasonable', 'borderline', 'premature'] = 'reasonable'
     stop_review: str = Field(default='', max_length=800)
+    user_asked_exhaustive: bool = False
+    continuation_stated: bool = True
+    continuation_accurate: bool = True
     reason: str = Field(min_length=1, max_length=800)
 
 PRESENTED = ('tier', 'reason', 'gaps', 'to_confirm', 'next_steps', 'match_score', 'score_meaning', 'caveats')

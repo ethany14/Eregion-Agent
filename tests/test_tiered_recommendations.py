@@ -208,8 +208,9 @@ def test_posting_conditions_are_quoted_from_the_posting_and_reach_the_decision(c
 
 
 # tiered-recommendations-v2: no count threshold; only substantive errors fail.
-def _v2_summary(job, recs, review, reply, decisions=None, final=None):
+def _v2_summary(job, recs, review, reply, decisions=None, final=None, version=None):
     from evals.tiered_audit import ACCEPTANCE_VERSION
+    ACCEPTANCE_VERSION = version or ACCEPTANCE_VERSION
     final = final if final is not None else ''.join(f"{r['url']} Score {r['match_score']}\n" for r in recs)
     return {'status': 'completed', 'calls': 10, 'acceptance_version': ACCEPTANCE_VERSION,
             'usage': {'usage_complete': True, 'pending': 0, 'unknown_usage_calls': 0, 'input_tokens': 1000,
@@ -389,8 +390,8 @@ def test_search_coverage_reports_each_query_total_and_cards_seen_and_the_model_c
                    'request': {'query': 'junior data analyst', 'pages': 2, 'cards': 20}}}}}}
     row = searches(state)[0]
     assert row['boards'] == {'searched': 34, 'remaining': 0, 'matching': 34}
-    assert row['linkedin'] == [{'query': 'junior data analyst', 'pages': 2, 'cards': 20, 'status': 'ok',
-                                'reported_total': 408, 'cached': False}]
+    assert row['linkedin'] == [{'query': 'junior data analyst', 'location': None, 'pages': 2, 'cards': 20, 'status': 'ok',
+                                'reported_total': 408, 'cached': False, 'unseen': 388}]
     assert source_limits(state, {'query': 'junior data analyst', 'pages': 6})['pages'] == 6
     assert source_limits(state, {'query': 'junior data analyst', 'pages': 50})['pages'] == 8
 
@@ -415,7 +416,8 @@ def test_v3_fails_only_a_clearly_premature_stop(assessment, status, suggestions)
     from scripts.remaining_search_acceptance import evaluate_search
     job = {**_v2_job(), 'match_score': None}
     reply = {**HONEST, 'stop_assessment': assessment, 'stop_review': 'LinkedIn reported 408 results; 20 were seen.'}
-    result = evaluate_search(_v2_summary(job, [], {}, reply, final='Searched LinkedIn once.'), 'analyst')
+    result = evaluate_search(_v2_summary(job, [], {}, reply, final='Searched LinkedIn once.',
+                                         version='tiered-recommendations-v3'), 'analyst')
     assert result['status'] == status and len(result['improvement_suggestions']) == suggestions
     assert result['stop_assessment'] == assessment
 
@@ -476,3 +478,44 @@ def test_tier_words_inside_an_entry_are_not_a_section_heading(career, monkeypatc
     entry = '\n'.join(['- Junior Data Analyst', '  ' + job['url'], f"  Score {result['jobs'][0]['match_score']}", ''])
     other = '- Needs your confirmation: whether a license is needed (another job).\n'
     c.harness.validate_completion(state, '### Worth trying (known gaps) (1)\n' + other + entry)
+
+
+
+@pytest.mark.parametrize('reply,status,failures', [
+    # v4: the stop is the model's choice; a premature stop is advice unless the user asked for an exhaustive search.
+    ({'stop_assessment': 'premature'}, 'passed', []),
+    ({'stop_assessment': 'premature', 'user_asked_exhaustive': True}, 'failed', ['search_stopped_prematurely']),
+    ({'continuation_stated': False}, 'failed', ['continuation_missing_or_inaccurate']),
+    ({'continuation_accurate': False}, 'failed', ['continuation_missing_or_inaccurate']),
+])
+def test_v4_requires_an_accurate_continuation_offer_and_keeps_the_stop_advisory(reply, status, failures):
+    from scripts.remaining_search_acceptance import evaluate_search
+    job = {**_v2_job(), 'match_score': None}
+    result = evaluate_search(_v2_summary(job, [], {}, {**HONEST, **reply}, final='Searched LinkedIn once.',
+                                         version='tiered-recommendations-v4'), 'analyst')
+    assert result['status'] == status and result['failures'] == failures
+    if reply.get('stop_assessment') == 'premature' and status == 'passed':
+        assert result['improvement_suggestions']
+
+
+def test_earlier_linkedin_queries_stay_visible_for_a_follow_up():
+    from eregion.runtime.career.source_health import linkedin_queries
+    state = {'linkedin_mcp_search_cache': {'k': {'status': 'ok', 'total': 291,
+             'request': {'query': 'junior data analyst', 'location': 'New York, NY', 'pages': 2, 'cards': 20}}}}
+    assert linkedin_queries(state)[0]['unseen'] == 271
+
+
+def test_a_follow_up_continues_the_earlier_search_once_this_turn_does_search_work():
+    from eregion.runtime.career.search_recovery import search_request
+    from eregion.runtime.career.qualification import request_fields
+    first = 'Find current junior data analyst positions in New York for my saved resume.'
+    state = {'chat_revision': 1, 'history': [{'tool': 'search_jobs', 'chat_revision': 0}],
+             'messages': [{'role': 'user', 'text': first}, {'role': 'assistant', 'text': 'Results...'},
+                          {'role': 'user', 'text': 'search more'}]}
+    assert search_request(state) is None                       # no search work in this turn yet
+    assert request_fields(state) == {'role': 'data analyst', 'location': 'New York'}
+    state['history'].append({'tool': 'search_jobs', 'chat_revision': 1})
+    assert search_request(state) == {'count': None, 'words': {'data', 'analyst'}}
+    state['messages'][-1]['text'] = 'What does the second job pay?'
+    state['history'] = [{'tool': 'search_jobs', 'chat_revision': 0}]
+    assert search_request(state) is None                       # an unrelated question stays a question
