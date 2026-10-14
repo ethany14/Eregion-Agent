@@ -766,8 +766,21 @@ DraftKings 的问题：岗位要求“接触机器学习、回归方法与模型
 
 登录命令（在仓库根目录运行；浏览器会打开 Indeed 登录页，由你本人登录并同意授权）：
 
-    PYTHONPATH="backend;tools" .venv/Scripts/python.exe tools/scripts/mcp_oauth_login.py --config "<repo>/.codex-runs/indeed-mcp.json" --server indeed --tools-out "<repo>/.codex-runs/indeed-mcp/tools.json"
+    .venv\Scripts\python.exe tools\scripts\mcp_oauth_login.py --config "<repo>\.codex-runs\indeed-mcp.json" --server indeed --tools-out "<repo>\.codex-runs\indeed-mcp	ools.json"
+
+（PowerShell 写法；脚本自行把 backend 加入导入路径，不需要设置 PYTHONPATH。）
 
 **仍未确定：**
 - 登录时 Indeed 会不会授予这些 scope，未经验证。
 - 若授予，下一步是按真实工具结构编写 Indeed 来源适配（搜索与详情 → 候选与正文，独立调用额度、账本与覆盖事实），再做定向验证。
+
+### 12.14 差距披露修正与验收 v5（`fe922e6`）
+
+- **生产（共用推荐规则）：** 先逐条对照岗位的必需条件，再看加分项与职责；写“简历未体现”之前先核对简历原文。
+- **审计 v5：** 只澄清一个口径——遗漏岗位标明为 preferred、a plus 或 nice to have 的条目，算轻微遗漏，不算隐瞒冲突。v4 结论保留。
+- **定向回放：** v4-01 样本，8 个已评分岗位，不重抓、不重评分。
+  - 两次回放中，展示岗位无实质错误的分别是 5/6 和 6/6；v4-01 实跑为 2/6。
+  - DraftKings 不再因加分项被判失败；The Trade Desk 写明了复杂 SQL 差距；adMarketplace 不再误称简历没有统计背景。
+  - 仍有一处：Gap Pricing 两次都没写必需的“1–3 年定价分析经验”。第一次被判实质错误，第二次审计接受（认为 stretch 已足够保守）。
+- **用量：** 实验账本 `v5-check-01`，15 次调用，299,760 / 44,068 token，0 未知。
+- **尚未进行 v5 完整验收。**
