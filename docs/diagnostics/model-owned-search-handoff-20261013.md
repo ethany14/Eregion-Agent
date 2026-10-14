@@ -449,7 +449,7 @@ v2-03 的类别分歧（Gap Pricing：生产 stretch，审计 priority）只报�
 - 重复评分、重复详情读取、重复上下文翻阅均为 0。
 
 **明显浪费，需改进：**
-- 首批 10 个候选因单个招聘板 HTTP 404 整批失败，从未读取或重试，导致搜索深度不足：只做 1 次 LinkedIn 搜索，LinkedIn 额度用 21/100；
+- 首批 10 个候选因单个招聘板（SeatGeek）HTTP 403 整批失败，从未读取或重试，导致搜索深度不足：只做 1 次 LinkedIn 搜索，LinkedIn 额度用 21/100；
 - 4 次对已保存岗位重复调用 `recommend_job`；
 - 1 次因缺少类别标签被拒的 `finish_task`。
 
@@ -473,6 +473,48 @@ v2-03 的类别分歧（Gap Pricing：生产 stretch，审计 priority）只报�
 ### 11.8 遗留问题与需要你决定
 
 1. 是否再跑一次同档完整验收，验证 `ecb1cce` 的两处修复（整批失败隔离、类别位置校验）。本次失败点是回复如实性与首批读取失败，不是数量。
-2. 招聘板 URL 的 HTTP 404 来源：本次未逐个定位是哪一个看板 URL；修复后会在批量结果的 `source_error` 中逐条可见。
+2. （已查明）整批失败源自 SeatGeek 招聘页 HTTP 403；第二次验收中它只记为该岗位的 `source_error`。
 3. 两个基线即失败的告警测试（11.6）需要另行修复脚本化资格判断。
 4. 无 Jev 路线仍未单独验收（见 9.5）。
+
+### 11.9 第二次完整真实验收（用户批准）：未通过（`6c1703d`，`default-batch-tiered-v2-02`）
+
+条件同 11.5（expanded 档、LinkedIn MCP + 招聘板、Treg 关闭；实验账本 `tiered-v2-acceptance-02`，上限 106 次 / 1.7M）。
+
+`ecb1cce` 的两处修复在实跑中生效：
+- SeatGeek 403 与两个无法定位正文的看板页只记为各自岗位的 `source_error`，同批其余岗位照常处理；
+- 4 条推荐都在各自已保存类别标签之下；
+- 回复审计通过：说明充分，无隐瞒、无误报。
+
+**失败项：** `substantive_error`，仅 DraftKings 一条。
+
+| 记录类别 | 审计类别 | 岗位 | 分数 | 实质错误 |
+|---|---|---|---|---|
+| priority | priority | Data Analyst — ShrinQ Consulting Group — https://www.linkedin.com/jobs/view/4469955024/ | 84.47 | 无 |
+| stretch | stretch | Analyst - Pricing Analytics — Gap — https://www.linkedin.com/jobs/view/4478770314/ | 37.95 | 无 |
+| stretch | stretch | Growth Strategy Analyst, GTM Data — Charlie Health — https://www.linkedin.com/jobs/view/4415733742/ | 34.95 | 无 |
+| to_confirm | stretch | Analyst I, Customer Economics — DraftKings — https://www.linkedin.com/jobs/view/4469058776/ | 48.56 | 隐瞒重要差距 |
+
+DraftKings 的问题：岗位要求“接触机器学习、回归方法与模型评估”“构建并部署预测模型”。生产推荐没有点明这两项，只写“将模型输出转化为可扩展方案”和工具差距，同时把可能需要的州博彩执照列为待确认。审计认为这模糊了核心差距。我认同这一判断：这是模型对差距的披露问题，不宜用代码规则裁决，因此未改代码。
+
+用量与指标（审计单列）：
+
+| 项 | 值 |
+|---|---|
+| 主任务 provider | 30 次（主模型 6 / 资格 5 / Jev 19），225,313 / 39,896 token，0 未知 |
+| 审计 | 3 次，10,959 / 7,562 token，52.1 秒 |
+| 实验账本合计 | 33 次，236,272 / 47,458 token，0 未知，0 失败，0 重试 |
+| 首个可用结果 / 总用时 | 128 秒 / 211 秒 |
+| LinkedIn | 21 次（1 次搜索、20 次详情） |
+| 正文 / 评分 | 读取 24 份，评分 4 份 |
+| 各类数量 | priority 1、stretch 2、to_confirm 1 |
+| 重复读取 / 重复评分 / 重复推荐 | 0 / 0 / 0 |
+
+**按 6.4 口径评价：**
+- 每份正文 9.4k 输入 token、1.25 次调用、8.8 秒，均优于可比历史；
+- 首个结果 128 秒；
+- 无浪费指标。
+
+**需要注意（未按 v2 判失败，但应如实说明）：** 搜索面很窄，只有 1 次 LinkedIn 查询（取 20 张卡片），27 个候选，LinkedIn 额度只用 21/100，主模型 6 次即结束。回复说明了搜索范围与结果少的原因，但没有尝试其他查询或来源。v2 不要求凑数，也不应由代码规定最少查询次数。是否把“覆盖不足”纳入审计判断，需要你决定。
+
+费用：两次完整验收合计 74 次调用、623,328 / 109,763 token；本轮全部实验账本合计 108 次、1,380,902 / 199,048 token，0 未知。无账单证据，金额未知，不记为 0。
