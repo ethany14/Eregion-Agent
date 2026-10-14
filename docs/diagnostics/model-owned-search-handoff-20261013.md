@@ -719,3 +719,55 @@ DraftKings 的问题：岗位要求“接触机器学习、回归方法与模型
   - 技术上可以由我们的应用作为 OAuth 客户端接入。
 - 本应用的 MCP 管理器只支持本地 stdio 服务器，接入需要新增远程 HTTP 传输、OAuth 登录（由用户本人在浏览器中完成）、令牌安全保存、Indeed 来源适配（搜索、详情 → 候选与正文）及其预算与账本。
 - 是否符合 Indeed 条款（端点路径为 `/claude/mcp`）需要你确认。
+
+### 12.12 第一次 v4 完整验收：未通过（`76ff159`，`default-batch-tiered-v4-01`）
+
+干净完成。用量与 v3 实跑对照：
+
+| 项 | v4-01 | v3-04 |
+|---|---:|---:|
+| 主模型调用 | 9 次 | 17 次 |
+| provider 合计 | 39 次 | 50 次 |
+| 输入 / 输出 token | 478,426 / 69,976 | 495,492 / 59,031 |
+| 未知用量 | 0 | 0 |
+| 首个可用结果 | 175.4 秒 | 104.6 秒 |
+| 总用时 | 291 秒 | 365 秒 |
+| 读取 / 评分 / 展示 | 30 / 8 / 6 | 24 / 5 / 4 |
+| 每份正文：输入 / 调用 / 秒 | 15.9k / 1.3 / 9.7 | 20.6k / 2.08 / 15.2 |
+| 重复读取 / 重复评分 / 被拒结束 | 0 / 0 / 0 | 0 / 0 / 2 |
+
+- 审计 3 次，16,000 / 10,351 token。实验账本合计 42 次，494,426 / 80,327，0 未知，0 失败。
+- 连接重试修复与 `pages` 修复本次未被触发。
+
+**v4 机制生效：**
+- 回复按记录写明剩余：LinkedIn 307 条中 287 条未看、看板 51 个中 11 个未查，并提供“search more”。审计判停止 reasonable，`continuation_stated`/`continuation_accurate` 均为真。
+- 招聘板首次有实际贡献：搜索 40 个看板，11 张卡片，读取 10，合格 1，推荐 1（The Trade Desk, Data Support Analyst I）。
+
+**失败项：** 6 个展示岗位中 4 个被判实质错误，都是差距披露问题。
+
+| 岗位 | 审计指出 | 我的判断 |
+|---|---|---|
+| Analyst - Pricing Analytics（Gap） | 漏写必需的“1–3 年定价分析或相关经验”，列的是职责类差距 | 成立：违反“先写必需能力，职责只在要求入职即具备时算差距” |
+| Graduate Data Analyst（adMarketplace） | 写“简历未体现统计/实验设计”，而简历是统计学学士 | 成立（小）：无依据陈述 |
+| Data Support Analyst I（The Trade Desk） | 岗位要求复杂 SQL（CTE、嵌套查询），回复暗示 SQL 已符合 | 边界 |
+| Analyst I, Customer Economics（DraftKings） | 漏写 Databricks、营销概念等差距 | 审计过严：这些在岗位中写明为“is a plus”（加分项） |
+
+**结论：** 停止与继续、来源覆盖、效率都已改善。剩余问题是差距选择：模型有时用职责代替必需条件，或写出与简历不符的差距。另外，审计把加分项遗漏也判为隐瞒，这一点需要确定口径。未修改标准，也未再跑。
+
+### 12.13 Indeed MCP 接入进度（`ca9af85`）
+
+**已完成：**
+- MCP 层支持远程 streamable HTTP 与 OAuth（官方 SDK，PKCE）。
+- 令牌与客户端记录加密保存在 `%LOCALAPPDATA%/Eregion/mcp-oauth`（DPAPI），不进仓库。
+- 任务运行中绝不发起登录：没有令牌时连接失败并提示先登录。
+- 单元测试 4 项。
+
+**阻塞（需要你本人操作）：** Indeed 拒绝在动态注册里申请 job_seeker scope（“Requested scopes are invalid or not supported”）。脚本因此先不带 scope 注册，再在登录时申请 scope。这一步要在 Indeed 注册 OAuth 客户端并保存凭据，被权限系统判定须由你执行。我此前为探测发出过一次不带 scope 的注册请求，留下一个未使用的客户端记录，不授予任何权限。
+
+登录命令（在仓库根目录运行；浏览器会打开 Indeed 登录页，由你本人登录并同意授权）：
+
+    PYTHONPATH="backend;tools" .venv/Scripts/python.exe tools/scripts/mcp_oauth_login.py --config "<repo>/.codex-runs/indeed-mcp.json" --server indeed --tools-out "<repo>/.codex-runs/indeed-mcp/tools.json"
+
+**仍未确定：**
+- 登录时 Indeed 会不会授予这些 scope，未经验证。
+- 若授予，下一步是按真实工具结构编写 Indeed 来源适配（搜索与详情 → 候选与正文，独立调用额度、账本与覆盖事实），再做定向验证。
