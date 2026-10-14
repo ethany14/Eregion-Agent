@@ -7401,5 +7401,308 @@
     "verified_by": "public_api_get",
     "job_count_at_verification": 942,
     "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "lever",
+    "company": "bazaarvoice",
+    "display_name": "Bazaarvoice",
+    "domains": [
+      "backend",
+      "data/analytics"
+    ],
+    "locations": [
+      "Austin",
+      "Belfast",
+      "Bengaluru",
+      "London",
+      "Munich",
+      "Remote, United States",
+      "Sydney",
+      "Vilnius"
+    ],
+    "family_locations": {
+      "backend": [
+        "Belfast"
+      ],
+      "data/analytics": [
+        "Belfast",
+        "Bengaluru",
+        "Vilnius"
+      ]
+    },
+    "source_url": "https://jobs.lever.co/bazaarvoice",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 17,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "lever",
+    "company": "everlywell",
+    "display_name": "Everlywell",
+    "domains": [],
+    "locations": [
+      "Austin, TX",
+      "Austin, TX or Nationwide",
+      "Hoffman Estates, IL",
+      "United States"
+    ],
+    "family_locations": {},
+    "source_url": "https://jobs.lever.co/everlywell",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 15,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "ashby",
+    "company": "ampersand",
+    "display_name": "Ampersand",
+    "domains": [],
+    "locations": [
+      "San Francisco"
+    ],
+    "family_locations": {},
+    "source_url": "https://jobs.ashbyhq.com/ampersand",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 7,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "lever",
+    "company": "restaurant365",
+    "display_name": "Restaurant365",
+    "domains": [],
+    "locations": [
+      "Austin, TX",
+      "Austin, TX/Akron, Ohio/Irvine, CA",
+      "Chicago, IL",
+      "Irvine, CA",
+      "Irvine, CA, Austin, TX, San Francisco Bay Area, CA, Denver, CO",
+      "Mexico City",
+      "Miami, FL",
+      "Phoenix, AZ",
+      "Remote"
+    ],
+    "family_locations": {},
+    "source_url": "https://jobs.lever.co/restaurant365",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 31,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "homeward",
+    "display_name": "Homeward",
+    "domains": [],
+    "locations": [
+      "Remote (anywhere in the U.S.)",
+      "Remote - Latin America"
+    ],
+    "family_locations": {},
+    "source_url": "https://job-boards.greenhouse.io/homeward",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 2,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "smartsheet",
+    "display_name": "Smartsheet",
+    "domains": [
+      "ML",
+      "backend",
+      "data/analytics",
+      "design"
+    ],
+    "locations": [
+      " -REMOTE, BULGARIA-",
+      " -REMOTE, UK-",
+      " -REMOTE, USA-",
+      "-REMOTE, BULGARIA-",
+      "-REMOTE, USA-",
+      "Bangalore, INDIA",
+      "Bellevue, WA, USA",
+      "Boise, ID, USA",
+      "Boston, MA, USA",
+      "Chicago, IL, USA",
+      "Dallas, TX, USA",
+      "London, UK",
+      "Melbourne, AU",
+      "Munich, DE",
+      "Phoenix, AZ, USA",
+      "Portland, OR, USA",
+      "San Francisco, CA, USA",
+      "San Jose, CR",
+      "Singapore, SGP",
+      "Sydney, AU",
+      "Washington, D.C., USA"
+    ],
+    "family_locations": {
+      "ML": [
+        " -REMOTE, UK-",
+        " -REMOTE, USA-",
+        "Bangalore, INDIA",
+        "Bellevue, WA, USA",
+        "London, UK",
+        "Munich, DE"
+      ],
+      "backend": [
+        " -REMOTE, BULGARIA-",
+        " -REMOTE, USA-",
+        "-REMOTE, BULGARIA-",
+        "-REMOTE, USA-",
+        "Bangalore, INDIA",
+        "Bellevue, WA, USA"
+      ],
+      "data/analytics": [
+        " -REMOTE, USA-",
+        "Bangalore, INDIA",
+        "Bellevue, WA, USA",
+        "San Jose, CR"
+      ],
+      "design": [
+        " -REMOTE, USA-",
+        "Bellevue, WA, USA",
+        "San Jose, CR"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/smartsheet",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 98,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "lever",
+    "company": "articulate",
+    "display_name": "Articulate",
+    "domains": [],
+    "locations": [
+      "United States"
+    ],
+    "family_locations": {},
+    "source_url": "https://jobs.lever.co/articulate",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 1,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "ashby",
+    "company": "billie",
+    "display_name": "Billie",
+    "domains": [],
+    "locations": [
+      "Berlin"
+    ],
+    "family_locations": {},
+    "source_url": "https://jobs.ashbyhq.com/billie",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 2,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "ashby",
+    "company": "amplify",
+    "display_name": "Amplify",
+    "domains": [
+      "data/analytics"
+    ],
+    "locations": [
+      "Remote - AZ",
+      "Remote - MD",
+      "Remote - NY",
+      "Remote - US",
+      "Remote - United States"
+    ],
+    "family_locations": {
+      "data/analytics": [
+        "Remote - United States"
+      ]
+    },
+    "source_url": "https://jobs.ashbyhq.com/amplify",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 23,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "babylist",
+    "display_name": "Babylist",
+    "domains": [
+      "ML",
+      "backend",
+      "data/analytics",
+      "design"
+    ],
+    "locations": [
+      "Beverly Hills,CA",
+      "Canada",
+      "Canada ",
+      "Commercial Point, OH",
+      "New York City, NY",
+      "New York City, NY ",
+      "New York City, New York",
+      "Severna Park, MD",
+      "United States",
+      "United States ",
+      "United States & Canada ",
+      "United States & Canada  ",
+      "United States - NY Tri-State Area Only"
+    ],
+    "family_locations": {
+      "ML": [
+        "Canada",
+        "Canada ",
+        "United States"
+      ],
+      "backend": [
+        "Canada",
+        "United States "
+      ],
+      "data/analytics": [
+        "Canada",
+        "United States",
+        "United States "
+      ],
+      "design": [
+        "Canada",
+        "United States"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/babylist",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 43,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
+  },
+  {
+    "platform": "greenhouse",
+    "company": "calendly",
+    "display_name": "Calendly",
+    "domains": [
+      "ML"
+    ],
+    "locations": [
+      "Remote - US",
+      "San Francisco (Hybrid)"
+    ],
+    "family_locations": {
+      "ML": [
+        "Remote - US",
+        "San Francisco (Hybrid)"
+      ]
+    },
+    "source_url": "https://job-boards.greenhouse.io/calendly",
+    "verified_at": "2026-10-14",
+    "verified_by": "public_api_get",
+    "job_count_at_verification": 9,
+    "notes": "Added by expand_board_directory after a public API GET returned listed jobs."
   }
 ]

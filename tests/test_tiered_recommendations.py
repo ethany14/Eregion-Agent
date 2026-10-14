@@ -541,3 +541,18 @@ def test_the_audit_retries_one_transport_failure_but_never_a_verdict(monkeypatch
     with pytest.raises(ValueError):
         tiered_audit.review_reply('r', 'final', {}, [])
     assert len(calls) == 1
+
+
+def test_scenario_set_verdict_pools_jobs_and_keeps_infrastructure_and_reply_failures_separate():
+    from scripts.scenario_set_report import verdict
+    def row(scenario, shown, clean, failures=(), infra=(), reply=()):
+        return {'scenario': scenario, 'shown': shown, 'clean': clean, 'gap_omissions': shown - clean,
+                'failures': list(failures), 'infra_failures': list(infra), 'reply_failures': list(reply)}
+    ok = verdict([row('analyst', 6, 6), row('backend', 5, 5), row('student', 4, 4), row('designer', 1, 1)])
+    assert ok['ready'] and ok['substantive_error_rate'] == 0
+    few = verdict([row('analyst', 6, 6), row('designer', 2, 2)])
+    assert not few['ready'] and 'at least 15' in few['reasons'][0]
+    errors = verdict([row('analyst', 8, 6), row('backend', 8, 7)])
+    assert not errors['ready'] and errors['substantive_error_rate'] == 3 / 16
+    infra = verdict([row('analyst', 16, 16, infra=['semantic_audit_incomplete'])])
+    assert not infra['ready'] and 'did not complete' in infra['reasons'][0]

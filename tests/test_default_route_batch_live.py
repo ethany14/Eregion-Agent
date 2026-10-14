@@ -28,14 +28,27 @@ TIERED_GOAL = ('Find 15 current junior data analyst positions in New York for my
         'location constraints; report insufficient results honestly. Include each job URL and match '
         'score. Do not apply, generate materials, or create a schedule.')
 # tiered-recommendations-v2: the same request without a count target (2026-10-13).
+def open_goal(search):
+    return OPEN_GOAL.replace('junior data analyst positions in New York', search)
+
+
 OPEN_GOAL = ('Find current junior data analyst positions in New York for my saved resume. Show real, '
         'relevant opportunities: strong matches, roles worth trying with their gaps stated, and roles '
         'where I must confirm something such as GPA or work status. Use LinkedIn MCP and public company '
         'job-board APIs first. Keep the role, seniority and location constraints; report honestly what '
         'was searched and why results are few if they are. Include each job URL and match score. '
         'Do not apply, generate materials, or create a schedule.')
+# Live-readiness scenario set (spec section 9): different applicants, roles, levels and places.
+# 'analyst' is the request every earlier run used, so its history stays comparable.
+SCENARIOS = {
+    'analyst': {'applicant': 'analyst', 'search': 'junior data analyst positions in New York'},
+    'backend': {'applicant': 'backend', 'search': 'senior backend engineer positions in Remote US'},
+    'student': {'applicant': 'student', 'search': 'machine learning internship positions in California'},
+    'designer': {'applicant': 'designer', 'search': 'junior UX designer positions in Austin, TX'},
+}
+SCENARIO = os.getenv('JOB_AGENT_LIVE_SCENARIO', 'analyst')
 OPEN_VERSIONS = {'tiered-recommendations-v2', 'tiered-recommendations-v3', 'tiered-recommendations-v4', 'tiered-recommendations-v5'}
-GOAL = {'tiered-recommendations-v5': OPEN_GOAL, 'tiered-recommendations-v4': OPEN_GOAL, 'tiered-recommendations-v3': OPEN_GOAL, 'tiered-recommendations-v2': OPEN_GOAL, 'tiered-recommendations-v1': TIERED_GOAL}.get(ACCEPTANCE_VERSION, LEGACY_GOAL)
+GOAL = {'tiered-recommendations-v5': open_goal(SCENARIOS[SCENARIO]['search']), 'tiered-recommendations-v4': OPEN_GOAL, 'tiered-recommendations-v3': OPEN_GOAL, 'tiered-recommendations-v2': OPEN_GOAL, 'tiered-recommendations-v1': TIERED_GOAL}.get(ACCEPTANCE_VERSION, LEGACY_GOAL)
 FLAGS = {'JOB_AGENT_JOB_API_FIRST': '1', 'JOB_AGENT_TREG_ENABLED': '0',
          'JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS': '60',
          'JOB_AGENT_TASK_MAX_INPUT_TOKENS': '1000000'}
@@ -82,8 +95,8 @@ def test_default_route_search(career, monkeypatch):
     c.runtime.mcp_manager = manager
     c.repository.change(c.state['task_id'], status='cancelled', pause_requested=True)
     c.applications.repository.save_candidate(
-        {'first_name':'Synthetic','last_name':'analyst','email':'analyst@example.com'},
-        resume=render_letter_pdf(APPLICANTS['analyst']), name='synthetic.pdf', extracted=True)
+        {'first_name':'Synthetic','last_name':SCENARIOS[SCENARIO]['applicant'],'email':SCENARIOS[SCENARIO]['applicant']+'@example.com'},
+        resume=render_letter_pdf(APPLICANTS[SCENARIOS[SCENARIO]['applicant']]), name='synthetic.pdf', extracted=True)
     c.harness.discovery = JobDiscovery()
     c.harness.analysis._fit_service = FitAnalysisService(jev_enabled=True,
         jev_config=replace(Settings.load(cache_path=output/'fit.sqlite3'), resolve_unknowns=False))
@@ -92,7 +105,7 @@ def test_default_route_search(career, monkeypatch):
     task = None
     (output/'invocation.json').write_text(json.dumps({
         'head':subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
-        'goal':GOAL, 'acceptance_version':ACCEPTANCE_VERSION, 'flags':flags, 'limits_profile':profile_name, 'limits':limits,
+        'goal':GOAL, 'scenario':SCENARIO, 'acceptance_version':ACCEPTANCE_VERSION, 'flags':flags, 'limits_profile':profile_name, 'limits':limits,
         **({} if ACCEPTANCE_VERSION in OPEN_VERSIONS else {'minimum_qualified':10, 'target':15}),
         'mcp_call_limit':limits['linkedin_calls'], 'deadline_seconds':limits['deadline_seconds'], 'synthetic_candidate':True,
         'audit_budget':{'provider_attempts':6,'input_tokens':200000},
@@ -103,7 +116,7 @@ def test_default_route_search(career, monkeypatch):
         assert 'mcp__linkedin__search_jobs' in manager.public_tool_names
         task = service.start(GOAL, str(uuid4()))
         try:
-            settle_live(service, task['run_id'], output, 'analyst', timeout=limits['deadline_seconds'],semantic_review=True,
+            settle_live(service, task['run_id'], output, SCENARIOS[SCENARIO]['applicant'], timeout=limits['deadline_seconds'],semantic_review=True,
                         limits={'input_tokens':limits['input_tokens']}, acceptance_version=ACCEPTANCE_VERSION)
         except AssertionError:
             if not (output/'acceptance.json').exists():
