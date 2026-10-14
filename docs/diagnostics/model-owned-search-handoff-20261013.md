@@ -766,7 +766,7 @@ DraftKings 的问题：岗位要求“接触机器学习、回归方法与模型
 
 登录命令（在仓库根目录运行；浏览器会打开 Indeed 登录页，由你本人登录并同意授权）：
 
-    .venv\Scripts\python.exe tools\scripts\mcp_oauth_login.py --config "<repo>\.codex-runs\indeed-mcp.json" --server indeed --tools-out "<repo>\.codex-runs\indeed-mcp	ools.json"
+    .venv\Scripts\python.exe tools\scripts\mcp_oauth_login.py --config "<repo>\.codex-runs\indeed-mcp.json" --server indeed --tools-out "<repo>\.codex-runs\indeed-mcp\tools.json"
 
 （PowerShell 写法；脚本自行把 backend 加入导入路径，不需要设置 PYTHONPATH。）
 
