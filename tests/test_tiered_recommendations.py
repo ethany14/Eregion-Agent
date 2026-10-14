@@ -519,3 +519,25 @@ def test_a_follow_up_continues_the_earlier_search_once_this_turn_does_search_wor
     state['messages'][-1]['text'] = 'What does the second job pay?'
     state['history'] = [{'tool': 'search_jobs', 'chat_revision': 0}]
     assert search_request(state) is None                       # an unrelated question stays a question
+
+
+def test_the_audit_retries_one_transport_failure_but_never_a_verdict(monkeypatch):
+    import httpx, openai
+    from evals import tiered_audit
+    calls = []
+    def invoke(model, schema, prompt, payload):
+        calls.append(1)
+        if len(calls) == 1:
+            raise openai.APITimeoutError(request=httpx.Request('POST', 'https://example.invalid'))
+        return tiered_audit.ReplyAudit(explains_results_and_search=True, hides_or_misreports_problems=False,
+                                       misstates_jobs=False, reason='ok')
+    monkeypatch.setattr('eregion.domain.model.invoke_structured', invoke)
+    monkeypatch.setattr('eregion.domain.model.shared_model', lambda **k: None)
+    assert tiered_audit.review_reply('r', 'final', {}, [])['explains_results_and_search'] and len(calls) == 2
+    calls.clear()
+    def broken(*a):
+        calls.append(1); raise ValueError('program error')
+    monkeypatch.setattr('eregion.domain.model.invoke_structured', broken)
+    with pytest.raises(ValueError):
+        tiered_audit.review_reply('r', 'final', {}, [])
+    assert len(calls) == 1

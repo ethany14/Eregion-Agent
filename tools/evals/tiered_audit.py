@@ -19,6 +19,7 @@ from eregion.domain.search_qualification import PostingDecision
 from eregion.domain.jev_fit.resolve import locate
 from eregion.runtime.career.qualification import body_hash, verified_checks, FIELDS
 from evals.search_semantic_audit import PROMPT, Requirement, candidate_hash
+from eregion.runtime.model_runtime import recoverable_failure
 
 V1 = 'tiered-recommendations-v1'
 V2 = 'tiered-recommendations-v2'
@@ -136,11 +137,17 @@ PRESENTED = ('tier', 'reason', 'gaps', 'to_confirm', 'next_steps', 'match_score'
 def _ask(schema, prompt, payload, purpose, size, items):
     from eregion.domain.model import invoke_structured, shared_model
     from eregion.runtime.provider_usage import usage_scope
-    # One retry only for an unusable reply (identities); a verdict is never retried.
+    # One retry only for a transport failure or an unusable reply (identities); a verdict
+    # is never retried. tiered-v5-01 lost its whole audit to one timeout.
     for attempt in range(2):
-        with usage_scope(purpose=purpose):
-            result = invoke_structured(shared_model(purpose='search_qualification'), schema, prompt,
-                                       json.dumps(payload, ensure_ascii=False))
+        try:
+            with usage_scope(purpose=purpose):
+                result = invoke_structured(shared_model(purpose='search_qualification'), schema, prompt,
+                                           json.dumps(payload, ensure_ascii=False))
+        except Exception as exc:
+            if attempt or not recoverable_failure(exc):
+                raise
+            continue
         rows = getattr(result, items)
         ids = [r.posting_id for r in rows]
         if len(ids) == size and set(ids) == {str(i) for i in range(size)}:
@@ -195,10 +202,15 @@ def review_reply(request, final, facts, recommendations):
     payload = {'request': request, 'final_reply': final, 'run_facts': facts,
                'recommendations': [{k: r.get(k) for k in ('title', 'company', 'url', 'tier', 'match_score')}
                                    for r in recommendations]}
-    with usage_scope(purpose='acceptance_tier_audit_reply'):
-        result = invoke_structured(shared_model(purpose='search_qualification'), ReplyAudit, REPLY_PROMPT,
-                                   json.dumps(payload, ensure_ascii=False, default=str))
-    return result.model_dump()
+    for attempt in range(2):
+        try:
+            with usage_scope(purpose='acceptance_tier_audit_reply'):
+                result = invoke_structured(shared_model(purpose='search_qualification'), ReplyAudit, REPLY_PROMPT,
+                                           json.dumps(payload, ensure_ascii=False, default=str))
+            return result.model_dump()
+        except Exception as exc:
+            if attempt or not recoverable_failure(exc):
+                raise
 
 
 def substantive_checks(job, audit, request, candidate_digest=None):
