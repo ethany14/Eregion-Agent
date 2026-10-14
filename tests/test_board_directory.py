@@ -355,3 +355,22 @@ def test_default_directory_search_covers_every_matching_board_once(career):
     finally:
         mp.undo()
     assert searched == [f'ats:greenhouse:b{i}' for i in range(12)] and first['directory_remaining'] == 0
+
+
+def test_greenhouse_card_on_a_company_site_keeps_the_readable_board_identity():
+    # Stripe-style absolute_url (company page + gh_jid) was not readable (acceptance tiered-v3-04).
+    def serve(request):
+        if request.url.path.endswith('/jobs'):
+            return httpx.Response(200, json={'jobs': [{'id': 8189909, 'title': 'Junior Data Analyst', 'location': {'name': 'New York'},
+                                                      'absolute_url': 'https://example.com/jobs/search?gh_jid=8189909'}]})
+        return httpx.Response(200, json={'title': 'Junior Data Analyst', 'location': {'name': 'New York'},
+                                          'content': '&lt;p&gt;' + 'Analyse product data with SQL. ' * 10 + '&lt;/p&gt;'})
+    d = discovery(serve)
+    try:
+        card = d.search('data analyst', 'New York, NY', boards=[entry()])['jobs'][0]
+        assert card['url'] == 'https://job-boards.greenhouse.io/synthetic/jobs/8189909'
+        assert card['apply_url'] == 'https://example.com/jobs/search?gh_jid=8189909'
+        body = d.job(card['url'])
+        assert body['title'] == 'Junior Data Analyst' and 'SQL' in body['description']
+    finally:
+        d.close()

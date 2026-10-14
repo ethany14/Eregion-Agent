@@ -369,8 +369,17 @@ class JobDiscovery:
                 if platform=='greenhouse':
                     body,_ = self.read(f'https://boards-api.greenhouse.io/v1/boards/{company}/jobs')
                     jobs = json.loads(body)['jobs']
-                    items = [{'url':j['absolute_url'],'title':j['title'],'company':company,
-                        'location':j.get('location',{}).get('name','')} for j in jobs]
+                    # The posting's identity is board + id. absolute_url is often the
+                    # company's own career page (stripe.com/jobs/search?gh_jid=...), which
+                    # is not readable as a bounded posting; the canonical Greenhouse URL is
+                    # read through the public API. The company page stays as apply_url.
+                    def posting_url(j):
+                        known=str(j.get('id','')).isdigit() and urlsplit(j.get('absolute_url') or '').hostname not in {
+                            'boards.greenhouse.io','job-boards.greenhouse.io'}
+                        return f'https://job-boards.greenhouse.io/{company}/jobs/{j["id"]}' if known else j['absolute_url']
+                    items = [{'url':posting_url(j),'title':j['title'],'company':company,
+                        'location':j.get('location',{}).get('name',''),
+                        **({'apply_url':j['absolute_url']} if posting_url(j)!=j.get('absolute_url') else {})} for j in jobs]
                 elif platform=='lever':
                     body,_ = self.read(f'https://api.lever.co/v0/postings/{company}?mode=json')
                     items = [{'url':j['hostedUrl'],'title':j['text'],'company':company,
