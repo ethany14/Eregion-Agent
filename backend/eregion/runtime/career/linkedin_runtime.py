@@ -63,12 +63,16 @@ def _search_one(harness,task_id,state,args):
     stopped=(state.get('linkedin_mcp_state') or {}).get('stopped')
     if stopped:return {'jobs':[],'status':'blocked','error_code':stopped,'no_new_evidence':True}
     if not available(harness):return {'jobs':[],'status':'unavailable','error_code':'linkedin_mcp_unavailable','no_new_evidence':True}
+    pages=source_limits(state,args)['pages']
     try:result=invoke(harness,task_id,state,'search',args)
     except LinkedInSourceStopped as exc:
         result={'jobs':[],'status':'blocked','error_code':exc.reason,'no_new_evidence':True}
     except Exception as exc:
         result={'jobs':[],'status':'unavailable','error_code':type(exc).__name__,'no_new_evidence':True}
     if result.get('error_code')=='task_changed_or_cancelled':raise LinkedInSourceStopped(result['error_code'])
+    result={**result,'request':{'query':args['query'],'location':args.get('location'),'pages':pages,
+                                'experience_level':filters.get('experience_level'),'work_type':filters.get('work_type'),
+                                'cards':len(result.get('jobs') or [])}}
     def save(s):
         candidates={job_key(j['url']):j for j in s.get('search_candidates',{}).values() if j.get('url')}
         candidates.update({job_key(j['url']):j for j in result.get('jobs',[])})

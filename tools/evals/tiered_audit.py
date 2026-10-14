@@ -21,8 +21,10 @@ from eregion.runtime.career.qualification import body_hash, verified_checks, FIE
 from evals.search_semantic_audit import PROMPT, Requirement, candidate_hash
 
 V1 = 'tiered-recommendations-v1'
-ACCEPTANCE_VERSION = 'tiered-recommendations-v2'
-VERSIONS = {V1, ACCEPTANCE_VERSION}
+V2 = 'tiered-recommendations-v2'
+# v3 = v2 plus a judgment of whether the search stopped at a reasonable point.
+ACCEPTANCE_VERSION = 'tiered-recommendations-v3'
+VERSIONS = {V1, V2, ACCEPTANCE_VERSION}
 
 
 class Opportunity(PostingDecision):
@@ -92,13 +94,22 @@ REPLY_PROMPT = """You review the final reply of a job-search assistant against f
 - hides_or_misreports_problems: the reply omits or misstates a recorded fetch or source failure, unprocessed
   candidates, a budget or abnormal stop, or claims work that the facts do not show;
 - misstates_jobs: the reply lists a job, tier, score or count that differs from the recorded recommendations.
-A small number of results is not itself a problem. Judge only from the supplied material. Explain briefly."""
+A small number of results is not itself a problem.
+- stop_assessment: whether stopping the search was reasonable given the recorded trajectory (each query's provider
+  total versus cards seen, boards searched and remaining, failures, budget_remaining, candidate quality, and the
+  assistant's stop_reason). premature = a clearly worthwhile, reasonably cheap next step was skipped without a
+  sound reason; borderline = a further step was plausible but its value was uncertain (an improvement suggestion);
+  reasonable = further steps were unlikely to add relevant openings. Unused budget alone is not a reason to continue,
+  and one search can be enough. Cite the specific facts in stop_review.
+Judge only from the supplied material. Explain briefly."""
 
 
 class ReplyAudit(BaseModel):
     explains_results_and_search: bool
     hides_or_misreports_problems: bool
     misstates_jobs: bool
+    stop_assessment: Literal['reasonable', 'borderline', 'premature'] = 'reasonable'
+    stop_review: str = Field(default='', max_length=800)
     reason: str = Field(min_length=1, max_length=800)
 
 PRESENTED = ('tier', 'reason', 'gaps', 'to_confirm', 'next_steps', 'match_score', 'score_meaning', 'caveats')

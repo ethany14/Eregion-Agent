@@ -37,7 +37,11 @@ def run_facts(service,state,summary):
         'decisions':dict(Counter(d.get('decision') for d in summary['job_decisions'].values())),
         'scored_without_outcome':[j['url'] for j in scored if j.get('application_id') not in decided],
         'recommended_by_tier':dict(Counter(r.get('tier') for r in summary['recommendations'])),
-        'stalled_candidates':[{'target':k,**v} for k,v in stalled(state).items()]}
+        'stalled_candidates':[{'target':k,**v} for k,v in stalled(state).items()],
+        'searches':coverage(state).get('searches'),'budget_remaining':service.harness.search_budget(state),
+        'stop_reason':state.get('stop_reason'),
+        'qualification_outcomes':dict(Counter('qualified' if q.get('qualified') else 'deferred'
+                                              for q in (state.get('candidate_qualifications') or {}).values()))}
 
 
 def settle_live(service,task_id,output,applicant,timeout=600,*,semantic_review=False,limits=None,acceptance_version=None):
@@ -93,11 +97,11 @@ def settle_live(service,task_id,output,applicant,timeout=600,*,semantic_review=F
                 candidate=(resume_text or '')+('\nCANDIDATE-STATED FACTS\n'+json.dumps(facts,ensure_ascii=False,sort_keys=True) if facts else '')
                 summary['audit_candidate_hash']=candidate_hash(candidate)
                 audited=[j for j in summary['verified_jobs'] if j['url'] in urls]
-                if acceptance_version in {'tiered-recommendations-v1','tiered-recommendations-v2'}:
+                if acceptance_version in {'tiered-recommendations-v1','tiered-recommendations-v2','tiered-recommendations-v3'}:
                     from evals.tiered_audit import review as tiered_review
                     summary['acceptance_version']=acceptance_version
                     summary['semantic_review']=tiered_review(summary['user_request'],audited,summary['recommendations'],candidate)
-                if acceptance_version=='tiered-recommendations-v2':
+                if acceptance_version in {'tiered-recommendations-v2','tiered-recommendations-v3'}:
                     from evals.tiered_audit import review_reply
                     summary['reply_review']=review_reply(summary['user_request'],summary['final'],
                                                          run_facts(service,state,summary),summary['recommendations'])

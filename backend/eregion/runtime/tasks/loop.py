@@ -73,7 +73,9 @@ CONTROL_TOOLS = [
     function('pause_task','Honor a request to pause this task and its running capabilities. Preserve all work.',{'text':TEXT}),
     function('wait_for_result','Sleep until a running capability needs input or completes.',
         {'kind':TEXT,'id':TEXT}),
-    function('finish_task','Explicitly finish the latest request with its answer or observed outcome and evidenced limitations. Also use directly for greetings and ordinary questions. Do not conclude with a promise of future work; the conversation can continue.',{'text':TEXT}),
+    function('finish_task','Explicitly finish the latest request with its answer or observed outcome and evidenced limitations. Also use directly for greetings and ordinary questions. Do not conclude with a promise of future work; the conversation can continue.',
+             {'text':TEXT,'stop_reason':{'type':'string','maxLength':400,'description':'When finishing a job search: one short '
+              'sentence on why searching stops now (what was covered and why a further step is not worth it).'}},['text']),
 ]
 
 
@@ -347,6 +349,8 @@ class TaskLoop:
             if not isinstance(args['text'],str) or not 0<len(args['text'])<=4000:raise ValueError('Summarize the observed outcome.')
             if hasattr(self.harness,'validate_reply'):self.harness.validate_reply(self.repository.get(task_id),args['text'])
             if hasattr(self.harness,'validate_completion'):self.harness.validate_completion(self.repository.get(task_id),args['text'])
+            if hasattr(self.harness,'validate_stop'):self.harness.validate_stop(self.repository.get(task_id),args.get('stop_reason'))
+            if args.get('stop_reason'):self.repository.change(task_id,stop_reason=args['stop_reason'])
             self.repository.append(task_id,role='assistant',text=args['text'])
             # Commit completion together with the action history in _drive.
             return {'completed':True}

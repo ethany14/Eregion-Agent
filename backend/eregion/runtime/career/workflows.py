@@ -27,7 +27,7 @@ RULE += ('Large entry-level searches expand equivalent role queries automaticall
          'before cards whose title states a different level or whose location is another city or only a country. '
          'The qualification model already reviews the complete saved JD and gives verified source quotes. '
          'If it remains unknown, only new source evidence for the unresolved field helps; rereading the same JD does not. '
-         'When sources and actionable candidates are exhausted, finish honestly with saved qualified recommendations and the shortfall.\n')
+         'Finish honestly with the saved recommendations and the shortfall when further searching is not worth it.\n')
 FALLBACK = 'Use read_job, import_job, then score_job individually; inspect saved progress first.'
 
 

@@ -81,10 +81,48 @@ def record_browser(repository,task_id,result):
     repository.change(task_id,mutation)
 
 
+def searches(state):
+    """What each search of this turn covered, as recorded (facts only, no verdict)."""
+    cache=state.get('search_request_cache') or {}
+    if cache.get('user_turn_id')!=user_turn(state):return []
+    rows=[]
+    for entry in list((cache.get('requests') or {}).values())[-12:]:
+        result=entry.get('result') or {}
+        row={'query':entry.get('query'),'location':entry.get('location'),'cards_returned':len(result.get('jobs') or [])}
+        if result.get('directory'):
+            row['boards']={'searched':len(result.get('directory_searched') or []),'remaining':result.get('directory_remaining'),
+                           'matching':result.get('directory_matching')}
+        linked=result.get('linkedin_mcp') or {}
+        variants=linked.get('query_variants') or ([linked] if linked else [])
+        row['linkedin']=[{**{k:(v.get('request') or {}).get(k) for k in ('query','pages','cards')},'status':v.get('status'),
+                          'reported_total':v.get('total'),'cached':bool(v.get('cached'))} for v in variants]
+        rows.append(row)
+    return rows
+
+
+def yields(state):
+    """Per source: postings carded, read, qualified and recommended so far this turn (facts)."""
+    from .alerts import job_key
+    def source(url):
+        try:return 'linkedin' if job_key(url).startswith('linkedin:') else 'company_boards'
+        except ValueError:return None
+    rows={}
+    def add(url,field):
+        name=source(url or '')
+        if name:rows.setdefault(name,{'cards':0,'read':0,'qualified':0,'recommended':0})[field]+=1
+    for j in (state.get('search_candidates') or {}).values():add(j.get('url'),'cards')
+    for j in (state.get('retrieved_jobs') or {}).values():add(j.get('url'),'read')
+    for q in (state.get('candidate_qualifications') or {}).values():
+        if q.get('qualified'):add(q.get('url'),'qualified')
+    for r in state.get('recommendations') or []:add(r.get('url'),'recommended')
+    return rows
+
+
 def coverage(state):
     sources=active_sources(state)
     blocked=[source for source,item in sources.items() if item.get('blocked')]
     return {'blocked_sources':blocked[-8:],'blocked_count':len(blocked),'exhausted_sources':[source for source,item in sources.items() if item.get('empty_count',0)>=2][-8:],
+        'searches':searches(state),'yield_by_source':yields(state),
         'instruction':'Disclose source access limitations once to the user. These failures do not establish absence of vacancies. Public detail reading and switching sources are already authorized.'}
 
 

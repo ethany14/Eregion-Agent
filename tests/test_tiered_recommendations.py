@@ -374,3 +374,77 @@ def test_one_posting_source_failure_does_not_fail_the_batch(career, monkeypatch)
     assert not result.get('error') and len(result['jobs']) == 1
     failed = next(i for i in result['candidates'] if i['url'] == bad['url'])
     assert failed['status'] == 'source_error'
+
+
+# tiered-recommendations-v3: the stop decision is the model's; facts are shown, the audit judges.
+def test_search_coverage_reports_each_query_total_and_cards_seen_and_the_model_can_choose_depth():
+    from eregion.runtime.career.source_health import searches, user_turn
+    from eregion.runtime.career.search_strategy import source_limits
+    state = {'chat_revision': 0, 'messages': [{'role': 'user', 'text': GOAL, 'id': 'm1'}], 'goal': GOAL}
+    turn = user_turn(state)
+    state['search_request_cache'] = {'user_turn_id': turn, 'requests': {'k': {
+        'query': 'junior data analyst', 'location': 'New York', 'limit': 20,
+        'result': {'jobs': [{}] * 27, 'directory': True, 'directory_searched': ['a'] * 34, 'directory_remaining': 0,
+                   'directory_matching': 34, 'linkedin_mcp': {'status': 'ok', 'total': 408,
+                   'request': {'query': 'junior data analyst', 'pages': 2, 'cards': 20}}}}}}
+    row = searches(state)[0]
+    assert row['boards'] == {'searched': 34, 'remaining': 0, 'matching': 34}
+    assert row['linkedin'] == [{'query': 'junior data analyst', 'pages': 2, 'cards': 20, 'status': 'ok',
+                                'reported_total': 408, 'cached': False}]
+    assert source_limits(state, {'query': 'junior data analyst', 'pages': 6})['pages'] == 6
+    assert source_limits(state, {'query': 'junior data analyst', 'pages': 50})['pages'] == 8
+
+
+def test_a_search_turn_records_a_short_stop_reason_and_other_turns_do_not_need_one(career):
+    c = career
+    state = {**c.repository.get(c.state['task_id']), 'goal': GOAL,
+             'messages': [{'role': 'user', 'text': GOAL}], 'history': []}
+    c.harness.validate_stop(state, None)                     # nothing searched yet
+    state['history'] = [{'tool': 'search_jobs', 'arguments': {'query': 'x'}, 'chat_revision': state.get('chat_revision', 0)}]
+    with pytest.raises(ValueError, match='stop_reason'):
+        c.harness.validate_stop(state, '  ')
+    c.harness.validate_stop(state, 'The query was paged to its end and all directory boards were searched.')
+    from eregion.runtime.tasks.loop import CONTROL_TOOLS as TOOLS
+    finish = next(t for t in TOOLS if t['function']['name'] == 'finish_task')['function']['parameters']
+    assert finish['required'] == ['text'] and 'stop_reason' in finish['properties']
+
+
+@pytest.mark.parametrize('assessment,status,suggestions', [
+    ('reasonable', 'passed', 0), ('borderline', 'passed', 1), ('premature', 'failed', 0)])
+def test_v3_fails_only_a_clearly_premature_stop(assessment, status, suggestions):
+    from scripts.remaining_search_acceptance import evaluate_search
+    job = {**_v2_job(), 'match_score': None}
+    reply = {**HONEST, 'stop_assessment': assessment, 'stop_review': 'LinkedIn reported 408 results; 20 were seen.'}
+    result = evaluate_search(_v2_summary(job, [], {}, reply, final='Searched LinkedIn once.'), 'analyst')
+    assert result['status'] == status and len(result['improvement_suggestions']) == suggestions
+    assert result['stop_assessment'] == assessment
+
+
+def test_shared_prompts_carry_the_stop_rule_and_gap_priority():
+    from eregion.runtime.career import prompt
+    from eregion.runtime.career.prompt import SEARCH_STOP_RULE, RECOMMENDATION_RULE, trim_prompt
+    for text in (prompt.SYSTEM, trim_prompt(prompt.SYSTEM)):
+        assert SEARCH_STOP_RULE in text
+    assert 'unknown means the scorer did not decide' in RECOMMENDATION_RULE.replace('a scorer status of unknown means', 'unknown means')
+    assert 'never stands in for an important capability gap' in RECOMMENDATION_RULE
+
+
+def test_tier_labels_match_whatever_punctuation_separates_their_words(career, monkeypatch):
+    c = career
+    job, result = scored(c, monkeypatch)
+    app = result['jobs'][0]['application_id']
+    execute(c, 'recommend_job', **args(app, 'stretch', gaps=['Required R is not shown in the resume.']))
+    state = c.repository.get(c.state['task_id'])
+    body = '\n'.join(['- Junior Data Analyst', '  ' + job['url'], f"  Score {result['jobs'][0]['match_score']}", ''])
+    c.harness.validate_completion(state, '### Worth trying – known gaps (1)\n' + body)
+    with pytest.raises(ValueError, match='missing labels'):
+        c.harness.validate_completion(state, '### Worth a try (1)\n' + body)
+
+
+def test_yield_by_source_counts_cards_reads_qualifications_and_recommendations():
+    from eregion.runtime.career.source_health import yields
+    li, board = 'https://www.linkedin.com/jobs/view/1/', 'https://job-boards.greenhouse.io/acme/jobs/2'
+    state = {'search_candidates': {'a': {'url': li}, 'b': {'url': board}}, 'retrieved_jobs': {'a': {'url': li}},
+             'candidate_qualifications': {'a': {'url': li, 'qualified': True}}, 'recommendations': [{'url': li}]}
+    assert yields(state) == {'linkedin': {'cards': 1, 'read': 1, 'qualified': 1, 'recommended': 1},
+                             'company_boards': {'cards': 1, 'read': 0, 'qualified': 0, 'recommended': 0}}

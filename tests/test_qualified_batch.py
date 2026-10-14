@@ -188,7 +188,7 @@ def test_repeated_recommendation_is_reported_as_already_saved(career,monkeypatch
     state=c.repository.get(c.state['task_id'])
     assert len(state['recommendations'])==1
     snapshot=c.harness.observe(state)['recommended_jobs']
-    assert snapshot==[{k:state['recommendations'][0][k] for k in ('application_id','title','company','url','match_score')}]
+    assert snapshot==[{k:state['recommendations'][0][k] for k in ('application_id','title','company','url','match_score','tier','gaps','to_confirm','next_steps')}]
     # A changed tier is a new decision, not a repeat.
     moved=execute(c,'recommend_job',**{**args,'tier':'stretch','gaps':['SQL depth unclear']})
     assert moved['recommendation']['tier']=='stretch' and not moved.get('already_recommended')

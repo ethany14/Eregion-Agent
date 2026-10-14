@@ -50,7 +50,9 @@ TOOLS = [
     function('search_jobs','API-first discovery through configured LinkedIn MCP and public company boards. Returns observed posting cards; process candidate_queue.next_unread with verify_and_score_jobs. Search again for new boards only after actionable candidates are processed. Optional boards contain platform and company board token.',
         {**FILTER_SCHEMA,'query':TEXT,'location':TEXT,'use_directory':{'type':'boolean','description':'Select fresh verified boards by role and location; prefer after blocked requested sources.'},'boards':{'type':'array','maxItems':5,'items':{'type':'object',
             'properties':{'platform':{'type':'string','enum':['greenhouse','lever','ashby','workday']},'company':TEXT,'host':TEXT,'site':TEXT},
-            'required':['platform','company'],'additionalProperties':False}},'limit':{'type':'integer','minimum':1,'maximum':20}},['query']),
+            'required':['platform','company'],'additionalProperties':False}},'limit':{'type':'integer','minimum':1,'maximum':20},
+            'pages':{'type':'integer','minimum':1,'maximum':8,'description':'LinkedIn result pages for this query (about 10 cards and 9 s each). '
+                     'search_coverage reports for each query the provider total and cards seen, so you can judge whether deeper pages are worth it.'}},['query']),
     function('screen_jobs','Quickly rank a batch of actually observed job links against a short search query. Use after browser search to choose which descriptions to read and score. Advisory only; cannot replace score_job or establish eligibility. Unknowns remain available to you.',
         {'urls':{'type':'array','minItems':1,'maxItems':20,'items':TEXT},'query':TEXT}),
     function('read_job','Read and cache the canonical posting via configured LinkedIn MCP or public APIs. Prefer verify_and_score_jobs for a batch. Browser detail regions are a fallback; supply observed region_ref and observation_id for split pages. A cached body needs no repeated read.',
@@ -356,15 +358,19 @@ class CareerHarness:
         search_view=recovery(state,saved_urls=[self.runtime.workspace.application_job(a).canonical_url for a in state['jobs']])
         return {'candidate':saved.get('profile',{}),'resume_text':text[:40000],
             'search_recovery':search_view,
+            # Coverage, yield and remaining budget sit beside the queue: they are what a
+            # continue-or-stop choice rests on.
+            'search_coverage':{**coverage(state),'budget_remaining':self.search_budget(state)},
             **({'candidate_queue':candidate_view(state,search_view)} if candidate_batches() and search_view else {}),
             **source_mode.snapshot_policy(api_first:=self.api_first(),self._source_scope(state) if api_first else None),
             'known_results':known,
             'scheduled_search':recommendation,
-            # Identity, URL and score stay inline for the final answer. The model's own
-            # reason/caveat prose stays in state: inline it pushed 11+ rows behind a
-            # ref, the model could not see what it had saved and re-recommended them.
+            # What the final answer must restate stays inline: identity, URL, score and the
+            # saved tier, gaps, items to confirm and next steps (stop replay v3: without them
+            # the model re-read every archived job to write the reply). The list is never
+            # archived (request_context); free-form reason/caveat prose stays in state.
             'recommended_jobs':[{k:r[k] for k in ('application_id','title','company','url','match_score',
-                                                  'score_range') if k in r}
+                                                  'score_range','tier','gaps','to_confirm','next_steps') if k in r}
                                 for r in state.get('recommendations',[])],
             'previous_recommendations':self.alerts.recommended() if recommendation else [],
             'job_alerts':self.alerts.list() if getattr(self,'alerts',None) and not recommendation else [],
@@ -372,7 +378,6 @@ class CareerHarness:
             'research_pages': [{k: (v[:400] if k == 'excerpt' else [{a:b for a,b in link.items() if a in {'url','label'}} for link in v[:6]] if k == 'links' else v) for k,v in page.items() if k in {'url','title','blocked','links','excerpt'}} for page in state.get('research_pages', [])],
             'search_source_health':projection(state),
             'search_constraints':constraints(state),
-            'search_coverage':coverage(state),
             'visual_fallback':bool(state.get('visual_fallback')),
             'resume_issue':self._resume_issue if saved.get('resume_base64') else None,
             'has_original_pdf':bool(saved.get('resume_base64')),
@@ -382,6 +387,16 @@ class CareerHarness:
             'material_choices':{a:self.material_choices(a) for a in state['jobs']},
             'capability_versions':{'application':{r:self.wait_token({'id':r}) for r in state['application_runs']}},
             'interviews':[self.interview(i) for i in state['interviews']]}
+
+    def search_budget(self,state):
+        """Remaining paid work for this task, as facts for the model's continue/stop choice."""
+        from eregion.runtime.provider_usage import task_limits, UsageLedger
+        limits=task_limits();used=UsageLedger(self.repository.sessions).summary(task_id=state['task_id']) if state.get('task_id') else {}
+        source=state.get('linkedin_mcp_state') or {}
+        return {'provider_attempts':(limits['provider_attempts']-used.get('calls',0)) if limits.get('provider_attempts') else None,
+                'input_tokens':(limits['input_tokens']-used.get('budget_input_tokens',used.get('input_tokens',0)))
+                               if limits.get('input_tokens') else None,
+                'linkedin_calls':(source['call_limit']-source.get('calls_used',0)) if source.get('call_limit') else None}
 
     def job_summary(self,application_id,*,detail=False):
         rt = self.runtime
@@ -494,8 +509,9 @@ class CareerHarness:
                 'required_unresolved':listed(unresolved),
                 'needs_confirmation':listed(confirm),
                 'note':'Scoring is complete. Statuses come from the scorer: partial means some supporting evidence, not '
-                       'automatically disqualifying. Use these items to choose the tier (priority, stretch, to_confirm) and '
-                       'to name gaps or items to confirm. For exact text or resume evidence of any item (listed, truncated '
+                       'automatically disqualifying; unknown means the scorer did not decide, so compare that requirement with '
+                       'the resume yourself. Use these items to choose the tier (priority, stretch, to_confirm) and to name '
+                       'the gaps that matter most and the items to confirm. For exact text or resume evidence of any item (listed, truncated '
                        'or omitted) call inspect_job with requirement_ids.'}
 
     def requirement_details(self,application_id,requirement_ids):
@@ -971,7 +987,7 @@ class CareerHarness:
                 progress={**progress,directory_key:list(dict.fromkeys([*searched,*result.get('directory_searched',[])]))}
             health={'revision':state['chat_revision'],'user_turn_id':turn,'sources':sources,'history':history,
                     'directory_searched':progress,'treg_supplemented':supplemented}
-            attempts[request_key]={'limit':args.get('limit',10),'result':result}
+            attempts[request_key]={'limit':args.get('limit',10),'query':args['query'],'location':args.get('location'),'result':result}
             def remember_search(s):
                 # Preserve navigation URLs but key storage by posting identity;
                 # tracking-only variants must not evict genuinely new targets.
@@ -1621,6 +1637,15 @@ class CareerHarness:
                 '(a shortfall is reported honestly; never recommend a mandatory-gap job to close it). '
                 'Do not claim the budget is exhausted. Pending links: '+str(pending['pending_candidates'][:3]))
 
+    def validate_stop(self,state,reason):
+        """Structure only: a turn that searched records a short reason for stopping."""
+        from .search_recovery import search_request
+        searched=any(h.get('tool')=='search_jobs' and h.get('chat_revision',state.get('chat_revision',0))==state.get('chat_revision',0)
+                     for h in state.get('history',[]))
+        if search_request(state) and searched and not (isinstance(reason,str) and reason.strip()):
+            raise ValueError('Give stop_reason: one short sentence on why searching stops now, from search_coverage, '
+                             'candidate quality, failures and budget_remaining.')
+
     def validate_completion(self,state,text):
         from .source_health import validate_coverage
         validate_coverage(state,text)
@@ -1647,14 +1672,17 @@ class CareerHarness:
             '(scored jobs that were excluded or need evidence are listed too, marked as such). Missing URLs: '+str(missing))
         # The reply uses the same tier contract as the saved records (labels only;
         # whether a tier is right is the model's and the audit's judgment).
+        # A label matches whatever punctuation or spacing separates its words
+        # ('Worth trying - known gaps'); replay tiered-v3-01 lost two rounds to a dash.
+        def label_pattern(label):
+            return re.compile(r'[^0-9a-z]+'.join(re.escape(w) for w in re.findall(r'[0-9a-z]+',label.casefold())),re.I)
         absent=[TIERS[t] for t in dict.fromkeys(r.get('tier') for r in state.get('recommendations',[]))
-                if t in TIERS and TIERS[t].casefold() not in text.casefold()]
+                if t in TIERS and not label_pattern(TIERS[t]).search(text)]
         if absent:raise ValueError('Group the recommendations under their tier labels with counts; missing labels: '
                                    +', '.join(absent)+'. '+FINAL_FORMAT)
         # Structure only: each saved recommendation appears under its own saved tier label
         # (acceptance tiered-v2-01 listed a to_confirm job under Priority match).
-        folded=text.casefold()
-        labels=sorted((m.start(),tier) for tier,label in TIERS.items() for m in re.finditer(re.escape(label.casefold()),folded))
+        labels=sorted((m.start(),tier) for tier,label in TIERS.items() for m in label_pattern(label).finditer(text))
         placed={}
         for match in re.finditer(r'https://[^\s<>"\]]+',text):
             try:key=job_key(match[0].rstrip('.,;!?)'))

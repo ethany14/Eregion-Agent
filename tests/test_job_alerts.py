@@ -73,7 +73,8 @@ def search_decision(s):
     if 'recommend_job' not in history:return 'recommend_job',{'application_id':job['application_id'],'tier':'priority',
         'reason':'Your resume shows Python API experience.','evidence':[job['title']],'gaps':[],'to_confirm':[],
         'next_steps':['Apply with the saved resume.'],'caveats':'Confirm location and sponsorship.'}
-    return 'finish_task',{'text':'I found a verified Python role. Review the recommendation below.'}
+    return 'finish_task',{'text':'I found a verified Python role. Review the recommendation below.',
+                          'stop_reason':'The single observed posting was processed; no other candidates were observed.'}
 
 
 def start_service(c,decide=search_decision):

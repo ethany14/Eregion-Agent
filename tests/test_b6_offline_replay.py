@@ -269,6 +269,9 @@ class ScriptedModel:
                 # Historical recordings predate the tier contract (tiered-recommendations-v1).
                 args.update(tier='priority', evidence=[target['title']], gaps=[], to_confirm=[],
                             next_steps=['Review the posting and apply if interested.'])
+        if name == 'finish_task' and 'stop_reason' not in args:
+            # Historical recordings predate the stop_reason field (tiered-recommendations-v3).
+            args['stop_reason'] = 'Recorded run: searching ended after the recorded sources and candidates.'
         if name == 'finish_task' and step.get('render_final'):
             jobs = snapshot['jobs']
             lines = [step['render_final'], 'Priority match']

@@ -1,6 +1,6 @@
 """Explicit live default-route acceptance; no applications or schedules.
 
-New runs use tiered-recommendations-v2: no minimum count; counts are reported.
+New runs use tiered-recommendations-v3 (v2 plus a stop-reasonableness review): no minimum count; counts are reported.
 Historical runs keep their recorded version and verdict."""
 import json
 import os
@@ -13,7 +13,7 @@ import pytest
 from test_career_flow import career
 
 # Acceptance version for new runs. Historical runs keep their recorded version and result.
-ACCEPTANCE_VERSION = os.getenv('JOB_AGENT_LIVE_ACCEPTANCE', 'tiered-recommendations-v2')
+ACCEPTANCE_VERSION = os.getenv('JOB_AGENT_LIVE_ACCEPTANCE', 'tiered-recommendations-v3')
 LEGACY_GOAL = ('Find 15 current junior data analyst positions in New York for my saved resume. '
         'Aim for at least 10 verified, scored, qualifying recommendations. Use LinkedIn MCP '
         'and public company job-board APIs first. Keep the role, seniority and location '
@@ -34,7 +34,8 @@ OPEN_GOAL = ('Find current junior data analyst positions in New York for my save
         'job-board APIs first. Keep the role, seniority and location constraints; report honestly what '
         'was searched and why results are few if they are. Include each job URL and match score. '
         'Do not apply, generate materials, or create a schedule.')
-GOAL = {'tiered-recommendations-v2': OPEN_GOAL, 'tiered-recommendations-v1': TIERED_GOAL}.get(ACCEPTANCE_VERSION, LEGACY_GOAL)
+OPEN_VERSIONS = {'tiered-recommendations-v2', 'tiered-recommendations-v3'}
+GOAL = {'tiered-recommendations-v3': OPEN_GOAL, 'tiered-recommendations-v2': OPEN_GOAL, 'tiered-recommendations-v1': TIERED_GOAL}.get(ACCEPTANCE_VERSION, LEGACY_GOAL)
 FLAGS = {'JOB_AGENT_JOB_API_FIRST': '1', 'JOB_AGENT_TREG_ENABLED': '0',
          'JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS': '60',
          'JOB_AGENT_TASK_MAX_INPUT_TOKENS': '1000000'}
@@ -92,7 +93,7 @@ def test_default_route_search(career, monkeypatch):
     (output/'invocation.json').write_text(json.dumps({
         'head':subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
         'goal':GOAL, 'acceptance_version':ACCEPTANCE_VERSION, 'flags':flags, 'limits_profile':profile_name, 'limits':limits,
-        **({} if ACCEPTANCE_VERSION == 'tiered-recommendations-v2' else {'minimum_qualified':10, 'target':15}),
+        **({} if ACCEPTANCE_VERSION in OPEN_VERSIONS else {'minimum_qualified':10, 'target':15}),
         'mcp_call_limit':limits['linkedin_calls'], 'deadline_seconds':limits['deadline_seconds'], 'synthetic_candidate':True,
         'audit_budget':{'provider_attempts':6,'input_tokens':200000},
         'cost_usd':None, 'cost_note':'Provider billing unavailable; attempt and token caps enforced.'
@@ -108,7 +109,7 @@ def test_default_route_search(career, monkeypatch):
             if not (output/'acceptance.json').exists():
                 raise
         acceptance = json.loads((output/'acceptance.json').read_text(encoding='utf-8'))
-        if ACCEPTANCE_VERSION != 'tiered-recommendations-v2':
+        if ACCEPTANCE_VERSION not in OPEN_VERSIONS:
             # Historical versions only; v2 has no count threshold.
             if acceptance['qualified_count'] < 10:
                 acceptance['failures'].append('fewer_than_ten_verified_scored_qualifying_recommendations')

@@ -21,8 +21,11 @@ def source_limits(state,args=None):
     import os
     configured=os.getenv('JOB_AGENT_LINKEDIN_MAX_CALLS','').strip()
     calls=int(configured) if configured.isdigit() and int(configured)>0 else 50 if large else 26
-    return {'calls':calls,
-            'pages':8 if large and broad else 4 if large else 2 if (args or {}).get('limit',10)>10 else 1}
+    # The model may choose the depth for a query (bounded by the per-call deadline);
+    # otherwise the default sizing applies.
+    chosen=(args or {}).get('pages')
+    default=8 if large and broad else 4 if large else 2 if (args or {}).get('limit',10)>10 else 1
+    return {'calls':calls,'pages':max(1,min(8,int(chosen))) if isinstance(chosen,int) else default}
 
 
 def variants(state,args):
