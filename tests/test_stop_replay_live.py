@@ -37,6 +37,10 @@ def scenario(state, name):
         if name == 'exhausted':
             # The provider reports no more results than were already seen.
             linked['total'] = linked['request']['cards']
+    if name == 'budget_low':
+        # Only a few LinkedIn calls remain for this task.
+        source = state['linkedin_mcp_state']
+        source['calls_used'] = max(source.get('calls_used', 0), source.get('call_limit', 100) - 3)
     return state
 
 
@@ -86,6 +90,7 @@ def test_stop_replay(tmp_path, monkeypatch):
     history = [h for h in state['history'] if h['tool'] != 'finish_task']
     messages = [m for m in state['messages'] if m.get('role') == 'user']
     repository.change(task_id, search_request_cache=state['search_request_cache'], history=history, messages=messages,
+                      linkedin_mcp_state=state['linkedin_mcp_state'],
                       status='queued', error=None, pause_requested=False, progress_guard={}, loop_runtime=None,
                       input_request=None, wait=None, stop_reason=None)
 
@@ -109,6 +114,11 @@ def test_stop_replay(tmp_path, monkeypatch):
                 repository.change(task_id, pause_requested=True)
                 raise RuntimeError('Replay model-call cap reached.')
             invocations.append(time.monotonic())
+            if os.getenv('REPLAY_REASONING'):
+                # Only the main model's continue/stop call; scores and qualification caches
+                # keep their fingerprint (an env setting would mark them stale).
+                return self.model.model.bind_tools(tools).invoke(
+                    messages, timeout=self.model.timeout, max_tokens=4000, reasoning_effort=os.environ['REPLAY_REASONING'])
             return self.model.invoke(messages, tools)
 
     ledger = UsageLedger(db.session_factory)
@@ -128,7 +138,8 @@ def test_stop_replay(tmp_path, monkeypatch):
     final = repository.get(task_id)
     after = ledger.summary(task_id=task_id)
     outcome = 'continued' if attempted else 'finished' if final['status'] == 'completed' else 'undecided'
-    result = {'source': str(source), 'scenario': name, 'outcome': outcome, 'next_step': attempted[:1],
+    result = {'source': str(source), 'scenario': name, 'reasoning': os.getenv('REPLAY_REASONING') or 'default',
+              'outcome': outcome, 'next_step': attempted[:1],
               'stop_reason': final.get('stop_reason'), 'model_calls': len(invocations),
               'tools': [h['tool'] for h in final.get('history', [])[len(history):]],
               'final': next((m['text'] for m in reversed(final['messages']) if m['role'] == 'assistant'), None),
