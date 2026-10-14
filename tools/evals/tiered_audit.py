@@ -27,8 +27,11 @@ V3 = 'tiered-recommendations-v3'
 # v4 = the model still decides when to stop; the reply must state accurately what remains
 # and offer to continue. Stop reasonableness is advisory unless the user asked for an
 # exhaustive search (one audit call proved too inconsistent to pass or fail a run on).
-ACCEPTANCE_VERSION = 'tiered-recommendations-v4'
-VERSIONS = {V1, V2, V3, ACCEPTANCE_VERSION}
+V4 = 'tiered-recommendations-v4'
+# v5 = v4 with one clarified audit term: leaving out a preferred / 'a plus' item is a minor
+# omission, not a hidden conflict (tiered-v4-01 failed DraftKings on Databricks 'is a plus').
+ACCEPTANCE_VERSION = 'tiered-recommendations-v5'
+VERSIONS = {V1, V2, V3, V4, ACCEPTANCE_VERSION}
 
 
 class Opportunity(PostingDecision):
@@ -85,7 +88,9 @@ compare the assistant's tier, reason, gaps, items to confirm, next steps and sco
 - ineligible_presented_as_applicable: a known hard mismatch is presented as applicable;
 - score_used_as_eligibility_proof: the score is presented as proof of eligibility rather than a fit estimate;
 - known_conflict_hidden: a known hard mismatch, an important gap or a condition the user must confirm is
-  missing or worded so that a reader would be misled about whether to apply;
+  missing or worded so that a reader would be misled about whether to apply. An important gap is a required
+  qualification the candidate does not show; items the posting marks as preferred, a plus or nice to have are
+  minor_omissions unless the assessment shows they decide the application;
 - unsupported_claim: the reason or evidence states something the posting or candidate material does not support;
 - minor_omissions: smaller details left out that would not mislead a reader (listed only).
 A different but defensible tier is not an error. Judge only from the supplied material. Explain briefly.
