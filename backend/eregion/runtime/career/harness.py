@@ -1684,7 +1684,14 @@ class CareerHarness:
                                    +', '.join(absent)+'. '+FINAL_FORMAT)
         # Structure only: each saved recommendation appears under its own saved tier label
         # (acceptance tiered-v2-01 listed a to_confirm job under Priority match).
-        labels=sorted((m.start(),tier) for tier,label in TIERS.items() for m in label_pattern(label).finditer(text))
+        # Only a heading-shaped line counts ('### Worth trying (known gaps) (2)'); the same words
+        # inside an entry ('- Needs your confirmation: GPA ...') are not a section (tiered-v3-04).
+        def heading(match):
+            line_start=text.rfind('\n',0,match.start())+1
+            line_end=text.find('\n',match.end());line_end=len(text) if line_end<0 else line_end
+            before=text[line_start:match.start()];rest=re.sub(r'\([^)]*\)','',text[match.end():line_end])
+            return not re.search(r'[0-9A-Za-z]',before.replace('#','')) and not re.search(r'[A-Za-z:]',rest)
+        labels=sorted((m.start(),tier) for tier,label in TIERS.items() for m in label_pattern(label).finditer(text) if heading(m))
         placed={}
         for match in re.finditer(r'https://[^\s<>"\]]+',text):
             try:key=job_key(match[0].rstrip('.,;!?)'))

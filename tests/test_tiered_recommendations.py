@@ -465,3 +465,14 @@ def test_a_linkedin_page_depth_never_reaches_the_board_apis(career, monkeypatch)
     monkeypatch.setattr(c.harness.discovery, 'search', search, raising=False)
     result = execute(c, 'search_jobs', query='data analyst', location='New York, NY', pages=3, limit=20)
     assert not result.get('error'), result
+
+
+def test_tier_words_inside_an_entry_are_not_a_section_heading(career, monkeypatch):
+    c = career
+    job, result = scored(c, monkeypatch)
+    app = result['jobs'][0]['application_id']
+    execute(c, 'recommend_job', **args(app, 'stretch', gaps=['Required R is not shown in the resume.']))
+    state = c.repository.get(c.state['task_id'])
+    entry = '\n'.join(['- Junior Data Analyst', '  ' + job['url'], f"  Score {result['jobs'][0]['match_score']}", ''])
+    other = '- Needs your confirmation: whether a license is needed (another job).\n'
+    c.harness.validate_completion(state, '### Worth trying (known gaps) (1)\n' + other + entry)

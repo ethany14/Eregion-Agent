@@ -346,7 +346,11 @@ class TaskLoop:
         if name=='finish_task':
             self.harness.validate_finish(self.repository.get(task_id))
             if self.repository.get(task_id).get('input_request'):raise ValueError('A question is still pending.')
-            if not isinstance(args['text'],str) or not 0<len(args['text'])<=4000:raise ValueError('Summarize the observed outcome.')
+            if not isinstance(args['text'],str) or not args['text'].strip():raise ValueError('Summarize the observed outcome.')
+            # A tiered search reply with gaps per job needs more room than 4000 characters
+            # (acceptance tiered-v3-04 was rejected once for length without being told why).
+            if len(args['text'])>8000:raise ValueError(f"The reply has {len(args['text'])} characters; keep it under 8000 "
+                                                       "by shortening each job's text, not by dropping jobs, gaps or failures.")
             if hasattr(self.harness,'validate_reply'):self.harness.validate_reply(self.repository.get(task_id),args['text'])
             if hasattr(self.harness,'validate_completion'):self.harness.validate_completion(self.repository.get(task_id),args['text'])
             if hasattr(self.harness,'validate_stop'):self.harness.validate_stop(self.repository.get(task_id),args.get('stop_reason'))
