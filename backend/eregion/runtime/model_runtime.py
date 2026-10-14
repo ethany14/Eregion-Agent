@@ -53,3 +53,34 @@ def model_failure(error):
     if isinstance(error, (ConnectionError,httpx.NetworkError,httpx.ProxyError)) or "connection" in name.casefold() or (status and status >= 500):
         return ModelFailure("model_unavailable", True, name, status)
     return ModelFailure("model_error", False, name, status)
+
+
+class ResponseFormatError(ValueError):
+    """The provider answered, but the structured reply is unusable (identities, schema)."""
+
+
+def recoverable_failure(error):
+    """True only for a transport failure or an unusable response format.
+
+    Authentication, payment, rate limits, configuration, programming errors,
+    cancellation and budget stops are never retried, and a well-formed semantic
+    answer is never retried for a more favourable verdict.
+    """
+    if not isinstance(error, Exception):
+        return False   # BaseException: budget stops, cancellation, interpreter exit
+    seen, current = set(), error
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if isinstance(current, ResponseFormatError):
+            return True
+        try:
+            from pydantic import ValidationError
+            from langchain_core.exceptions import OutputParserException
+            if isinstance(current, (ValidationError, OutputParserException)):
+                return True
+        except ImportError:
+            pass
+        if isinstance(current, ValueError) and str(current) == 'The model did not return valid structured output.':
+            return True
+        current = current.__cause__ or current.__context__
+    return model_failure(error).code in {'model_timeout', 'model_unavailable'}

@@ -328,3 +328,40 @@ def test_failed_qualification_group_is_retried_once_then_stays_unknown(career,mo
     monkeypatch.setattr(q,'judge',broken);calls.clear()
     results=q.record_many(repo,tid,[job(9,title='Data Analyst 9')])
     assert len(calls)==2 and results[0]['review']['method']=='model_unavailable'   # bounded: never a third
+
+
+def test_experiment_budget_is_shared_across_tasks_and_counts_failures(tmp_path,monkeypatch):
+    from eregion.runtime.provider_usage import (provider_call, usage_scope, UsageLedger, TaskProviderBudgetExceeded,
+                                                experiment_summary)
+    from eregion.api.db import create_database
+    ledger_path=tmp_path/'experiment.sqlite3'
+    monkeypatch.setenv('JOB_AGENT_EXPERIMENT_ID','exp-1');monkeypatch.setenv('JOB_AGENT_EXPERIMENT_LEDGER',str(ledger_path))
+    monkeypatch.setenv('JOB_AGENT_EXPERIMENT_MAX_PROVIDER_ATTEMPTS','3');monkeypatch.setenv('JOB_AGENT_EXPERIMENT_MAX_INPUT_TOKENS','10000')
+    db=create_database('sqlite:///'+(tmp_path/'task.sqlite3').as_posix(),create_schema_for_tests=True)
+    try:
+        ledger=UsageLedger(db.session_factory)
+        def call(task,fail=False):
+            with usage_scope(task_id=task,ledger=ledger):
+                with provider_call('m',input_token_reservation=10) as details:
+                    if fail:raise ConnectionError('reset after send')
+                    details.update(input_tokens=10,output_tokens=1)
+        call('task-a')
+        with pytest.raises(ConnectionError):call('task-b',fail=True)   # a new task, a failed call
+        call('task-c')
+        with pytest.raises(TaskProviderBudgetExceeded):call('task-d')  # fourth call: cumulative cap
+        total=experiment_summary(ledger_path,'exp-1')
+        assert total['calls']==3 and total['unknown_usage_calls']==1   # the dropped call stays unknown
+    finally:db.close()
+
+
+@pytest.mark.parametrize('error,retried',[
+    (ConnectionError('reset'),True),(TimeoutError('slow'),True),
+    (type('AuthenticationError',(Exception,),{'status_code':401})('bad key'),False),
+    (type('RateLimitError',(Exception,),{'status_code':429})('slow down'),False),
+    (TypeError('program error'),False),(KeyError('config'),False)])
+def test_only_transport_or_format_failures_are_retried(career,monkeypatch,error,retried):
+    repo,tid=setup(career);calls=[]
+    def judge(request,postings):calls.append(1);raise error
+    monkeypatch.setattr(q,'judge',judge)
+    result=q.record_many(repo,tid,[job(1)])[0]
+    assert len(calls)==(2 if retried else 1) and result['review']['method']=='model_unavailable'

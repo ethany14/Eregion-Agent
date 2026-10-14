@@ -6,6 +6,8 @@ import json
 import logging
 import time
 import os
+import threading
+from pathlib import Path
 from functools import wraps
 from uuid import uuid4
 
@@ -181,7 +183,7 @@ class UsageLedger:
     def __init__(self, sessions):
         self.sessions = sessions
 
-    def start(self, call_id, scope, details, *, limits=None):
+    def start(self, call_id, scope, details, *, limits=None, reply_reserve=True):
         with self.sessions.begin() as db:
             if limits and scope.get('task_id'):
                 # Serialize reservations across workers AND restarted processes.
@@ -194,7 +196,7 @@ class UsageLedger:
                 total = summarize(rows)
                 if 'provider_attempts' in limits and total['calls'] + 1 > limits['provider_attempts']:
                     raise TaskProviderBudgetExceeded('provider_attempts')
-                if ('provider_attempts' in limits and details.get('purpose') != 'agent'
+                if (reply_reserve and 'provider_attempts' in limits and details.get('purpose') != 'agent'
                         and limits['provider_attempts'] > 2 * REPLY_RESERVE
                         and total['calls'] + 1 > limits['provider_attempts'] - REPLY_RESERVE):
                     raise ReplyBudgetReserved('reply_reserve')
@@ -265,6 +267,44 @@ def summarize(rows):
     return result
 
 
+_experiment_ledgers = {}
+_experiment_lock = threading.Lock()
+
+
+def experiment_budget():
+    """Opt-in cumulative budget shared by every task, phase, worker and retry of one
+    paid experiment. A new task id cannot reset it; failed calls are counted."""
+    experiment = os.getenv('JOB_AGENT_EXPERIMENT_ID', '').strip()
+    if not experiment:
+        return None
+    path = os.getenv('JOB_AGENT_EXPERIMENT_LEDGER', '').strip()
+    limits = {}
+    for metric, name in (('provider_attempts', 'JOB_AGENT_EXPERIMENT_MAX_PROVIDER_ATTEMPTS'),
+                         ('input_tokens', 'JOB_AGENT_EXPERIMENT_MAX_INPUT_TOKENS')):
+        value = os.getenv(name, '').strip()
+        if not value.isdigit():
+            raise TaskProviderBudgetExceeded('missing_experiment_limit')
+        limits[metric] = int(value)
+    if not path:
+        raise TaskProviderBudgetExceeded('missing_experiment_ledger')
+    with _experiment_lock:
+        ledger = _experiment_ledgers.get(path)
+        if ledger is None:
+            from eregion.api.db import create_database
+            database = create_database('sqlite:///' + Path(path).as_posix(), create_schema_for_tests=True)
+            ledger = _experiment_ledgers[path] = UsageLedger(database.session_factory)
+    return experiment, ledger, limits
+
+
+def experiment_summary(path, experiment):
+    from eregion.api.db import create_database
+    database = create_database('sqlite:///' + Path(path).as_posix(), create_schema_for_tests=True)
+    try:
+        return UsageLedger(database.session_factory).summary(task_id=experiment)
+    finally:
+        database.close()
+
+
 @contextmanager
 def provider_call(model, **sizes):
     scope = current_scope()
@@ -282,6 +322,12 @@ def provider_call(model, **sizes):
     for key in ('context_metrics', 'queue_wait_seconds', 'reasoning_escalation', 'reasoning_fallback', 'effective_reasoning'):
         if key in scope:
             details[key] = scope[key]
+    experiment = experiment_budget()
+    if experiment:
+        details['experiment_id'] = experiment[0]
+        details['reserved_input_tokens'] = sizes.get('input_token_reservation')
+        if details['reserved_input_tokens'] is None:
+            raise TaskProviderBudgetExceeded('unknown_input_size')
     if limits:
         if ledger is None:
             raise TaskProviderBudgetExceeded('missing_usage_ledger')
@@ -304,7 +350,27 @@ def provider_call(model, **sizes):
                 log.warning('Provider usage persistence failed: %s', type(exc).__name__)
             finally:
                 persistence += time.monotonic() - before
-    persist('start')
+    def persist_experiment(method):
+        if not experiment:
+            return
+        experiment_id, experiment_ledger, experiment_limits = experiment
+        if method == 'start':
+            # Reserved before sending; budget refusals raise before any provider I/O.
+            experiment_ledger.start(call_id, {'task_id': experiment_id}, dict(details),
+                                    limits=experiment_limits, reply_reserve=False)
+        else:
+            try:
+                experiment_ledger.finish(call_id, dict(details))
+            except Exception as exc:
+                log.warning('Experiment usage persistence failed: %s', type(exc).__name__)
+    persist_experiment('start')
+    try:
+        persist('start')
+    except BaseException:
+        # Refused by the task budget before anything was sent: zero is a fact here.
+        details.update(status='refused_before_send', input_tokens=0, output_tokens=0)
+        persist_experiment('finish')
+        raise
     _observe(details)
     provider_started = time.monotonic()
     try:
@@ -324,7 +390,8 @@ def provider_call(model, **sizes):
         details['persistence_seconds'] = persistence
         details['persistence_boundary'] = 'attempt_start_write'
         details['duration_seconds'] = round(time.monotonic() - started, 3)
-        persist('finish')
+        persist("finish")
+        persist_experiment("finish")
         if ledger is not None:
             details['persistence_seconds'] = persistence
             details['persistence_boundary'] = 'start_and_finish_writes_excluding_timing_update'

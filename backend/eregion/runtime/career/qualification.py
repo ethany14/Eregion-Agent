@@ -97,6 +97,7 @@ def record_many(repository,task_id,jobs):
     """Batched semantic IO under the caller's owner, budget and cancellation guard."""
     from eregion.runtime.core.engine import LoopStop
     from eregion.runtime.provider_usage import usage_scope, TaskProviderBudgetExceeded
+    from eregion.runtime.model_runtime import ResponseFormatError, recoverable_failure
     state=repository.get(task_id);fingerprint=request_hash(state);request=user_request(state)
     def check():
         current=repository.get(task_id)
@@ -125,10 +126,12 @@ def record_many(repository,task_id,jobs):
                 with usage_scope(provider_guard=check):response=judge(request,postings)
                 ids=[d.posting_id for d in response.decisions]
                 if len(ids)!=len(group) or set(ids)!={str(i) for i in range(len(group))}:
-                    raise ValueError('Qualification response identities do not match the supplied batch.')
+                    raise ResponseFormatError('Qualification response identities do not match the supplied batch.')
                 return {d.posting_id:d for d in response.decisions},None
             except (TaskProviderBudgetExceeded,LoopStop):raise
-            except Exception as exc:error=type(exc).__name__
+            except Exception as exc:
+                error=type(exc).__name__
+                if not recoverable_failure(exc):break   # auth, config or program errors: no retry
         return {},error
     def save(group,decisions,error):
         check()
