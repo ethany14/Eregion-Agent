@@ -20,6 +20,30 @@ def enabled():
     return os.getenv('JOB_AGENT_OPT_CANDIDATE_BATCHES', '1' if default else '0') == '1'
 
 
+WORK = {'verify_and_score', 'verify_and_score_jobs', 'import_job', 'read_job', 'score_job', 'score_jobs'}
+
+
+def stalled(state):
+    """Targets whose latest work attempt in this turn made no progress, with that outcome.
+
+    State consistency only: an attempt that returned an error or no new evidence is not
+    shown again as the next action, so it cannot starve the remaining items."""
+    revision = state.get('chat_revision', 0)
+    latest = {}
+    for h in state.get('history', []):
+        if h.get('tool') not in WORK or h.get('chat_revision', revision) != revision:
+            continue
+        args = h.get('arguments') or {}
+        result = h.get('result') if isinstance(h.get('result'), dict) else {}
+        outcome = ({'tool': h['tool'], **{k: result[k] for k in ('error', 'error_code', 'note') if k in result}}
+                   if result.get('error') or result.get('no_new_evidence') else None)
+        for target in [*(args.get('urls') or []), args.get('url'), *(args.get('application_ids') or []),
+                       args.get('application_id')]:
+            if target:
+                latest[job_key(target) if '://' in target else target] = outcome
+    return {k: v for k, v in latest.items() if v}
+
+
 def view(state, recovery):
     from .decisions import statuses
     if not recovery:
@@ -27,8 +51,13 @@ def view(state, recovery):
     decided = statuses(state)
     evidence = state.get('scored_job_evidence') or {}
     scored_keys = {job_key(e['url']) for e in evidence.values() if e.get('url')}
-    in_progress = []
+    in_progress, stuck = [], []
+    blocked = stalled(state)
     for item in recovery.get('read_not_imported', []):
+        if job_key(item['url']) in blocked:
+            stuck.append({'stage': 'import', 'url': item['url'], 'title': item.get('title'),
+                          'last_attempt': blocked[job_key(item['url'])]})
+            continue
         in_progress.append({'stage': 'import', 'url': item['url'], 'title': item.get('title'),
                             'next': {'tool': 'verify_and_score or import_job', 'arguments': {'url': item['url']}},
                             'alternative': 'dismiss_candidate with an exact source quote and reason if unsuitable'})
@@ -37,6 +66,9 @@ def view(state, recovery):
             continue
         if any(q.get('application_id')==app and q.get('revision')==state.get('chat_revision',0)
                and not q['qualified'] for q in state.get('candidate_qualifications',{}).values()):
+            continue
+        if app in blocked:
+            stuck.append({'stage': 'score', 'application_id': app, 'last_attempt': blocked[app]})
             continue
         in_progress.append({'stage': 'score', 'application_id': app,
                             'next': {'tool': 'score_job', 'arguments': {'application_id': app}}})
@@ -59,6 +91,9 @@ def view(state, recovery):
     return {'batch_limit': BATCH_LIMIT, 'detail_limit': DETAIL_LIMIT, 'requested': target,
             'recommended_without_level_warning': len(qualified), 'target_reached': reached,
             'in_progress': in_progress[:DETAIL_LIMIT * 2], 'next_unread': batch[:DETAIL_LIMIT],
+            **({'stalled': stuck[:DETAIL_LIMIT], 'stalled_note': 'Attempted this turn without progress; not '
+                'retried automatically. Retry only if something changed, dismiss with source evidence, or report it.'}
+               if stuck else {}),
             'deferred_unread': max(0, len(unread) - DETAIL_LIMIT),
             'instruction': ('Target reached: finish with the saved results.' if reached else
                             'Finish in_progress items first, then process next_unread URLs with verify_and_score_jobs in a bounded batch. '

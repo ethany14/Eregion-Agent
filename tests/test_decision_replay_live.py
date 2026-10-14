@@ -175,9 +175,9 @@ def test_decision_replay(tmp_path, monkeypatch):
     result['passed'] = bool(result['all_decided'] and not repeated_reads and not repeated_work
                             and result['model_calls'] <= MAX_MODEL_CALLS)
     if os.getenv('REPLAY_TIER_AUDIT') == '1' and recommendations:
-        # Independent tiered-recommendations-v1 audit of the replay's presentations,
+        # Independent tiered-recommendations-v2 audit of the replay's presentations,
         # under its own 6-call / 200k cap (and the shared experiment budget).
-        from evals.tiered_audit import review, contract_checks
+        from evals.tiered_audit import review, substantive_checks
         from evals.search_semantic_audit import candidate_hash
         from eregion.runtime.provider_usage import usage_scope
         jobs = [harness.job_summary(a, detail=True) for a in scored]
@@ -189,12 +189,12 @@ def test_decision_replay(tmp_path, monkeypatch):
         audit_started = time.monotonic()
         with usage_scope(task_id=audit_task, ledger=ledger):
             audit = review(final['goal'], jobs, recommendations, candidate)
-        checks = {j['url']: contract_checks(j, audit, final['goal'], candidate_hash(candidate)) for j in jobs
+        checks = {j['url']: substantive_checks(j, audit, final['goal'], candidate_hash(candidate)) for j in jobs
                   if any(r.get('url') == j['url'] for r in recommendations)}
         result['audit'] = {'usage': {k: ledger.summary(task_id=audit_task).get(k) for k in
                                      ('calls', 'input_tokens', 'output_tokens', 'unknown_usage_calls')},
                            'seconds': round(time.monotonic() - audit_started, 2),
-                           'counted': sum(all(v.values()) for v in checks.values()), 'checks': checks,
+                           'without_substantive_error': sum(all(v.values()) for v in checks.values()), 'checks': checks,
                            'independent_tiers': {u: (row.get('independent') or {}).get('tier') for u, row in audit.items()},
                            'presentation': {u: row.get('presentation') for u, row in audit.items() if row.get('presentation')}}
     (output / 'replay.json').write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding='utf-8')

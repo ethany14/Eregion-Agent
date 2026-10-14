@@ -23,6 +23,7 @@ def run_facts(service,state,summary):
     """Runtime-recorded facts the final reply must report faithfully (for the reply audit)."""
     from collections import Counter
     from eregion.runtime.career.source_health import coverage, projection
+    from eregion.runtime.career.candidate_queue import stalled
     source=state.get('linkedin_mcp_state') or {}
     log=source.get('log',[])
     scored=[j for j in summary['verified_jobs'] if j.get('match_score') is not None]
@@ -35,7 +36,8 @@ def run_facts(service,state,summary):
         'postings_read':len(state.get('retrieved_jobs') or {}),'imported':len(state['jobs']),'scored':len(scored),
         'decisions':dict(Counter(d.get('decision') for d in summary['job_decisions'].values())),
         'scored_without_outcome':[j['url'] for j in scored if j.get('application_id') not in decided],
-        'recommended_by_tier':dict(Counter(r.get('tier') for r in summary['recommendations']))}
+        'recommended_by_tier':dict(Counter(r.get('tier') for r in summary['recommendations'])),
+        'stalled_candidates':[{'target':k,**v} for k,v in stalled(state).items()]}
 
 
 def settle_live(service,task_id,output,applicant,timeout=600,*,semantic_review=False,limits=None,acceptance_version=None):

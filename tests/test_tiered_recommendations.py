@@ -307,3 +307,23 @@ def test_run_metrics_report_first_result_time_and_repeated_reads():
     m = run_metrics(state, '2026-10-13T10:05:00+00:00')
     assert m['seconds_to_first_recommendation'] == 210.0 and m['total_seconds'] == 300.0
     assert m['repeated_context_reads'] == 1 and m['repeated_linkedin_detail_reads'] == 1 and m['linkedin_searches'] == 1
+
+
+def test_an_item_attempted_without_progress_is_stalled_not_repeated_and_decisions_stay_actionable():
+    from eregion.runtime.career.candidate_queue import view, stalled
+    url = 'https://www.linkedin.com/jobs/view/1/'
+    state = {'chat_revision': 0, 'jobs': [], 'scored_job_evidence': {}, 'recommendations': [], 'job_decisions': {},
+             'history': [{'tool': 'verify_and_score_jobs', 'arguments': {'urls': [url]}, 'chat_revision': 0,
+                          'result': {'no_new_evidence': True, 'note': 'not available'}}]}
+    recovery = {'read_not_imported': [{'url': url, 'title': 'Data Analyst'},
+                                      {'url': 'https://www.linkedin.com/jobs/view/2/', 'title': 'Other'}],
+                'pending_candidates': [], 'requested_count': None}
+    current = view(state, recovery)
+    assert [i['url'] for i in current['in_progress']] == ['https://www.linkedin.com/jobs/view/2/']
+    assert current['stalled'][0]['url'] == url and current['stalled'][0]['last_attempt']['tool'] == 'verify_and_score_jobs'
+    # A later successful attempt clears it; a new user turn (revision) also clears it.
+    state['history'].append({'tool': 'import_job', 'arguments': {'url': url}, 'chat_revision': 0,
+                             'result': {'application_id': 'a'}})
+    assert not stalled(state)
+    state['history'].pop(); state['chat_revision'] = 1
+    assert not stalled(state)
