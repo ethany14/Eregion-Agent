@@ -177,3 +177,10 @@ def test_single_entry_applies_the_same_relevance_gate(career, monkeypatch):
     imported = execute(c, 'import_job', url=job['url'])
     result = execute(c, 'score_job', application_id=imported['application_id'])
     assert result['error_code'] == 'qualification_needed'
+
+
+def test_production_and_audit_share_one_set_of_tier_definitions():
+    from eregion.runtime.career.prompt import TIER_DEFINITIONS, RECOMMENDATION_RULE
+    from evals.tiered_audit import TIER_PROMPT
+    assert TIER_DEFINITIONS in RECOMMENDATION_RULE and TIER_DEFINITIONS in TIER_PROMPT
+    assert "a GPA the resume does not state is to_confirm" in TIER_DEFINITIONS

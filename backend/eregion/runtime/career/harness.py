@@ -39,7 +39,7 @@ TOOLS = [
     function('recommend_job','Present an actually read and scored job as an opportunity in one tier: priority, stretch or '
         'to_confirm (see the tier rule). evidence: exact quotes from this posting supporting the reason. gaps: each '
         'known skill/experience gap including required ones, with how hard it makes the application. to_confirm: '
-        'facts the user must confirm (GPA, nationality, visa/program status, license, start date). next_steps: '
+        'every personal fact the posting requires that the resume does not state (GPA, nationality, age, visa/program status, license, graduation date or cohort, start date). next_steps: '
         'concrete actions. Also adds it to the digest when this task was started by a schedule.',
         {**APP,'tier':{'type':'string','enum':list(TIERS)},'reason':TEXT,
          'evidence':{'type':'array','minItems':1,'maxItems':4,'items':{'type':'string','maxLength':400}},

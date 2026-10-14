@@ -44,20 +44,16 @@ class PresentationAudit(BaseModel):
     reviews: list[Presentation]
 
 
+from eregion.runtime.career.prompt import TIER_DEFINITIONS
+
+# The audit applies the same tier definitions as production (one shared text); it
+# judges independently, without seeing production labels.
 TIER_PROMPT = PROMPT.split('\n\nSeparately judge personal eligibility')[0] + """
 
-Then classify the posting as an opportunity for this candidate yourself, from the request, the complete
-posting and the candidate facts only:
-- priority: role, location and level match, ability evidence reasonably strong, no known major
-  qualification conflict (preferred gaps allowed);
-- stretch: relevant overall but with skill or experience gaps, including some required items;
-- to_confirm: relevant, but key personal facts are not provided (GPA, citizenship or nationality, visa or
-  program status, license, availability or start date);
-- not_an_opportunity: closed, unrelated, violating the user's explicit location, level or other stated
-  restriction, or a hard qualification the candidate's facts explicitly contradict.
-A GPA the resume does not state is to_confirm, never unmet. List important_gaps, to_confirm items and
-known_hard_mismatch (explicitly contradicted hard requirements) with exact posting text. Set
-violates_user_restriction only for a restriction the human actually stated."""
+Then classify the posting as an opportunity for this candidate yourself. """ + TIER_DEFINITIONS + """
+Use tier not_an_opportunity for the last group. List important_gaps, to_confirm items and
+known_hard_mismatch with exact posting text. Set violates_user_restriction only for a restriction the
+human actually stated."""
 
 PRESENTATION_PROMPT = """You review how a job-search assistant presented opportunities, against an independent
 assessment of each posting that was made earlier without seeing the assistant's output. For each posting_id
