@@ -29,7 +29,9 @@ def load(path):
             'infra_failures': [f for f in acc['failures'] if f in INFRA],
             'reply_failures': [f for f in acc['failures'] if f in REPLY or f == 'search_stopped_prematurely'],
             'shown': len(jobs), 'clean': sum(all(j['checks'].values()) for j in jobs),
-            'gap_omissions': sum(any(not j['checks'].get(c, True) for c in GAP_CHECKS) for j in jobs),
+            'gap_omissions': sum(any(not (j.get('audit_checks') or j['checks']).get(c, True) for c in GAP_CHECKS) for j in jobs),
+            'audit_flags': sum(not all((j.get('audit_checks') or {}).values()) for j in jobs if j.get('audit_checks')),
+            'audit_findings': acc.get('audit_findings') or [],
             'by_tier': acc.get('by_tier'), 'stop': acc.get('stop_assessment'),
             'continuation': {k: (acc.get('reply_review') or {}).get(k) for k in ('continuation_stated', 'continuation_accurate')},
             'first_result_s': (summary.get('metrics') or {}).get('seconds_to_first_recommendation'),
@@ -70,7 +72,7 @@ def main():
         Path(args.out).write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding='utf-8')
     for r in rows:
         print(f"{r['scenario']:9} {r['status']:7} shown {r['shown']} clean {r['clean']} gaps {r['gap_omissions']} "
-              f"stop {r['stop']} first {r['first_result_s']}s total {r['total_s']}s calls {r['provider_calls']} "
+              f"audit flags {r.get('audit_flags', 0)} stop {r['stop']} first {r['first_result_s']}s total {r['total_s']}s calls {r['provider_calls']} "
               f"in {r['input_tokens']} out {r['output_tokens']} unknown {r['unknown_usage']} | {', '.join(r['failures'])}")
     print(json.dumps(report['set'], indent=1))
 

@@ -20,7 +20,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--set-id', required=True)
     parser.add_argument('--scenarios', default=','.join(SCENARIOS))
-    parser.add_argument('--version', default='tiered-recommendations-v5')
+    parser.add_argument('--version', default='tiered-recommendations-v6')
     args = parser.parse_args()
     chosen = [s for s in args.scenarios.split(',') if s]
     unknown = set(chosen) - set(SCENARIOS)

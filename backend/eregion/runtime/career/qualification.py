@@ -14,6 +14,8 @@ GROUP_RETRIES=1
 GROUP_SIZE=6
 
 
+NEAR_FIELDS={'location','seniority'}
+
 def user_request(state):
     # Preserve the original request and subsequent human corrections, not model plans.
     texts=[state.get('goal','')]
@@ -71,13 +73,18 @@ def verified_conditions(decision,job):
 
 def result(state,job,checks,*,method='model_with_verified_quotes',conditions=()):
     unresolved=[k for k,v in checks.items() if v['status']=='unknown']
-    qualified=all(c['status'] in {'met','not_requested'} for c in checks.values())
+    # A near miss on location or seniority goes on to scoring and is shown with the difference
+    # stated (to_confirm or stretch); role and vacancy must be met.
+    qualified=all(c['status'] in ({'met','not_requested','near'} if f in NEAR_FIELDS else {'met','not_requested'})
+                  for f,c in checks.items())
     return {'url':job['url'],'revision':state.get('chat_revision',0),'body_hash':body_hash(job),
             'request_hash':request_hash(state),
             **({'application_id':job['application_id']} if job.get('application_id') else {}),
             'requested':request_fields(state),'checks':checks,'qualified':qualified,
             'status':'qualified' if qualified else 'needs_evidence',
             'candidate_conditions':list(conditions),
+            'near_misses':[{'field':f,'quote':c.get('quote',''),'reason':c.get('reason','')}
+                           for f,c in checks.items() if c['status']=='near'],
             'review':{'method':method,'unresolved':unresolved,
                       'next':'Reuse this assessment for unchanged inputs. New source evidence or user corrections can resolve unknowns.'},
             'interpretation':'Search constraints only; scoring must still check personal eligibility.'}
@@ -100,7 +107,8 @@ def verified_checks(decision,request,job):
             if span is None:valid=False;continue
             citations.append({'source':quote.source,'quote':original[span[0]:span[1]],
                               'start':span[0],'end':span[1]})
-        if item.status in {'met','unmet'} and not citations:valid=False
+        if item.status in {'met','unmet','near'} and not citations:valid=False
+        if item.status=='near' and field not in NEAR_FIELDS:valid=False
         checks[field]={'status':item.status if valid else 'unknown','quote':'\n'.join(c['quote'] for c in citations),
             'request_quote':item.request_quote,'reason':item.reason if valid else 'Model citation was missing or not found in this posting/request.',
             'evidence':citations,'citation_valid':valid}

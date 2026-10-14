@@ -210,7 +210,7 @@ def test_posting_conditions_are_quoted_from_the_posting_and_reach_the_decision(c
 # tiered-recommendations-v2: no count threshold; only substantive errors fail.
 def _v2_summary(job, recs, review, reply, decisions=None, final=None, version=None):
     from evals.tiered_audit import ACCEPTANCE_VERSION
-    ACCEPTANCE_VERSION = version or ACCEPTANCE_VERSION
+    ACCEPTANCE_VERSION = version or 'tiered-recommendations-v5'   # the substantive-gate versions
     final = final if final is not None else ''.join(f"{r['url']} Score {r['match_score']}\n" for r in recs)
     return {'status': 'completed', 'calls': 10, 'acceptance_version': ACCEPTANCE_VERSION,
             'usage': {'usage_complete': True, 'pending': 0, 'unknown_usage_calls': 0, 'input_tokens': 1000,
@@ -556,3 +556,49 @@ def test_scenario_set_verdict_pools_jobs_and_keeps_infrastructure_and_reply_fail
     assert not errors['ready'] and errors['substantive_error_rate'] == 3 / 16
     infra = verdict([row('analyst', 16, 16, infra=['semantic_audit_incomplete'])])
     assert not infra['ready'] and 'did not complete' in infra['reasons'][0]
+
+
+def test_a_near_miss_on_level_or_location_is_scored_and_never_presented_as_priority(career, monkeypatch):
+    from eregion.runtime.career import qualification as q
+    from test_semantic_search_qualification import response
+    def judge(request, postings):
+        value = response(request, postings)
+        value.decisions[0].seniority.status = 'near'
+        value.decisions[0].seniority.reason = 'Asks for two years against a junior request.'
+        return value
+    c = career
+    monkeypatch.setattr(q, 'judge', judge)
+    job = posting(1, description=DESCRIPTION)
+    prepare(c, monkeypatch, [job])
+    result = execute(c, 'verify_and_score_jobs', urls=[job['url']])
+    assert result['qualified_count'] == 1
+    scored = result['jobs'][0]
+    assert scored['request_near_misses'][0]['field'] == 'seniority'
+    with pytest.raises(ValueError, match='never as priority'):
+        execute(c, 'recommend_job', **args(scored['application_id'], 'priority'))
+    record = execute(c, 'recommend_job', **args(scored['application_id'], 'to_confirm',
+                                                to_confirm=['Asks for about two years; you have one.']))['recommendation']
+    assert record['request_near_misses'][0]['field'] == 'seniority'
+
+
+def test_role_is_never_near():
+    from eregion.runtime.career.qualification import verified_checks
+    from test_semantic_search_qualification import response
+    job = posting(1, description=DESCRIPTION)
+    decision = response(GOAL, [{'posting_id': '0', **{k: job[k] for k in ('title', 'location', 'description')}}]).decisions[0]
+    decision.role.status = 'near'
+    assert verified_checks(decision, GOAL, job)['role']['status'] == 'unknown'
+
+
+def test_v6_turns_audit_judgments_into_findings_but_keeps_structural_failures():
+    from scripts.remaining_search_acceptance import evaluate_search
+    job = _v2_job()
+    rec = {'application_id': 'a1', 'url': job['url'], 'match_score': 71.5, 'tier': 'stretch'}
+    review = _audit_row(job, GOAL, 'stretch', {**CLEAN, 'known_conflict_hidden': True})
+    bad_reply = {**HONEST, 'hides_or_misreports_problems': True}
+    result = evaluate_search(_v2_summary(job, [rec], review, bad_reply, version='tiered-recommendations-v6'), 'analyst')
+    assert result['status'] == 'passed'
+    assert set(result['audit_findings']) == {'final_reply_not_honest_or_unexplained', 'audit_flag:' + job['url']}
+    unscored = evaluate_search(_v2_summary({**job, 'retrieved': False}, [rec], review, HONEST,
+                                           version='tiered-recommendations-v6'), 'analyst')
+    assert unscored['failures'] == ['structural_error:' + job['url']]

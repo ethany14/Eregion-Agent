@@ -445,6 +445,10 @@ class CareerHarness:
         if tier=='stretch' and not lists['gaps']:raise ValueError('A stretch opportunity must list its specific gaps.')
         if tier=='to_confirm' and not lists['to_confirm']:raise ValueError('A to_confirm opportunity must list what the user must confirm.')
         if not lists['next_steps']:raise ValueError('Give at least one concrete next step.')
+        near=[c for c in (qualification.get('near_misses') or [])]
+        if near and tier=='priority':
+            raise ValueError('This opening sits just outside the requested '+' and '.join(c['field'] for c in near)
+                             +'; present it as to_confirm or stretch and state that difference, never as priority.')
         sources={'title':retrieved.get('title') or '','location':retrieved.get('location') or '',
                  'description':retrieved.get('description') or ''}
         evidence=[]
@@ -466,6 +470,7 @@ class CareerHarness:
             'tier':tier,'tier_label':TIERS[tier],'reason':reason.strip(),'evidence':evidence,
             'qualification_evidence':{f:(c.get('quote') or '')[:300] for f,c in (qualification.get('checks') or {}).items()},
             'gaps':lists['gaps'],'to_confirm':lists['to_confirm'],'next_steps':lists['next_steps'],
+            'request_near_misses':qualification.get('near_misses') or [],
             'score_meaning':meaning,'verified_at':retrieved.get('read_at'),'caveats':str(args.get('caveats') or '')[:2000]}
         if score is None:
             payload.update(score_range=interval,analysis_status=job.get('analysis_status'))
@@ -721,6 +726,9 @@ class CareerHarness:
             # quoted by the qualification model, so tiering never depends on what the
             # fit scorer happened to mark as unresolved.
             row['posting_conditions']=q.get('candidate_conditions',[])
+            # Where the opening sits just outside the requested level or location (near miss):
+            # the user decides, so the difference is stated and the job is never a priority match.
+            row['request_near_misses']=q.get('near_misses',[])
         self.repository.change(task_id,lambda s:{'scored_job_evidence':{**s.get('scored_job_evidence',{}),**results}})
 
     def fit_facts(self):
@@ -1198,7 +1206,8 @@ class CareerHarness:
             self.repository.change(task_id,lambda s:{'analyses':{**s.get('analyses',{}),**fingerprints}})
             self.save_scored_evidence(task_id,identifiers)
             evidence=self.repository.get(task_id).get('scored_job_evidence',{})
-            return {'jobs':[{**self.job_summary(a,detail=True),'posting_conditions':evidence.get(a,{}).get('posting_conditions',[])}
+            return {'jobs':[{**self.job_summary(a,detail=True),'posting_conditions':evidence.get(a,{}).get('posting_conditions',[]),
+                             'request_near_misses':evidence.get(a,{}).get('request_near_misses',[])}
                             for a in identifiers],
                     **({'unscored_for_budget':deferred,'budget_note':'Imported and qualified but not scored: the '
                         'remaining provider attempts could not complete their scoring. Not recommendations.'} if deferred else {}),

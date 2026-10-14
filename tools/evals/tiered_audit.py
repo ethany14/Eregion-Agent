@@ -31,8 +31,11 @@ V3 = 'tiered-recommendations-v3'
 V4 = 'tiered-recommendations-v4'
 # v5 = v4 with one clarified audit term: leaving out a preferred / 'a plus' item is a minor
 # omission, not a hidden conflict (tiered-v4-01 failed DraftKings on Databricks 'is a plus').
-ACCEPTANCE_VERSION = 'tiered-recommendations-v5'
-VERSIONS = {V1, V2, V3, V4, ACCEPTANCE_VERSION}
+V5 = 'tiered-recommendations-v5'
+# v6 = audit judgments are advice only; pass/fail rests on code-checkable facts. Quality is
+# measured against human labels (live-set-01 review: 0 of the audit's 8 flags upheld).
+ACCEPTANCE_VERSION = 'tiered-recommendations-v6'
+VERSIONS = {V1, V2, V3, V4, V5, ACCEPTANCE_VERSION}
 
 
 class Opportunity(PostingDecision):

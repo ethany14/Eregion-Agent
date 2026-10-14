@@ -533,7 +533,7 @@ def compact_resources(key,rows,archive):
     keys={'interviews':('mock_interview_id','status','version','interview','question','current_question',
                          'latest_feedback','report_available','failure'),
           'materials':('pack_id','application_id','status','version','material_overview','items'),
-          'jobs':('application_id','title','company','url','location','status','match_score','score_range','qualification_evidence','posting_conditions',
+          'jobs':('application_id','title','company','url','location','status','match_score','score_range','qualification_evidence','posting_conditions','request_near_misses',
                   'analysis_status','score_algorithm','score_valid_until','requirement_counts','gaps','decision_brief')}
     result=[]
     for row in rows:

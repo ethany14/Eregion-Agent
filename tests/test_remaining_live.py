@@ -105,11 +105,11 @@ def settle_live(service,task_id,output,applicant,timeout=600,*,semantic_review=F
                 candidate=(resume_text or '')+('\nCANDIDATE-STATED FACTS\n'+json.dumps(facts,ensure_ascii=False,sort_keys=True) if facts else '')
                 summary['audit_candidate_hash']=candidate_hash(candidate)
                 audited=[j for j in summary['verified_jobs'] if j['url'] in urls]
-                if acceptance_version in {'tiered-recommendations-v1','tiered-recommendations-v2','tiered-recommendations-v3','tiered-recommendations-v4','tiered-recommendations-v5'}:
+                if acceptance_version in {'tiered-recommendations-v1','tiered-recommendations-v2','tiered-recommendations-v3','tiered-recommendations-v4','tiered-recommendations-v5','tiered-recommendations-v6'}:
                     from evals.tiered_audit import review as tiered_review
                     summary['acceptance_version']=acceptance_version
                     summary['semantic_review']=tiered_review(summary['user_request'],audited,summary['recommendations'],candidate)
-                if acceptance_version in {'tiered-recommendations-v2','tiered-recommendations-v3','tiered-recommendations-v4','tiered-recommendations-v5'}:
+                if acceptance_version in {'tiered-recommendations-v2','tiered-recommendations-v3','tiered-recommendations-v4','tiered-recommendations-v5','tiered-recommendations-v6'}:
                     from evals.tiered_audit import review_reply
                     summary['reply_review']=review_reply(summary['user_request'],summary['final'],
                                                          run_facts(service,state,summary),summary['recommendations'])

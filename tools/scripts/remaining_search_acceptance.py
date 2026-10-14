@@ -97,7 +97,8 @@ def evaluate_search(summary, applicant, limits=None):
     require('Send continue' not in final, 'budget_continuation')
     recommendations = {job_key(j['url']): j for j in summary.get('recommendations', []) if j.get('url')}
     if summary.get('acceptance_version') in {'tiered-recommendations-v2', 'tiered-recommendations-v3',
-                                             'tiered-recommendations-v4', 'tiered-recommendations-v5'}:
+                                             'tiered-recommendations-v4', 'tiered-recommendations-v5',
+                                             'tiered-recommendations-v6'}:
         return _evaluate_v2(summary, recommendations, reply_scores, failures, require, main_input, usage, input_limit)
     seen, qualified, checked = set(), [], []
     for job in summary.get('verified_jobs', []):
@@ -164,9 +165,19 @@ def _evaluate_v2(summary, recommendations, reply_scores, failures, require, main
                  for j in jobs.values() if j.get('match_score') is not None and j.get('application_id') not in decided]
     require(not undecided, 'scored_jobs_without_outcome')
     reply = summary.get('reply_review') or {}
-    require(bool(reply) and reply.get('explains_results_and_search') and not reply.get('hides_or_misreports_problems')
-            and not reply.get('misstates_jobs'), 'final_reply_not_honest_or_unexplained')
     version = summary.get('acceptance_version')
+    # v6: audit judgments are advice only (the human review of live-set-01 upheld 0 of its 8
+    # 'substantive error' flags); failures come from facts code can check.
+    advisory = version == 'tiered-recommendations-v6'
+    findings = []
+    def judged(ok, reason):
+        if ok: return
+        (findings if advisory else failures).append(reason)
+    judged(bool(reply) and reply.get('explains_results_and_search') and not reply.get('hides_or_misreports_problems')
+           and not reply.get('misstates_jobs'), 'final_reply_not_honest_or_unexplained')
+    if advisory:
+        judged(reply.get('continuation_stated', True) and reply.get('continuation_accurate', True),
+               'continuation_missing_or_inaccurate')
     if version == 'tiered-recommendations-v3':
         # A clearly premature stop fails; a borderline one is an improvement suggestion only.
         require(reply.get('stop_assessment') != 'premature', 'search_stopped_prematurely')
@@ -180,7 +191,8 @@ def _evaluate_v2(summary, recommendations, reply_scores, failures, require, main
     checked, clean, seen = [], [], set()
     for key, rec in recommendations.items():
         job = jobs.get(key) or {'url': rec['url']}
-        tests = substantive_checks(job, review, summary.get('user_request', ''), summary.get('audit_candidate_hash') or '')
+        audit_tests = substantive_checks(job, review, summary.get('user_request', ''), summary.get('audit_candidate_hash') or '')
+        tests = {} if advisory else dict(audit_tests)
         score = job.get('match_score')
         tests['scored'] = type(score) in (int, float) and math.isfinite(score) and 0 <= score <= 100
         tests['retrieved'] = job.get('retrieved') is True
@@ -194,19 +206,21 @@ def _evaluate_v2(summary, recommendations, reply_scores, failures, require, main
         row = review.get(rec['url']) or {}
         checked.append({'application_id': rec.get('application_id'), 'url': rec['url'], 'title': rec.get('title'),
                         'tier': rec.get('tier'), 'audit_tier': (row.get('independent') or {}).get('tier'),
-                        'score': score, 'checks': tests,
+                        'score': score, 'checks': tests, 'audit_checks': audit_tests,
                         'minor_omissions': (row.get('presentation') or {}).get('minor_omissions', [])})
         if all(tests.values()):
             clean.append(key)
         else:
-            failures.append('substantive_error:' + rec['url'])
+            failures.append(('structural_error:' if advisory else 'substantive_error:') + rec['url'])
+        if advisory and not all(audit_tests.values()):
+            findings.append('audit_flag:' + rec['url'])
     by_tier = {}
     for row in checked:
         entry = by_tier.setdefault(row['tier'] or 'untiered', {'shown': 0, 'clean': 0})
         entry['shown'] += 1
         entry['clean'] += job_key(row['url']) in clean
     disagreements = [{k: row[k] for k in ('url', 'tier', 'audit_tier')} for row in checked if row['audit_tier'] != row['tier']]
-    return {'status': 'failed' if failures else 'passed', 'failures': failures,
+    return {'status': 'failed' if failures else 'passed', 'failures': failures, 'audit_findings': findings,
             'acceptance_version': version, 'shown_count': len(checked), 'clean_count': len(clean),
             'by_tier': by_tier, 'tier_disagreements': disagreements, 'scored_without_outcome': undecided,
             'stop_assessment': reply.get('stop_assessment'), 'stop_review': reply.get('stop_review'),

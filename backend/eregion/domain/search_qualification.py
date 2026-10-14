@@ -9,7 +9,7 @@ class SourceQuote(BaseModel):
 
 
 class ConstraintDecision(BaseModel):
-    status: Literal['met', 'unmet', 'unknown', 'not_requested']
+    status: Literal['met', 'near', 'unmet', 'unknown', 'not_requested']
     request_quote: str = Field(description='Verbatim user text establishing this constraint; empty only if not requested.')
     reason: str = Field(min_length=1, max_length=500)
     evidence: list[SourceQuote] = Field(max_length=4)
@@ -46,6 +46,13 @@ level; the mere absence of signals for some other level is not that support. Con
 mandatory experience or responsibility is unmet even if a title says otherwise. Insufficient or
 conflicting evidence stays unknown.
 Do not count a related but different occupation as the same role.
+Near (location and seniority only): the opening sits just outside what the user asked for, in a way a
+reasonable applicant would still want to see and decide on themselves, for example an opening at the
+requested level that asks for a little more experience than the request implies, a hybrid opening for a
+remote request, or a remote opening that admits the requested city's region or time zone. A clear mismatch (a level well above or
+below the request, a location the request rules out with nothing admitting it) is unmet. Near needs exact
+quotes like met and unmet, and the reason states the difference the user would have to accept.
+Role and vacancy are never near.
 Location must describe where THIS opening can be worked; general US remote coverage does not
 by itself verify a requested city. Use geographic knowledge: boroughs/neighborhoods inside a
 requested city belong to that city; a nearby independent city is not the requested city. Ambiguous or conflicting
