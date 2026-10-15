@@ -54,7 +54,10 @@ Near (location and seniority only): the opening sits just outside what the user 
 reasonable applicant would still want to see and decide on themselves, for example an opening at the
 requested level that asks for a little more experience than the request implies, a hybrid opening for a
 remote request, or a remote opening that admits the requested city's region or time zone. A clear mismatch (a level well above or
-below the request, a location the request rules out with nothing admitting it) is unmet. Near needs exact
+below the request, a location the request rules out with nothing admitting it) is unmet. An opening that
+explicitly states a different named career level from the requested one (for example a staff, principal or
+intermediate opening for a senior request) is a clear mismatch, not near; a company ladder name that does
+not clearly map to a level, or an unstated level, stays near or unknown. Near needs exact
 quotes like met and unmet, and the reason states the difference the user would have to accept.
 Role and vacancy are never near.
 Location must describe where THIS opening can be worked; general US remote coverage does not

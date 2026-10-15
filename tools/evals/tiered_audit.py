@@ -34,8 +34,19 @@ V4 = 'tiered-recommendations-v4'
 V5 = 'tiered-recommendations-v5'
 # v6 = audit judgments are advice only; pass/fail rests on code-checkable facts. Quality is
 # measured against human labels (live-set-01 review: 0 of the audit's 8 flags upheld).
-ACCEPTANCE_VERSION = 'tiered-recommendations-v6'
-VERSIONS = {V1, V2, V3, V4, V5, ACCEPTANCE_VERSION}
+V6 = 'tiered-recommendations-v6'
+# v7 = v6 with an audit budget that grows with the jobs shown: the fixed 6 calls covered at most
+# 16 jobs, so a run that found 20 lost its reply review (live-set-05 backend).
+ACCEPTANCE_VERSION = 'tiered-recommendations-v7'
+VERSIONS = {V1, V2, V3, V4, V5, V6, ACCEPTANCE_VERSION}
+
+
+def audit_limits(version, shown):
+    """Audit call and input caps: v7 gives two calls per eight shown jobs plus the reply review."""
+    if version != ACCEPTANCE_VERSION:
+        return 6, 200000
+    calls = max(6, 2 * -(-max(shown, 1) // 8) + 1)
+    return calls, max(200000, calls * 33000)
 
 
 class Opportunity(PostingDecision):

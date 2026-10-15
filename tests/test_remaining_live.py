@@ -94,7 +94,9 @@ def settle_live(service,task_id,output,applicant,timeout=600,*,semantic_review=F
         audit_id=str(uuid4());audit_started=time.monotonic()
         saved={k:os.environ.get(k) for k in ('JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS','JOB_AGENT_TASK_MAX_INPUT_TOKENS')}
         try:
-            os.environ.update(JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS='6',JOB_AGENT_TASK_MAX_INPUT_TOKENS='200000')
+            from evals.tiered_audit import audit_limits
+            call_cap,token_cap=audit_limits(acceptance_version,len(summary['recommendations']))
+            os.environ.update(JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS=str(call_cap),JOB_AGENT_TASK_MAX_INPUT_TOKENS=str(token_cap))
             urls={r['url'] for r in summary['recommendations']}
             with usage_scope(task_id=audit_id,ledger=UsageLedger(service.repository.sessions)):
                 # The audit judges personal mandatory qualifications from the candidate's own
@@ -105,11 +107,11 @@ def settle_live(service,task_id,output,applicant,timeout=600,*,semantic_review=F
                 candidate=(resume_text or '')+('\nCANDIDATE-STATED FACTS\n'+json.dumps(facts,ensure_ascii=False,sort_keys=True) if facts else '')
                 summary['audit_candidate_hash']=candidate_hash(candidate)
                 audited=[j for j in summary['verified_jobs'] if j['url'] in urls]
-                if acceptance_version in {'tiered-recommendations-v1','tiered-recommendations-v2','tiered-recommendations-v3','tiered-recommendations-v4','tiered-recommendations-v5','tiered-recommendations-v6'}:
+                if acceptance_version in {'tiered-recommendations-v1','tiered-recommendations-v2','tiered-recommendations-v3','tiered-recommendations-v4','tiered-recommendations-v5','tiered-recommendations-v6','tiered-recommendations-v7'}:
                     from evals.tiered_audit import review as tiered_review
                     summary['acceptance_version']=acceptance_version
                     summary['semantic_review']=tiered_review(summary['user_request'],audited,summary['recommendations'],candidate)
-                if acceptance_version in {'tiered-recommendations-v2','tiered-recommendations-v3','tiered-recommendations-v4','tiered-recommendations-v5','tiered-recommendations-v6'}:
+                if acceptance_version in {'tiered-recommendations-v2','tiered-recommendations-v3','tiered-recommendations-v4','tiered-recommendations-v5','tiered-recommendations-v6','tiered-recommendations-v7'}:
                     from evals.tiered_audit import review_reply
                     summary['reply_review']=review_reply(summary['user_request'],summary['final'],
                                                          run_facts(service,state,summary),summary['recommendations'])

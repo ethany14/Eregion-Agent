@@ -13,7 +13,7 @@ import pytest
 from test_career_flow import career
 
 # Acceptance version for new runs. Historical runs keep their recorded version and result.
-ACCEPTANCE_VERSION = os.getenv('JOB_AGENT_LIVE_ACCEPTANCE', 'tiered-recommendations-v6')
+ACCEPTANCE_VERSION = os.getenv('JOB_AGENT_LIVE_ACCEPTANCE', 'tiered-recommendations-v7')
 LEGACY_GOAL = ('Find 15 current junior data analyst positions in New York for my saved resume. '
         'Aim for at least 10 verified, scored, qualifying recommendations. Use LinkedIn MCP '
         'and public company job-board APIs first. Keep the role, seniority and location '
@@ -47,8 +47,8 @@ SCENARIOS = {
     'designer': {'applicant': 'designer', 'search': 'junior UX designer positions in Austin, TX'},
 }
 SCENARIO = os.getenv('JOB_AGENT_LIVE_SCENARIO', 'analyst')
-OPEN_VERSIONS = {'tiered-recommendations-v2', 'tiered-recommendations-v3', 'tiered-recommendations-v4', 'tiered-recommendations-v5', 'tiered-recommendations-v6'}
-GOAL = {'tiered-recommendations-v6': open_goal(SCENARIOS[SCENARIO]['search']), 'tiered-recommendations-v5': open_goal(SCENARIOS[SCENARIO]['search']), 'tiered-recommendations-v4': OPEN_GOAL, 'tiered-recommendations-v3': OPEN_GOAL, 'tiered-recommendations-v2': OPEN_GOAL, 'tiered-recommendations-v1': TIERED_GOAL}.get(ACCEPTANCE_VERSION, LEGACY_GOAL)
+OPEN_VERSIONS = {'tiered-recommendations-v2', 'tiered-recommendations-v3', 'tiered-recommendations-v4', 'tiered-recommendations-v5', 'tiered-recommendations-v6', 'tiered-recommendations-v7'}
+GOAL = {'tiered-recommendations-v7': open_goal(SCENARIOS[SCENARIO]['search']), 'tiered-recommendations-v6': open_goal(SCENARIOS[SCENARIO]['search']), 'tiered-recommendations-v5': open_goal(SCENARIOS[SCENARIO]['search']), 'tiered-recommendations-v4': OPEN_GOAL, 'tiered-recommendations-v3': OPEN_GOAL, 'tiered-recommendations-v2': OPEN_GOAL, 'tiered-recommendations-v1': TIERED_GOAL}.get(ACCEPTANCE_VERSION, LEGACY_GOAL)
 FLAGS = {'JOB_AGENT_JOB_API_FIRST': '1', 'JOB_AGENT_TREG_ENABLED': '0',
          'JOB_AGENT_TASK_MAX_PROVIDER_ATTEMPTS': '60',
          'JOB_AGENT_TASK_MAX_INPUT_TOKENS': '1000000'}

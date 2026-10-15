@@ -88,9 +88,11 @@ def evaluate_search(summary, applicant, limits=None):
     require(usage.get('input_tokens', input_limit + 1) <= input_limit, 'total_input_budget')
     if summary.get('qualification_method')=='model':
         audit=summary.get('audit_usage') or {}
+        from evals.tiered_audit import audit_limits
+        call_cap,token_cap=audit_limits(summary.get('acceptance_version'),len(summary.get('recommendations') or []))
         require(audit.get('usage_complete') is True and not audit.get('pending')
-                and not audit.get('unknown_usage_calls') and audit.get('calls',7)<=6
-                and audit.get('input_tokens',200001)<=200000
+                and not audit.get('unknown_usage_calls') and audit.get('calls',call_cap+1)<=call_cap
+                and audit.get('input_tokens',token_cap+1)<=token_cap
                 and not summary.get('semantic_review_error'),'semantic_audit_incomplete')
     final = summary.get('final') or ''
     reply_scores = reply_job_scores(final)
@@ -98,7 +100,7 @@ def evaluate_search(summary, applicant, limits=None):
     recommendations = {job_key(j['url']): j for j in summary.get('recommendations', []) if j.get('url')}
     if summary.get('acceptance_version') in {'tiered-recommendations-v2', 'tiered-recommendations-v3',
                                              'tiered-recommendations-v4', 'tiered-recommendations-v5',
-                                             'tiered-recommendations-v6'}:
+                                             'tiered-recommendations-v6', 'tiered-recommendations-v7'}:
         return _evaluate_v2(summary, recommendations, reply_scores, failures, require, main_input, usage, input_limit)
     seen, qualified, checked = set(), [], []
     for job in summary.get('verified_jobs', []):
@@ -168,7 +170,7 @@ def _evaluate_v2(summary, recommendations, reply_scores, failures, require, main
     version = summary.get('acceptance_version')
     # v6: audit judgments are advice only (the human review of live-set-01 upheld 0 of its 8
     # 'substantive error' flags); failures come from facts code can check.
-    advisory = version == 'tiered-recommendations-v6'
+    advisory = version in {'tiered-recommendations-v6', 'tiered-recommendations-v7'}
     findings = []
     def judged(ok, reason):
         if ok: return

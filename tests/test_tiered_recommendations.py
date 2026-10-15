@@ -662,3 +662,28 @@ def test_search_coverage_counts_distinct_employers():
                                 'qualified': {'openings': 3, 'distinct_employers': 1, 'largest_employer_openings': 3}}
     from eregion.runtime.career.prompt import SEARCH_STOP_RULE
     assert 'search_coverage.employers' in SEARCH_STOP_RULE
+
+
+def test_v7_audit_budget_grows_with_the_jobs_shown_and_v6_keeps_its_fixed_cap():
+    # live-set-05 backend: 20 shown jobs used all 6 audit calls, so the reply review never ran.
+    from evals.tiered_audit import audit_limits
+    from scripts.remaining_search_acceptance import evaluate_search
+    assert audit_limits('tiered-recommendations-v6', 20) == (6, 200000)
+    assert audit_limits('tiered-recommendations-v7', 4) == (6, 200000)
+    assert audit_limits('tiered-recommendations-v7', 20) == (7, 231000)
+    assert audit_limits('tiered-recommendations-v7', 33)[0] == 11
+    job = _v2_job()
+    rec = {'application_id': 'a1', 'url': job['url'], 'match_score': 71.5, 'tier': 'stretch'}
+    review = _audit_row(job, GOAL, 'stretch', CLEAN)
+    def run(version, calls):
+        summary = _v2_summary(job, [rec], review, HONEST, version=version)
+        summary['recommendations'] = [rec] + [{'url': f'https://jobs.lever.co/other/{i}'} for i in range(19)]
+        summary['audit_usage'] = {**summary['audit_usage'], 'calls': calls, 'input_tokens': 210000}
+        return 'semantic_audit_incomplete' in evaluate_search(summary, 'analyst')['failures']
+    assert run('tiered-recommendations-v6', 7) and not run('tiered-recommendations-v7', 7)
+    assert run('tiered-recommendations-v7', 8)
+
+
+def test_an_explicitly_different_named_level_is_a_clear_mismatch_in_the_policy():
+    from eregion.domain.search_qualification import POLICY
+    assert 'explicitly states a different named career level' in POLICY and 'stays near or unknown' in POLICY
