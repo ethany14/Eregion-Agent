@@ -891,14 +891,16 @@ class ApplicationLoop:
             # self-identification). They must reach the same question/option UI
             # as required fields, rather than only the pending_fields list.
             requested = set(outcome.get("field_keys", []))
+            drafts = visible_drafts(state, fields)
             for field in fields:
                 if field["key"] not in requested or field in missing:
                     continue
+                if not field.get("required") and field["key"] in drafts:
+                    continue  # An optional drafted field stays a suggestion (see below).
                 desired = desired_answer(field, state)
                 if ((desired is None and (not field["value"] or field.get("invalid")))
                         or (desired is not None and not matches(field, desired))):
                     missing.append(field)
-            drafts = visible_drafts(state, fields)
             # A draft for an optional field is a suggestion, not a blocker: left unapproved,
             # the field stays blank (Veeva pilot: two optional essays held review forever).
             missing.extend(f for f in fields if f['key'] in drafts and f.get('required') and f not in missing)

@@ -978,9 +978,19 @@ class ApplicationBrowser:
             self.choose_option(field["key"], option["label"])
         elif kind == "location":
             locator.fill(str(value))
-            option = self.scope.locator('.dropdown-results').get_by_text(str(value), exact=True)
+            results = self.scope.locator('.dropdown-results')
+            option = results.get_by_text(str(value), exact=True)
             try:
-                option.wait_for(state="visible", timeout=5000)
+                try:
+                    option.wait_for(state="visible", timeout=5000)
+                except Exception:
+                    # Suggestions often extend the typed place ("Ithaca, NY" -> "Ithaca, NY, USA").
+                    # Pick it only when exactly one suggestion starts with what was typed.
+                    wanted = ' '.join(str(value).casefold().split())
+                    items = [item for item in results.locator('*').all()
+                             if item.is_visible() and ' '.join(item.inner_text().casefold().split()).startswith(wanted)
+                             and not item.locator('*').count()]
+                    option = items[0] if len(items) == 1 else option
                 if option.count() != 1:
                     raise BrowserBlocked("Choose the intended location suggestion in the browser, then continue.", code='dom_interaction_failed')
                 option.click()
