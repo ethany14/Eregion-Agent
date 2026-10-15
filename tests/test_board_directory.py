@@ -385,3 +385,14 @@ def test_board_location_strings_in_common_shapes(observed, expected):
     # Board cards with these shapes were dropped before the model ever saw them (tiered-v3-04).
     from eregion.runtime.career.discovery import location_matches
     assert location_matches('New York, NY', observed) is expected
+
+
+@pytest.mark.parametrize('observed,expected', [
+    ('Remote US', True), ('Remote - United States', True), ('US Remote', True), ('Remote, USA', True),
+    ('Remote', True), ('United States', True), ('Remote, US; Remote, Canada', True),
+    ('New York, NY or Remote (US)', True), ('Remote - Canada', False), ('Remote (EMEA)', False),
+    ('San Francisco, CA', False), ('London, UK', False)])
+def test_remote_us_request_matches_every_board_wording_of_a_remote_us_opening(observed, expected):
+    # live-set-04: only Affirm's exact 'Remote US' matched, so 22 of 23 boards came back empty.
+    from eregion.runtime.career.discovery import location_matches
+    assert location_matches('Remote US', observed) is expected

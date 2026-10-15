@@ -26,6 +26,20 @@ def location_matches(requested, observed):
         value=re.sub(r'\s+\d{5}(?:-\d{4})?$', '',value.strip())
         return US_STATES.get(value,value if value in US_STATES.values() else None)
     def city(value):return {'new york city':'new york','nyc':'new york'}.get(value.strip(),value.strip())
+    us=r'\b(?:us|usa|u\.s\.(?:a\.)?|united states(?: of america)?|north america|americas)\b'
+    remote=r'\b(?:remote|anywhere|distributed)\b'
+    if re.search(r'\bremote\b',requested):
+        # Boards word a remote US opening many ways ('Remote - United States', 'US Remote',
+        # 'Remote, USA'); only Affirm's exact 'Remote US' matched before (live-set-04: 22 of 23
+        # boards empty). Retrieval stays inclusive; qualification judges the actual location.
+        place=' '.join(re.sub(r'\bremote\b|[-,()/|]',' ',requested).split())
+        if not re.search(remote,observed) and not re.fullmatch(us,observed.strip()):return False
+        if not place:return True
+        if not re.fullmatch(us,place):return place in observed
+        for address in re.split(r';|\s+or\s+|\|',observed):
+            rest=' '.join(re.sub(remote+r'|[^a-z. ]',' ',address).split())
+            if re.search(us,address) or (re.search(remote,address) and not rest):return True
+        return False
     if len(parts)<2 or not state(parts[1]):return requested in observed
     countries={'us','usa','united states','united states of america'}
     # Boards list several places in one string ('Chicago or New York', 'New York - New York
