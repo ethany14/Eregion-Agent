@@ -581,3 +581,27 @@ def test_slow_tracking_resource_does_not_prevent_using_loaded_form():
         assert browser.page.evaluate("document.readyState") != "complete"
     finally:
         browser.close()
+
+
+def test_lever_select2_school_picker_is_the_hidden_required_select():
+    # Veeva pilot (2026-10-15): the scanner read select2's rendered box, named by its
+    # displayed text and optional, and the agent retried it ~23 times.
+    browser = FixtureBrowser("https://jobs.lever.co/example/abc123")
+    try:
+        browser.page.set_content('''<form><li class="application-question custom-question">
+          <div class="application-label"><div class="text">Please select your college or University:<span class="required">✱</span></div></div>
+          <div class="application-field"><select name="cards[a][field1]" class="select2-hidden-accessible" aria-hidden="true" tabindex="-1" required
+              style="border:0;clip:rect(0 0 0 0);height:1px;width:1px;overflow:hidden;position:absolute;padding:0;margin:-1px"
+              onchange="document.getElementById('shown').textContent=this.selectedOptions[0].textContent">
+            <option value="">If you are unable to find your college or university, please select "Other"</option>
+            <option value="Cornell College">Cornell College</option><option value="Cornell University">Cornell University</option></select>
+          <span class="select2 select2-container"><span class="select2-selection" role="combobox" aria-labelledby="shown" tabindex="0">
+            <span id="shown" class="select2-selection__rendered">If you are unable to find your college or university, please select "Other"</span></span></span>
+          </div></li></form>''')
+        fields = browser.observe()
+        assert [(f["kind"], f["label"], f["required"]) for f in fields] == [
+            ("select", "Please select your college or University:✱", True)]
+        browser.fill(fields[0], "Cornell University")
+        assert browser.observe()[0]["value"] == "Cornell University"
+        assert browser.page.locator('#shown').inner_text() == "Cornell University"
+    finally: browser.close()

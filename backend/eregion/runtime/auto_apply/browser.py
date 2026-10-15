@@ -54,13 +54,18 @@ SCAN = r"""() => {
   const counts = new Map(), fields = [], groups = new Set();
   for (const [index, el] of elements.entries()) {
     if (el.getAttribute('role') === 'combobox' && !['INPUT','BUTTON','SELECT'].includes(el.tagName) && el.querySelector('input:not([type="hidden"])')) continue;
+    // select2 (Lever school pickers) hides the real <select> and renders a combobox named by
+    // its displayed text. The select carries the question, options and required flag.
+    if (el.closest('.select2-container')) continue;
+    const select2 = el.tagName === 'SELECT' && el.classList.contains('select2-hidden-accessible') &&
+      !!el.nextElementSibling?.matches('.select2-container') && visible(el.nextElementSibling);
     const buttonChoice = el.matches('button[aria-pressed][data-option]');
     const kind = buttonChoice ? 'radio' : el.tagName === 'SELECT' ? 'select' : el.getAttribute('role') === 'combobox' || el.getAttribute('aria-haspopup') === 'listbox' ? 'combobox' :
       el.name === 'location' && el.parentElement.querySelector('input[name="selectedLocation"]') ? 'location' : (el.type || 'text');
     if (['hidden', 'password', 'submit', 'button', 'reset', 'image'].includes(kind) ||
         el.hasAttribute('data-northstar-secret') || el.autocomplete === 'one-time-code' || /otp|verificationcode/i.test(el.name || '') || el.disabled ||
         el.getAttribute('data-automation-id') === 'beecatcher') continue;
-    const hiddenField = kind !== 'file' && (!visible(el) || el.closest('[aria-hidden="true"]'));
+    const hiddenField = kind !== 'file' && !select2 && (!visible(el) || el.closest('[aria-hidden="true"]'));
     if(hiddenField && kind === 'radio')continue;
     if (kind === 'file' && !el.closest('form, #application, .application-form, [data-automation-id], [role="form"], [role="tabpanel"], [data-field-path]')) continue;
     if (kind === 'file' && el.closest('form, [role="form"], [role="tabpanel"]') && !visible(el.closest('form, [role="form"], [role="tabpanel"]'))) continue;
@@ -193,7 +198,7 @@ SCAN = r"""() => {
     // occurrences before excluding them, or row 2 becomes row 1 while editing.
     if(hiddenField)continue;
     fields.push({id, dom_id:el.id, name:el.name || '', key, kind, label:text || 'Unlabelled field', required:!checkboxGroup && !!(required || parentRequired || text.includes('*') || text.includes('✱')), options, value, invalid,
-      choice_control:choice, value_committed:committed, errors:[...new Set(errors)], help:clean(described('aria-describedby').map(x=>x.textContent).join(' ')),
+      choice_control:choice, value_committed:committed, ...(select2 ? {select2:true} : {}), errors:[...new Set(errors)], help:clean(described('aria-describedby').map(x=>x.textContent).join(' ')),
       group:clean(group?.querySelector('legend')?.textContent || group?.getAttribute('aria-label')), section:sections.join(' / ').slice(0,500),
       constraints:{read_only:!!el.readOnly, pattern:el.getAttribute('pattern'), max_length:el.getAttribute('maxlength'), min_length:el.getAttribute('minlength'),
         placeholder:el.getAttribute('placeholder'), input_mode:el.getAttribute('inputmode'), autocomplete:el.getAttribute('autocomplete')}});
@@ -962,7 +967,8 @@ class ApplicationBrowser:
             if option is None:
                 raise BrowserBlocked("Choose an exact option from the application form.", code='option_mapping_required')
             if kind == "select":
-                locator.select_option(value=option["value"])
+                # select2 keeps the real select hidden and redraws from its change event.
+                locator.select_option(value=option["value"], force=bool(field.get("select2")))
             else:
                 selected = self.scope.locator(f'[data-northstar-field="{option["id"]}"]')
                 if option.get("button"): selected.click()

@@ -396,3 +396,14 @@ def test_field_attempt_limit_leaves_optional_fields_and_returns_required_ones(mo
     assert len(attempted)==FIELD_ATTEMPT_LIMIT
     # A new user message gives the field fresh attempts.
     assert host.field_attempts(Turn('',{},[],revision=turn.revision+1))=={}
+
+
+def test_education_mapping_ignores_gpa_and_other_follow_up_questions():
+    from eregion.runtime.auto_apply.education import gaps
+    state={'profile':{'education':[{'id':'e1','school':'Cornell University','degree':'M.Eng.','field_of_study':'Systems Engineering'}]},
+           'answers':{},'education_required':True}
+    def f(key,label):return {'key':key,'label':label,'kind':'text','value':'x','required':True,'group':'','section':''}
+    fields=[f('gpa','Please specify the overall average grade (GPA) for your last/current degree:✱'),
+            f('other','If you selected Other, please indicate your field of study:'),
+            f('study','Please select your field of study:✱')]
+    assert [g for g in gaps(state,fields,None,final=True) if g.startswith('Map')]==['Map education field: Please select your field of study:✱']

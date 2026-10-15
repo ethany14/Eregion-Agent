@@ -199,6 +199,10 @@ def gaps(state,fields,page,*,final=False):
     for field in fields:
         if binding(field,state):continue
         label=field.get('label','').lower()
+        # Veeva: "...average grade (GPA) for your last/current degree" asks for a GPA, and
+        # "If you selected Other, please indicate your field of study" is a follow-up; neither
+        # is a degree/field-of-study column, so requiring a mapping held review forever.
+        if re.search(r'\b(gpa|grade|average)\b',label) or re.match(r'\s*if (?:you )?(?:selected|chose|picked)\b.*\bother\b',label):continue
         component=next((name for name,pattern in [('school',r'\b(school|university|college|institution)\b'),('degree',r'\bdegree\b'),('field_of_study',r'field of study|major|discipline')] if re.search(pattern,label)),None)
         if component and any(r.get(component) for r in records):pending.append('Map education field: '+field['label'])
         education_section=re.search(r'education|academic|school',field.get('section',''),re.I)
