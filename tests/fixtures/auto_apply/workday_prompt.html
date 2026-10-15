@@ -1,0 +1,46 @@
+<!doctype html>
+<!-- Adobe Workday "My Information" (pilot 2026-10-15), reduced: a source prompt whose list
+     renders late, rows labelled "... not checked", categories with sub-lists, a popup that
+     ignores Escape and covers the previous-worker radio until focus leaves the prompt. -->
+<html><body>
+<h2>My Information</h2>
+<div data-automation-id="formField-source">
+  <label for="source--source">How Did You Hear About Us?*</label>
+  <div data-automation-id="multiSelectContainer">
+    <input id="source--source" enterkeyhint="search" aria-required="true" placeholder="Search" autocomplete="off">
+    <div data-automation-id="promptSelectionLabel" id="chosen"></div>
+  </div>
+</div>
+<div id="popup" style="position:absolute; top:60px; left:0; width:360px; height:220px; background:#fff; display:none; z-index:10">
+  <div data-automation-id="activeListContainer" role="listbox" aria-label="Options Expanded" id="list"></div>
+</div>
+<fieldset style="margin-top:40px">
+  <legend><label id="radio-label1">Have you been employed by Adobe in the past?*</label></legend>
+  <div name="candidateIsPreviousWorker" aria-labelledby="radio-label1" aria-required="true">
+    <div><input id="yes" name="candidateIsPreviousWorker" type="radio" value="true"><label for="yes">Yes</label></div>
+    <div><input id="no" name="candidateIsPreviousWorker" type="radio" value="false"><label for="no">No</label></div>
+  </div>
+</fieldset>
+<script>
+const TREE = {'Adobe Source': ['Adobe.com', 'Adobe Recruiting Team'], 'Job Board': ['LinkedIn', 'Indeed']};
+const popup = document.getElementById('popup'), list = document.getElementById('list'), input = document.getElementById('source--source');
+function row(text, category) {
+  const r = document.createElement('div');
+  r.setAttribute('role', 'option'); r.setAttribute('data-automation-id', 'menuItem'); r.setAttribute('aria-label', text + ' not checked');
+  const leaf = document.createElement('div');
+  leaf.setAttribute('data-automation-id', 'promptLeafNode');
+  leaf.setAttribute('data-uxi-multiselectlistitem-hassidecharm', category ? 'true' : 'false');
+  leaf.textContent = text; r.append(leaf);
+  r.addEventListener('click', () => category ? show(TREE[text], false) : pick(text));
+  return r;
+}
+function show(items, categories) { list.replaceChildren(); setTimeout(() => list.append(...items.map(t => row(t, categories))), 1200); }
+function pick(text) {
+  const pill = document.createElement('div');
+  pill.setAttribute('data-automation-id', 'selectedItem'); pill.textContent = text;
+  document.getElementById('chosen').replaceChildren(pill); input.value = ''; popup.style.display = 'none';
+}
+input.addEventListener('click', () => { popup.style.display = 'block'; show(Object.keys(TREE), true); });
+input.addEventListener('keydown', e => { if (e.key === 'Tab') popup.style.display = 'none'; });  // Escape is ignored
+</script>
+</body></html>

@@ -212,7 +212,8 @@ OPTION_SCAN = r"""els => {
   const members = new Set(els);
   // An explicit accessible name excludes decorative text such as a hidden
   // "Select" affordance inside the option row.
-  const name = el => clean(el.getAttribute('aria-label')) || clean(el.innerText);
+  // Workday rows announce state ("Job Board not checked"); the inner item is just "Job Board".
+  const name = el => clean(el.getAttribute('aria-label')).replace(/,?\s+(?:not checked|checked)$/i, '') || clean(el.innerText);
   return els.map((el, index) => {
     const text = name(el);
     // Nested wrappers describe the same choice. Keep the outer clickable node,
@@ -223,7 +224,9 @@ OPTION_SCAN = r"""els => {
     return {index, label:text || clean(el.getAttribute('aria-label')),
       value:clean(el.getAttribute('data-value')) || clean(el.querySelector('[class*="canonicalSchoolResultName"]')?.textContent) || text || clean(el.getAttribute('aria-label')),
       role:el.getAttribute('role'), automation_id:el.getAttribute('data-automation-id'),
-      expandable:el.hasAttribute('aria-expanded') || !!el.querySelector('[aria-expanded], [aria-haspopup]'),
+      // Workday categories ("Adobe Source") carry a side chevron that opens their sub-list.
+      expandable:el.hasAttribute('aria-expanded') || !!el.querySelector('[aria-expanded], [aria-haspopup]') ||
+        el.matches('[data-uxi-multiselectlistitem-hassidecharm="true"]') || !!el.querySelector('[data-uxi-multiselectlistitem-hassidecharm="true"]'),
       disabled:el.getAttribute('aria-disabled') === 'true'};
   }).filter(Boolean);
 }"""
@@ -727,14 +730,23 @@ class ApplicationBrowser:
             return menus.nth(roots[0]).locator('[role="option"]:visible, [role="treeitem"]:visible, [role="menuitem"]:visible, [data-automation-id="promptOption"]:visible, [data-automation-id="promptLeafNode"]:visible')
         return self.scope.locator('.select__menu:visible .select__option')
 
-    def inspect_options(self, key, query=None):
+    def _close_other_menu(self, key):
+        """An open menu can cover the next control (Adobe: the source prompt hid the
+        previous-worker radio, whose click then timed out)."""
         if self._option_owner and self._option_owner != key:
             previous = next((item for item in self.observe() if item['key'] == self._option_owner), None)
             if previous and self._option_locator(previous).count():
                 self.locate(previous).press('Escape')
                 self._settle()
                 if self._option_locator(previous).count():
+                    # Workday prompts ignore Escape but close when focus leaves them.
+                    self.locate(previous).press('Tab')
+                    self._settle()
+                if self._option_locator(previous).count():
                     raise BrowserBlocked('The previous dropdown is still open. Close it before opening another field.', code='dom_interaction_failed')
+
+    def inspect_options(self, key, query=None):
+        self._close_other_menu(key)
         field = self.field(key)
         if field["kind"] in {"select", "radio"}:
             options = field["options"]
@@ -778,12 +790,22 @@ class ApplicationBrowser:
             self._choice_queries[key] = str(query)
             if enter_search:
                 locator.press("Enter")
-        options = self._option_locator(field)
+        options = self._await_options(field)
         try:
-            options.first.wait_for(state="visible", timeout=4000)
+            options.first.wait_for(state="visible", timeout=1000)
         except Exception:
             return []
         return self._read_options(key, options)
+
+    def _await_options(self, field, seconds=8):
+        """The menu root is chosen when the locator is built, so build it again until the
+        popup has rendered (Adobe's Workday prompt took seconds and read as empty)."""
+        deadline = time.monotonic() + seconds
+        options = self._option_locator(field)
+        while not options.count() and time.monotonic() < deadline:
+            self.page.wait_for_timeout(250)
+            options = self._option_locator(field)
+        return options
 
     def _read_options(self, key, options):
         items = [{k: v for k, v in item.items() if k != "index"}
@@ -808,7 +830,7 @@ class ApplicationBrowser:
         self._settle()
         # Read the new level without clicking the field again (which can close
         # the popup or jump back to its root).
-        return self._read_options(key, self._option_locator(self.field(key)))
+        return self._read_options(key, self._await_options(self.field(key), seconds=5))
 
     def choose_option(self, key, label):
         field = self.field(key)
@@ -950,6 +972,7 @@ class ApplicationBrowser:
         from .autofill import matches
         if field["kind"] != "file" and matches(field, value):
             return
+        self._close_other_menu(field["key"])
         locator = self.locate(field)
         kind = field["kind"]
         if kind == "file":

@@ -149,3 +149,27 @@ def test_secure_account_ui_keeps_password_out_of_chat_and_clears_input():
         page.get_by_role('button',name='Sign in securely',exact=True).click()
         assert page.locator('#account-password').input_value()==''
         browser.close()
+
+
+def test_workday_prompt_reads_late_lists_categories_and_releases_the_covered_radio():
+    # Adobe pilot (2026-10-15): the list rendered late and read as empty, rows read twice
+    # ("Job Board not checked"), and the open prompt covered the radio, whose click timed out.
+    class PromptBrowser(WorkdayBrowser):
+        def _guard_request(self,route):
+            if route.request.is_navigation_request():
+                route.fulfill(content_type='text/html',body=(Path(__file__).parent/'fixtures/auto_apply/workday_prompt.html').read_text(encoding='utf-8'))
+            else:route.abort()
+    browser=PromptBrowser(URL)
+    try:
+        fields=browser.observe()
+        source=next(f for f in fields if 'Hear About' in f['label'])
+        radio=next(f for f in fields if f['kind']=='radio')
+        top=browser.inspect_options(source['key'])
+        assert [(o['label'],o['expandable']) for o in top]==[('Adobe Source',True),('Job Board',True)]
+        browser.fill(radio,'No')  # the prompt is still open over it
+        assert next(f for f in browser.observe() if f['key']==radio['key'])['value']=='false'
+        browser.inspect_options(source['key'])
+        assert [o['label'] for o in browser.explore_option(source['key'],'Adobe Source')]==['Adobe.com','Adobe Recruiting Team']
+        browser.choose_option(source['key'],'Adobe.com')
+        assert next(f for f in browser.observe() if f['key']==source['key'])['value']=='Adobe.com'
+    finally:browser.close()
