@@ -844,6 +844,11 @@ class ApplicationBrowser:
         if field["kind"] in {"select", "radio"}:
             return self.fill(field, label)
         options = self._option_locator(field)
+        if not options.count():
+            # Changing a filled picker (Adobe: UW-Madison degree "Masters" -> "Bachelors"):
+            # inspection returned early without opening it, so open it here.
+            self.inspect_options(key)
+            options = self._option_locator(self.field(key))
         # Match only the active field's observed options, never a global text hit.
         choices = options.evaluate_all(OPTION_SCAN)
         matching = [(item["index"], item) for item in choices if item['label'].strip().casefold() == label.strip().casefold() and not item['disabled']]

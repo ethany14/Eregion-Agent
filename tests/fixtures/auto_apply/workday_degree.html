@@ -1,0 +1,24 @@
+<!doctype html>
+<!-- Workday degree picker (Adobe pilot 2026-10-15), reduced: a filled listbox button whose
+     menu opens only on click. -->
+<html><body>
+<div data-automation-id="formField-degree">
+  <label id="degree-label">Degree*</label>
+  <button id="degree" aria-haspopup="listbox" aria-labelledby="degree-label" aria-required="true" type="button">Masters</button>
+</div>
+<script>
+const button = document.getElementById('degree');
+button.addEventListener('click', () => {
+  document.getElementById('menu')?.remove();
+  const menu = document.createElement('ul');
+  menu.id = 'menu'; menu.setAttribute('role', 'listbox');
+  for (const label of ['High School', 'Bachelors', 'Masters']) {
+    const item = document.createElement('li');
+    item.setAttribute('role', 'option'); item.textContent = label;
+    item.addEventListener('click', () => { button.textContent = label; menu.remove(); });
+    menu.append(item);
+  }
+  document.body.append(menu);
+});
+</script>
+</body></html>

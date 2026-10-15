@@ -189,3 +189,20 @@ def test_workday_date_segments_are_typed_and_empty_placeholders_are_not_values()
         browser.fill(month,'08');browser.fill(year,'2026')
         assert [f['value'] for f in browser.observe()]==['08','2026']
     finally:browser.close()
+
+
+def test_filled_workday_picker_can_be_changed_without_inspecting_first():
+    # Adobe pilot (2026-10-15): the UW-Madison degree read "Masters" and every choose_option
+    # for "Bachelors" failed, because the menu was never opened for it.
+    class DegreeBrowser(WorkdayBrowser):
+        def _guard_request(self,route):
+            if route.request.is_navigation_request():
+                route.fulfill(content_type='text/html',body=(Path(__file__).parent/'fixtures/auto_apply/workday_degree.html').read_text(encoding='utf-8'))
+            else:route.abort()
+    browser=DegreeBrowser(URL)
+    try:
+        degree=browser.observe()[0]
+        assert degree['value']=='Masters'
+        browser.choose_option(degree['key'],'Bachelors')
+        assert browser.observe()[0]['value']=='Bachelors'
+    finally:browser.close()
