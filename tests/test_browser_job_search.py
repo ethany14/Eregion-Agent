@@ -57,7 +57,8 @@ def test_browser_search_capture_score_and_recommend_uses_selected_job_only(caree
         saved=execute(c,'import_job',url=url,title='Python Engineer',company='Example Company',location='New York')
         assert saved['company']=='Example Company' and saved['location']=='New York'
         execute(c,'score_job',application_id=saved['application_id'])
-        recommended=execute(c,'recommend_job',application_id=saved['application_id'],reason='Relevant Python API experience.',caveats='Confirm work authorization.')
+        recommended=execute(c,'recommend_job',application_id=saved['application_id'],tier='to_confirm',reason='Relevant Python API experience.',
+            evidence=['Python Engineer'],gaps=[],to_confirm=['Work authorization.'],next_steps=['Apply.'],caveats='Confirm work authorization.')
         assert recommended['recommended']
         assert c.repository.get(c.state['task_id'])['recommendations'][0]['url']==url
     finally:c.harness.close()

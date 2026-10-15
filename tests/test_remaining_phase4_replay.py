@@ -187,5 +187,6 @@ def test_saved_target_body_import_is_local_even_when_remote_source_later_blocked
     # (a captured title) still applies to cached bodies.
     invalid={**job,'title':''}
     c.repository.change(tid,retrieved_jobs={job['url']:invalid})
-    with pytest.raises(PostingRejected):execute(c,'import_job',url=job['url'])
+    expected=ValueError if invalid.get('source') in {'rendered_browser','user_job_quote'} else PostingRejected
+    with pytest.raises(expected,match='title'):execute(c,'import_job',url=job['url'])
     assert len(c.repository.get(tid)['jobs'])==1 and not calls
