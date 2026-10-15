@@ -358,6 +358,7 @@ class ApplicationHost:
         record = self.session.state.get('field_attempts') or {}
         if record.get('revision') != turn.revision:
             record = self.session.state['field_attempts'] = {'revision': turn.revision, 'counts': {}}
+            self.session.state['abandoned_fields'] = self.pending['abandoned_fields'] = []
         return record['counts']
 
     def action_error(self, exc):
@@ -395,6 +396,10 @@ class ApplicationHost:
             counts = self.field_attempts(turn)
             counts[key] = counts.get(key, 0) + 1
             self.pending['field_attempts'] = self.session.state['field_attempts']
+            if counts[key] >= FIELD_ATTEMPT_LIMIT and not field.get('required'):
+                # Autofill skips it too; otherwise each round re-reports it as failed (Adobe).
+                abandoned = list(dict.fromkeys([*self.session.state.get('abandoned_fields', []), key]))
+                self.session.state['abandoned_fields'] = self.pending['abandoned_fields'] = abandoned
         self.session._cached_fields = (time.monotonic(), fields)
         self.report(fields, name, args.get('field_key'), 'failed' if failed else 'completed')
         if name == 'ready_for_review' and 'error' not in outcome:

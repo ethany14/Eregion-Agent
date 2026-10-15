@@ -419,3 +419,15 @@ def test_resume_never_fills_an_upload_for_another_document():
     assert document_kind(upload('Resume/CV'),{})=='resume'
     assert document_kind(upload('Resume or portfolio'),{})=='resume'
     assert document_kind(upload('Upload file'),{})=='resume'
+
+
+def test_autofill_skips_optional_fields_set_aside_by_the_attempt_limit():
+    # Adobe pilot: Field of Study hit the limit, but autofill re-reported it each round.
+    from test_auto_apply import FakeBrowser, field
+    from eregion.runtime.auto_apply.autofill import autofill
+    browser=FakeBrowser('');browser.fields=[field('study',required=False)]
+    state={'profile':{},'answers':{'study':'Systems Engineering'},'abandoned_fields':['study']}
+    result=autofill(browser,state,lambda:b'')
+    assert 'study' not in result.get('failed',{}) and browser.fields[0]['value']==''
+    state['abandoned_fields']=[]
+    assert autofill(browser,state,lambda:b'')['filled']==['study']

@@ -111,6 +111,9 @@ def autofill(browser, state, resume, *, edited_keys=frozenset(), active=lambda: 
             key = field["key"]
             if attempts.get(key, 0) >= (1 if state.get("automation_mode") == "hybrid" else 2):
                 continue
+            # Optional fields set aside after repeated failures (runner FIELD_ATTEMPT_LIMIT).
+            if key in state.get("abandoned_fields", ()) and not field.get("required"):
+                continue
             value = desired_answer(field, state)
             # A website's preselected value must not override the candidate's
             # confirmed answer, especially remembered refusals of consent.

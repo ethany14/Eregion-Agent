@@ -630,6 +630,8 @@ class ApplicationBrowser:
             # career site to its ATS. Never grant a model-supplied arbitrary URL.
             self.navigation_hosts.add(urlsplit(url).hostname)
         locator = self.scope.locator(f'[data-northstar-action="{target["id"]}"]')
+        # Adobe: an open Field of Study prompt covered "Save and Continue" (click timed out).
+        self._close_other_menu(None)
         self._trusted_until = time.monotonic() + TRUSTED_NAVIGATION_SECONDS
         locator.click(timeout=8000)
         self._settle()
