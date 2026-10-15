@@ -354,3 +354,18 @@ def test_document_replacement_invalidates_memory_revision_and_close_unsubscribes
     finally:
         loop.close(); db.close()
     assert not repo.state_listeners
+
+
+def test_malformed_batch_items_are_argument_errors_not_crashes(monkeypatch):
+    # Veeva pilot (2026-10-15): bind_education with a string item crashed the run.
+    from test_auto_apply import FakeBrowser, field
+    from eregion.runtime.auto_apply.agent import AgentTools
+    from eregion.runtime.auto_apply.runner import ApplicationHost
+    from eregion.runtime.core.engine import Turn, ToolArgumentsError
+    monkeypatch.setenv('TYPESAFE_ENABLED','false')
+    browser=FakeBrowser('');browser.fields=[field('school')]
+    session=AgentTools(browser,{'profile':{},'answers':{}},autofill=lambda:{},active=lambda:True)
+    session.observe()
+    host=ApplicationHost(session,object(),active=lambda:True,reserve=lambda _:True,report=lambda *args:None)
+    with pytest.raises(ToolArgumentsError):
+        host.validate_batch([{'name':'bind_education','args':{'fields':['school']}}],Turn('',{},[]))

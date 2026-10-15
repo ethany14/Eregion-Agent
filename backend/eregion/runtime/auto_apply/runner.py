@@ -124,6 +124,8 @@ class ApplicationHost:
         observed = {f['key'] for f in self.session.fields}
         for call in calls:
             args = call['args']
+            if any(not isinstance(item, dict) for key in ('answers', 'fields') for item in args.get(key) or []):
+                raise ToolArgumentsError(f"{call['name']}: each item in answers/fields must be an object with a field_key.")
             if call['name']=='bind_education':
                 from .education import combined_bindings
                 args = {**args, 'fields':combined_bindings(args.get('fields', []))}
