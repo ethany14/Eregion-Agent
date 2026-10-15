@@ -67,6 +67,9 @@ def date_format(field):
     hint=' '.join(str(field.get(k) or '') for k in ('label','placeholder','help')).upper()
     template=re.search(r'(?<![A-Z])(?:YYYY[-/]MM(?:[-/]DD)?|MM[-/]YYYY|DD[-/]MM[-/]YYYY|MM[-/]DD[-/]YYYY)(?![A-Z])',hint)
     if template:return template[0]
+    # Workday splits dates into segment inputs named only by their ids (Adobe: "From* MM").
+    segment=re.search(r'dateSection(Month|Day|Year)',str(field.get('key') or '')+' '+str(field.get('dom_id') or ''))
+    if segment:return {'Month':'MM','Day':'DD','Year':'YYYY'}[segment[1]]
     native=field.get('type') or field.get('kind')
     return {'month':'YYYY-MM','date':'YYYY-MM-DD'}.get(native)
 

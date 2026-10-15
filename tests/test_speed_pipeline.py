@@ -431,3 +431,12 @@ def test_autofill_skips_optional_fields_set_aside_by_the_attempt_limit():
     assert 'study' not in result.get('failed',{}) and browser.fields[0]['value']==''
     state['abandoned_fields']=[]
     assert autofill(browser,state,lambda:b'')['filled']==['study']
+
+
+def test_workday_date_segments_format_month_and_year_from_a_stated_date():
+    # Adobe pilot: "Aug 2026" -> the "From* MM" segment was refused as inventing digits.
+    from eregion.runtime.auto_apply.education import format_date
+    def segment(part):return {'key':f'text:workExperience-8--startDate-dateSection{part}-input:1','label':'From*','kind':'text'}
+    assert format_date(segment('Month'),'Aug 2026')=='08'
+    assert format_date(segment('Year'),'Aug 2026')=='2026'
+    assert format_date({'key':'text:jobTitle:1','label':'Job Title*','kind':'text'},'Aug 2026')=='Aug 2026'

@@ -88,6 +88,8 @@ SCAN = r"""() => {
       !!el.closest('[data-automation-id="multiSelectContainer"], [role="combobox"]');
     let committed = false, checkboxGroup = false;
     let text = label(el), options = [], value = el.getAttribute('aria-valuetext') || el.value || '', required = el.required || el.getAttribute('aria-required') === 'true';
+    // An empty Workday date segment shows its own placeholder ("MM", "YYYY") as its value.
+    if (/dateSection(Month|Day|Year)/.test(el.id) && /^(MM|DD|YYYY)$/.test(value)) value = '';
     let invalid = el.getAttribute('aria-invalid') === 'true' || (!!el.validity && !el.validity.valid) || errors.length > 0;
     let parentRequired = !!el.closest('.application-question.required, [data-required="true"]');
     if (buttonChoice) {
