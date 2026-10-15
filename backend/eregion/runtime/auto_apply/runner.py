@@ -14,6 +14,13 @@ from .browser import BrowserBlocked
 from .errors import failure_detail, failure as action_failure
 from .prompt import SYSTEM
 
+# Veeva pilot: ~23 tries on one optional school type-ahead. Past this many unsuccessful
+# actions on a field (reset by each user message), optional fields are left empty and
+# required ones go back to the user.
+FIELD_ATTEMPT_LIMIT = 4
+NON_FIELD_ACTIONS = {'observe', 'view_browser', 'say', 'ask_user', 'request_input', 'read_context', 'record_answers',
+    'update_plan', 'computer_wait', 'draft_answer'}
+
 logger = logging.getLogger(__name__)
 
 
@@ -329,6 +336,13 @@ class ApplicationHost:
             raise LoopStop('no_progress', field_keys=[args['field_key']] if args.get('field_key') else [])
         if failures >= 2 and name not in {'observe', 'view_browser', 'say', 'ask_user', 'request_input', 'computer_wait'}:
             return {**action_failure('repeated_action', 'This failed action was not executed again because the page and inputs are unchanged.'), 'repeated_action': True}
+        key = args.get('field_key') if isinstance(args.get('field_key'), str) else None
+        if key and name not in NON_FIELD_ACTIONS and self.field_attempts(turn).get(key, 0) >= FIELD_ATTEMPT_LIMIT:
+            field = next((f for f in session.fields if f['key'] == key), {})
+            if field.get('required'):
+                raise LoopStop('no_progress', field_keys=[key])
+            return {**action_failure('field_attempt_limit', f'{FIELD_ATTEMPT_LIMIT} attempts did not fill this optional field. '
+                'Leave it empty; it does not block review. Continue with other fields or call ready_for_review.'), 'abandoned': key}
         self.text_turns = 0
         session._cached_fields = None
         outcome = session.execute(name, args)
@@ -338,6 +352,13 @@ class ApplicationHost:
             self.pending_screen = dict(outcome)
             outcome = {key: value for key, value in outcome.items() if key != 'image'}
         return outcome
+
+    def field_attempts(self, turn):
+        """Unsuccessful actions per field since the user's last message."""
+        record = self.session.state.get('field_attempts') or {}
+        if record.get('revision') != turn.revision:
+            record = self.session.state['field_attempts'] = {'revision': turn.revision, 'counts': {}}
+        return record['counts']
 
     def action_error(self, exc):
         if isinstance(exc, ToolArgumentsError):
@@ -368,6 +389,12 @@ class ApplicationHost:
                     'verified', 'decision', 'value', 'filled', 'failed', 'field_key', 'action', 'saved', 'options', 'goal', 'screen', 'target'}}})
         fields = self.browser.observe()
         self.session.fields = fields
+        key = args.get('field_key') if isinstance(args.get('field_key'), str) else None
+        field = next((f for f in fields if f['key'] == key), None) if key and name not in NON_FIELD_ACTIONS else None
+        if field is not None and (not field.get('value') or field.get('invalid')):
+            counts = self.field_attempts(turn)
+            counts[key] = counts.get(key, 0) + 1
+            self.pending['field_attempts'] = self.session.state['field_attempts']
         self.session._cached_fields = (time.monotonic(), fields)
         self.report(fields, name, args.get('field_key'), 'failed' if failed else 'completed')
         if name == 'ready_for_review' and 'error' not in outcome:

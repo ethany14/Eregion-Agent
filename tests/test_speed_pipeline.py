@@ -369,3 +369,30 @@ def test_malformed_batch_items_are_argument_errors_not_crashes(monkeypatch):
     host=ApplicationHost(session,object(),active=lambda:True,reserve=lambda _:True,report=lambda *args:None)
     with pytest.raises(ToolArgumentsError):
         host.validate_batch([{'name':'bind_education','args':{'fields':['school']}}],Turn('',{},[]))
+
+
+@pytest.mark.parametrize('required', [False, True])
+def test_field_attempt_limit_leaves_optional_fields_and_returns_required_ones(monkeypatch, required):
+    from test_auto_apply import FakeBrowser, field
+    from eregion.runtime.auto_apply.agent import AgentTools
+    from eregion.runtime.auto_apply.runner import ApplicationHost, FIELD_ATTEMPT_LIMIT
+    from eregion.runtime.core.engine import Turn, LoopStop
+    monkeypatch.setenv('TYPESAFE_ENABLED','false')
+    browser=FakeBrowser('');browser.fields=[field('school',kind='combobox',required=required)]
+    session=AgentTools(browser,{'profile':{},'answers':{}},autofill=lambda:{},active=lambda:True)
+    session.observe()
+    host=ApplicationHost(session,object(),active=lambda:True,reserve=lambda _:True,report=lambda *args:None)
+    attempted=[]
+    monkeypatch.setattr(session,'execute',lambda name,args:attempted.append(args['field_key']) or {'options':[]})
+    turn=Turn('',{},[])
+    for i in range(FIELD_ATTEMPT_LIMIT):
+        call={'id':str(i),'name':'search_options','args':{'field_key':'school','query':f'Cornell {i}'}}
+        host.after_action(call,host.execute(call,turn),turn)
+    call={'id':'last','name':'search_options','args':{'field_key':'school','query':'Cornell again'}}
+    if required:
+        with pytest.raises(LoopStop):host.execute(call,turn)
+    else:
+        assert host.execute(call,turn)['abandoned']=='school'
+    assert len(attempted)==FIELD_ATTEMPT_LIMIT
+    # A new user message gives the field fresh attempts.
+    assert host.field_attempts(Turn('',{},[],revision=turn.revision+1))=={}
