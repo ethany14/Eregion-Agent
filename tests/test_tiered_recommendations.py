@@ -630,3 +630,35 @@ def test_merge_never_downgrades_a_verdict():
     met = {'status': 'met', 'reason': 'a'}; unmet = {'status': 'unmet', 'reason': 'b'}
     assert merge_opinions({'role': met}, {'role': unmet})['role'] is met
     assert merge_opinions({'role': unmet}, {'role': met})['role']['status'] == 'met'
+
+
+def test_priority_with_posting_conditions_needs_one_explicit_review(career, monkeypatch):
+    # live-set-03: intern postings with availability/start-date conditions were placed as priority.
+    from eregion.runtime.career import qualification as q
+    from eregion.domain.search_qualification import SourceQuote
+    from test_semantic_search_qualification import response
+    def judge(request, postings):
+        value = response(request, postings)
+        value.decisions[0].candidate_conditions = [
+            SourceQuote(source='description', quote='Required: Bachelor degree with a minimum 3.0 GPA.')]
+        return value
+    c = career
+    monkeypatch.setattr(q, 'judge', judge)
+    job = posting(1, description=DESCRIPTION)
+    prepare(c, monkeypatch, [job])
+    app = execute(c, 'verify_and_score_jobs', urls=[job['url']])['jobs'][0]['application_id']
+    with pytest.raises(ValueError, match='minimum 3.0 GPA'):
+        execute(c, 'recommend_job', **args(app, 'priority'))
+    assert execute(c, 'recommend_job', **args(app, 'priority', conditions_reviewed=True))['recommended']
+
+
+def test_search_coverage_counts_distinct_employers():
+    from eregion.runtime.career.source_health import employers
+    jobs = {str(i): {'url': f'https://job-boards.greenhouse.io/x/jobs/{i}', 'company': c}
+            for i, c in enumerate(['Affirm', 'affirm', 'Affirm', 'Stripe'])}
+    state = {'retrieved_jobs': jobs, 'recommendations': [{'url': j['url']} for j in jobs.values()],
+             'candidate_qualifications': {k: {'url': j['url'], 'qualified': k != '3'} for k, j in jobs.items()}}
+    assert employers(state) == {'recommended': {'openings': 4, 'distinct_employers': 2, 'largest_employer_openings': 3},
+                                'qualified': {'openings': 3, 'distinct_employers': 1, 'largest_employer_openings': 3}}
+    from eregion.runtime.career.prompt import SEARCH_STOP_RULE
+    assert 'search_coverage.employers' in SEARCH_STOP_RULE

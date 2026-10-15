@@ -133,11 +133,27 @@ def yields(state):
     return rows
 
 
+def employers(state):
+    """How many distinct employers the presented and qualified openings come from (a fact, not a target)."""
+    from .alerts import job_key
+    bodies={job_key(j['url']):j for j in (state.get('retrieved_jobs') or {}).values() if j.get('url')}
+    def name(url):
+        try:return str((bodies.get(job_key(url)) or {}).get('company') or '').strip().casefold() or None
+        except ValueError:return None
+    rec=[n for n in (name(r.get('url') or '') for r in state.get('recommendations') or []) if n]
+    qual=[n for n in (name(q.get('url') or '') for q in (state.get('candidate_qualifications') or {}).values() if q.get('qualified')) if n]
+    def row(names):
+        top=max((names.count(n) for n in set(names)),default=0)
+        return {'openings':len(names),'distinct_employers':len(set(names)),'largest_employer_openings':top}
+    return {'recommended':row(rec),'qualified':row(qual)}
+
+
 def coverage(state):
     sources=active_sources(state)
     blocked=[source for source,item in sources.items() if item.get('blocked')]
     return {'blocked_sources':blocked[-8:],'blocked_count':len(blocked),'exhausted_sources':[source for source,item in sources.items() if item.get('empty_count',0)>=2][-8:],
         'searches':searches(state),'yield_by_source':yields(state),'linkedin_queries':linkedin_queries(state),
+        'employers':employers(state),
         'instruction':'Disclose source access limitations once to the user. These failures do not establish absence of vacancies. Public detail reading and switching sources are already authorized.'}
 
 

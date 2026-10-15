@@ -47,7 +47,9 @@ mandatory experience or responsibility is unmet even if a title says otherwise. 
 conflicting evidence stays unknown. Unmet is only for a clear mismatch the user would not want to see
 (a different occupation, a level far from the request, a location the request rules out, a closed opening);
 anything less certain is near or unknown, and the user decides with the difference stated.
-Do not count a related but different occupation as the same role.
+Role is about the main work of the opening, not its title wording: an opening that mainly does the requested
+work in a specialised domain or under a different title is the requested role; a related occupation whose
+work only partly overlaps is unknown; unmet is only for clearly different work.
 Near (location and seniority only): the opening sits just outside what the user asked for, in a way a
 reasonable applicant would still want to see and decide on themselves, for example an opening at the
 requested level that asks for a little more experience than the request implies, a hybrid opening for a

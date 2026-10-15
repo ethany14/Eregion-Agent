@@ -46,7 +46,8 @@ TOOLS = [
          'gaps':{'type':'array','maxItems':10,'items':{'type':'string','maxLength':300}},
          'to_confirm':{'type':'array','maxItems':8,'items':{'type':'string','maxLength':300}},
          'next_steps':{'type':'array','minItems':1,'maxItems':5,'items':{'type':'string','maxLength':200}},
-         'caveats':TEXT},['application_id','tier','reason','evidence','gaps','to_confirm','next_steps']),
+         'caveats':TEXT,'conditions_reviewed':{'type':'boolean','description':'For priority only: true after checking that the resume or the user states every posting condition on the candidate (enrollment, graduation date or cohort, availability or start date, authorization).'}},
+        ['application_id','tier','reason','evidence','gaps','to_confirm','next_steps']),
     function('search_jobs','API-first discovery through configured LinkedIn MCP and public company boards. Returns observed posting cards; process candidate_queue.next_unread with verify_and_score_jobs. Search again for new boards only after actionable candidates are processed. Optional boards contain platform and company board token.',
         {**FILTER_SCHEMA,'query':TEXT,'location':TEXT,'use_directory':{'type':'boolean','description':'Select fresh verified boards by role and location; prefer after blocked requested sources.'},'boards':{'type':'array','maxItems':5,'items':{'type':'object',
             'properties':{'platform':{'type':'string','enum':['greenhouse','lever','ashby','workday']},'company':TEXT,'host':TEXT,'site':TEXT},
@@ -449,6 +450,15 @@ class CareerHarness:
         if near and tier=='priority':
             raise ValueError('This opening is not confirmed inside the requested '+' and '.join(c['field'] for c in near)
                              +' (near or unknown); present it as to_confirm or stretch and state that, never as priority.')
+        conditions=[c['quote'] for c in (qualification.get('candidate_conditions') or [])]
+        if conditions and tier=='priority' and not lists['to_confirm'] and args.get('conditions_reviewed') is not True:
+            # One explicit check, judged by the model: intern postings were placed as priority while the
+            # resume stated no availability or start date (live-set-03, user labels to_confirm).
+            raise ValueError('This posting states conditions on the candidate: '+json.dumps(conditions[:6],ensure_ascii=False)
+                             +'. Check each against the resume and the facts the user stated. If any is not stated there '
+                             '(for example availability, start date, cohort or graduation window), present the job as '
+                             'to_confirm and list it; if all are stated, resubmit priority with conditions_reviewed=true '
+                             'and say in the reason how they are met.')
         sources={'title':retrieved.get('title') or '','location':retrieved.get('location') or '',
                  'description':retrieved.get('description') or ''}
         evidence=[]
