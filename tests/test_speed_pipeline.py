@@ -440,3 +440,13 @@ def test_workday_date_segments_format_month_and_year_from_a_stated_date():
     assert format_date(segment('Month'),'Aug 2026')=='08'
     assert format_date(segment('Year'),'Aug 2026')=='2026'
     assert format_date({'key':'text:jobTitle:1','label':'Job Title*','kind':'text'},'Aug 2026')=='Aug 2026'
+
+
+def test_workday_single_segment_dates_need_only_their_own_part():
+    # Adobe pilot: answers saved per segment ("Aug", "2026") were refused as imprecise.
+    from eregion.runtime.auto_apply.education import format_date
+    def segment(part):return {'key':f'text:education-5--firstYearAttended-dateSection{part}-input:1','label':'From','kind':'text'}
+    assert format_date(segment('Month'),'Aug')=='08'
+    assert format_date(segment('Year'),'2026')=='2026'
+    assert format_date(segment('Year'),'Expected May 2027')=='2027'
+    assert format_date(segment('Month'),'2026') is None

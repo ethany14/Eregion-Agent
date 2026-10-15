@@ -78,6 +78,9 @@ def format_date(field, value):
     template=date_format(field)
     if not template or not isinstance(value,str):return value
     parts=date_parts(value,confirmed_quote=value)
+    # A single Workday segment needs only its own part ("Aug" -> MM, "2026" -> YYYY).
+    if template=='YYYY':return parts['year'] if 'year' in parts else None
+    if template=='MM':return f"{int(parts['month']):02d}" if 'month' in parts else None
     if 'year' not in parts or 'month' not in parts:return None
     year,month=int(parts['year']),int(parts['month'])
     day=None
