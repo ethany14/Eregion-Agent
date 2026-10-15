@@ -899,7 +899,9 @@ class ApplicationLoop:
                         or (desired is not None and not matches(field, desired))):
                     missing.append(field)
             drafts = visible_drafts(state, fields)
-            missing.extend(f for f in fields if f['key'] in drafts and f not in missing)
+            # A draft for an optional field is a suggestion, not a blocker: left unapproved,
+            # the field stays blank (Veeva pilot: two optional essays held review forever).
+            missing.extend(f for f in fields if f['key'] in drafts and f.get('required') and f not in missing)
             paths = unresolved_paths(fields,state)
             missing.extend(f for f in fields if f['key'] in paths and f not in missing)
             if reason == "ready" and any(desired_answer(f,state) is not None for f in missing):
