@@ -1024,3 +1024,10 @@ DraftKings 的问题：岗位要求“接触机器学习、回归方法与模型
   - backend-2、backend-3（Reddit）仍为“值得一试”，人工判优先。
   - 人工判不展示的 analyst-8、designer-2 这次以“需要确认”展示，属于默认展示的代价。
 - **新观察：** 资深后端请求下，Staff 岗位以“需要确认”展示（级别 near/unknown）。用户在人工复核中说过 Staff 属于明确不符、应排除，这需要用户确认取舍。
+
+**回归测试（`54cecbd`，排除 “(1)” 副本和 `tests/test_custom_agent.py`）：** 2442 通过，36 失败。
+- 比 12.23 多出的 10 个失败都与本轮改动无关：
+  - `test_general_repairs` ×2 是已知的基线失败；
+  - `test_integrated_p3` 候选视图和 `test_integrated_p6_replay` ×7，在恢复到本轮工作之前的代码（9aea182）后同样失败，属于环境因素；
+  - `test_remaining_search_runtime` 单独运行通过（与运行顺序有关）。
+- `5df0beb` 只改了看板检索的地点过滤，看板与推荐相关的测试套件（139 个）全部通过。
