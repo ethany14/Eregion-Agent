@@ -155,6 +155,11 @@ def grounded(field, quote, value, options):
     return chosen is not None and bool(re.search(r"[^\x00-\x7f]", quote))
 
 
+# Reasoning counts against the cap. At 2400 the Adobe Workday experience page was cut off six
+# times in a row (incomplete_response); the career agent already uses 8000.
+MAX_OUTPUT_TOKENS = 8000
+
+
 class ConfiguredToolModel:
     def __init__(self):
         from eregion.domain.model import shared_model
@@ -163,14 +168,14 @@ class ConfiguredToolModel:
         self.timeout = model_timeout(self.model)
 
     def invoke(self, messages, tools):
-        return self.model.bind_tools(tools).invoke(messages, timeout=self.timeout, max_tokens=2400)
+        return self.model.bind_tools(tools).invoke(messages, timeout=self.timeout, max_tokens=MAX_OUTPUT_TOKENS)
 
     def invoke_turn(self, messages, tools, snapshot):
         complex_turn = (snapshot.get('recovery') or snapshot.get('runtime_feedback') or
             any(f.get('kind') == 'textarea' for f in snapshot.get('fields', [])) or
             any(h.get('failed') or h.get('error_code') for h in snapshot.get('decision_history', [])))
         model = self.model if complex_turn else self.fast_model
-        return model.bind_tools(tools).invoke(messages, timeout=self.timeout, max_tokens=2400)
+        return model.bind_tools(tools).invoke(messages, timeout=self.timeout, max_tokens=MAX_OUTPUT_TOKENS)
 
     def verify_answers(self, answers):
         from .grounding import verify_boolean_answers
