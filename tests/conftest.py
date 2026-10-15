@@ -78,3 +78,18 @@ def _offline_isolation(monkeypatch):
     yield
     if attempts:
         pytest.fail(f'Offline test attempted outside connections (caught or not): {attempts[:3]}')
+
+
+def pytest_runtest_logreport(report):
+    """On GitHub Actions, publish each failing test as a public annotation.
+
+    Annotations are readable without signing in (the run's logs are not), so a failure on
+    the Linux runner can be diagnosed from the API.
+    """
+    if not os.getenv('GITHUB_ACTIONS') or not report.failed:
+        return
+    path, line = report.location[0], (report.location[1] or 0) + 1
+    detail = str(getattr(report.longrepr, 'reprcrash', None) and report.longrepr.reprcrash.message
+                 or report.longreprtext.strip().splitlines()[-1:] or '')
+    message = (report.nodeid + ' :: ' + detail).replace('%', '%25').replace('\r', '').replace('\n', '%0A')[:900]
+    print(f'\n::error file={path},line={line}::{message}', flush=True)
