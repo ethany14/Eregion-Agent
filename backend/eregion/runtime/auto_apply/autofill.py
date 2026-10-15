@@ -60,8 +60,22 @@ def matches(field, value):
     return field["value"] == value and not field.get("invalid")
 
 
+# Uploads that ask for a document Eregion doesn't hold (Veeva pilot: the resume went into
+# "Please upload your most recent transcript"). These are left for the user.
+OTHER_DOCUMENT = re.compile(r'transcript|portfolio|writing sample|work sample|code sample|reference|recommendation|'
+    r'certificat|diploma|licen[cs]e|passport|identification|\bid\b|visa|permit|photo|headshot|'
+    r'video|thesis|publication|research statement|teaching statement|grade report', re.I)
+
+
+def other_document(field):
+    label = field.get('label') or ''
+    # "Resume or portfolio" still accepts the resume.
+    return bool(OTHER_DOCUMENT.search(label)) and not re.search(r'resume|résumé|curriculum|\bcv\b|cover letter', label, re.I)
+
+
 def document_kind(field,state):
     if field['kind']!='file':return None
+    if other_document(field):return None
     bound = state.get('document_bindings',{}).get(field['key'])
     if bound:return bound
     label=field['label'].casefold()

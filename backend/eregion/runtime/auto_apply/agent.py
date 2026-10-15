@@ -500,6 +500,10 @@ class AgentTools:
         if name=='bind_document':
             if field['kind']!='file' or args['document'] not in {'resume','cover_letter'}:
                 raise BrowserBlocked('Choose an observed file upload and an available document.')
+            from .autofill import other_document
+            if other_document(field):
+                raise BrowserBlocked('This upload asks for a different document than the resume or cover letter. '
+                    'Ask the user to upload it in the browser; never substitute another file.', code='input_pending')
             if args['document']=='cover_letter' and not self.state.get('cover_letter'):
                 raise BrowserBlocked('No approved cover letter is available.')
             self._save_decisions(document_bindings={**self.state.get('document_bindings',{}),key:args['document']})

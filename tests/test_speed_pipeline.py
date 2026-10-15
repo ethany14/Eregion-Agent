@@ -407,3 +407,15 @@ def test_education_mapping_ignores_gpa_and_other_follow_up_questions():
             f('other','If you selected Other, please indicate your field of study:'),
             f('study','Please select your field of study:✱')]
     assert [g for g in gaps(state,fields,None,final=True) if g.startswith('Map')]==['Map education field: Please select your field of study:✱']
+
+
+def test_resume_never_fills_an_upload_for_another_document():
+    # Veeva pilot (2026-10-15): the resume was uploaded as "most recent transcript".
+    from eregion.runtime.auto_apply.autofill import document_kind
+    def upload(label, required=True):return {'key':label,'kind':'file','label':label,'required':required}
+    state={'document_bindings':{'Please upload your most recent transcript:✱':'resume'}}
+    assert document_kind(upload('Please upload your most recent transcript:✱'),state) is None
+    assert document_kind(upload('Photo ID'),{}) is None
+    assert document_kind(upload('Resume/CV'),{})=='resume'
+    assert document_kind(upload('Resume or portfolio'),{})=='resume'
+    assert document_kind(upload('Upload file'),{})=='resume'
