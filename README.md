@@ -8,30 +8,31 @@
 <p align="center">
   <a href="#get-started"><img src="https://img.shields.io/badge/python-3.12-3d6a4a?style=flat-square&logo=python&logoColor=white" alt="Python 3.12"></a>
   <a href="docs/configuration.md"><img src="https://img.shields.io/badge/models-OpenAI--compatible-3d6a4a?style=flat-square" alt="Any OpenAI-compatible model"></a>
-  <a href="#deployment-and-compatibility"><img src="https://img.shields.io/badge/runs-locally-9a7428?style=flat-square" alt="Runs locally"></a>
-  <a href="frontend/chrome_extension/README.md"><img src="https://img.shields.io/badge/Chrome-Eregion%20Lens-c0532a?style=flat-square&logo=googlechrome&logoColor=white" alt="Chrome extension"></a>
-  <a href="#day-and-night"><img src="https://img.shields.io/badge/themes-Day%20%C2%B7%20Night-1b2420?style=flat-square" alt="Day and Night themes"></a>
+  <a href="#where-jobs-come-from"><img src="https://img.shields.io/badge/sources-company%20boards%20%C2%B7%20LinkedIn-9a7428?style=flat-square" alt="Company boards and LinkedIn"></a>
+  <a href="docs/evaluation-report.md"><img src="https://img.shields.io/badge/evaluation-report-c0532a?style=flat-square" alt="Evaluation report"></a>
   <a href="#-faster-fit-scores-with-jev"><img src="https://img.shields.io/badge/fit%20scoring-Jev%20optional-d9b86a?style=flat-square" alt="Optional Jev fit scoring"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-6c776f?style=flat-square" alt="MIT License"></a>
 </p>
 
 <p align="center">
   <b><a href="#get-started">Get started</a></b> ·
-  <a href="https://ethany14.github.io/Eregion-Agent/guide.html">User guide</a> ·
+  <a href="https://ethany14.github.io/Eregion-Job-Finding-Agent/guide.html">User guide</a> ·
   <a href="docs/configuration.md">Configuration</a> ·
-  <a href="docs/agent-loop.md">Architecture</a> ·
-  <b><a href="https://ethany14.github.io/Eregion-Agent/">Website</a></b>
+  <a href="docs/evaluation-report.md">Evaluation</a> ·
+  <b><a href="https://ethany14.github.io/Eregion-Job-Finding-Agent/">Website</a></b>
 </p>
 
 ---
 
-Eregion helps you find relevant roles, understand your fit, prepare application
-materials, work through application forms, and practise for interviews. Bring
-your resume, describe what you want, and keep the whole search in one workspace.
+Eregion is a job-search agent that runs on your computer. Tell it what you are
+looking for and it searches company job boards and LinkedIn, reads each posting
+in full, and comes back with jobs sorted by how well they fit your resume. Each
+job lists its gaps and what you still need to confirm. It also tailors your
+resume and cover letter, fills in application forms in Chrome, and helps you
+practise for interviews.
 
-It runs on your computer with your own model API credentials. Your saved resume,
-conversations, documents and application history stay in a local database;
-model-assisted work sends relevant content to the providers you configure.
+Everything stays in a local database. Model work uses the API key you provide,
+and nothing is submitted without your approval.
 
 <p align="center">
   <picture>
@@ -40,14 +41,41 @@ model-assisted work sends relevant content to the providers you configure.
   </picture>
 </p>
 
+## How a job search works
+
+Ask in plain words, for example *“Find senior backend roles, remote in the US,
+for my resume.”* The agent:
+
+1. **Searches** the verified company-board directory and LinkedIn, mixing
+   results across employers.
+2. **Reads each posting in full** and checks it against what you asked for:
+   role, location, level, and whether the opening is current. Only clear
+   mismatches are dropped, such as a different occupation, a Staff role when you
+   asked for senior, or a city you ruled out. A near miss is kept, with the
+   difference stated.
+3. **Scores fit** against your resume, using your main model or optional
+   [Jev](#-faster-fit-scores-with-jev).
+4. **Sorts the results into three tiers**, each with evidence quoted from the
+   posting:
+
+| Tier | Means |
+| :-- | :-- |
+| **Priority match** | Role, location and level match, and your resume shows the core requirements. |
+| **Worth trying** | Relevant, but a core skill or experience isn't on your resume. Each gap is listed with how much it matters. |
+| **Needs your confirmation** | Something only you can answer: GPA, work authorization, start date, or a level or location the posting doesn't make clear. |
+
+There is no quota and no padding with weak matches. The agent decides when
+further searching is unlikely to help. The reply then says what was searched,
+what failed, and what is left, and you can reply *“search more”* to continue.
+
 ## One road, from first sight to offer
 
-Every application travels the same five stations. The agent does the walking;
-you decide at the crossings.
+Every application moves through the same five stations. The agent does the work;
+you make the decisions.
 
 ```mermaid
 flowchart LR
-    A(["<b>Sighted</b><br/>search boards and<br/>careers pages"]) --> B(["<b>Prepared</b><br/>score fit · tailor resume,<br/>cover letter, answers"])
+    A(["<b>Sighted</b><br/>search boards<br/>and LinkedIn"]) --> B(["<b>Prepared</b><br/>tiered fit · tailor resume,<br/>cover letter, answers"])
     B --> C(["<b>Sent</b><br/>fill forms in Chrome,<br/>ask you for the rest"])
     C --> D(["<b>In interview</b><br/>job-specific practice<br/>and feedback"])
     D --> E(["<b>Offer</b>"])
@@ -57,18 +85,15 @@ flowchart LR
     class E gold;
 ```
 
-| Station | What you need | What Eregion does |
-| :-- | :-- | :-- |
-| **Sighted** | Find your next role | Browses job boards and company careers pages, builds a shortlist, or schedules recurring recommendations. |
-| **Prepared** | Decide where to apply | Compares a job with your resume and shows the score, supporting evidence, gaps, and questions that need your input. With [Jev](#-faster-fit-scores-with-jev) on, three jobs score in about 2 s. |
-| | Prepare your materials | Drafts a tailored resume, cover letter and application answers from your source information. Review versions and download resume PDFs. |
-| **Sent** | Get through the application | Navigates pages, fills known details, uploads approved documents, and asks for missing answers in chat. |
-| | Keep the process moving | Reuses confirmed details and answers, follows multiple applications, and resumes saved work. |
-| **In interview** | Prepare for the conversation | Practises job-specific interview questions, with feedback and a final report. |
+| Station | What Eregion does |
+| :-- | :-- |
+| **Sighted** | Searches boards and LinkedIn on request or on a schedule, and returns tiered recommendations with gaps and items to confirm. |
+| **Prepared** | Shows the fit score with evidence. Drafts a tailored resume, cover letter and answers, and checks every claim against your resume. |
+| **Sent** | Navigates the application in your Chrome, fills in known details, uploads approved documents, and asks you in chat for anything missing. |
+| **In interview** | Practises questions for the specific job, with feedback and a final report. |
 
-The agent chooses its next actions and can continue independent work while it
-waits for an answer. You can correct it, pause it, or take control of its browser.
-**Material approval and final submission always remain explicit review steps.**
+You can correct, pause or take over at any time. **Approving materials and the
+final submit are always yours.**
 
 ## A workspace for the whole search
 
@@ -80,7 +105,7 @@ waits for an answer. You can correct it, pause it, or take control of its browse
         <img src="frontend/site/assets/screens/home-night.webp" alt="The Chronicle home view: today's events, beacons that need you, and applications on the road.">
       </picture>
       <h3>📖 Chronicle</h3>
-      Your home page: what happened today, and which conversations are waiting on you.
+      Home: what happened today, and which conversations are waiting on you.
     </td>
     <td width="50%" valign="top">
       <picture>
@@ -88,7 +113,7 @@ waits for an answer. You can correct it, pause it, or take control of its browse
         <img src="frontend/site/assets/screens/road-night.webp" alt="The Road: application totals, a winding map of stations, and a progress table.">
       </picture>
       <h3>🛤️ The Road</h3>
-      Every application on one map, board or table, with response rates and weekly activity.
+      Every application on one map, board or table, with response rates.
     </td>
   </tr>
   <tr>
@@ -98,41 +123,40 @@ waits for an answer. You can correct it, pause it, or take control of its browse
         <img src="frontend/site/assets/screens/forge-night.webp" alt="The Forge: tailored resumes and cover letters with a drafted, tempered and sealed trail and a verified preview.">
       </picture>
       <h3>⚒️ The Forge</h3>
-      Generated materials are <i>drafted</i>, <i>tempered</i> (every claim checked against your resume) and <i>sealed</i> once you approve them.
+      Materials are <i>drafted</i>, <i>tempered</i> (each claim checked against your resume) and <i>sealed</i> when you approve them.
     </td>
     <td width="50%" valign="top">
       <picture>
-        <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/screens/chat-light.webp">
-        <img src="frontend/site/assets/screens/chat-night.webp" alt="Council: a conversation with a 91/100 match card for a Product Analyst role.">
+        <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/screens/phone-light.webp">
+        <img src="frontend/site/assets/screens/phone-night.webp" alt="Eregion on a phone-width screen." width="46%">
       </picture>
       <h3>💬 Council</h3>
-      Your conversations with the agent, in folders, pinned or archived.
+      Your conversations with the agent, in folders, pinned or archived, and on any screen size.
     </td>
   </tr>
 </table>
 
-| Place | Purpose |
-| :-- | :-- |
-| **Council** | Conversations with the agent |
-| **The Road** | Applications and their progress |
-| **The Forge** | Materials, versions, verification and approvals |
-| **Job alerts** | Recurring searches and recommendation digests |
-| **The Lookout** | Browser activity and manual browser control |
+Job alerts run recurring searches and send you digests, and **The Lookout**
+shows the agent's browser so you can take control. Switch between parchment
+**Day** and holly-green **Night** from the sidebar.
 
-<a id="day-and-night"></a>
-**Day and Night.** Switch between parchment Day and holly-green Night from the
-sidebar; until you choose, Eregion follows your system setting. Conversation
-folders and an archive keep the workspace organized as your search grows. See the
-[user guide](docs/usage.md) for account sign-in, answer memory, browser takeover
-and recovery.
+<a id="where-jobs-come-from"></a>
+## Where jobs come from
+
+| Source | Setup | Notes |
+| :-- | :-- | :-- |
+| **Company boards** (Greenhouse, Lever, Ashby, Workday) | None | A directory of 118 boards, each verified through its public API. |
+| **LinkedIn**, through a local MCP server | One-time sign-in in a separate browser profile | On by default once configured. Calls are budgeted, and the source stops on sign-in or rate-limit problems. See [default sources](docs/configuration.md#default-job-sources). |
+| **Treg** (optional) | Your own Treg key; you pay Treg directly | LinkedIn search and page extraction, with spend capped per call ($0.01), per task ($0.10) and per day ($0.50). Off by default. See [configuration](docs/configuration.md#optional-treg-job-sources). |
+| **A posting you paste or open** | None | Share a link or job text in chat, or use the **Eregion Lens** Chrome extension on any job page. |
+
+Indeed's MCP server only accepts allow-listed clients, so Eregion does not use it.
 
 ## ⚡ Faster fit scores with Jev
 
-[Jev](docs/jev-benchmark.md) is a fast yes/no decision model from Typesafe. When
-it is on, Eregion scores job fit with Jev alone, while your main model still
-handles conversation, planning and writing. Eregion works fully without it.
-
-### How much faster
+[Jev](docs/jev-benchmark.md) is a fast yes/no decision model from Typesafe. With
+it on, fit scoring uses Jev, while your main model still handles conversation,
+planning and writing. Eregion works fully without it.
 
 <p align="center">
   <picture>
@@ -141,76 +165,71 @@ handles conversation, planning and writing. Eregion works fully without it.
   </picture>
 </p>
 
-| Recorded run | Time |
+| Recorded run (synthetic resumes) | Time |
 | :-- | --: |
-| Fit analysis with the main model only, cold *(2026-10-09)* | 32–49 s |
-| Three jobs scored independently with Jev, cold | 4.6 s |
-| Three jobs scored in one Jev batch, cold | **2.0 s** |
+| Main model only, cold | 32–49 s |
+| Three jobs in one Jev batch, cold | **2.0 s** |
 | Same three jobs again, from the local cache | **0.15 s** |
 
-The Jev batch also used 47% fewer tokens than three separate Jev requests. These
-are small synthetic test runs on different days and inputs, so treat them as an
-indication rather than a controlled comparison or a guarantee. Details,
-caveats and reproduction steps are in [Jev and performance](docs/jev-benchmark.md),
-and every setting is in [Configuration](docs/configuration.md#optional-jev-acceleration).
-
-### Turn it on
-
-Add these lines to `.env` and restart the server:
+These are small runs on different days and inputs, so treat them as an
+indication, not a guarantee. To turn Jev on, add these lines to `.env` and
+restart:
 
 ```dotenv
 TYPESAFE_API_KEY=your-typesafe-key
 TYPESAFE_BASE_URL=https://api.typesafe.ai
 TYPESAFE_DEFAULT_MODEL=jev-latest
 TYPESAFE_ENABLED=true
-# Optional: also use Jev for memory, question and evidence helpers.
-TYPESAFE_CAREER_ENABLED=false
 ```
 
-| Setting | Default | What it does |
-| :-- | :-- | :-- |
-| `TYPESAFE_ENABLED` | `false` | Turns on Jev fit scoring for chat, quick analysis and saved jobs, plus form-option mapping and job screening. `false` uses the original analyzer. |
-| `TYPESAFE_CAREER_ENABLED` | `false` | Also uses Jev for memory, question classification and evidence helpers. Needs `TYPESAFE_ENABLED=true`. |
-| `TYPESAFE_FIT_MODEL` | `jev-1.13.0` | The exact Jev release used for fit scoring. |
-| `TYPESAFE_FIT_TIMEOUT` | `12` | Seconds allowed per fit request (0.1–60). |
-| `TYPESAFE_FIT_CACHE_PATH` | next to your database | Where cached decisions are stored. |
+- Up to 16 jobs are scored per batch, and decisions are cached locally for 24
+  hours.
+- A requirement Jev can't decide stays *unresolved*, and the score is shown as a
+  range.
+- There is no fallback to the main model: if Typesafe is unreachable, scoring
+  stops until you fix the key or turn Jev off.
 
-### What changes when it is on
+Fit requests send the extracted resume text and the job description; resume
+files, screenshots and passwords never leave your machine. Every setting is in
+[configuration](docs/configuration.md#optional-jev-acceleration).
 
-- Up to eight jobs are scored together in one batch, sharing your resume context.
-- Decisions are cached on your computer for 24 hours, so re-scoring the same resume
-  and job is nearly instant. Uncertain answers are kept for 5 minutes.
-- A requirement Jev can't decide stays *unresolved* and the score is shown as a
-  range, rather than a guessed exact number.
-- There is no fallback to the main model for scoring. If Typesafe is unreachable,
-  scoring fails until you fix the key or turn Jev off.
-- Fit requests send your extracted resume text, the job description and scoped
-  details to Typesafe. Resume files, screenshots and passwords are never sent.
+## How well it works
+
+Eregion is tested with four synthetic applicants: a junior data analyst in New
+York, a senior backend engineer for remote US, an ML intern in California, and
+a junior UX designer in Austin. Live runs have fixed budgets, and a person
+reviewed one full set of results by hand.
+
+- **Results:** across the latest four-scenario runs, 123 jobs were shown with 0
+  structural errors. In the human review, 0 of 23 shown jobs were wrong.
+- **What to show:** for 28 of 29 labelled postings, the show or hide decision
+  matched the reviewer.
+- **Tiers:** about two in three match the reviewer; most misses are one tier
+  apart.
+- **Replies:** every audited reply stated accurately what failed and what was
+  left.
+
+Known limits:
+
+- The agent often stops searching early, and says so with an offer to continue.
+- Verdicts can vary slightly between runs.
+- Scoring accuracy has not been measured against human labels yet.
+
+The full summary, including what failed along the way, is in the
+**[evaluation report](docs/evaluation-report.md)**.
 
 ## Get started
 
-Developing the agent? Start with the [runtime map](backend/eregion/runtime/README.md),
-[documentation index](docs/README.md), or open
-[`JobHunterAgent.code-workspace`](JobHunterAgent.code-workspace) for an ordered
-project view centered on the single AgentLoop.
-
-The source tree is grouped into `backend/`, `frontend/` and `tools/`. Backend code
-uses one Python namespace: `eregion.runtime`, `eregion.domain`, and `eregion.api`.
-See [backend layout and startup](backend/README.md). After updating an existing
-checkout, rerun `python -m pip install -r requirements.txt` and use the new server
-module below; the old top-level Python packages have been removed.
-
 > [!NOTE]
-> You need **Python 3.12**, **Google Chrome** for browser tasks, and credentials
-> for an **OpenAI-compatible** model service. Choose a model that supports tool
-> calling and structured output; visual browser backup also requires image input.
-> Node.js is only needed for frontend tests.
+> You need **Python 3.12**, **Google Chrome**, and an API key for an
+> **OpenAI-compatible** model that supports tool calling and structured output.
+> The visual browser fallback also needs image input.
 
 ### 1 · Install
 
 ```sh
-git clone https://github.com/ethany14/Eregion-Agent.git
-cd Eregion-Agent
+git clone https://github.com/ethany14/Eregion-Job-Finding-Agent.git
+cd Eregion-Job-Finding-Agent
 ```
 
 <details open>
@@ -242,141 +261,75 @@ Create `.env` in the repository root:
 ```dotenv
 LLM_MODEL_ID=your-model-id
 LLM_API_KEY=your-api-key
-# Set this when your provider uses a custom compatible endpoint.
+# Only if your provider uses a custom compatible endpoint.
 LLM_BASE_URL=https://your-provider.example/v1
 ```
 
-Replace the placeholders with your provider's settings. Leave `LLM_BASE_URL` out
-if the client's default endpoint is appropriate.
-
 > [!IMPORTANT]
-> Keep `.env` private; it is excluded from Git.
+> Keep `.env` private; Git ignores it.
 
-> [!TIP]
-> Want fit scores in about a second? Turn on the optional
-> [Jev fast path](#-faster-fit-scores-with-jev) with five more lines in `.env`.
-
+To add LinkedIn as a source, follow [default sources](docs/configuration.md#default-job-sources).
+It takes a one-time sign-in in a separate browser profile; company boards work
+without it.
 
 ### 3 · Start Eregion
-
-Run from the repository root, in the activated environment:
 
 ```sh
 python -m alembic upgrade head
 python -m uvicorn eregion.api.main:app --host 127.0.0.1 --port 8000
 ```
 
-Open **[localhost:8000/apply](http://localhost:8000/apply)**.
+Open **[localhost:8000/apply](http://localhost:8000/apply)**, upload a PDF resume
+with selectable text, check **Your details**, and ask for what you want:
 
-The default browser channel uses your installed Google Chrome. Keep one backend
-process running while the agent works or scheduled recommendations are due.
-
-### 4 · Start your first conversation
-
-1. Upload a PDF resume with selectable text using the composer attachment button.
-2. Open **Your details** and check the extracted contact information and education.
-3. Describe the roles you want, paste a job description, or share a posting link.
-4. Review the match, ask for tailored materials, and approve the versions you want.
-5. Ask Eregion to prepare the application and review the completed form.
-
-Try a request such as:
-
-> 🔎 *Find data analyst roles in New York that fit my resume. Show me the best
-> matches and explain any gaps.*
+> 🔎 *Find junior data analyst roles in New York for my resume. Explain any gaps.*
 
 > ✍️ *Tailor my resume and write a cover letter for this role. Keep every claim
 > supported by my experience.*
 
-> ⏰ *Every day at 9 AM in America/New_York, recommend new roles matching
-> these preferences.*
+> ⏰ *Every weekday at 9 AM New York time, recommend new roles like these.*
 
-## Bring a job from your browser
+Keep the server running while the agent works or scheduled searches are due.
 
-**Eregion Lens**, the optional Chrome extension, extracts the job on your current
-tab, lets you edit the result, and compares it with your saved resume. Open the
-saved job in Eregion to continue with materials, applications or interview prep.
-
-→ [Install Eregion Lens](frontend/chrome_extension/README.md)
-
-## Deployment and compatibility
+## Good to know
 
 | | |
 | :-- | :-- |
-| 🔒 **Local and single-user** | The server binds to loopback by default. Eregion is not a hosted multi-user service. |
-| 🌐 **Your own Chrome** | The current workflow uses local Chrome; a managed cloud browser is not required or included. |
-| 🧩 **Browser automation** | Combines form autofill, observed page controls and optional visual backup. Login walls, custom widgets, MFA and CAPTCHA can require your help. |
-| ✅ **Checked, not guaranteed** | Generated materials are checked against their cited sources, but review them before use. |
-| 📊 **Scores describe evidence** | A match score describes the supplied evidence; it is not a prediction of an employer's decision. |
-| 📄 **Text PDFs** | PDF input requires selectable text; scanned resumes need text extraction before upload. |
-
-Public-page checks and synthetic application tests do not establish
-compatibility with every ATS or successful submission to every employer.
-
-## Optional: LinkedIn search through your own Treg account
-
-Eregion works without this. Without it, job search uses public company boards (Greenhouse, Lever, Ashby, Workday) and your browser.
-[Treg](https://treg.to) is an optional paid gateway for LinkedIn job search and page text extraction:
-- **You pay Treg directly.** You use your own Treg account and key; the project does not host, proxy or bill anything.
-- **"Bring your own key" here means your Treg key.** It is not Treg's own upstream BYOK feature.
-
-Setup:
-
-1. **Get a key.** Create a team key in your Treg account (see Treg's *Get a token* docs).
-2. **Create `.env` only if it does not exist yet:**
-   - Windows (PowerShell): `if (-not (Test-Path .env)) { Copy-Item .env.example .env }`
-   - macOS / Linux: `[ -f .env ] || cp .env.example .env`
-
-   If `.env` already exists, add the missing `TREG_*` and `JOB_AGENT_TREG_*` lines by hand and keep your model settings.
-3. **Add the key.** Set `TREG_TOKEN=...`. Add `TREG_ORG=<team>` only for an identity token. Process environment variables override `.env`. Restart Eregion after editing. The key is never shown in the app, logs or tool output.
-4. **Turn it on yourself.**
-   - `JOB_AGENT_TREG_ENABLED=1` allows Treg calls.
-   - `JOB_AGENT_TREG_SEARCH_PROVIDER` picks `anyapi` or `crawl4ai`.
-   - `JOB_AGENT_TREG_CRAWL4AI_SCRAPE_ENABLED=1` separately allows page text extraction.
-   - `JOB_AGENT_JOB_API_FIRST=1` is the default: company-board APIs plus configured LinkedIn MCP; it works with Treg off. See [default sources](docs/configuration.md#default-job-sources) for the one-time MCP login and configuration.
-5. **Know the limits.** Spend is capped per task (`JOB_AGENT_TREG_TASK_MAX_COST_USD`, default $0.10), per UTC day for this deployment (`JOB_AGENT_TREG_DAILY_MAX_COST_USD`, $0.50), per call (`JOB_AGENT_TREG_CALL_MAX_COST_USD`, $0.01, sent to Treg as a hard cap) and by attempt count. These limits cover this deployment's database only, not other apps using the same Treg account.
-
-What happens when something is missing:
-- **Missing key or Treg disabled:** public company boards and configured LinkedIn MCP remain available; browser use supplements missing evidence.
-- **Authentication failure, out of balance (HTTP 402) or a reached limit:** Treg stops for that task and the reason is reported.
-- **Unknown charges** (for example a timeout after sending) stay counted against the limit until confirmed.
-
-Checking the configuration does not call Treg. The live API smoke test is a separate opt-in (`JOB_AGENT_TREG_LIVE_API_TEST=1`), and normal tests never spend. To turn Treg off, set `JOB_AGENT_TREG_ENABLED=0`. To restore the original search route completely, also set `JOB_AGENT_JOB_API_FIRST=0`. Spend records are kept. Details: [configuration](docs/configuration.md#optional-treg-job-sources).
-
-R1 acceptance update (2026-10-12): optimization experiments remain disabled by default;
-history remains `current`. Offline regression passed. The user-approved gate amendment
-allows R2 migration preparation to proceed while preserving the failed browser-first
-B6 result. The two-recommendation business gate is still required on the migrated
-API-first configuration in R6/R9; end-to-end acceptance is not yet complete.
-See the [R1 gate report](docs/diagnostics/r1-closeout-and-r2-gate-20261012.md)
-and [adoption decisions](docs/diagnostics/r1-adoption-decisions-20261012.md).
+| 🔒 **Local, single-user** | The server listens on your machine only. It is not a hosted service. |
+| 🧩 **Some sites need you** | Login walls, unusual widgets, MFA and CAPTCHA pause the agent until you step in. |
+| 📊 **Scores describe evidence** | A score reflects what your resume shows, not an employer's decision. |
+| ✅ **Review before you send** | Materials are checked against your resume, but read them before use. |
+| 📄 **Text PDFs** | Resumes need selectable text; scanned files need text extraction first. |
 
 ## Documentation
 
 | Guide | Covers |
 | :-- | :-- |
 | 📘 [Using Eregion](docs/usage.md) | Daily workflow, approvals, saved answers, alerts and recovery |
-| ⚙️ [Configuration](docs/configuration.md) | Model credentials, browser settings, optional Jev and local data |
-| 🧭 [Agent architecture](docs/agent-loop.md) | Shared loop, evidence, context, persistence and browser workers |
-| ⚡ [Jev and performance](docs/jev-benchmark.md) | Fast-path behaviour, recorded measurements and reproducible comparisons |
-| 🛠️ [Development](docs/development.md) | Repository layout, local checks, live evaluation and contributions |
-| 🌍 [Website](https://ethany14.github.io/Eregion-Agent/) | Product overview and download · [source and publishing](frontend/site/README.md) |
+| ⚙️ [Configuration](docs/configuration.md) | Model, job sources, LinkedIn MCP, Treg, Jev, browser and local data |
+| 🧭 [Architecture](docs/agent-loop.md) | The single agent loop, evidence, context and browser workers |
+| 📈 [Evaluation report](docs/evaluation-report.md) | How Eregion was tested and what the results showed |
+| ⚡ [Jev and performance](docs/jev-benchmark.md) | Fast scoring, recorded measurements and how to reproduce them |
+| 🛠️ [Development](docs/development.md) | Repository layout, checks, live evaluation and contributing |
+| 🌍 [Website](https://ethany14.github.io/Eregion-Job-Finding-Agent/) | Overview, user guide and docs · [site source](frontend/site/README.md) |
 
 <details>
-<summary><b>Run the checks</b></summary>
+<summary><b>For developers</b></summary>
 
-From the repository root, with dependencies installed:
+Code lives in `backend/` (one Python namespace: `eregion.runtime`,
+`eregion.domain`, `eregion.api`), `frontend/` and `tools/`. Start with the
+[runtime map](backend/eregion/runtime/README.md) and the
+[documentation index](docs/README.md). Run the checks from the repository root:
 
 ```sh
 python -m pytest -q
 node --test "tests/*.mjs"
 ```
 
-See [Development](docs/development.md) for the opt-in real-Chrome tests.
+The running server also serves [API docs](http://localhost:8000/docs) and a
+[health check](http://localhost:8000/health).
 
 </details>
-
-The running service also exposes [API documentation](http://localhost:8000/docs)
-and a [health endpoint](http://localhost:8000/health).
 
 ## License
 
@@ -387,13 +340,3 @@ Eregion is released under the [MIT License](LICENSE).
   <img src="frontend/site/assets/holly.svg" width="36" alt=""><br>
   <sub><i>A little less paperwork. A step closer.</i></sub>
 </p>
-
-## Integrated optimization experiments
-
-Release switches and rollback instructions are in [configuration](docs/configuration.md).
-See the [integrated validation report](docs/diagnostics/integrated-optimization-final.md),
-[context comparisons](docs/diagnostics/pi-context-experiments.md), and
-[material patch gates](docs/diagnostics/material-patch-validation.md).
-The local [master execution plan](docs/specs/integrated-optimization-execution-plan-20261012.md)
-is maintained separately and intentionally excluded from this change's commits.
-Experimental behavior remains disabled until the required live evidence is reviewed.

@@ -193,7 +193,7 @@ path's `LLM_AGENT_REASONING` / `LLM_EXTRACTION_REASONING` /
 `low`. Career `TaskModel` historically sends no agent reasoning by default, while
 application router does read `LLM_AGENT_REASONING`; this distinction is preserved.
 The complete construction/schema matrix is in
-[`opt-reasoning-audit-20261011.md`](diagnostics/opt-reasoning-audit-20261011.md).
+`opt-reasoning-audit-20261011.md`.
 Overrides do not leak between semantic purposes on a shared client: for example,
 `LLM_REASONING_EXTRACTION` does not change scoring or the Jev resolver; without their
 own overrides those retain the legacy extraction reasoning setting.
@@ -334,7 +334,7 @@ restore groups already evicted under an enabled history policy. Durable domain
 results and their original context references remain authoritative.
 
 Offline measurements, limitations, and proposed defaults are in
-[`benchmarks/opt-v3-stage2-20261011/README.md`](benchmarks/opt-v3-stage2-20261011/README.md).
+`benchmarks/opt-v3-stage2-20261011/README.md`.
 Defaults are deliberately unchanged pending review; no token-cost or cache-hit
 claim is inferred from character counts and scripted decisions.
 
@@ -381,7 +381,7 @@ Spend records (`external_tool_operations`, migration `0037`) are kept separately
 - Retries reuse the same `Idempotency-Key` (network error, 409, 429, saturated 503) at most once, within a deadline.
 - Responses served through Treg's overflow relay (`X-Treg-Served-Via: overflow:*`) are recorded and quarantined.
 
-Contract record: `docs/diagnostics/treg-ab-contract.md`.
+The contract record is kept with the maintainers’ local test reports.
 
 ## Integrated optimization switches
 
@@ -404,17 +404,17 @@ There is no new prompt cache key or automatic model compaction. No patch submits
 application or bypasses review. Treg remains separately disabled, requires the user's
 own token and explicit provider selection, and retains unknown spend reservations on
 failures. Missing credentials, account access or budget prevents a paid operation;
-existing free source paths remain available. See the [final report](diagnostics/integrated-optimization-final.md)
+existing free source paths remain available. See the final report
 for evidence and pending networked validation.
 
-The [R1 adoption decisions](diagnostics/r1-adoption-decisions-20261012.md) retain
+The R1 adoption decisions retain
 these disabled defaults and `current` history. The real-search gate is still
 failed; the user-approved gate amendment allows migration while moving business
 acceptance to the API-first configuration in R6/R9. No experiment is enabled by
 this policy change. A provider
 budget stop now includes saved results in its reply, while retaining `needs_input`
 and an explicit incomplete status. This does not relax search acceptance or
-increase any budget. See the [R2 gate](diagnostics/r1-closeout-and-r2-gate-20261012.md).
+increase any budget. See the R2 gate.
 
 
 ## Default job sources
@@ -435,4 +435,4 @@ Jev still classifies requirements and scores personal fit when enabled. Headings
 
 Qualification defaults to low reasoning on the extraction model (or main model when no extraction model is configured). `LLM_EXTRACTION_MODEL_ID`, `LLM_EXTRACTION_REASONING` and the explicit `LLM_REASONING_SEARCH_QUALIFICATION` override control this purpose. Model calls are metered separately from MCP and Treg source calls. The live batch test runs a separate blind semantic audit, capped at six provider attempts and 200,000 input tokens, after the execution budget. This audit receives original posting evidence rather than production labels; it is a second model pass, not human ground truth.
 
-See [the model-owned search handoff](diagnostics/model-owned-search-handoff-20261013.md) for completed checks and the still-pending 10–15-job live acceptance.
+See the [evaluation report](evaluation-report.md) for how search was tested and its known limits.

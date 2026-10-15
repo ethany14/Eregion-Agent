@@ -28,7 +28,7 @@ and startup command. Old top-level Python packages are removed.
 | `skills/` | Runtime skill packages with their own metadata and permissions |
 | `tests/` | Unit, integration, frontend, and opt-in Chrome tests |
 | `tools/evals/`, `tools/scripts/` | Evaluation datasets, harnesses, and opt-in live benchmarks |
-| `docs/benchmarks/` | Recorded historical measurements |
+| `docs/evaluation-report.md` | Summary of how Eregion was tested; detailed dated reports stay local and are not published |
 
 `design/` is an ignored local reference directory, not a runtime dependency.
 The implemented frontend is the source of truth for a fresh checkout.

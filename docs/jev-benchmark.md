@@ -45,7 +45,7 @@ remained partial; unresolved evidence kept a score interval. All scoring request
 used zero primary-model calls. This is limited integration evidence, not a new
 accuracy benchmark or a universal resume-layout claim.
 
-The [integration measurements](benchmarks/jev-only-fit-2026-10-10.json) include
+The integration measurements include
 unique task IDs, source-code hashes and per-phase token accounting.
 
 Run the deterministic routing, source-boundary, cache, failure and accounting
@@ -127,7 +127,7 @@ A comparable six-requirement cold pair took 53.616 s versus 45.885 s. Main-model
 calls fell from three to two, with two additional Jev requests. Counting only
 main calls would conceal part of the cost.
 
-See the [recorded Jev results](benchmarks/jev-2026-10-09.json). These small samples
+See the recorded Jev results. These small samples
 do not describe current production percentiles or establish an accuracy guarantee.
 
 ## Other historical measurements
@@ -144,8 +144,8 @@ than current product targets or service guarantees.
 | Two-page synthetic application | 26.27 → 19.07 s | One paired Chrome smoke; no employer submission. |
 | Saved cold fit versus reused analysis | 217.482 → 0.032 s | Cache reuse, not faster cold inference. |
 
-Sources: [latency measurements](benchmarks/latency-2026-10-09.json) and
-[speed measurements](benchmarks/speed-2026-10-09.json). The saved-input speed trial
+Sources: latency measurements and
+speed measurements. The saved-input speed trial
 also had extraction and revision timeouts; it did not produce a fully verified
 tailored pack in those attempted cases. Failed attempts must remain in any
 comparison of completion rate and cost.

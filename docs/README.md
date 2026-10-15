@@ -1,41 +1,20 @@
 # Documentation index
 
-## Start here
+## Using Eregion
 
-- [User guide](usage.md) and [configuration](configuration.md)
+- [User guide](usage.md): daily workflow, approvals, saved answers, alerts and recovery
+- [Configuration](configuration.md): model, job sources (company boards, LinkedIn MCP, Treg), Jev, browser and local data
+- [Evaluation report](evaluation-report.md): how Eregion was tested and what the results showed
+
+## Building on Eregion
+
 - [Single AgentLoop architecture](agent-loop.md)
-- [Runtime directory map and import migration](../backend/eregion/runtime/README.md)
-- [Development and repository map](development.md)
+- [Runtime directory map](../backend/eregion/runtime/README.md)
 - [Backend namespace and startup](../backend/README.md)
-- [Namespace cleanup and validation](diagnostics/eregion-namespace-cleanup-20261012.md)
+- [Development and repository map](development.md)
+- [Jev and performance](jev-benchmark.md)
+- [LinkedIn MCP configuration example](examples/linkedin-mcp.json)
 
-## Current implementation and acceptance
-
-- [LinkedIn MCP + public boards default route](diagnostics/mcp-default-route-20261012.md)
-- [API/MCP source comparison](diagnostics/filter-api-mcp-comparison-20261012.md)
-- [Source retrieval and repeated-read repairs](diagnostics/codex-source-repair-20261012.md)
-- [Unified-loop migration evidence](diagnostics/unified-loop-final.md)
-- [Workspace reorganization](diagnostics/workspace-layout-20261012.md)
-
-Source-level comparisons and offline passing tests do not establish integrated
-10–15-qualified-job acceptance. Consult each report's remaining acceptance section.
-
-## Document roles
-
-| Directory | Contents |
-| --- | --- |
-| `specs/` | Implementation plans, requirements and gate amendments |
-| `diagnostics/` | Findings, implementation status, limitations and evidence references |
-| `benchmarks/` | Recorded test logs, metrics and reproducible compact evidence |
-| `examples/` | User-facing integration configuration examples |
-
-The [unified execution plan](specs/claude-unified-execution-plan-20261012.md) and
-[API-first gate amendment](specs/r1-r2-api-first-gate-amendment-20261012.md) describe
-the migration sequence. Older optimization and Treg plans remain historical inputs;
-the later default-route report records the approved MCP/public-board source policy.
-Do not treat every older plan as an additional active architecture.
-
-Root-level dated E2E reports remain at their existing paths because audit scripts
-and recorded evidence reference them. New reports belong in `diagnostics/` and
-measurements in `benchmarks/`. Local raw captures, sessions and databases are not
-documentation and must not be published.
+The evaluation report is the one published summary of testing. Detailed dated
+test reports, plans and raw measurements are kept locally by the maintainers and
+are not part of the repository.
