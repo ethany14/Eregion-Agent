@@ -18,7 +18,7 @@ from test_career_flow import career, execute
 from test_b6_offline_replay import replay, frozen_web, offline_guard, ScriptedModel
 import test_board_directory_replay as directory
 
-BASE = '566f5642f921347df0446b7c40aa52d80ccbeaa9'
+# The byte-identical comparison with commit 566f564 was removed (old version; needs git history).
 URL = 'https://jobs.lever.co/example/abc123'
 
 
@@ -180,34 +180,6 @@ def test_failure_parity(career, monkeypatch, kind):
         assert outcome['completed_steps'] == ([] if failing == 'read_job' else ['read_job','import_job'])
         assert ('fallback' in outcome) == (kind in {'unreadable','scoring'})
         assert next(iter(c.repository.get(c.state['task_id'])['verification_workflows'].values()))['failure']
-
-
-@pytest.mark.parametrize('optimized', [False, True])
-def test_flag_off_base_arrays_and_requests(career, monkeypatch, optimized):
-    from test_remaining_search_runtime import host_for
-    from eregion.runtime.request_context import prepare_request, ContextArchive
-    from eregion.runtime.core.context import ConversationWindow
-    monkeypatch.setenv('JOB_AGENT_OPT_VERIFY_AND_SCORE','0')
-    for flag in ('STABLE_TOOLS','PROMPT_TRIM','SNAPSHOT_REFS'):
-        monkeypatch.setenv('JOB_AGENT_OPT_'+flag,'1' if optimized else '0')
-    monkeypatch.setenv('JOB_AGENT_OPT_HISTORY_POLICY','checkpoint' if optimized else 'current')
-    source = subprocess.check_output(['git','show',BASE+':agent_runtime/career/harness.py']).decode()
-    module = types.ModuleType('eregion.runtime.career._stage4_base')
-    exec(compile(relocate_imports(source),'base/harness.py','exec'), module.__dict__)
-    state=career.repository.get(career.state['task_id'])
-    assert career.harness.available_tools(state) == module.CareerHarness.available_tools(career.harness,state)
-    assert career.harness.stable_tools(state) == module.CareerHarness.available_tools(career.harness,state,stable=True)
-    with pytest.raises(ValueError,match='disabled'):
-        execute(career,'verify_and_score',url=URL)
-    host=host_for(career); turn=host.observe()
-    base=types.ModuleType('eregion.runtime._stage4_host')
-    exec(relocate_imports(subprocess.check_output(['git','show',BASE+':agent_runtime/task_host.py']).decode()),base.__dict__)
-    old=base.TaskHost.observe(host)
-    assert turn.tools == old.tools and turn.prompt == old.prompt
-    assert turn.allowed_tools == old.allowed_tools
-    a,_=prepare_request(turn.prompt,turn.tools,ConversationWindow(),turn.snapshot,ContextArchive())
-    b,_=prepare_request(old.prompt,old.tools,ConversationWindow(),turn.snapshot,ContextArchive())
-    assert encoded([m.model_dump() for m in a]) == encoded([m.model_dump() for m in b])
 
 
 @pytest.mark.parametrize('stable', ['0', '1'])

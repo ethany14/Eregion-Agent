@@ -1,4 +1,5 @@
 """Remote (streamable HTTP) MCP servers: configuration, client selection and token storage."""
+import sys
 import asyncio
 import pytest
 from eregion.runtime.mcp.config import McpStdioServerConfig
@@ -27,6 +28,7 @@ def test_client_factory_picks_the_transport():
     assert type(create_client(McpStdioServerConfig(server_id='local', command='x'))) is StdioMcpClient
 
 
+@pytest.mark.skipif(sys.platform != 'win32', reason='Encryption at rest uses Windows DPAPI; other platforms use file permissions')
 def test_tokens_round_trip_encrypted_outside_the_repository(tmp_path):
     from mcp.shared.auth import OAuthToken
     from eregion.runtime.mcp.oauth_store import FileTokenStorage

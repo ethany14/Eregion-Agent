@@ -2,6 +2,9 @@
 from eregion.runtime.browser.manager import BrowsingManager
 from eregion.runtime.auto_apply.browser import _playwright_runtime, BrowserBlocked
 from test_general_browser import LocalWebBrowser
+import os
+import pytest
+pytestmark=pytest.mark.skipif(os.getenv('JOB_AGENT_BROWSER_TESTS')!='1',reason='Offline Chrome opt-in (needs a display)')
 
 
 def test_parallel_context_owner_and_last_task_close():
