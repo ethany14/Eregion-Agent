@@ -1034,9 +1034,9 @@ class ApplicationBrowser:
         elif kind in {"text", "email", "tel", "url", "textarea", "number", "search"} and re.search(r'dateSection(Month|Day|Year)', field.get("dom_id") or field["key"]):
             # Workday date segments mishandle a set value (Adobe: month "08" became "08/2008");
             # typed digits work and auto-advance. Verify the segment kept exactly this value.
+            # Click then type, as a person does; Control+A here scattered digits (12/2012).
             locator.click()
-            locator.press("Control+a")
-            locator.press_sequentially(str(value), delay=60)
+            self.page.keyboard.type(str(value), delay=60)
             self.page.wait_for_timeout(200)
             if locator.input_value() != str(value):
                 raise BrowserBlocked("The date segment did not keep the typed value. Check it in the browser.", code='value_not_retained')
