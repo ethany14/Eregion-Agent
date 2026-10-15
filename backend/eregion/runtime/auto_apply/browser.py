@@ -14,7 +14,7 @@ import re
 import socket
 import time
 from threading import local
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from .errors import BrowserBlocked
 from .contracts import GREENHOUSE, LEVER, posting, public_https_url
@@ -305,13 +305,15 @@ class ApplicationBrowser:
             self.page = self.context.new_page()
             self._anchor = self.page  # The application tab; popups fall back to it.
             self.context.on("page", self._popup)
-            # Opening the posting the user asked for is a trusted navigation: an ATS link often
-            # redirects to the employer's own careers page that embeds the form (Greenhouse ->
-            # careers.roblox.com). Only public HTTPS hosts can be added (_guard_request).
-            self._trusted_until = time.monotonic() + TRUSTED_NAVIGATION_SECONDS
             try:self.page.goto(self.url, wait_until="domcontentloaded", timeout=30_000)
             except Exception as exc:
                 if purpose!='browse' or 'Timeout' not in type(exc).__name__ or not self.page.locator('body').count():raise
+            # A server redirect is followed without passing through _guard_request, so add the
+            # landing site here under the same rule (public HTTPS only).
+            landed = urlsplit(self.page.url)
+            if (purpose != 'browse' and landed.scheme == 'https' and landed.hostname
+                    and landed.hostname not in self.navigation_hosts and self._public_host(landed.hostname)):
+                self.navigation_hosts.add(landed.hostname)
             self.scope = self.page
             # ATS analytics/images can keep `load` pending after the application
             # is usable. Wait for form controls, not every third-party resource.
@@ -482,11 +484,11 @@ class ApplicationBrowser:
             try:top_level = route.request.frame.parent_frame is None
             except Exception:top_level = True # A popup's request can precede frame creation.
             if top_level:
-                # A page reached from a control the agent just clicked, or by the
-                # user in the visible window, may move to another public HTTPS
-                # site (company career page -> ATS, script redirects).
+                # Any public HTTPS site may be visited (user decision 2026-10-15): applications
+                # move between company career pages, ATS hosts, sign-in providers and redirects.
+                # Private networks, plain HTTP, password typing and unreviewed submits stay blocked.
                 if (self.purpose != 'browse' and host not in self.navigation_hosts and not blocked
-                        and url.scheme == "https" and self._trusted_navigation() and self._public_host(host)):
+                        and url.scheme == "https" and self._public_host(host)):
                     self.navigation_hosts.add(host)
                 blocked = blocked or url.scheme != "https" or (self.purpose != 'browse' and host not in self.navigation_hosts)
         if blocked or url.scheme not in {"http", "https"} or not self._public_host(host):
@@ -520,12 +522,26 @@ class ApplicationBrowser:
         if self._live_page() is None or self.page.is_closed():
             raise BrowserBlocked("The browser was closed. Continue to reopen the application.")
         allowed = self.navigation_hosts
-        if urlsplit(self.page.url).hostname not in allowed and self.purpose != 'browse':
-            raise BrowserBlocked("The application navigated outside the supported site.")
+        current = urlsplit(self.page.url)
+        if current.hostname not in allowed and self.purpose != 'browse':
+            # Server redirects bypass _guard_request; the same public-HTTPS rule applies here.
+            if current.scheme == "https" and current.hostname and self._public_host(current.hostname):
+                allowed.add(current.hostname)
+            else:
+                raise BrowserBlocked("The application navigated to a page that is not a public HTTPS site.")
         try:
-            identity = posting(self.page.url)[1]
+            platform, identity = posting(self.page.url)[:2]
         except ValueError:
-            identity = self.identity  # ATS-specific confirmation path is checked separately.
+            platform, identity = None, self.identity  # ATS-specific confirmation path is checked separately.
+        if platform == "generic":
+            # Company sites, sign-in providers and other non-ATS pages are part of the
+            # application route; only a recognised posting for another job is "different".
+            identity = self.identity
+        # An employer careers page embedding the Greenhouse form names the same job by gh_jid
+        # (careers.roblox.com/jobs/8072244?gh_jid=8072244).
+        if (self.platform == "greenhouse" and identity != self.identity
+                and parse_qs(urlsplit(self.page.url).query).get("gh_jid") == [self.identity.rsplit(":", 1)[-1]]):
+            identity = self.identity
         if self.platform in {"greenhouse", "lever", "workday"} and identity != self.identity and ("/job/" in self.page.url or self.platform != "workday"):
             raise BrowserBlocked("The browser is showing a different job. Reopen this attempt.")
         self.scope = self.page

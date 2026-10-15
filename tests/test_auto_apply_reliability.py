@@ -30,20 +30,15 @@ def navigation(url):
     return route, calls
 
 
-def test_navigation_to_a_new_site_needs_a_recent_click_or_the_user():
+def test_any_public_https_site_may_be_visited_but_never_private_or_plain_http():
+    # User decision (2026-10-15): applications move between career sites, ATS hosts,
+    # sign-in providers and redirects, so no click or allowlist is required.
     browser = guard_browser()
-    route, calls = navigation("https://ats.example.net/apply/123")
-    browser._guard_request(route)
-    assert calls == ["abort"] and "ats.example.net" not in browser.navigation_hosts
-
-    # The agent clicked Apply on the career site; its redirect to the ATS is followed.
-    import time
-    browser._trusted_until = time.monotonic() + 10
     route, calls = navigation("https://ats.example.net/apply/123")
     browser._guard_request(route)
     assert calls == ["continue"] and "ats.example.net" in browser.navigation_hosts
 
-    # Never to private addresses or plain HTTP, even right after a click.
+    # Never to private addresses or plain HTTP.
     for url in ("https://internal.example/", "http://ats2.example.net/", "https://127.0.0.1/"):
         route, calls = navigation(url)
         browser._guard_request(route)
