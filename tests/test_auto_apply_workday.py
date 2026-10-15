@@ -173,3 +173,19 @@ def test_workday_prompt_reads_late_lists_categories_and_releases_the_covered_rad
         browser.choose_option(source['key'],'Adobe.com')
         assert next(f for f in browser.observe() if f['key']==source['key'])['value']=='Adobe.com'
     finally:browser.close()
+
+
+def test_workday_date_segments_are_typed_and_empty_placeholders_are_not_values():
+    # Adobe pilot (2026-10-15): "MM" read as a value and a set month turned into 08/2008.
+    class DateBrowser(WorkdayBrowser):
+        def _guard_request(self,route):
+            if route.request.is_navigation_request():
+                route.fulfill(content_type='text/html',body=(Path(__file__).parent/'fixtures/auto_apply/workday_date.html').read_text(encoding='utf-8'))
+            else:route.abort()
+    browser=DateBrowser(URL)
+    try:
+        month,year=browser.observe()
+        assert month['value']=='' and year['value']==''
+        browser.fill(month,'08');browser.fill(year,'2026')
+        assert [f['value'] for f in browser.observe()]==['08','2026']
+    finally:browser.close()

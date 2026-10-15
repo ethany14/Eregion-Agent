@@ -1,0 +1,31 @@
+<!doctype html>
+<!-- Workday date segments (Adobe pilot 2026-10-15), reduced: keystrokes only, a set value is
+     undone, two month digits jump to the year. Empty segments show their placeholder. -->
+<html><body>
+<div data-automation-id="formField-startDate">
+  <label id="from">From*</label>
+  <div role="group" aria-labelledby="from">
+    <input id="workExperience-8--startDate-dateSectionMonth-input" aria-required="true" value="MM" aria-label="Month">
+    <span>/</span>
+    <input id="workExperience-8--startDate-dateSectionYear-input" aria-required="true" value="YYYY" aria-label="Year">
+  </div>
+</div>
+<script>
+for (const [id, size, placeholder, next] of [
+    ['workExperience-8--startDate-dateSectionMonth-input', 2, 'MM', 'workExperience-8--startDate-dateSectionYear-input'],
+    ['workExperience-8--startDate-dateSectionYear-input', 4, 'YYYY', null]]) {
+  const el = document.getElementById(id);
+  let digits = '';
+  el.addEventListener('focus', () => { digits = ''; });
+  el.addEventListener('keydown', e => {
+    if (/^\d$/.test(e.key)) {
+      digits = (digits + e.key).slice(-size);
+      el.dataset.typed = digits;
+      if (digits.length === size && next) setTimeout(() => document.getElementById(next).focus(), 0);
+    }
+  });
+  // Only typed digits count; a value set without keystrokes is undone.
+  el.addEventListener('input', () => { el.value = el.dataset.typed || placeholder; });
+}
+</script>
+</body></html>
