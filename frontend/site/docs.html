@@ -107,15 +107,17 @@
   <a class="drawer-page" href="docs.html" aria-current="page"><svg class="i" aria-hidden="true"><use href="#i-wrench"/></svg>Documentation</a>
   <ol class="drawer-sub">
           <li><a href="docs.html#model" data-page="docs.html" data-id="model">Model connection</a></li>
+          <li><a href="docs.html#sources" data-page="docs.html" data-id="sources">Job sources</a></li>
           <li><a href="docs.html#jev" data-page="docs.html" data-id="jev">Jev fast scoring</a></li>
           <li><a href="docs.html#browser" data-page="docs.html" data-id="browser">Browser and workers</a></li>
           <li><a href="docs.html#data" data-page="docs.html" data-id="data">Data and privacy</a></li>
           <li><a href="docs.html#limits" data-page="docs.html" data-id="limits">Good to know</a></li>
+          <li><a href="docs.html#evaluation" data-page="docs.html" data-id="evaluation">Evaluation</a></li>
           <li><a href="docs.html#update" data-page="docs.html" data-id="update">Updating</a></li>
           <li><a href="docs.html#architecture" data-page="docs.html" data-id="architecture">How it works</a></li>
           <li><a href="docs.html#develop" data-page="docs.html" data-id="develop">Development</a></li>
   </ol>
-  <a class="drawer-page" href="https://github.com/ethany14/Eregion-Agent"><svg class="i" aria-hidden="true"><use href="#i-gh"/></svg>GitHub</a>
+  <a class="drawer-page" href="https://github.com/ethany14/Eregion-Job-Finding-Agent"><svg class="i" aria-hidden="true"><use href="#i-gh"/></svg>GitHub</a>
 </nav>
 
 <main id="main" class="doc">
@@ -140,10 +142,12 @@
       <p class="side-group here">Documentation</p>
       <ol>
           <li><a href="docs.html#model" data-page="docs.html" data-id="model">Model connection</a></li>
+          <li><a href="docs.html#sources" data-page="docs.html" data-id="sources">Job sources</a></li>
           <li><a href="docs.html#jev" data-page="docs.html" data-id="jev">Jev fast scoring</a></li>
           <li><a href="docs.html#browser" data-page="docs.html" data-id="browser">Browser and workers</a></li>
           <li><a href="docs.html#data" data-page="docs.html" data-id="data">Data and privacy</a></li>
           <li><a href="docs.html#limits" data-page="docs.html" data-id="limits">Good to know</a></li>
+          <li><a href="docs.html#evaluation" data-page="docs.html" data-id="evaluation">Evaluation</a></li>
           <li><a href="docs.html#update" data-page="docs.html" data-id="update">Updating</a></li>
           <li><a href="docs.html#architecture" data-page="docs.html" data-id="architecture">How it works</a></li>
           <li><a href="docs.html#develop" data-page="docs.html" data-id="develop">Development</a></li>
@@ -168,9 +172,27 @@
         <p>The model must support tool calling and structured output. Visual browser backup also needs image input.</p>
       </section>
 
+      <section id="sources">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Job sources</h2>
+        <p>Searches use public company boards and, once you set it up, LinkedIn. No paid search key is needed.</p>
+        <div class="table-wrap"><table><thead><tr><th>Source</th><th>Setup</th><th>Notes</th></tr></thead><tbody>
+<tr><td>Company boards</td><td>None</td><td>118 Greenhouse, Lever, Ashby and Workday boards, each verified through its public API</td></tr>
+<tr><td>LinkedIn (local MCP server)</td><td>One-time sign-in</td><td>Read-only search and job details; 26 calls per task, or 50 for larger searches. Stops on sign-in or rate-limit problems</td></tr>
+<tr><td>Treg (optional)</td><td>Your own key</td><td>Paid by you to Treg; capped per call, task and day. Off by default</td></tr>
+<tr><td>A link or job text</td><td>None</td><td>Paste it in chat, or use Eregion Lens on any job page</td></tr>
+</tbody></table></div>
+        <p class="mini-title">Set up LinkedIn</p>
+        <ol>
+          <li>Install the pinned <code>mcp-server-linkedin==4.27.0</code> in its own environment</li>
+          <li>Copy <code>docs/examples/linkedin-mcp.json</code>, adjust the paths, and point <code>MCP_CONFIG_PATH</code> at it in <code>.env</code></li>
+          <li>Sign in once with the server's <code>--login</code> mode in a separate browser profile, never your everyday one</li>
+        </ol>
+        <div class="callout"><b>Indeed is not available.</b> Indeed's MCP server only accepts allow-listed clients. Full steps and every setting are in the <a href="https://github.com/ethany14/Eregion-Job-Finding-Agent/blob/main/docs/configuration.md#default-job-sources">configuration guide</a>.</div>
+      </section>
+
       <section id="jev">
         <h2><svg class="i" aria-hidden="true"><use href="#i-bolt"/></svg>Jev fast fit scoring</h2>
-        <p>Optional. With Jev on, fit scoring uses Typesafe's Jev decision model alone, batches up to eight jobs, and caches decisions on your computer. Conversation and writing still use your main model.</p>
+        <p>Optional. With Jev on, fit scoring uses Typesafe's Jev decision model alone, batches up to sixteen jobs, and caches decisions on your computer. Conversation and writing still use your main model.</p>
         <figure class="speed-chart">
         <figcaption><b>Time to score fit</b><span>Recorded test runs · seconds, same scale</span></figcaption>
         <div class="bars" role="img" aria-label="Main model only, cold: 32 to 49 seconds. Three jobs with Jev, separately: 4.6 seconds. Three jobs in one Jev batch: 2.0 seconds. Same three jobs from cache: 0.15 seconds.">
@@ -196,7 +218,7 @@
           </div>
           <div class="bar-axis" aria-hidden="true"><span></span><span class="ticks-row"><b>0</b><b>10</b><b>20</b><b>30</b><b>40</b><b>50</b></span><span></span></div>
         </div>
-        <p class="fine">Small synthetic runs on different days and inputs, so an indication rather than a controlled comparison. <a href="https://github.com/ethany14/Eregion-Agent/blob/main/docs/jev-benchmark.md">Full measurements</a></p>
+        <p class="fine">Small synthetic runs on different days and inputs, so an indication rather than a controlled comparison. <a href="https://github.com/ethany14/Eregion-Job-Finding-Agent/blob/main/docs/jev-benchmark.md">Full measurements</a></p>
       </figure>
         <pre class="code"><code>TYPESAFE_API_KEY=your-typesafe-key
 TYPESAFE_BASE_URL=https://api.typesafe.ai
@@ -233,7 +255,7 @@ TYPESAFE_CAREER_ENABLED=false</code></pre>
         <pre class="code"><code># macOS / Linux: headless Chrome, two workers
 export JOB_AGENT_HIDDEN_BROWSER=headless
 export JOB_AGENT_APPLY_WORKERS=2
-python -m uvicorn api.main:app --host 127.0.0.1 --port 8000</code></pre>
+python -m uvicorn eregion.api.main:app --host 127.0.0.1 --port 8000</code></pre>
       </section>
 
       <section id="data">
@@ -257,19 +279,31 @@ python -m uvicorn api.main:app --host 127.0.0.1 --port 8000</code></pre>
         </dl>
       </section>
 
+      <section id="evaluation">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>Evaluation</h2>
+        <p>Eregion is tested with four synthetic applicants: a junior data analyst in New York, a senior backend engineer for remote US, an ML intern in California, and a junior UX designer in Austin. Live runs have fixed budgets and never apply or create schedules. A person reviewed one full set of results by hand.</p>
+        <dl class="facts">
+          <div><dt>Shown jobs</dt><dd>0 of 23 were wrong in the human review. The latest runs showed 123 jobs with 0 structural errors.</dd></div>
+          <div><dt>What to show</dt><dd>28 of 29 labelled postings were shown or hidden the way the reviewer wanted.</dd></div>
+          <div><dt>Tiers</dt><dd>About two in three match the reviewer; most misses are one tier apart.</dd></div>
+          <div><dt>Known limits</dt><dd>The agent often stops searching early and offers to continue. Scoring accuracy against human labels is not measured yet.</dd></div>
+        </dl>
+        <p>The <a href="https://github.com/ethany14/Eregion-Job-Finding-Agent/blob/main/docs/evaluation-report.md">evaluation report</a> summarises everything that was tested, including what failed along the way.</p>
+      </section>
+
       <section id="update">
         <h2><svg class="i" aria-hidden="true"><use href="#i-restore"/></svg>Updating</h2>
         <p>Stop the server and back up your data, then from the project folder:</p>
         <pre class="code"><code>git pull --ff-only
 python -m pip install -r requirements.txt
 python -m alembic upgrade head
-python -m uvicorn api.main:app --host 127.0.0.1 --port 8000</code></pre>
+python -m uvicorn eregion.api.main:app --host 127.0.0.1 --port 8000</code></pre>
         <p>Reload the Eregion Lens extension after updating. Never delete the database to fix a migration error.</p>
       </section>
 
       <section id="architecture">
         <h2><svg class="i" aria-hidden="true"><use href="#i-council"/></svg>How it works inside</h2>
-        <p>One shared decision loop chooses tools and the order of work. Domain services own your facts, document checks, browser state and final submission.</p>
+        <p>One shared agent loop runs every autonomous task: chat, scheduled searches and applications. It chooses tools and the order of work. Code checks what the model cannot be trusted to judge alone: quoted evidence must appear in the posting, budgets are enforced, and approvals and the final submit stay with you.</p>
         <div class="arch" role="img" aria-label="Chat and scheduled searches feed the task loop, which drives the shared agent loop. The loop calls your model and the career tools: search, fit scoring, materials, interviews and application workers. Application workers drive Chrome. State and usage are stored in the local database.">
           <div class="arch-row"><span class="node in">Chat &amp; scheduled searches</span></div>
           <div class="arch-down"></div>
@@ -279,7 +313,7 @@ python -m uvicorn api.main:app --host 127.0.0.1 --port 8000</code></pre>
           <div class="arch-down"></div>
           <div class="arch-row"><span class="node out">Chrome</span><span class="node out">Local database</span></div>
         </div>
-        <p>Read the <a href="https://github.com/ethany14/Eregion-Agent/blob/main/docs/agent-loop.md">architecture notes</a> for the loop, context and persistence details.</p>
+        <p>Read the <a href="https://github.com/ethany14/Eregion-Job-Finding-Agent/blob/main/docs/agent-loop.md">architecture notes</a> for the loop, context and persistence details.</p>
       </section>
 
       <section id="develop">
@@ -289,11 +323,12 @@ node --test "tests/*.mjs"</code></pre>
         <div class="table-wrap"><table>
           <thead><tr><th>Full guide</th><th>Covers</th></tr></thead>
           <tbody>
-            <tr><td><a href="https://github.com/ethany14/Eregion-Agent/blob/main/docs/usage.md">Using Eregion</a></td><td>Daily workflow, approvals, saved answers, alerts and recovery</td></tr>
-            <tr><td><a href="https://github.com/ethany14/Eregion-Agent/blob/main/docs/configuration.md">Configuration</a></td><td>Every setting, browser options, data and updates</td></tr>
-            <tr><td><a href="https://github.com/ethany14/Eregion-Agent/blob/main/docs/agent-loop.md">Agent architecture</a></td><td>Loop, evidence, context, persistence and browser workers</td></tr>
-            <tr><td><a href="https://github.com/ethany14/Eregion-Agent/blob/main/docs/jev-benchmark.md">Jev and performance</a></td><td>Measurements, caveats and how to reproduce them</td></tr>
-            <tr><td><a href="https://github.com/ethany14/Eregion-Agent/blob/main/docs/development.md">Development</a></td><td>Repository layout, checks and contributing</td></tr>
+            <tr><td><a href="https://github.com/ethany14/Eregion-Job-Finding-Agent/blob/main/docs/usage.md">Using Eregion</a></td><td>Daily workflow, approvals, saved answers, alerts and recovery</td></tr>
+            <tr><td><a href="https://github.com/ethany14/Eregion-Job-Finding-Agent/blob/main/docs/configuration.md">Configuration</a></td><td>Every setting, browser options, data and updates</td></tr>
+            <tr><td><a href="https://github.com/ethany14/Eregion-Job-Finding-Agent/blob/main/docs/agent-loop.md">Agent architecture</a></td><td>Loop, evidence, context, persistence and browser workers</td></tr>
+            <tr><td><a href="https://github.com/ethany14/Eregion-Job-Finding-Agent/blob/main/docs/evaluation-report.md">Evaluation report</a></td><td>How Eregion was tested and what the results showed</td></tr>
+            <tr><td><a href="https://github.com/ethany14/Eregion-Job-Finding-Agent/blob/main/docs/jev-benchmark.md">Jev and performance</a></td><td>Measurements, caveats and how to reproduce them</td></tr>
+            <tr><td><a href="https://github.com/ethany14/Eregion-Job-Finding-Agent/blob/main/docs/development.md">Development</a></td><td>Repository layout, checks and contributing</td></tr>
           </tbody>
         </table></div>
       </section>
@@ -307,14 +342,14 @@ node --test "tests/*.mjs"</code></pre>
     <div class="footer-brand">
       <a class="brand" href="index.html"><svg class="mark" aria-hidden="true"><use href="#i-holly"/></svg><span>Eregion</span></a>
       <p>A little less paperwork. A step closer.</p>
-      <p class="legal">Free and open source under the <a href="https://github.com/ethany14/Eregion-Agent/blob/main/LICENSE">MIT License</a>.</p>
+      <p class="legal">Free and open source under the <a href="https://github.com/ethany14/Eregion-Job-Finding-Agent/blob/main/LICENSE">MIT License</a>.</p>
     </div>
     <nav class="footer-links" aria-label="Site">
       <a href="index.html">Home</a>
       <a href="guide.html">User guide</a>
       <a href="docs.html">Documentation</a>
       <a href="index.html#download">Download</a>
-      <a href="https://github.com/ethany14/Eregion-Agent">GitHub</a>
+      <a href="https://github.com/ethany14/Eregion-Job-Finding-Agent">GitHub</a>
     </nav>
   </div>
 </footer>

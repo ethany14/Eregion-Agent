@@ -1,13 +1,13 @@
 # Eregion website
 
 The product and download page for Eregion, live at
-[ethany14.github.io/Eregion-Agent](https://ethany14.github.io/Eregion-Agent/). It is a static site with no build step.
+[ethany14.github.io/Eregion-Job-Finding-Agent](https://ethany14.github.io/Eregion-Job-Finding-Agent/). It is a static site with no build step.
 
 | Page | Contents |
 | --- | --- |
-| `index.html` | Home: overview, the five stages, Jev speed, privacy and download |
+| `index.html` | Home: overview, result tiers, the five stages, Jev speed, privacy, evaluation and download |
 | `guide.html` | User guide: install, examples and walkthroughs, one topic at a time |
-| `docs.html` | Documentation: settings, Jev, browser options, data, updating, architecture |
+| `docs.html` | Documentation: model, job sources, Jev, browser options, data, evaluation, updating, architecture |
 
 Every page has a ☰ menu that opens a side panel with Home, every guide topic and
 every docs topic. Guide and Docs also keep that list beside the content. `script.js`
@@ -22,7 +22,7 @@ footer and icon sprite are repeated in each page, so change them in all three.
 Open `frontend/site/index.html` in a browser, or serve the folder:
 
 ```sh
-python -m http.server 4000 --directory site
+python -m http.server 4000 --directory frontend/site
 ```
 
 Then visit [localhost:4000](http://localhost:4000).

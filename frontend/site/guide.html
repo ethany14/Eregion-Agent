@@ -107,15 +107,17 @@
   <a class="drawer-page" href="docs.html"><svg class="i" aria-hidden="true"><use href="#i-wrench"/></svg>Documentation</a>
   <ol class="drawer-sub">
           <li><a href="docs.html#model" data-page="docs.html" data-id="model">Model connection</a></li>
+          <li><a href="docs.html#sources" data-page="docs.html" data-id="sources">Job sources</a></li>
           <li><a href="docs.html#jev" data-page="docs.html" data-id="jev">Jev fast scoring</a></li>
           <li><a href="docs.html#browser" data-page="docs.html" data-id="browser">Browser and workers</a></li>
           <li><a href="docs.html#data" data-page="docs.html" data-id="data">Data and privacy</a></li>
           <li><a href="docs.html#limits" data-page="docs.html" data-id="limits">Good to know</a></li>
+          <li><a href="docs.html#evaluation" data-page="docs.html" data-id="evaluation">Evaluation</a></li>
           <li><a href="docs.html#update" data-page="docs.html" data-id="update">Updating</a></li>
           <li><a href="docs.html#architecture" data-page="docs.html" data-id="architecture">How it works</a></li>
           <li><a href="docs.html#develop" data-page="docs.html" data-id="develop">Development</a></li>
   </ol>
-  <a class="drawer-page" href="https://github.com/ethany14/Eregion-Agent"><svg class="i" aria-hidden="true"><use href="#i-gh"/></svg>GitHub</a>
+  <a class="drawer-page" href="https://github.com/ethany14/Eregion-Job-Finding-Agent"><svg class="i" aria-hidden="true"><use href="#i-gh"/></svg>GitHub</a>
 </nav>
 
 <main id="main" class="doc">
@@ -140,10 +142,12 @@
       <p class="side-group">Documentation</p>
       <ol>
           <li><a href="docs.html#model" data-page="docs.html" data-id="model">Model connection</a></li>
+          <li><a href="docs.html#sources" data-page="docs.html" data-id="sources">Job sources</a></li>
           <li><a href="docs.html#jev" data-page="docs.html" data-id="jev">Jev fast scoring</a></li>
           <li><a href="docs.html#browser" data-page="docs.html" data-id="browser">Browser and workers</a></li>
           <li><a href="docs.html#data" data-page="docs.html" data-id="data">Data and privacy</a></li>
           <li><a href="docs.html#limits" data-page="docs.html" data-id="limits">Good to know</a></li>
+          <li><a href="docs.html#evaluation" data-page="docs.html" data-id="evaluation">Evaluation</a></li>
           <li><a href="docs.html#update" data-page="docs.html" data-id="update">Updating</a></li>
           <li><a href="docs.html#architecture" data-page="docs.html" data-id="architecture">How it works</a></li>
           <li><a href="docs.html#develop" data-page="docs.html" data-id="develop">Development</a></li>
@@ -162,7 +166,7 @@
 
       <ol class="steps" id="steps" role="tabpanel">
         <li>
-          <div class="step-copy"><h4>Unzip and open a terminal in the folder</h4><p>Or <code>cd Eregion-Agent</code> if you cloned it.</p></div>
+          <div class="step-copy"><h4>Unzip and open a terminal in the folder</h4><p>Or <code>cd Eregion-Job-Finding-Agent</code> if you cloned it.</p></div>
         </li>
         <li>
           <div class="step-copy"><h4>Create an environment and install</h4></div>
@@ -188,7 +192,7 @@ TYPESAFE_ENABLED=true</code></pre><button class="copy" type="button" data-copy="
         <li>
           <div class="step-copy"><h4>Start Eregion</h4><p>Then open <a href="http://localhost:8000/apply">localhost:8000/apply</a> and upload your resume.</p></div>
           <div class="cmd block"><pre><code id="cmd-run">python -m alembic upgrade head
-python -m uvicorn api.main:app --host 127.0.0.1 --port 8000</code></pre><button class="copy" type="button" data-copy="cmd-run" aria-label="Copy start commands"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg></button></div>
+python -m uvicorn eregion.api.main:app --host 127.0.0.1 --port 8000</code></pre><button class="copy" type="button" data-copy="cmd-run" aria-label="Copy start commands"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg></button></div>
         </li>
       </ol>
       </section>
@@ -202,24 +206,42 @@ python -m uvicorn api.main:app --host 127.0.0.1 --port 8000</code></pre><button 
 
       <section id="find">
         <h2><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Find and compare roles</h2>
-        <p>Describe the role, location, seniority and working arrangement you want. You can also paste a posting link, or paste a job description and say that it is one.</p>
-        <blockquote class="ask"><svg class="i" aria-hidden="true"><use href="#i-user"/></svg><p>Find data analyst roles in New York that fit my resume. Show me the best matches and explain any gaps.</p></blockquote>
+        <p>Describe the role, location and level you want, in plain words. You can also paste a posting link or a job description.</p>
+        <blockquote class="ask"><svg class="i" aria-hidden="true"><use href="#i-user"/></svg><p>Find junior data analyst roles in New York that fit my resume. Explain any gaps.</p></blockquote>
+        <p class="mini-title">What the agent does</p>
+        <ol class="flow">
+<li class="agent"><span class="who">Eregion</span><b>Search</b><span>118 verified company boards and LinkedIn, mixing results across employers</span></li>
+<li class="agent"><span class="who">Eregion</span><b>Read</b><span>Each posting in full, not just the search card</span></li>
+<li class="agent"><span class="who">Eregion</span><b>Check</b><span>Role, location, level and whether the opening is current; only clear mismatches are dropped</span></li>
+<li class="agent"><span class="who">Eregion</span><b>Score</b><span>Fit against your resume, with quoted evidence</span></li>
+<li class="you"><span class="who">You</span><b>Decide</b><span>Results arrive in three tiers, each with gaps and items to confirm</span></li>
+</ol><p class="flow-legend"><span class="k agent">Eregion does it</span><span class="k you">Needs you</span></p>
         <div class="demo-chat" aria-label="Example reply">
           <p class="demo-who"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>Eregion</p>
-          <p>I searched 4 job boards and 12 careers pages and shortlisted <b>9 roles</b>. The strongest is <b>Product Analyst at Halcyon Labs</b>.</p>
+          <p>I searched 23 company boards and two pages of LinkedIn results and read 18 postings. <b>7 are worth your time</b>: 2 priority matches, 3 worth trying, and 2 that need your confirmation.</p>
           <div class="demo-card">
-            <div class="demo-score"><b>91</b><small>/100</small></div>
+            <div class="demo-score"><b>81</b><small>/100</small></div>
             <div class="demo-detail">
-              <p class="demo-title">Product Analyst <span>Halcyon Labs · New York</span></p>
+              <p class="demo-title">Graduate Data Analyst <span>Priority match · New York</span></p>
               <ul class="demo-ev">
-                <li class="ok">SQL and dbt in production <small>Resume, Corvid Retail</small></li>
-                <li class="ok">A/B test design <small>"lifted conversion 4.2%"</small></li>
-                <li class="gap">Looker <small>You list Tableau</small></li>
+                <li class="ok">SQL and Python dashboards <small>Resume, Fictional Analytics</small></li>
+                <li class="ok">Entry-level opening <small>"0–2 years of experience"</small></li>
+                <li class="gap">To confirm: work authorization <small>Not stated in your resume</small></li>
               </ul>
             </div>
           </div>
+          <p>12 more results on LinkedIn are unread. Reply “search more” to continue.</p>
         </div>
-        <p>Read the evidence and gaps alongside the number. A score describes what your resume shows; it does not predict an employer's decision. If a site blocked the full posting, the reply says so.</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Tier</th><th>What it means</th></tr></thead>
+          <tbody>
+            <tr><td><b>Priority match</b></td><td>Role, location and level match, and your resume shows the posting's core requirements. Smaller gaps are still listed.</td></tr>
+            <tr><td><b>Worth trying</b></td><td>Relevant, but a core skill or experience isn't on your resume. Each gap is listed with how much it matters.</td></tr>
+            <tr><td><b>Needs your confirmation</b></td><td>Something only you can answer: GPA, work authorization, start date or cohort, or a level or location the posting leaves unclear.</td></tr>
+          </tbody>
+        </table></div>
+        <p>A job is left out only when it clearly doesn't fit: a different occupation, a level that is explicitly different (a Staff role when you asked for senior), a location you ruled out, or a closed opening. A near miss, such as a hybrid role for a remote request, comes back as <i>needs your confirmation</i> with the difference stated.</p>
+        <div class="callout"><b>Scores describe evidence.</b> A score reflects what your resume shows; it does not predict an employer's decision. The agent decides when more searching is unlikely to help, and the reply always says what was searched, what failed and what is left.</div>
       </section>
 
       <section id="alerts">
@@ -229,7 +251,7 @@ python -m uvicorn api.main:app --host 127.0.0.1 --port 8000</code></pre><button 
         <p class="mini-title">What happens each day</p>
         <ol class="flow">
 <li class="agent"><span class="who">Eregion</span><b>09:00</b><span>The search starts at your time, in your timezone</span></li>
-<li class="agent"><span class="who">Eregion</span><b>Browse</b><span>Job boards, plus any careers sites you listed</span></li>
+<li class="agent"><span class="who">Eregion</span><b>Search</b><span>Company boards and LinkedIn, plus any careers sites you listed</span></li>
 <li class="agent"><span class="who">Eregion</span><b>Score</b><span>Each new posting against your resume</span></li>
 <li class="agent"><span class="who">Eregion</span><b>Filter</b><span>Keeps roles at or above your minimum score, up to your limit</span></li>
 <li class="you"><span class="who">You</span><b>Digest</b><span>New matches appear in Job alerts and in their conversation</span></li>
@@ -341,14 +363,14 @@ python -m uvicorn api.main:app --host 127.0.0.1 --port 8000</code></pre><button 
     <div class="footer-brand">
       <a class="brand" href="index.html"><svg class="mark" aria-hidden="true"><use href="#i-holly"/></svg><span>Eregion</span></a>
       <p>A little less paperwork. A step closer.</p>
-      <p class="legal">Free and open source under the <a href="https://github.com/ethany14/Eregion-Agent/blob/main/LICENSE">MIT License</a>.</p>
+      <p class="legal">Free and open source under the <a href="https://github.com/ethany14/Eregion-Job-Finding-Agent/blob/main/LICENSE">MIT License</a>.</p>
     </div>
     <nav class="footer-links" aria-label="Site">
       <a href="index.html">Home</a>
       <a href="guide.html">User guide</a>
       <a href="docs.html">Documentation</a>
       <a href="index.html#download">Download</a>
-      <a href="https://github.com/ethany14/Eregion-Agent">GitHub</a>
+      <a href="https://github.com/ethany14/Eregion-Job-Finding-Agent">GitHub</a>
     </nav>
   </div>
 </footer>
