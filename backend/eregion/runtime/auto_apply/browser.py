@@ -97,9 +97,26 @@ SCAN = r"""() => {
     } else if (kind === 'radio') {
       const group = el.name || id; if (groups.has(group)) continue; groups.add(group);
       const members = elements.filter(x => x.type === 'radio' && (x.name || `ns-${elements.indexOf(x)}`) === group);
-      text = clean(el.closest('fieldset')?.querySelector('legend')?.textContent || el.closest('.application-question')?.querySelector('.application-label')?.textContent || text);
+      // Without a legend (Ashby), the question is the nearest enclosing label/heading that is
+      // not one of the options. Falling back to the first option's text named a race field
+      // "Hispanic or Latino", and saved answers were applied to the wrong question.
+      const optionTexts = new Set(members.map(x => label(x)));
+      const groupTitle = () => {
+        let node = members[0].parentElement;
+        while (node && !members.every(m => node.contains(m))) node = node.parentElement;
+        for (let up = 0; node && up < 4; up++, node = node.parentElement) {
+          const found = [...node.querySelectorAll('label, legend, h2, h3, h4, [class*="title" i], [class*="heading" i], [class*="question" i]')]
+            .filter(x => !members.some(m => x.contains(m) || (m.labels && [...m.labels].includes(x))))
+            .map(x => clean(x.textContent)).find(t => t && t.length <= 400 && !optionTexts.has(t));
+          if (found) return found;
+        }
+        return '';
+      };
+      text = clean(el.closest('fieldset')?.querySelector('legend')?.textContent || el.closest('.application-question')?.querySelector('.application-label')?.textContent || groupTitle() || text);
       options = members.map((x) => {const token=`ns-${elements.indexOf(x)}`;x.setAttribute('data-northstar-field',token);return {label:label(x),value:x.value,id:token};});
-      value = members.find(x => x.checked)?.value || ''; required = members.some(x => x.required);
+      // Show the chosen option, not a generic "on" shared by every Ashby radio.
+      const chosen = members.find(x => x.checked);
+      value = chosen ? (chosen.value && chosen.value !== 'on' ? chosen.value : label(chosen)) : ''; required = members.some(x => x.required);
     } else if (kind === 'select') {
       options = Array.from(el.options).map(x => ({label: clean(x.textContent), value:x.value, disabled:x.disabled}));
       const part=clean(el.options[0]?.textContent).replace(/\.+$/, '');
