@@ -97,6 +97,15 @@ def test_draft_has_evidence_but_is_not_a_confirmed_answer_or_browser_input():
         draft(tools)
 
 
+def test_optional_draft_does_not_hold_review():
+    # Veeva pilot (2026-10-15): optional essays with drafts kept ready_for_review refusing.
+    tools, browser, state = session()
+    assert draft(tools)["saved"]
+    browser.fields[0]["required"] = False
+    tools.observe()
+    assert tools.execute("ready_for_review", {})["host_validation_required"]
+
+
 @pytest.mark.parametrize("evidence", [
     [{"source_ref": "resume", "quote": "Saved 50 hours every week"}],
     [{"source_ref": "page", "quote": PROJECT}],

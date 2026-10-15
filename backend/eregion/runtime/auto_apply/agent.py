@@ -442,14 +442,18 @@ class AgentTools:
             return {'question':request['text'],'field_keys':request['field_keys'],
                 'request_id':request['id'],'waiting_for_user':True}
         if name == "ready_for_review":
-            if any(is_consent(f) and self.state.get('consent_policy', 'ask') == 'ask'
-                   and f['key'] not in self.state['answers'] for f in self.fields):
-                raise BrowserBlocked('Confirm consent answers before review.', code='input_pending')
+            consents = [f for f in self.fields if is_consent(f) and self.state.get('consent_policy', 'ask') == 'ask'
+                        and f['key'] not in self.state['answers']]
+            if consents:
+                raise BrowserBlocked('Ask the user with ask_user (field_keys set) whether to agree to: '
+                    + '; '.join(f"{f['key']} ({f['label'][:80]})" for f in consents), code='input_pending')
             if pending_documents(self.state,self.fields):
                 raise BrowserBlocked('Upload the selected documents before review. Bind an unfamiliar file control with bind_document, then use autofill.', code='document_pending')
             if self.state.get("input_request"):
                 raise BrowserBlocked("Wait for the pending user reply before final review.", code='input_pending')
-            if visible_drafts(self.state, self.fields):
+            # Drafts for optional fields are offered at review; only required ones hold it.
+            required = {f['key'] for f in self.fields if f.get('required')}
+            if required & set(visible_drafts(self.state, self.fields)):
                 raise BrowserBlocked("Show the editable drafts with request_input before final review.")
             if self.page_context is not None and not self.browser.page_state()["can_submit"]:
                 raise BrowserBlocked("This is not the final application step. Continue using the observed page controls.")
@@ -474,7 +478,7 @@ class AgentTools:
                 missing = [f["key"] for f in self.fields if (f["required"] and not f["value"]) or
                     (is_consent(f) and self.state.get("consent_policy", "ask") == "ask" and f["key"] not in self.state["answers"])]
                 missing += self._unresolved_paths()
-                missing += list(visible_drafts(self.state, self.fields))
+                missing += [k for k in visible_drafts(self.state, self.fields) if any(f['key'] == k and f.get('required') for f in self.fields)]
                 missing += education_gaps(self.state,self.fields,self.page_context)
                 if missing:
                     raise BrowserBlocked("Complete this step's required answers and consent before continuing: " + "; ".join(missing))
