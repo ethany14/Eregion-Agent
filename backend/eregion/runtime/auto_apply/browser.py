@@ -305,6 +305,10 @@ class ApplicationBrowser:
             self.page = self.context.new_page()
             self._anchor = self.page  # The application tab; popups fall back to it.
             self.context.on("page", self._popup)
+            # Opening the posting the user asked for is a trusted navigation: an ATS link often
+            # redirects to the employer's own careers page that embeds the form (Greenhouse ->
+            # careers.roblox.com). Only public HTTPS hosts can be added (_guard_request).
+            self._trusted_until = time.monotonic() + TRUSTED_NAVIGATION_SECONDS
             try:self.page.goto(self.url, wait_until="domcontentloaded", timeout=30_000)
             except Exception as exc:
                 if purpose!='browse' or 'Timeout' not in type(exc).__name__ or not self.page.locator('body').count():raise
