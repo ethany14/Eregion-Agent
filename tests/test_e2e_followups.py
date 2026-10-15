@@ -273,6 +273,11 @@ def test_finished_application_is_never_waited_on():
     assert harness.wake({'wait': {'kind': 'application', 'id': 'r1', 'token': token}})
     child['status'] = 'running'
     assert not harness.capability_finished({'kind': 'application', 'id': 'r1'})
+    assert harness.capability_stopped({'kind': 'application', 'id': 'r1'}) is None
+    # Veeva pilot: a run paused by a model timeout is stopped; waiting on it never wakes.
+    child.update(status='needs_input', message='The model response timed out.')
+    stopped = harness.capability_stopped({'kind': 'application', 'id': 'r1'})
+    assert stopped['changed'] and 'reply_application' in stopped['next']
 
 
 # ---- Step 5: Jev expected score (one consistent number instead of a range) --------------------

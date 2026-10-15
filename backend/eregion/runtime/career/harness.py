@@ -1610,6 +1610,16 @@ class CareerHarness:
         if args.get('kind')!='application':return False
         return self.applications.repository.get(args['id'])['status'] in {'submitted','submission_unknown','failed','cancelled'}
 
+    def capability_stopped(self,args):
+        """An application paused for input never wakes a wait by itself (Veeva pilot: a
+        model-timeout pause left the task waiting while the user's "continue" went nowhere)."""
+        if args.get('kind')!='application':return None
+        child=self.applications.repository.get(args['id'])
+        if child['status'] in {'queued','running','submitting'} or self.capability_finished(args):return None
+        return {'changed':True,'status':child['status'],'message':child.get('message'),
+            'next':"The application is stopped, not running. Forward the user's latest message with reply_application "
+                   'to resume it, or ask the user for what it needs.'}
+
     def wake(self,state):
         wait = state.get('wait') or {}
         if wait.get('kind')=='application':

@@ -340,6 +340,8 @@ class TaskLoop:
             # token again, so waiting on it would never wake (lost wake-up).
             finished = getattr(self.harness,'capability_finished',None)
             if finished and finished(args):return {'changed':True,'next':'This capability already finished. Read its result.'}
+            stopped = getattr(self.harness,'capability_stopped',None)
+            if stopped and (result := stopped(args)):return result
             token = self.harness.wait_token(args)
             observed = state.get('capability_versions',{}).get(args['kind'],{}).get(args['id'])
             if observed is not None and observed!=token:return {'changed':True,'next':'Read the newly available result.'}
