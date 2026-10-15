@@ -41,7 +41,8 @@ jobs:
     # Real Chrome against offline fixture pages. Windows matches the supported
     # desktop setup, including its encrypted login-state store.
     runs-on: windows-latest
-    timeout-minutes: 30
+    # The full suite plus real-Chrome tests takes over 30 minutes on the hosted runner.
+    timeout-minutes: 60
 
     steps:
       - name: Check out source
