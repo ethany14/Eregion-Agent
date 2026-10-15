@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Eregion Guide</title>
+<meta name="description" content="How to install and use Eregion: finding roles, automatic job search, tailored materials, applications and interview practice.">
+<meta property="og:title" content="Eregion Guide">
+<meta property="og:description" content="How to install and use Eregion: finding roles, automatic job search, tailored materials, applications and interview practice.">
+<meta property="og:image" content="assets/screens/road-night.webp">
+<link rel="icon" href="assets/holly.svg" type="image/svg+xml">
+<script>
+  // Apply a saved Day/Night choice before first paint.
+  try { const t = localStorage.getItem('eregion.site-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IM+Fell+English+SC&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-holly" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17C13.6 14.8 10.6 15 9.6 12.8 7.6 13.4 6 11.6 4.4 12.4 5.6 9.8 3.8 8.2 5 6.6 7 7.4 8.4 5.4 10.6 6.6 11 4.4 13.4 4 14.6 5.4 14 8 16.2 9.6 15.6 12.2S16.8 14.2 15 17Z"/><path d="M15 17 7 8.6"/><path d="M17 17c2.2-1.2 2.4-4.2 4.6-5-.4-2 1.4-3.4.8-5 2.4 1.4 4.2-.2 5.6 1.2-.8 1.9 1.2 3.4 0 5.4 2 .6 2.2 3 .8 4-2.4-.8-4.2 1.2-6.6.4-1.8 1.2-3.6-.2-5.2-1z"/><path d="M17 17l8.6-7"/></g><g class="berries"><circle cx="13.2" cy="22" r="2.3"/><circle cx="18.2" cy="22.6" r="2.3"/><circle cx="15.8" cy="26.6" r="2.3"/></g></symbol>
+  <symbol id="i-chronicle" viewBox="0 0 24 24"><path d="M4 5.5C6.5 4.5 9.5 4.5 12 6c2.5-1.5 5.5-1.5 8-.5V19c-2.5-1-5.5-1-8 .5-2.5-1.5-5.5-1.5-8-.5z"/><path d="M12 6v13.5"/></symbol>
+  <symbol id="i-council" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="4" r="1.5"/><circle cx="19" cy="9" r="1.5"/><circle cx="17" cy="18" r="1.5"/><circle cx="7" cy="18" r="1.5"/><circle cx="5" cy="9" r="1.5"/></symbol>
+  <symbol id="i-road" viewBox="0 0 24 24"><path d="M4 20c4-1 3-6 8-7s5-6 8-8" stroke-dasharray="2 2.6"/><circle cx="4" cy="20" r="1.5"/><circle cx="12" cy="13" r="1.5"/><path d="M20 2.5v5M17.5 5h5"/></symbol>
+  <symbol id="i-forge" viewBox="0 0 24 24"><path d="M3 9h12a4 4 0 0 0 4-3v5h-3l-2 3v2h3v3H7v-3h3v-2l-3-3H3z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-lookout" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M15 4v16"/></symbol>
+  <symbol id="i-beacon" viewBox="0 0 24 24"><path d="M12 3c1.5 3.2 5 4.8 5 9.2A5 5 0 0 1 7 12.2C7 10 8.4 8.6 9.4 7.4c.3 1.6 1 2.4 2 2.8C11 7.6 11.2 5.2 12 3Z"/><path d="M8 21h8M10 17.5l-1 3.5M14 17.5l1 3.5"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-seal" viewBox="0 0 24 24"><circle cx="12" cy="10" r="6"/><path d="M12 6.5v7M8.5 10h7" stroke-width="1.2"/><path d="m8.5 15-1.5 6 5-2 5 2-1.5-6"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M15 8l2 2"/></symbol>
+  <symbol id="i-hand" viewBox="0 0 24 24"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12M11 11V4.5a1.5 1.5 0 0 1 3 0V12M14 11V6.5a1.5 1.5 0 0 1 3 0V14c0 4-2.5 7-6 7-2.5 0-4-1.2-5.5-3.5L3.7 14.6a1.5 1.5 0 0 1 2.5-1.6L8 15"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-lens" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 4v5M12 15v5"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-gh" viewBox="0 0 24 24"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-ithil" viewBox="0 0 24 24"><path d="M15.5 4.2A8 8 0 1 0 19.8 15 6.6 6.6 0 0 1 15.5 4.2Z"/><path d="M18.5 3.5v3M17 5h3" stroke-width="1.3"/></symbol>
+  <symbol id="i-anor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+  <symbol id="i-memory" viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/><path d="M9 9h6v6H9zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.5 5.5a4 4 0 0 0 5 5L12 18l-3 3-3-3 3-3 7.5-7.5"/><path d="M14.5 5.5 17 3"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5C6.5 4.5 9.5 4.5 12 6c2.5-1.5 5.5-1.5 8-.5V19c-2.5-1-5.5-1-8 .5-2.5-1.5-5.5-1.5-8-.5z"/><path d="M12 6v13.5"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
+  <symbol id="i-restore" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v4h4"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+</svg>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav" id="top">
+  <div class="wrap nav-row">
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="drawer" aria-label="Open menu"><svg class="i" aria-hidden="true"><use href="#i-menu"/></svg></button>
+    <a class="brand" href="index.html" aria-label="Eregion home"><svg class="mark" aria-hidden="true"><use href="#i-holly"/></svg><span>Eregion</span></a>
+    <nav class="nav-links" aria-label="Pages">
+      <a href="index.html">Home</a>
+      <a href="guide.html" aria-current="page">Guide</a>
+      <a href="docs.html">Docs</a>
+    </nav>
+    <div class="nav-end">
+      <div class="theme-toggle" role="group" aria-label="Theme">
+        <button class="night" type="button" aria-pressed="true" aria-label="Night theme" title="Night"><svg aria-hidden="true"><use href="#i-ithil"/></svg></button>
+        <button class="day" type="button" aria-pressed="false" aria-label="Day theme" title="Day"><svg aria-hidden="true"><use href="#i-anor"/></svg></button>
+      </div>
+      <a class="btn btn-primary btn-sm hide-sm" href="index.html#download"><svg class="i" aria-hidden="true"><use href="#i-dl"/></svg>Download</a>
+    </div>
+  </div>
+</header>
+<div class="drawer-scrim" hidden></div>
+<nav class="drawer" id="drawer" aria-label="Site menu">
+  <div class="drawer-head">
+    <a class="brand" href="index.html"><svg class="mark" aria-hidden="true"><use href="#i-holly"/></svg><span>Eregion</span></a>
+    <button class="drawer-close" type="button" aria-label="Close menu"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+  </div>
+  <a class="drawer-page" href="index.html"><svg class="i" aria-hidden="true"><use href="#i-holly"/></svg>Home</a>
+  <ol class="drawer-sub">
+    <li><a href="index.html#road">How it works</a></li>
+    <li><a href="index.html#workspace">Workspace</a></li>
+    <li><a href="index.html#jev">Speed</a></li>
+    <li><a href="index.html#local">Privacy</a></li>
+    <li><a href="index.html#download">Download</a></li>
+  </ol>
+  <a class="drawer-page" href="guide.html" aria-current="page"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>User guide</a>
+  <ol class="drawer-sub">
+          <li><a href="guide.html#install" data-page="guide.html" data-id="install">Install</a></li>
+          <li><a href="guide.html#profile" data-page="guide.html" data-id="profile">Set up your profile</a></li>
+          <li><a href="guide.html#find" data-page="guide.html" data-id="find">Find and compare roles</a></li>
+          <li><a href="guide.html#alerts" data-page="guide.html" data-id="alerts">Automatic job search</a></li>
+          <li><a href="guide.html#materials" data-page="guide.html" data-id="materials">Materials</a></li>
+          <li><a href="guide.html#apply" data-page="guide.html" data-id="apply">Applications</a></li>
+          <li><a href="guide.html#lookout" data-page="guide.html" data-id="lookout">Take over the browser</a></li>
+          <li><a href="guide.html#memory" data-page="guide.html" data-id="memory">Saved answers</a></li>
+          <li><a href="guide.html#interview" data-page="guide.html" data-id="interview">Interview practice</a></li>
+          <li><a href="guide.html#road" data-page="guide.html" data-id="road">Track applications</a></li>
+          <li><a href="guide.html#lens" data-page="guide.html" data-id="lens">Eregion Lens</a></li>
+          <li><a href="guide.html#troubleshoot" data-page="guide.html" data-id="troubleshoot">Troubleshooting</a></li>
+  </ol>
+  <a class="drawer-page" href="docs.html"><svg class="i" aria-hidden="true"><use href="#i-wrench"/></svg>Documentation</a>
+  <ol class="drawer-sub">
+          <li><a href="docs.html#model" data-page="docs.html" data-id="model">Model connection</a></li>
+          <li><a href="docs.html#jev" data-page="docs.html" data-id="jev">Jev fast scoring</a></li>
+          <li><a href="docs.html#browser" data-page="docs.html" data-id="browser">Browser and workers</a></li>
+          <li><a href="docs.html#data" data-page="docs.html" data-id="data">Data and privacy</a></li>
+          <li><a href="docs.html#limits" data-page="docs.html" data-id="limits">Good to know</a></li>
+          <li><a href="docs.html#update" data-page="docs.html" data-id="update">Updating</a></li>
+          <li><a href="docs.html#architecture" data-page="docs.html" data-id="architecture">How it works</a></li>
+          <li><a href="docs.html#develop" data-page="docs.html" data-id="develop">Development</a></li>
+  </ol>
+  <a class="drawer-page" href="https://github.com/ethany14/Eregion-Agent"><svg class="i" aria-hidden="true"><use href="#i-gh"/></svg>GitHub</a>
+</nav>
+
+<main id="main" class="doc">
+  <div class="wrap doc-layout">
+    <button class="side-toggle" type="button" aria-expanded="false" aria-controls="drawer"><svg class="i" aria-hidden="true"><use href="#i-menu"/></svg><span class="side-toggle-label">Contents</span><span class="side-current"></span></button>
+    <nav class="side" id="side" aria-label="Guide and documentation">
+      <p class="side-group here">User guide</p>
+      <ol>
+          <li><a href="guide.html#install" data-page="guide.html" data-id="install">Install</a></li>
+          <li><a href="guide.html#profile" data-page="guide.html" data-id="profile">Set up your profile</a></li>
+          <li><a href="guide.html#find" data-page="guide.html" data-id="find">Find and compare roles</a></li>
+          <li><a href="guide.html#alerts" data-page="guide.html" data-id="alerts">Automatic job search</a></li>
+          <li><a href="guide.html#materials" data-page="guide.html" data-id="materials">Materials</a></li>
+          <li><a href="guide.html#apply" data-page="guide.html" data-id="apply">Applications</a></li>
+          <li><a href="guide.html#lookout" data-page="guide.html" data-id="lookout">Take over the browser</a></li>
+          <li><a href="guide.html#memory" data-page="guide.html" data-id="memory">Saved answers</a></li>
+          <li><a href="guide.html#interview" data-page="guide.html" data-id="interview">Interview practice</a></li>
+          <li><a href="guide.html#road" data-page="guide.html" data-id="road">Track applications</a></li>
+          <li><a href="guide.html#lens" data-page="guide.html" data-id="lens">Eregion Lens</a></li>
+          <li><a href="guide.html#troubleshoot" data-page="guide.html" data-id="troubleshoot">Troubleshooting</a></li>
+      </ol>
+      <p class="side-group">Documentation</p>
+      <ol>
+          <li><a href="docs.html#model" data-page="docs.html" data-id="model">Model connection</a></li>
+          <li><a href="docs.html#jev" data-page="docs.html" data-id="jev">Jev fast scoring</a></li>
+          <li><a href="docs.html#browser" data-page="docs.html" data-id="browser">Browser and workers</a></li>
+          <li><a href="docs.html#data" data-page="docs.html" data-id="data">Data and privacy</a></li>
+          <li><a href="docs.html#limits" data-page="docs.html" data-id="limits">Good to know</a></li>
+          <li><a href="docs.html#update" data-page="docs.html" data-id="update">Updating</a></li>
+          <li><a href="docs.html#architecture" data-page="docs.html" data-id="architecture">How it works</a></li>
+          <li><a href="docs.html#develop" data-page="docs.html" data-id="develop">Development</a></li>
+      </ol>
+    </nav>
+    <article class="prose pager" data-page="guide.html">
+
+      <section id="install">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-dl"/></svg>Install</h2>
+        <p>You need <b>Python 3.12</b>, <b>Google Chrome</b>, and an API key for an OpenAI-compatible model that supports tool calling and structured output. <a href="index.html#download">Download Eregion</a> first, then follow the steps for your system.</p>
+        <div class="os-tabs" role="tablist" aria-label="Operating system">
+        <button type="button" role="tab" id="tab-win" aria-controls="steps" aria-selected="false" data-os="win">Windows</button>
+        <button type="button" role="tab" id="tab-mac" aria-controls="steps" aria-selected="true" data-os="mac">macOS</button>
+        <button type="button" role="tab" id="tab-linux" aria-controls="steps" aria-selected="false" data-os="linux">Linux</button>
+      </div>
+
+      <ol class="steps" id="steps" role="tabpanel">
+        <li>
+          <div class="step-copy"><h4>Unzip and open a terminal in the folder</h4><p>Or <code>cd Eregion-Agent</code> if you cloned it.</p></div>
+        </li>
+        <li>
+          <div class="step-copy"><h4>Create an environment and install</h4></div>
+          <div class="cmd block"><pre><code id="cmd-install" data-win="py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt" data-unix="python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt">python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt</code></pre><button class="copy" type="button" data-copy="cmd-install" aria-label="Copy install commands"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg></button></div>
+        </li>
+        <li>
+          <div class="step-copy"><h4>Connect your model</h4><p>Create a file named <code>.env</code> in the folder. Leave out <code>LLM_BASE_URL</code> if your provider uses the default endpoint.</p></div>
+          <div class="cmd block"><pre><code id="cmd-env">LLM_MODEL_ID=your-model-id
+LLM_API_KEY=your-api-key
+LLM_BASE_URL=https://your-provider.example/v1</code></pre><button class="copy" type="button" data-copy="cmd-env" aria-label="Copy .env template"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg></button></div>
+          <p class="opt">Optional: add these lines too for <a href="docs.html#jev">Jev fast fit scoring</a>.</p>
+          <div class="cmd block"><pre><code id="cmd-jev">TYPESAFE_API_KEY=your-typesafe-key
+TYPESAFE_BASE_URL=https://api.typesafe.ai
+TYPESAFE_DEFAULT_MODEL=jev-latest
+TYPESAFE_ENABLED=true</code></pre><button class="copy" type="button" data-copy="cmd-jev" aria-label="Copy Jev settings"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg></button></div>
+        </li>
+        <li>
+          <div class="step-copy"><h4>Start Eregion</h4><p>Then open <a href="http://localhost:8000/apply">localhost:8000/apply</a> and upload your resume.</p></div>
+          <div class="cmd block"><pre><code id="cmd-run">python -m alembic upgrade head
+python -m uvicorn api.main:app --host 127.0.0.1 --port 8000</code></pre><button class="copy" type="button" data-copy="cmd-run" aria-label="Copy start commands"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg></button></div>
+        </li>
+      </ol>
+      </section>
+
+      <section id="profile">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-user"/></svg>Set up your profile</h2>
+        <p>Upload a PDF resume with selectable text using the <b>+</b> button in the message box. Eregion keeps the original file and extracts your details for later applications.</p>
+        <p>Open <b>Your details</b> and check contact information, schools, degrees, fields of study and dates. Keep finished and in-progress education distinct.</p>
+        <div class="callout"><b>Tell it, don't let it guess.</b> If a fact is missing, say so in chat. A saved preference (say, "remote only") is not evidence of experience.</div>
+      </section>
+
+      <section id="find">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Find and compare roles</h2>
+        <p>Describe the role, location, seniority and working arrangement you want. You can also paste a posting link, or paste a job description and say that it is one.</p>
+        <blockquote class="ask"><svg class="i" aria-hidden="true"><use href="#i-user"/></svg><p>Find data analyst roles in New York that fit my resume. Show me the best matches and explain any gaps.</p></blockquote>
+        <div class="demo-chat" aria-label="Example reply">
+          <p class="demo-who"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>Eregion</p>
+          <p>I searched 4 job boards and 12 careers pages and shortlisted <b>9 roles</b>. The strongest is <b>Product Analyst at Halcyon Labs</b>.</p>
+          <div class="demo-card">
+            <div class="demo-score"><b>91</b><small>/100</small></div>
+            <div class="demo-detail">
+              <p class="demo-title">Product Analyst <span>Halcyon Labs · New York</span></p>
+              <ul class="demo-ev">
+                <li class="ok">SQL and dbt in production <small>Resume, Corvid Retail</small></li>
+                <li class="ok">A/B test design <small>"lifted conversion 4.2%"</small></li>
+                <li class="gap">Looker <small>You list Tableau</small></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <p>Read the evidence and gaps alongside the number. A score describes what your resume shows; it does not predict an employer's decision. If a site blocked the full posting, the reply says so.</p>
+      </section>
+
+      <section id="alerts">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg>Automatic job search</h2>
+        <p>Let Eregion look for new roles every day and bring you only the ones that clear your bar. Ask in chat, or open <b>Job alerts → New schedule</b>.</p>
+        <blockquote class="ask"><svg class="i" aria-hidden="true"><use href="#i-user"/></svg><p>Every day at 9 AM in America/New_York, find new junior analyst roles in New York or remote US. Show the strongest matches.</p></blockquote>
+        <p class="mini-title">What happens each day</p>
+        <ol class="flow">
+<li class="agent"><span class="who">Eregion</span><b>09:00</b><span>The search starts at your time, in your timezone</span></li>
+<li class="agent"><span class="who">Eregion</span><b>Browse</b><span>Job boards, plus any careers sites you listed</span></li>
+<li class="agent"><span class="who">Eregion</span><b>Score</b><span>Each new posting against your resume</span></li>
+<li class="agent"><span class="who">Eregion</span><b>Filter</b><span>Keeps roles at or above your minimum score, up to your limit</span></li>
+<li class="you"><span class="who">You</span><b>Digest</b><span>New matches appear in Job alerts and in their conversation</span></li>
+</ol><p class="flow-legend"><span class="k agent">Eregion does it</span><span class="k you">Needs you</span></p>
+        <figure class="shot "><div class="window"><img class="for-night" src="assets/screens/alerts-night.webp" width="1600" height="1000" alt="Job alerts: a daily 9 AM search and a digest with three recommendations scored 91, 84 and 76." loading="lazy"><img class="for-day" src="assets/screens/alerts-light.webp" width="1600" height="1000" alt="" loading="lazy"></div></figure>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Setting</th><th>Default</th><th>What it controls</th></tr></thead>
+          <tbody>
+            <tr><td>Roles, location and what matters</td><td>—</td><td>Your preferences in plain words</td></tr>
+            <tr><td>Preferred websites</td><td>None</td><td>Optional careers pages to include, one HTTPS link per line</td></tr>
+            <tr><td>Start searching at</td><td>09:00</td><td>Local time and timezone for the daily run</td></tr>
+            <tr><td>Maximum recommendations</td><td>5</td><td>Up to 10 per digest</td></tr>
+            <tr><td>Minimum match score</td><td>70</td><td>Roles below this are left out</td></tr>
+            <tr><td>Visual browser backup</td><td>Off</td><td>Lets non-login page screenshots reach your model for tricky pages</td></tr>
+          </tbody>
+        </table></div>
+        <div class="callout warn"><b>Keep the server running.</b> Schedules run in the local backend, so your computer must be awake and Eregion running at the chosen time. Recurring searches remember earlier recommendations and won't repeat them. Turn on browser notifications from Job alerts if you want a pop-up.</div>
+      </section>
+
+      <section id="materials">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-forge"/></svg>Prepare and review materials</h2>
+        <p>Ask for a tailored resume, a cover letter, or answers to application questions.</p>
+        <blockquote class="ask"><svg class="i" aria-hidden="true"><use href="#i-user"/></svg><p>Tailor my resume and write a cover letter for this role. Keep every claim supported by my experience.</p></blockquote>
+        <dl class="forge-steps">
+          <div><dt>Drafted</dt><dd>written from your resume and the posting</dd></div>
+          <div><dt>Tempered</dt><dd>every claim checked against its source line, revised within a fixed number of attempts</dd></div>
+          <div><dt>Sealed</dt><dd>approved by you, for that exact version</dd></div>
+        </dl>
+        <figure class="shot "><div class="window"><img class="for-night" src="assets/screens/forge-night.webp" width="1600" height="1000" alt="The Forge: a tailored resume marked Every claim verified against your resume, with approve and request changes buttons." loading="lazy"><img class="for-day" src="assets/screens/forge-light.webp" width="1600" height="1000" alt="" loading="lazy"></div></figure>
+        <p>Open <b>The Forge</b> or the cards in chat to read the content, the verification result and the version. Download the PDF and check its layout too. To change something, say so in the same chat.</p>
+        <div class="callout">Approval belongs to one version. If a newer draft fails, the older approved one stays available, and Eregion never swaps in a different document without asking.</div>
+      </section>
+
+      <section id="apply">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Prepare an application</h2>
+        <p>After you approve the materials, ask Eregion to apply. It works through the form in Chrome and stops where only you can decide.</p>
+        <ol class="flow">
+<li class="agent"><span class="who">Eregion</span><b>Open</b><span>The application page in Chrome</span></li>
+<li class="agent"><span class="who">Eregion</span><b>Fill</b><span>Known details, including repeatable sections like education</span></li>
+<li class="agent"><span class="who">Eregion</span><b>Attach</b><span>The materials you approved</span></li>
+<li class="you"><span class="who">You</span><b>Answer</b><span>Missing questions such as work authorization or consent</span></li>
+<li class="you"><span class="who">You</span><b>Submit</b><span>You inspect the finished form and press submit</span></li>
+</ol><p class="flow-legend"><span class="k agent">Eregion does it</span><span class="k you">Needs you</span></p>
+        <p>When several questions are waiting, fill what you can and press <b>Submit answers &amp; continue</b> once, or simply answer in chat. Editing a reviewed form can invalidate the review. If you're unsure whether a submission went through, check the employer's confirmation before trying again.</p>
+      </section>
+
+      <section id="lookout">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-lookout"/></svg>Watch or take over the browser</h2>
+        <p>Open <b>The Lookout</b> from the conversation header to watch the agent's Chrome. Press <b>Control browser</b> when a site needs you, then resume the agent.</p>
+        <ul class="ticks">
+          <li>Enter passwords in the secure account form, never in chat</li>
+          <li>MFA, email codes, CAPTCHA and some single sign-on flows need you</li>
+          <li><b>Visual browser backup</b> sends requested screenshots to your model for difficult controls. It is off by default</li>
+        </ul>
+      </section>
+
+      <section id="memory">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-memory"/></svg>Reuse confirmed answers</h2>
+        <p>Your details and saved resume carry across applications and restarts. Remembered answers keep their original question and scope, and you can remove any that no longer apply.</p>
+        <p>Similar wording is not enough to reuse consent, immigration or employer-specific answers. New corrections win over old values, and generated drafts never become confirmed facts on their own.</p>
+      </section>
+
+      <section id="interview">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg>Practise for interviews</h2>
+        <p>Pick a saved role and ask for a mock interview. Answer each question in chat, read the feedback, then the final report.</p>
+        <blockquote class="ask"><svg class="i" aria-hidden="true"><use href="#i-user"/></svg><p>Run a mock interview for the Lumen Health data analyst role. Five questions, mixed technical and behavioural.</p></blockquote>
+        <p>Practice answers don't add new evidence to your resume.</p>
+      </section>
+
+      <section id="road">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-road"/></svg>Track every application</h2>
+        <p><b>The Road</b> shows every application as a map, a board or a table: how many you set out on, sent and heard back from, and which ones need you.</p>
+        <figure class="shot "><div class="window"><img class="for-night" src="assets/screens/road-night.webp" width="1600" height="1000" alt="The Road: totals, a winding map with companies at each stage, and a progress table." loading="lazy"><img class="for-day" src="assets/screens/road-light.webp" width="1600" height="1000" alt="" loading="lazy"></div></figure>
+      </section>
+
+      <section id="lens">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-lens"/></svg>Bring a job from your browser</h2>
+        <p><b>Eregion Lens</b> is the optional Chrome extension. It opens in Chrome's side panel, extracts the job on the current tab, lets you correct it, and compares it with your resume.</p>
+        <ol class="num">
+          <li>Start Eregion and upload your resume.</li>
+          <li>Open <code>chrome://extensions</code> in Chrome 116 or later and turn on <b>Developer mode</b>.</li>
+          <li>Choose <b>Load unpacked</b> and select the <code>chrome_extension</code> folder from the download.</li>
+          <li>Open a job posting and click the Eregion Lens icon.</li>
+        </ol>
+      </section>
+
+      <section id="troubleshoot">
+        <h2><svg class="i" aria-hidden="true"><use href="#i-wrench"/></svg>Troubleshooting</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Symptom</th><th>What to check</th></tr></thead>
+          <tbody>
+            <tr><td>The model does not reply</td><td>The model ID, provider access, balance and rate limits. Retry the saved task after fixing the provider error.</td></tr>
+            <tr><td>Chrome does not start</td><td>Install Google Chrome, and install <code>requirements.txt</code> in the same Python environment that runs the server.</td></tr>
+            <tr><td>A field cannot be filled</td><td>The browser's current choices or validation message. Correct the source fact or take over, then resume.</td></tr>
+            <tr><td>A PDF has no readable content</td><td>Upload a selectable-text PDF. Image-only scans are not supported.</td></tr>
+            <tr><td>Materials need review again</td><td>Whether the document version, job source, your details or preferences changed.</td></tr>
+            <tr><td>A scheduled search did not run</td><td>The schedule's timezone and enabled state, and whether the server was running.</td></tr>
+          </tbody>
+        </table></div>
+        <p>For setup problems, see the <a href="docs.html">documentation</a>.</p>
+      </section>
+
+    </article>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-row">
+    <div class="footer-brand">
+      <a class="brand" href="index.html"><svg class="mark" aria-hidden="true"><use href="#i-holly"/></svg><span>Eregion</span></a>
+      <p>A little less paperwork. A step closer.</p>
+      <p class="legal">Free and open source under the <a href="https://github.com/ethany14/Eregion-Agent/blob/main/LICENSE">MIT License</a>.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <a href="index.html">Home</a>
+      <a href="guide.html">User guide</a>
+      <a href="docs.html">Documentation</a>
+      <a href="index.html#download">Download</a>
+      <a href="https://github.com/ethany14/Eregion-Agent">GitHub</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
