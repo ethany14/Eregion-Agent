@@ -1034,8 +1034,9 @@ class ApplicationBrowser:
         elif kind in {"text", "email", "tel", "url", "textarea", "number", "search"} and re.search(r'dateSection(Month|Day|Year)', field.get("dom_id") or field["key"]):
             # Workday date segments mishandle a set value (Adobe: month "08" became "08/2008");
             # typed digits work and auto-advance. Verify the segment kept exactly this value.
-            # Click then type, as a person does; Control+A here scattered digits (12/2012).
-            locator.click()
+            # Focus then type, as a person does. Control+A scattered digits (12/2012), and a
+            # display layer covers the inputs, so a locator click times out.
+            locator.focus()
             self.page.keyboard.type(str(value), delay=60)
             self.page.wait_for_timeout(200)
             if locator.input_value() != str(value):

@@ -4,10 +4,12 @@
 <html><body>
 <div data-automation-id="formField-startDate">
   <label id="from">From*</label>
-  <div role="group" aria-labelledby="from">
+  <div role="group" aria-labelledby="from" style="position:relative; display:inline-block">
     <input id="workExperience-8--startDate-dateSectionMonth-input" aria-required="true" value="MM" aria-label="Month">
     <span>/</span>
     <input id="workExperience-8--startDate-dateSectionYear-input" aria-required="true" value="YYYY" aria-label="Year">
+    <!-- Workday draws its date display over the inputs; pointer clicks never reach them. -->
+    <div style="position:absolute; inset:0; background:rgba(255,255,255,.01)"></div>
   </div>
 </div>
 <script>
