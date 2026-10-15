@@ -977,7 +977,9 @@ class ApplicationBrowser:
                 raise BrowserBlocked("Select an option from this field's available choices.", code='option_mapping_required')
             self.choose_option(field["key"], option["label"])
         elif kind == "location":
-            locator.fill(str(value))
+            # Lever searches on keystrokes; a pasted value reports "No location found".
+            locator.fill('')
+            locator.press_sequentially(str(value), delay=40)
             results = self.scope.locator('.dropdown-results')
             option = results.get_by_text(str(value), exact=True)
             try:
