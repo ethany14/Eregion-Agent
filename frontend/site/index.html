@@ -137,8 +137,8 @@
       <figure class="hero-shot">
         <div class="window">
           <div class="window-bar" aria-hidden="true"><i></i><i></i><i></i><span>localhost:8000/apply</span></div>
-          <img class="for-night" src="assets/screens/chat-night.webp" width="1600" height="1000" alt="Eregion's Council view: a 91 out of 100 match for a Product Analyst role, with the agent's explanation of strengths and the one gap.">
-          <img class="for-day" src="assets/screens/chat-light.webp" width="1600" height="1000" alt="Eregion's Council view in the Day theme, showing a job match card and the agent's reply." loading="lazy">
+          <img class="for-night" src="assets/screens/chat-night.webp" width="1600" height="1000" alt="Eregion's Council view: the agent's search summary and a priority match card, 91 out of 100 for a Product Analyst role, with its reason, gap and next step.">
+          <img class="for-day" src="assets/screens/chat-light.webp" width="1600" height="1000" alt="Eregion's Council view in the Day theme, showing the search summary and a priority match card." loading="lazy">
         </div>
         <div class="phone" aria-hidden="true">
           <img class="for-night" src="assets/screens/phone-night.webp" width="640" height="1385" alt="">
@@ -229,9 +229,9 @@
       <ul class="tiles">
         <li>
           <a href="guide.html#find">
-            <div class="window"><img class="for-night" src="assets/screens/chat-night.webp" width="1600" height="1000" alt="A conversation with a 91 out of 100 match card." loading="lazy"><img class="for-day" src="assets/screens/chat-light.webp" width="1600" height="1000" alt="" loading="lazy"></div>
+            <div class="window"><img class="for-night" src="assets/screens/chat-night.webp" width="1600" height="1000" alt="A conversation with a priority match card, 91 out of 100." loading="lazy"><img class="for-day" src="assets/screens/chat-light.webp" width="1600" height="1000" alt="" loading="lazy"></div>
             <h3><svg class="i" aria-hidden="true"><use href="#i-council"/></svg>Council</h3>
-            <p>Ask for roles, a fit score or a cover letter in plain words.</p>
+            <p>Ask in plain words; results come back sorted into tiers, with gaps written out.</p>
           </a>
         </li>
         <li>
@@ -257,36 +257,31 @@
     <div class="wrap speed-grid">
       <div class="speed-copy">
         <p class="eyebrow"><svg class="i" aria-hidden="true"><use href="#i-bolt"/></svg>Optional fast path</p>
-        <h2>Fit scores in seconds with Jev.</h2>
-        <p>Jev is a fast yes/no decision model from Typesafe. Turn it on and Eregion scores job fit with Jev alone, up to sixteen jobs per batch, and keeps the decisions in a local cache. Your main model still handles conversation and writing.</p>
+        <h2>Fit scores in under a second with Jev.</h2>
+        <p>Jev is a fast yes/no decision model from Typesafe. Turn it on and Eregion scores job fit with Jev alone, up to sixteen jobs per batch, and keeps the decisions in a local cache. In live searches it scored 150 real postings in about 0.4 seconds each. Your main model still handles conversation and writing.</p>
         <a class="text-link" href="docs.html#jev">How to turn it on<svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></a>
               </div>
       <figure class="speed-chart">
-        <figcaption><b>Time to score fit</b><span>Recorded test runs · seconds, same scale</span></figcaption>
-        <div class="bars" role="img" aria-label="Main model only, cold: 32 to 49 seconds. Three jobs with Jev, separately: 4.6 seconds. Three jobs in one Jev batch: 2.0 seconds. Same three jobs from cache: 0.15 seconds.">
-          <div class="bar-row" title="Main model only, cold fit analysis: 32–49 s">
+        <figcaption><b>Time to score fit</b><span>Seconds per job · same scale</span></figcaption>
+        <div class="bars" role="img" aria-label="Main model only, one job: 32 to 49 seconds. Jev, average real posting in live searches: 0.39 seconds. Jev, slowest of 13 live searches: 0.59 seconds per posting.">
+          <div class="bar-row" title="Main model only, one job, cold: 32–49 s">
             <span class="bar-label">Main model only</span>
             <span class="bar-track"><i class="bar main" style="width:64%"></i><i class="bar main-range" style="width:34%"></i></span>
             <span class="bar-value">32–49 s</span>
           </div>
-          <div class="bar-row" title="Three jobs scored separately with Jev, cold: 4.6 s">
-            <span class="bar-label">Jev, 3 jobs separately</span>
-            <span class="bar-track"><i class="bar jev" style="width:9.2%"></i></span>
-            <span class="bar-value">4.6 s</span>
+          <div class="bar-row" title="Jev, average per real posting across 13 live searches: 0.39 s">
+            <span class="bar-label">Jev, average posting</span>
+            <span class="bar-track"><i class="bar jev" style="width:0.78%"></i></span>
+            <span class="bar-value strong">0.39 s</span>
           </div>
-          <div class="bar-row" title="Three jobs in one Jev batch, cold: 2.0 s">
-            <span class="bar-label">Jev, 3 jobs in one batch</span>
-            <span class="bar-track"><i class="bar jev" style="width:4%"></i></span>
-            <span class="bar-value strong">2.0 s</span>
-          </div>
-          <div class="bar-row" title="Same three jobs again from the local cache: 0.15 s">
-            <span class="bar-label">Same jobs, from cache</span>
-            <span class="bar-track"><i class="bar jev" style="width:0.3%"></i></span>
-            <span class="bar-value strong">0.15 s</span>
+          <div class="bar-row" title="Jev, slowest of the 13 live searches: 0.59 s per posting">
+            <span class="bar-label">Jev, slowest search</span>
+            <span class="bar-track"><i class="bar jev" style="width:1.18%"></i></span>
+            <span class="bar-value strong">0.59 s</span>
           </div>
           <div class="bar-axis" aria-hidden="true"><span></span><span class="ticks-row"><b>0</b><b>10</b><b>20</b><b>30</b><b>40</b><b>50</b></span><span></span></div>
         </div>
-        <p class="fine">Small synthetic runs on different days and inputs, so an indication rather than a controlled comparison. <a href="docs.html#jev">Measurements and caveats</a></p>
+        <p class="fine">Jev: 150 real postings scored inside 13 live searches (October 14), 2.1 Jev requests each and none failed; time is the sum of every Jev request. Main model: one synthetic job, cold (October 9). <a href="docs.html#jev">Measurements and caveats</a></p>
       </figure>
     </div>
   </section>

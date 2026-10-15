@@ -34,12 +34,50 @@ practise for interviews.
 Everything stays in a local database. Model work uses the API key you provide,
 and nothing is submitted without your approval.
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/screens/chat-light.webp">
-    <img src="frontend/site/assets/screens/chat-night.webp" alt="A conversation in Eregion: a 91/100 match for a Product Analyst role, with the agent's explanation of strengths and the one gap." width="92%">
-  </picture>
-</p>
+## A workspace for the whole search
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/screens/chat-light.webp">
+        <img src="frontend/site/assets/screens/chat-night.webp" alt="Council: the agent's search summary and a priority match card for a Product Analyst role, with its reason, gap and next step.">
+      </picture>
+      <h3>💬 Council</h3>
+      Your conversations with the agent. Results arrive as cards with their tier, reason, gaps and next step.
+    </td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/screens/home-light.webp">
+        <img src="frontend/site/assets/screens/home-night.webp" alt="The Chronicle home view: today's events, beacons that need you, and applications on the road.">
+      </picture>
+      <h3>📖 Chronicle</h3>
+      Home: what happened today, and which conversations are waiting on you.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/screens/road-light.webp">
+        <img src="frontend/site/assets/screens/road-night.webp" alt="The Road: application totals, a winding map of stations, and a progress table.">
+      </picture>
+      <h3>🛤️ The Road</h3>
+      Every application on one map, board or table, with response rates.
+    </td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/screens/forge-light.webp">
+        <img src="frontend/site/assets/screens/forge-night.webp" alt="The Forge: tailored resumes and cover letters with a drafted, tempered and sealed trail and a verified preview.">
+      </picture>
+      <h3>⚒️ The Forge</h3>
+      Materials are <i>drafted</i>, <i>tempered</i> (each claim checked against your resume) and <i>sealed</i> when you approve them.
+    </td>
+  </tr>
+</table>
+
+Job alerts run recurring searches and send you digests, and **The Lookout**
+shows the agent's browser so you can take control. Switch between parchment
+**Day** and holly-green **Night** from the sidebar.
 
 ## How a job search works
 
@@ -95,51 +133,6 @@ flowchart LR
 You can correct, pause or take over at any time. **Approving materials and the
 final submit are always yours.**
 
-## A workspace for the whole search
-
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <picture>
-        <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/screens/home-light.webp">
-        <img src="frontend/site/assets/screens/home-night.webp" alt="The Chronicle home view: today's events, beacons that need you, and applications on the road.">
-      </picture>
-      <h3>📖 Chronicle</h3>
-      Home: what happened today, and which conversations are waiting on you.
-    </td>
-    <td width="50%" valign="top">
-      <picture>
-        <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/screens/road-light.webp">
-        <img src="frontend/site/assets/screens/road-night.webp" alt="The Road: application totals, a winding map of stations, and a progress table.">
-      </picture>
-      <h3>🛤️ The Road</h3>
-      Every application on one map, board or table, with response rates.
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <picture>
-        <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/screens/forge-light.webp">
-        <img src="frontend/site/assets/screens/forge-night.webp" alt="The Forge: tailored resumes and cover letters with a drafted, tempered and sealed trail and a verified preview.">
-      </picture>
-      <h3>⚒️ The Forge</h3>
-      Materials are <i>drafted</i>, <i>tempered</i> (each claim checked against your resume) and <i>sealed</i> when you approve them.
-    </td>
-    <td width="50%" valign="top">
-      <picture>
-        <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/screens/phone-light.webp">
-        <img src="frontend/site/assets/screens/phone-night.webp" alt="Eregion on a phone-width screen." width="46%">
-      </picture>
-      <h3>💬 Council</h3>
-      Your conversations with the agent, in folders, pinned or archived, and on any screen size.
-    </td>
-  </tr>
-</table>
-
-Job alerts run recurring searches and send you digests, and **The Lookout**
-shows the agent's browser so you can take control. Switch between parchment
-**Day** and holly-green **Night** from the sidebar.
-
 <a id="where-jobs-come-from"></a>
 ## Where jobs come from
 
@@ -161,19 +154,25 @@ planning and writing. Eregion works fully without it.
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: light)" srcset="frontend/site/assets/readme/jev-speed-light.webp">
-    <img src="frontend/site/assets/readme/jev-speed-dark.webp" alt="Time to score fit: main model only 32–49 s; Jev, three jobs separately 4.6 s; Jev, three jobs in one batch 2.0 s; same jobs from cache 0.15 s." width="70%">
+    <img src="frontend/site/assets/readme/jev-speed-dark.webp" alt="Time to score fit, seconds per job on one scale: main model only 32–49 s; Jev, average real posting 0.39 s; Jev, slowest live search 0.59 s per posting." width="70%">
   </picture>
 </p>
 
-| Recorded run (synthetic resumes) | Time |
-| :-- | --: |
-| Main model only, cold | 32–49 s |
-| Three jobs in one Jev batch, cold | **2.0 s** |
-| Same three jobs again, from the local cache | **0.15 s** |
+In the October 14 scenario runs, Jev scored **150 real postings inside 13 live
+searches**:
 
-These are small runs on different days and inputs, so treat them as an
-indication, not a guarantee. To turn Jev on, add these lines to `.env` and
-restart:
+| Measure | Result |
+| :-- | --: |
+| Jev time per posting, average | **0.39 s** |
+| Jev time per posting, per search | 0.28–0.59 s |
+| Jev requests per posting | 2.1 |
+| Failed Jev requests | 0 of 317 |
+| Main model only, one job (earlier synthetic test) | 32–49 s |
+
+Jev time is the total of its request times, and postings were scored in shared
+batches. The main-model figure comes from a separate cold test, so the two rows
+compare scale, not identical conditions. To turn Jev on, add these lines to
+`.env` and restart:
 
 ```dotenv
 TYPESAFE_API_KEY=your-typesafe-key

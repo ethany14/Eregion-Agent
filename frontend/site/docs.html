@@ -194,31 +194,26 @@
         <h2><svg class="i" aria-hidden="true"><use href="#i-bolt"/></svg>Jev fast fit scoring</h2>
         <p>Optional. With Jev on, fit scoring uses Typesafe's Jev decision model alone, batches up to sixteen jobs, and caches decisions on your computer. Conversation and writing still use your main model.</p>
         <figure class="speed-chart">
-        <figcaption><b>Time to score fit</b><span>Recorded test runs · seconds, same scale</span></figcaption>
-        <div class="bars" role="img" aria-label="Main model only, cold: 32 to 49 seconds. Three jobs with Jev, separately: 4.6 seconds. Three jobs in one Jev batch: 2.0 seconds. Same three jobs from cache: 0.15 seconds.">
-          <div class="bar-row" title="Main model only, cold fit analysis: 32–49 s">
+        <figcaption><b>Time to score fit</b><span>Seconds per job · same scale</span></figcaption>
+        <div class="bars" role="img" aria-label="Main model only, one job: 32 to 49 seconds. Jev, average real posting in live searches: 0.39 seconds. Jev, slowest of 13 live searches: 0.59 seconds per posting.">
+          <div class="bar-row" title="Main model only, one job, cold: 32–49 s">
             <span class="bar-label">Main model only</span>
             <span class="bar-track"><i class="bar main" style="width:64%"></i><i class="bar main-range" style="width:34%"></i></span>
             <span class="bar-value">32–49 s</span>
           </div>
-          <div class="bar-row" title="Three jobs scored separately with Jev, cold: 4.6 s">
-            <span class="bar-label">Jev, 3 jobs separately</span>
-            <span class="bar-track"><i class="bar jev" style="width:9.2%"></i></span>
-            <span class="bar-value">4.6 s</span>
+          <div class="bar-row" title="Jev, average per real posting across 13 live searches: 0.39 s">
+            <span class="bar-label">Jev, average posting</span>
+            <span class="bar-track"><i class="bar jev" style="width:0.78%"></i></span>
+            <span class="bar-value strong">0.39 s</span>
           </div>
-          <div class="bar-row" title="Three jobs in one Jev batch, cold: 2.0 s">
-            <span class="bar-label">Jev, 3 jobs in one batch</span>
-            <span class="bar-track"><i class="bar jev" style="width:4%"></i></span>
-            <span class="bar-value strong">2.0 s</span>
-          </div>
-          <div class="bar-row" title="Same three jobs again from the local cache: 0.15 s">
-            <span class="bar-label">Same jobs, from cache</span>
-            <span class="bar-track"><i class="bar jev" style="width:0.3%"></i></span>
-            <span class="bar-value strong">0.15 s</span>
+          <div class="bar-row" title="Jev, slowest of the 13 live searches: 0.59 s per posting">
+            <span class="bar-label">Jev, slowest search</span>
+            <span class="bar-track"><i class="bar jev" style="width:1.18%"></i></span>
+            <span class="bar-value strong">0.59 s</span>
           </div>
           <div class="bar-axis" aria-hidden="true"><span></span><span class="ticks-row"><b>0</b><b>10</b><b>20</b><b>30</b><b>40</b><b>50</b></span><span></span></div>
         </div>
-        <p class="fine">Small synthetic runs on different days and inputs, so an indication rather than a controlled comparison. <a href="https://github.com/ethany14/Eregion-Job-Finding-Agent/blob/main/docs/jev-benchmark.md">Full measurements</a></p>
+        <p class="fine">Jev: 150 real postings scored inside 13 live searches (October 14), 2.1 Jev requests each and none failed; time is the sum of every Jev request. Main model: one synthetic job, cold (October 9). <a href="https://github.com/ethany14/Eregion-Job-Finding-Agent/blob/main/docs/jev-benchmark.md">Measurements and caveats</a></p>
       </figure>
         <pre class="code"><code>TYPESAFE_API_KEY=your-typesafe-key
 TYPESAFE_BASE_URL=https://api.typesafe.ai
