@@ -2,6 +2,7 @@
 import json
 import os
 import time
+from uuid import uuid4
 from urllib.parse import urlsplit
 
 import pytest
@@ -82,20 +83,26 @@ def test_account_banner_shared_login_and_takeover_navigation_full_chain(career,t
             expect(page.get_by_role('button',name='Create candidate account',exact=True)).to_have_count(0,timeout=20000)
             expect(page.locator('#agent-messages')).to_contain_text('verification',timeout=20000)
             if not page.locator('#browser-panel').is_visible():page.locator('#browser-toggle').click()
-            page.locator('#take-over').click()
-            expect(page.locator('#control-status')).to_contain_text('You have control',timeout=20000)
-            expect(page.locator('#control-image')).to_be_visible()
-            page.locator('#control-text').fill('123456')
-            page.get_by_role('button',name='Type text',exact=True).click()
-            expect(page.locator('#control-status')).to_contain_text('You have control',timeout=15000)
-            page.locator('#control-key').select_option('Enter');page.locator('#control-key-send').click()
-            expect(page.locator('#control-address')).to_contain_text('/verified',timeout=20000)
-            page.locator('#control-refresh').click()
-            expect(page.locator('#control-status')).to_contain_text('You have control',timeout=20000)
+            # "Control browser" now pops up the real local Chrome window (2026-10-15), which a
+            # test must not put on screen. The same takeover chain is driven through the
+            # browser-control API that remains for it: take control, type the code, navigate,
+            # refresh, then hand back.
+            expect(page.locator('#take-over')).to_be_visible()
+            task_id=c.state['task_id'];control=f'/api/career/tasks/{task_id}/browser-control';local={'origin':'http://localhost'}
+            version=client.get(f'/api/career/tasks/{task_id}').json()['task_version']
+            frame=client.post(control,json={'action':'start','expected_version':version},headers=local).json()
+            assert frame.get('session') and frame.get('frame_id')
+            frame=client.post(control,json={'action':'text','text':'123456','session':frame['session'],'frame_id':frame['frame_id']},headers=local).json()
+            frame=client.post(control,json={'action':'key','key':'Enter','session':frame['session'],'frame_id':frame['frame_id']},headers=local).json()
+            deadline=time.monotonic()+20
+            while '/verified' not in frame.get('url','') and time.monotonic()<deadline:
+                page.wait_for_timeout(300)
+                frame=client.post(control,json={'action':'frame','session':frame['session']},headers=local).json()
+            assert '/verified' in frame['url'],frame.get('url')
             assert not page.locator('#apply-error').is_visible()
             page.screenshot(path=str(tmp_path/'takeover-after-navigation.png'),full_page=True)
-            page.locator('#control-resume').click()
-            expect(page.locator('#browser-control-dialog')).not_to_be_visible(timeout=15000)
+            client.post(control,json={'action':'end','session':frame['session']},headers=local)
+            assert client.post(f'/api/career/tasks/{task_id}/chat',json={'text':'continue','message_id':str(uuid4())}).status_code<400
             deadline=time.monotonic()+25
             while time.monotonic()<deadline:
                 a,b=loop.repository.get(first),loop.repository.get(second)

@@ -51,6 +51,7 @@ class FakeBrowser:
     def confirmation(self):
         return {"url": "https://jobs.lever.co/example/abc123/thanks", "text": "Application received"} if self.submissions and not self.uncertain else None
     def submit(self):
+        self.submit_clicked = True  # Like ApplicationBrowser: the error below happens during the click.
         self.submissions += 1
         if self.submit_error: raise TimeoutError("unsafe provider details must not be returned")
     def wait_confirmation(self): return self.confirmation()
@@ -136,6 +137,23 @@ def test_uncertain_submission_is_never_retried_even_after_restart(database, subm
         with pytest.raises(ApplyConflict): recovered.start(request(idempotency_key="different-request"))
         assert browser.submissions == 1
     finally: recovered.close()
+
+
+def test_failure_before_the_submit_click_is_reported_as_not_submitted(database):
+    # Pilot 1 (2026-10-15): a check that fails before any click used to read "may have
+    # reached the employer". Nothing was sent, so the run says so and can be reviewed again.
+    from eregion.runtime.auto_apply.browser import BrowserBlocked
+    browser = FakeBrowser("")
+    def refuse():
+        raise BrowserBlocked("A single final submit button could not be identified.")
+    browser.submit = refuse
+    loop = ApplicationLoop(ApplyRepository(database.session_factory), browser_factory=lambda _: browser)
+    try:
+        run_id = loop.start(request(auto_submit=True))["run_id"]
+        done = wait(loop, run_id)
+        assert done["status"] == "needs_input" and done["message"].startswith("Not submitted:")
+        assert "could not be identified" in done["message"] and browser.submissions == 0
+    finally: loop.close()
 
 
 def test_changed_form_requires_fresh_review(database):

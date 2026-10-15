@@ -763,6 +763,10 @@ class ApplicationLoop:
             if browser is not None and not browser.is_open():
                 self._close_browser(run_id)
                 browser = None
+            if browser is not None and getattr(browser, "headless", True) is False and hasattr(browser, "set_visible"):
+                # The user controlled the real Chrome window; the agent works hidden again.
+                try:browser.set_visible(False)
+                except BrowserBlocked:pass
             if browser is None:
                 # A finished browser may remain open briefly for inspection, but
                 # never accumulate an unbounded number of browser processes.
@@ -989,6 +993,7 @@ class ApplicationLoop:
                     return
                 self.repository.save(current, status="submitting", fields=fields, recovery_review_required=False,
                     message="Submitting once and waiting for the employer confirmation.")
+            browser.submit_clicked = False  # submit() sets True right before its one click
             browser.submit()
             proof = browser.wait_confirmation()
             self.repository.save(self.repository.get(run_id),
@@ -1002,6 +1007,17 @@ class ApplicationLoop:
             if state["status"] in TERMINAL or state.get("pause_requested"):
                 return
             submitting = state["status"] == "submitting"
+            if submitting and getattr(self.browsers.get(run_id), "submit_clicked", True) is False:
+                # Failed before the submit button was clicked: nothing reached the employer.
+                try:
+                    self.repository.save(state, status="needs_input", error_type=type(exc).__name__,
+                        message="Not submitted: " + (str(exc) if isinstance(exc, BrowserBlocked) else
+                                "the submit step failed before the button was clicked.") +
+                                " Check the form, then confirm the review again.",
+                        **({"fields": fields} if fields is not None else {}))
+                except ApplyConflict:
+                    pass
+                return
             if not isinstance(exc, BrowserBlocked):
                 # Never log the message: Playwright errors can contain typed answers.
                 logger.error("Application step failed: run=%s status=%s type=%s\n%s", run_id, state["status"],

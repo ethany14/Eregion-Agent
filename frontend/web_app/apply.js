@@ -524,7 +524,9 @@ function memoryApprovals(approvals,choices){
 function renderWorkspace(){
   $('#task-plan').replaceChildren();$('#browser-actions').replaceChildren();$('#answer-list').replaceChildren();
   const canControl=current&&(!current.career||current.application_run_id||current.browser)&&!terminal.has(current.status)&&current.status!=='submitting';
-  $('#take-over').hidden=!canControl;$('#background-browser').hidden=!canControl;$('#browser-mode-note').hidden=!canControl;
+  // The agent works in a hidden Chrome shown live in this panel. Control browser pauses it and
+  // pops up that real (local) Chrome window; it hides again when the agent resumes.
+  $('#take-over').hidden=!canControl;$('#background-browser').hidden=true;$('#browser-mode-note').hidden=!canControl;
   $('#take-over').disabled=actionBusy||chatBusy;$('#background-browser').disabled=actionBusy||chatBusy;
   $('#cancel-attempt').hidden=!current||terminal.has(current.status)||current.status==='submitting';
   $('#browser-caption').textContent=current?`${browserHost(current)||company(current)} · live view`:'The browser will appear here.';
@@ -612,7 +614,7 @@ $('#attach-resume').addEventListener('click',()=>$('#resume-file').click());$('#
 $('#pause-agent').addEventListener('click',()=>send(current?.pause_requested?'continue':'pause'));
 $('#browser-toggle').addEventListener('click',()=>workspace($('#browser-panel').hidden,{remember:true}));$('#browser-close').addEventListener('click',()=>workspace(false,{remember:true}));
 const localBrowserControl=createBrowserControl({current:()=>current,refresh,resume:()=>send('continue')});
-$('#take-over').addEventListener('click',()=>localBrowserControl.open());$('#background-browser').addEventListener('click',()=>browserWindow(true));$('#cancel-attempt').addEventListener('click',()=>act('cancel',{}));
+$('#take-over').addEventListener('click',()=>browserWindow(true));$('#background-browser').addEventListener('click',()=>browserWindow(true));$('#cancel-attempt').addEventListener('click',()=>act('cancel',{}));
 $('#history-toggle').addEventListener('click',()=>$('#history-panel').classList.toggle('open'));
 $('#history-scrim').addEventListener('click',()=>$('#history-panel').classList.remove('open'));
 document.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&!event.altKey&&event.key.toLowerCase()==='k'&&!document.querySelector('dialog[open]')){event.preventDefault();reset();$('#chat-text').focus();}});

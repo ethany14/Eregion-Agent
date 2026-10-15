@@ -132,10 +132,11 @@ def test_activity_panel_only_opens_window_on_explicit_button_click(career,tmp_pa
         page.locator('#browser-toggle').click()
         expect(page.locator('#take-over')).to_be_visible()
         assert calls==[]  # Viewing the preview alone must never show Chrome.
-        page.locator('#background-browser').click()
+        # Control browser pauses the agent and pops up the real (local) Chrome window (2026-10-15).
+        page.locator('#take-over').click()
         expect(page.locator('#pause-agent')).to_have_text('Resume')
         assert calls==[True]
-        # Background operation is the default. The separate window is now a fallback.
+        # Background operation stays the default; the window hides again on resume.
         page.screenshot(path=str(tmp_path/'background-browser-light.png'))
         page.emulate_media(color_scheme='dark');page.screenshot(path=str(tmp_path/'background-browser-dark.png'))
         page.set_viewport_size({'width':390,'height':844});page.emulate_media(color_scheme='light')

@@ -114,6 +114,19 @@ OTHER_PARTY = re.compile(r"\b(company|employer|organi[sz]ation|business|referenc
     r"school|university|college|institution|job|position|title|user ?name|account)\b")
 
 
+def confirms_proposal(history, quote, value):
+    """A plain "yes" confirms the exact value the agent proposed in its question just before.
+
+    Palantir pilot: "Use today's date, 10/15/2026?" -> "yes" was acknowledged but never
+    recorded, because "yes" does not literally contain the date. The value must appear in
+    that last assistant message; anything else still needs the user's own words.
+    """
+    if boolean_answer(quote) is not True or not clean(value):
+        return False
+    asked = next((m for m in reversed(history) if m.get("role") == "assistant"), None)
+    return bool(asked) and clean(value).casefold() in clean(asked.get("text", "")).casefold()
+
+
 def grounded(field, quote, value, options):
     """A recorded chat answer must be what the quote says, not merely cite a message."""
     q, v = clean(quote), clean(value)
@@ -404,6 +417,14 @@ class AgentTools:
                 raise BrowserBlocked('Associate observed fields, or use an empty field list for a general question.')
             waiting = args.get('wait_for_reply', True)
             if not isinstance(waiting, bool):raise BrowserBlocked('wait_for_reply must be a boolean.')
+            if not keys:
+                # A text question that names empty fields becomes an answer batch for them, so
+                # the user gets answer cards with their drafts (Palantir pilot: a text-only list
+                # hid both). A question naming no field stays a general question.
+                asked = ' '.join(text.casefold().split())
+                keys = [f['key'] for f in self.fields if not f.get('value') and f.get('kind') not in {'file', 'password'}
+                        and len(name := ' '.join(str(f.get('label') or '').casefold().replace('✱', '').replace('*', '').split())[:40]) >= 8
+                        and name in asked][:30]
             if self.publish_question:
                 request = self.publish_question(text.strip(), list(dict.fromkeys(keys)), self.fields,
                     self.state.get('chat_revision',0))
@@ -881,7 +902,8 @@ class AgentTools:
                 evidence = (field["label"], quote, value)
                 if evidence not in self.verified_answers:
                     semantic.append(evidence)
-            elif not grounded(field, quote, value, self.observed_options.get(key) or field.get("options", [])):
+            elif (not grounded(field, quote, value, self.observed_options.get(key) or field.get("options", []))
+                    and not confirms_proposal(messages[:order[message_id]], quote, value)):
                 raise BrowserBlocked("The value must be stated in the quoted part of the user's message. "
                     "Quote their words for this answer, or ask them if they did not give it.", code="quote_mismatch")
             if message.get("field_key") and message["field_key"] != key:

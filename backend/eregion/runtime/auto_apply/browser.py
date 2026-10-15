@@ -32,7 +32,15 @@ SCAN = r"""() => {
     }
     return '';
   };
-  const label = el => clean([...new Set(Array.from(el.labels || []).map(x => clean(x.textContent)))].join(' ') ||
+  // A <label> that wraps its own control (Lever EEO selects) must not absorb the
+  // option text ("Veteran statusSelect ...I identify..."), or saved answers never match.
+  const ownText = (lab, el) => {
+    if (!lab.contains(el)) return clean(lab.textContent);
+    const copy = lab.cloneNode(true);
+    copy.querySelectorAll('select, option, input, textarea, button, [role="listbox"], [role="option"]').forEach(n => n.remove());
+    return clean(copy.textContent);
+  };
+  const label = el => clean([...new Set(Array.from(el.labels || []).map(x => ownText(x, el)))].join(' ') ||
     el.closest('[data-automation-id^="formField-"]')?.querySelector('label')?.textContent ||
     // An explicit reference names the control better than the nearest label,
     // which can belong to a sibling field. Skip a self-reference (its value).
@@ -196,6 +204,25 @@ OPTION_SCAN = r"""els => {
       expandable:el.hasAttribute('aria-expanded') || !!el.querySelector('[aria-expanded], [aria-haspopup]'),
       disabled:el.getAttribute('aria-disabled') === 'true'};
   }).filter(Boolean);
+}"""
+
+# Cookie banners covering a form cost the agent minutes of page reads (Palantir pilot,
+# 2026-10-15). Privacy first: choose "reject"/"necessary only" when offered; otherwise hide
+# the banner without accepting. Only known consent containers are touched.
+CONSENT = r"""() => {
+  const boxes = '.cc-window, #onetrust-banner-sdk, #onetrust-consent-sdk, #CybotCookiebotDialog, #truste-consent-track, ' +
+    '#usercentrics-root, .osano-cm-dialog, [class*="cookie-banner"], [id*="cookie-banner"], [class*="cookieBanner"], [id*="cookieBanner"]';
+  const visible = e => e.offsetParent !== null || getComputedStyle(e).position === 'fixed';
+  const banners = [...document.querySelectorAll(boxes)].filter(visible);
+  if (!banners.length) return '';
+  const reject = /^(reject( all)?|decline( all)?|deny( all)?|necessary only|only necessary|essential only|only essential|use necessary cookies only|reject non-essential( cookies)?|refuse( all)?)$/i;
+  for (const banner of banners) {
+    const button = [...banner.querySelectorAll('button, a, [role="button"]')]
+      .find(b => visible(b) && reject.test((b.innerText || b.getAttribute('aria-label') || '').trim()));
+    if (button) { button.click(); return 'rejected'; }
+  }
+  for (const banner of banners) banner.style.setProperty('display', 'none', 'important');
+  return 'hidden';
 }"""
 
 _playwright_runtime = local()
@@ -592,8 +619,19 @@ class ApplicationBrowser:
         self._check_page()
         self.save_login_state()
 
+    def _clear_consent(self):
+        """Take a cookie banner out of the way without consenting (reject if offered, else hide)."""
+        try:
+            outcome = self.page.evaluate(CONSENT)
+        except Exception:
+            return None
+        if outcome:
+            self._settle(800)
+        return outcome
+
     def observe(self):
         self._check_page()
+        self._clear_consent()
         fields = self.scope.evaluate(SCAN)
         if len(fields) > MAX_FIELDS:
             raise BrowserBlocked("This form has too many controls for this release. Complete it manually.")
@@ -982,6 +1020,7 @@ class ApplicationBrowser:
         if not page["can_submit"] or len(buttons) != 1:
             raise BrowserBlocked("A single final submit button could not be identified.")
         button = self.scope.locator(f'[data-northstar-action="{buttons[0]["id"]}"]')
+        self.submit_clicked = True  # From here on the employer may have received it.
         button.click(timeout=8000)  # Exactly one attempt, even if the response times out.
 
     def wait_confirmation(self):
