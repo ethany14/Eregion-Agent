@@ -136,3 +136,11 @@ def test_http_rejection_without_hash_allows_one_observation_not_infinite_progres
         with pytest.raises(PostingRejected) as repeat:execute(c,name,url=job['url'])
         assert repeat.value.repeated
     assert len(calls)==1
+
+
+def test_composite_quote_counts_only_when_every_part_is_exact():
+    from eregion.runtime.career.candidate_health import exact_excerpt
+    job={'title':'UX Designer','location':'Austin, TX','description':'Requires 5+ years of product design.'}
+    assert exact_excerpt('UX Designer — Austin, TX',job) and exact_excerpt('UX Designer - Austin, TX',job)
+    assert exact_excerpt('Requires 5+ years',job)
+    assert not exact_excerpt('UX Designer — Dallas, TX',job) and not exact_excerpt('Senior UX Designer',job)

@@ -447,8 +447,8 @@ class CareerHarness:
         if not lists['next_steps']:raise ValueError('Give at least one concrete next step.')
         near=[c for c in (qualification.get('near_misses') or [])]
         if near and tier=='priority':
-            raise ValueError('This opening sits just outside the requested '+' and '.join(c['field'] for c in near)
-                             +'; present it as to_confirm or stretch and state that difference, never as priority.')
+            raise ValueError('This opening is not confirmed inside the requested '+' and '.join(c['field'] for c in near)
+                             +' (near or unknown); present it as to_confirm or stretch and state that, never as priority.')
         sources={'title':retrieved.get('title') or '','location':retrieved.get('location') or '',
                  'description':retrieved.get('description') or ''}
         evidence=[]

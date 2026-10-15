@@ -68,14 +68,17 @@ def test_plan_repair_returns_exact_valid_shape():
     assert '"steps":["Verify candidates","Score matches"]' in result['next']
 
 
-def test_workflow_skips_paid_scoring_when_requested_location_unverified(career,monkeypatch):
+def test_workflow_scores_unverified_location_as_unconfirmed(career,monkeypatch):
+    # Show by default (handoff 12.22): an unverified location is scored and carried as a
+    # near miss (never priority); a clear mismatch is what skips paid scoring (test_qualified_batch).
     monkeypatch.setenv('JOB_AGENT_JOB_API_FIRST','1')
     c=career
     c.repository.change(c.state['task_id'],goal='Find 15 current junior data analyst positions in New York.',messages=[])
     result=execute(c,'verify_and_score',url='https://jobs.lever.co/example/abc123')
-    assert result['error_code']=='qualification_needed'
-    assert result['completed_steps']==['read_job']
-    assert c.repository.get(c.state['task_id'])['jobs']==[]
+    state=c.repository.get(c.state['task_id'])
+    assert state['jobs']==[result['application_id']]
+    (row,)=state['candidate_qualifications'].values()
+    assert row['qualified'] and 'location' in [m['field'] for m in row['near_misses'] if m['status']=='unknown']
     repeated=execute(c,'verify_and_score',url='https://jobs.lever.co/example/abc123')
     assert repeated['no_new_evidence']
 

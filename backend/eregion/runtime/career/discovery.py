@@ -300,7 +300,9 @@ class JobDiscovery:
                     invalid += 1
             if invalid:
                 results['dropped_invalid_urls'] = invalid
-            results['jobs'] = list(keyed.values())[:max(limit, DIRECTORY_JOBS)]  # all boards' matches, bounded
+            from .search_recovery import spread
+            # Interleave employers so one large board does not fill the bounded list.
+            results['jobs'] = spread(list(keyed.values()))[:max(limit, DIRECTORY_JOBS)]  # all boards' matches, bounded
             results['directory_searched'] = [board_source(b) for b in boards[:DIRECTORY_FANOUT]]
             results['directory_remaining'] = max(0, len(boards) - DIRECTORY_FANOUT)
             results['directory_matching'] = total

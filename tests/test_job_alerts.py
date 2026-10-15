@@ -70,10 +70,13 @@ def search_decision(s):
     if not s['jobs']:return 'import_job',{'url':url}
     job=s['jobs'][0]
     if 'score_job' not in history:return 'score_job',{'application_id':job['application_id']}
-    if 'recommend_job' not in history:return 'recommend_job',{'application_id':job['application_id'],'tier':'priority',
-        'reason':'Your resume shows Python API experience.','evidence':[job['title']],'gaps':[],'to_confirm':[],
+    # The scripted posting's role and location are unconfirmed for the request: to_confirm, never priority.
+    if 'recommend_job' not in history:return 'recommend_job',{'application_id':job['application_id'],'tier':'to_confirm',
+        'reason':'Your resume shows Python API experience.','evidence':[job['title']],'gaps':[],'to_confirm':['Role and location fit the request.'],
         'next_steps':['Apply with the saved resume.'],'caveats':'Confirm location and sponsorship.'}
-    return 'finish_task',{'text':'I found a verified Python role. Review the recommendation below.',
+    score=next((r.get('match_score') for r in s.get('recommendations',[])),job.get('match_score'))
+    return 'finish_task',{'text':f'Needs your confirmation (1)\n- Python Engineer: {url} Score {score}. To confirm: role and '
+                                  'location fit the request. Next step: apply with the saved resume.',
                           'stop_reason':'The single observed posting was processed; no other candidates were observed.'}
 
 

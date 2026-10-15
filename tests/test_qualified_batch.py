@@ -32,7 +32,8 @@ def test_unknown_or_mismatch_never_qualifies(change,field,status):
     assert result['review']['method']=='not_assessed'  # No scripted semantic verdict, including for familiar phrases.
 
 def test_batch_only_scores_qualified_and_reuses_persisted_results(career,monkeypatch):
-    c=career;jobs=[posting(1),posting(2),posting(3,location='US Remote')]
+    # A clear mismatch (unmet level) is not scored; an unconfirmed field alone would be shown.
+    c=career;jobs=[posting(1),posting(2),posting(3,description='Requires 5 years of professional experience.')]
     reads=prepare(c,monkeypatch,jobs)
     service=c.harness.analysis._fit_service;original=service.analyze_many;groups=[]
     async def batch(**kwargs):groups.append([j['id'] for j in kwargs['jobs']]);return await original(**kwargs)
@@ -45,6 +46,9 @@ def test_batch_only_scores_qualified_and_reuses_persisted_results(career,monkeyp
     assert len(deferred(state))==1 and len(state['jobs'])==2
     repeated=execute(c,'verify_and_score_jobs',**args)
     assert repeated['no_new_evidence'] and len(groups)==1 and len(reads)==3
+    # Finished postings are reported as such instead of being redone (live-set-02 designer).
+    assert sorted(i['outcome'] for i in repeated['already_processed'])==['not_shown','scored','scored']
+    assert repeated['already_processed'][2]['unmet']==['seniority'] and 'do not resubmit' in repeated['next']
     regrouped=execute(c,'verify_and_score_jobs',urls=[jobs[0]['url'],jobs[2]['url']])
     assert regrouped['no_new_evidence'] and len(groups)==1 and len(reads)==3
     extra=posting(4);jobs.append(extra)
@@ -59,9 +63,14 @@ def test_recommendation_rechecks_current_request(career,monkeypatch):
     c=career;jobs=[posting(1)];prepare(c,monkeypatch,jobs)
     result=execute(c,'verify_and_score_jobs',urls=[jobs[0]['url']])
     identifier=result['jobs'][0]['application_id']
+    args=dict(application_id=identifier,tier='priority',reason='Good Python fit',
+              evidence=['Junior Data Analyst'],gaps=[],to_confirm=[],next_steps=['Apply.'],caveats='')
+    # A changed location is not confirmed for the new request: never priority.
     c.repository.change(c.state['task_id'],goal=GOAL.replace('New York','Boston'))
-    result=execute(c,'recommend_job',application_id=identifier,tier='priority',reason='Good Python fit',
-                   evidence=['Junior Data Analyst'],gaps=[],to_confirm=[],next_steps=['Apply.'],caveats='')
+    with pytest.raises(ValueError,match='not confirmed inside the requested location'):execute(c,'recommend_job',**args)
+    # A changed level the opening clearly does not meet keeps it out entirely.
+    c.repository.change(c.state['task_id'],goal=GOAL.replace('junior','senior'))
+    result=execute(c,'recommend_job',**args)
     assert result['error_code']=='qualification_needed'
     assert not c.repository.get(c.state['task_id']).get('recommendations')
 
@@ -125,8 +134,8 @@ def test_budget_stop_keeps_imports_and_resume_uses_same_jobs(career,monkeypatch)
     assert after['jobs']==before['jobs'] and len(reads)==2 and len(after['analyses'])==2
     assert all(not v.get('failure') for v in after['batch_verifications'].values())
 
-def test_granular_scoring_cannot_bypass_location_guard(career,monkeypatch):
-    c=career;jobs=[posting(1,location='US Remote')];prepare(c,monkeypatch,jobs)
+def test_granular_scoring_cannot_bypass_qualification_guard(career,monkeypatch):
+    c=career;jobs=[posting(1,description='Requires 5 years of professional experience.')];prepare(c,monkeypatch,jobs)
     execute(c,'read_job',url=jobs[0]['url']);saved=execute(c,'import_job',url=jobs[0]['url'])
     assert execute(c,'score_job',application_id=saved['application_id'])['error_code']=='qualification_needed'
     assert execute(c,'score_jobs',application_ids=[saved['application_id']])['error_code']=='qualification_needed'
@@ -202,7 +211,8 @@ def test_source_stop_mid_batch_keeps_already_read_postings(career,monkeypatch):
     monkeypatch.setattr(c.harness.discovery,'job',stopped)
     result=execute(c,'verify_and_score_jobs',urls=[jobs[0]['url'],jobs[1]['url']])
     statuses={i['url']:i['status'] for i in result['candidates']}
-    assert statuses[jobs[1]['url']]=='source_stopped' and result['qualified_count']==1
+    assert statuses[jobs[1]['url']]=='source_stopped' and result['qualified_count']==0
+    assert [i['url'] for i in result['already_processed']]==[jobs[0]['url']]  # finished earlier, not redone
 
 
 def test_exhausted_linkedin_cards_are_not_pending_work(career):
@@ -248,3 +258,10 @@ def test_inspect_job_reads_exact_requirements_by_id(career,monkeypatch):
     detail=execute(c,'inspect_job',application_id=job['application_id'],requirement_ids=[*ids,'missing-id'])
     assert [r['id'] for r in detail['requirements']]==ids and detail['unknown_ids']==['missing-id']
     assert 'materials' not in detail and all('requirement' in r and 'resume_evidence' in r for r in detail['requirements'])
+
+
+def test_queue_spreads_candidates_across_employers():
+    from eregion.runtime.career.search_recovery import spread
+    cards=[{'url':f'https://x/{c}{i}','company':c} for c,n in (('Affirm',4),('Stripe',1),('',1),('affirm',1)) for i in range(n)]
+    assert [c['company'] for c in spread(cards)]==['Affirm','Stripe','','Affirm','Affirm','Affirm','affirm']
+    assert sorted(c['url'] for c in spread(cards))==sorted(c['url'] for c in cards)  # nothing dropped

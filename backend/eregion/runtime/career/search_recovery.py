@@ -8,6 +8,21 @@ from .alerts import job_key
 SEARCH_WORK={'search_jobs','screen_jobs','read_job','verify_and_score','verify_and_score_jobs'}
 
 
+def spread(cards):
+    """Interleave cards across employers, keeping each employer's own order.
+
+    Presentation order only (nothing is dropped): one large employer's board used to fill the
+    whole next batch (live-set-02 backend: every result from one company)."""
+    groups={}
+    for card in cards:
+        groups.setdefault(str(card.get('company') or '').strip().casefold() or card.get('url',''),[]).append(card)
+    queues=list(groups.values());out=[]
+    while queues:
+        out.extend(q.pop(0) for q in queues)
+        queues=[q for q in queues if q]
+    return out
+
+
 def search_request(state):
     users=[m['text'] for m in state.get('messages',[]) if m.get('role')=='user'] or [state.get('goal','')]
     found=_parse(users[-1])
@@ -81,11 +96,12 @@ def recovery(state,*,saved_urls=()):
     from .search_filters import filter_cards
     from .candidate_queue import enabled
     if enabled():pending,_=filter_cards(pending,state)
+    pending=spread(pending)
     saved={job_key(url) for url in saved_urls if url}|{job_key(j['url']) for j in state.get('recommendations',[]) if j.get('url')}
     read_not_imported={job_key(j['url']):{k:j[k] for k in ('url','title','company','location') if k in j}
         for j in state.get('retrieved_jobs',{}).values() if j.get('url') and job_key(j['url']) not in excluded|saved}
     return {'requested_count':request['count'],'recommended_count':len(state.get('recommendations',[])),
-        'pending_candidates':[{**{k:j[k] for k in ('url','title','source','source_page') if k in j},
+        'pending_candidates':[{**{k:j[k] for k in ('url','title','company','source','source_page') if k in j},
             'read_job_arguments':{'url':j['url']}} for j in pending[:20]],
         'read_not_imported':[{**j,'import_job_arguments':{'url':j['url']}} for j in list(read_not_imported.values())[:3]],
         'instruction':'Pending links are discovery only, not verified jobs. Use the bounded read_job arguments to verify the target posting, identity, location, seniority and eligibility. Saved retrieved bodies can be imported without another remote read, but are not automatically qualifying or recommended. Do not repeat blocked sources or already-read details. If no eligible candidate remains, change public source or query to discover genuinely different postings; do not repeat identical result lists.'}

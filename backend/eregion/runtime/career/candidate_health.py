@@ -1,6 +1,7 @@
 """Durable source-backed exclusions shared across research/import tools."""
 import hashlib
 import json
+import re
 
 from .alerts import job_key
 from .posting_qualification import PostingRejected, validate_posting
@@ -9,6 +10,15 @@ from .posting_qualification import PostingRejected, validate_posting
 def source_hash(job):
     return hashlib.sha256(json.dumps({k:job.get(k) for k in
         ('title','company','location','description')},sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+
+
+def exact_excerpt(quote, job):
+    """An exact excerpt, or a composite such as 'Title — Location' whose every part is one."""
+    fields = [str(job.get(k) or '') for k in ('title','location','description')]
+    if any(quote in f for f in fields):
+        return True
+    parts = [p.strip() for p in re.split(r'\s+[—–|·-]\s+', quote)]
+    return len(parts) > 1 and all(p and any(p in f for f in fields) for p in parts)
 
 
 def dismiss(repository, task_id, args, observed=None):
@@ -22,7 +32,7 @@ def dismiss(repository, task_id, args, observed=None):
     quote, reason = args['quote'].strip(), args['reason'].strip()
     if not quote or len(quote) > 600 or not reason or len(reason) > 600:
         raise ValueError('Provide a source quote and reason, each at most 600 characters.')
-    if not any(quote in str(job.get(k) or '') for k in ('title','location','description')):
+    if not exact_excerpt(quote, job):
         raise ValueError('quote must be an exact excerpt of the retrieved title, location or JD.')
     body_hash = source_hash(job)
     record = {'revision':state.get('chat_revision',0), 'url':job['url'], 'title':job.get('title'),

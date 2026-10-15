@@ -62,8 +62,11 @@ def test_unknown_or_negative_model_decision_is_not_overridden_by_junior_title(ca
         return value
     monkeypatch.setattr(q,'judge',judge)
     result=q.record_many(repo,tid,[job(title='Junior Data Analyst'),job(2)])
-    assert not any(r['qualified'] for r in result)
     assert [r['checks'][f]['status'] for r,f in zip(result,['seniority','location'])]==['unmet','unknown']
+    # A clear mismatch keeps the posting out; an unknown is shown as unconfirmed (handoff 12.22).
+    assert not result[0]['qualified'] and result[1]['qualified']
+    assert result[1]['near_misses']==[{'field':'location','status':'unknown','quote':result[1]['checks']['location']['quote'],
+                                       'reason':result[1]['checks']['location']['reason']}]
 
 
 @pytest.mark.parametrize('status',['unmet','not_requested'])
@@ -76,8 +79,10 @@ def test_vacancy_must_be_established_by_the_model(career,monkeypatch,status):
         return value
     monkeypatch.setattr(q,'judge',judge)
     result=q.record(repo,tid,job(title='Junior Data Analyst'))
-    assert not result['qualified']
     assert result['checks']['vacancy']['status']==('unknown' if status=='not_requested' else 'unmet')
+    # A closed opening (unmet) stays out; an unestablished vacancy is shown as unconfirmed.
+    assert result['qualified']==(status=='not_requested')
+    if status=='not_requested':assert [m['field'] for m in result['near_misses']]==['vacancy']
 
 
 @pytest.mark.parametrize('invalid',['other_job_quote','invented_quote','missing_quote','wrong_request','duplicate_id'])
@@ -94,10 +99,17 @@ def test_unbound_model_evidence_cannot_qualify(career,monkeypatch,invalid):
     monkeypatch.setattr(q,'judge',judge)
     jobs=[job(),job(2,description='A distinct posting with a different source sentence.')]
     results=q.record_many(repo,tid,jobs)
-    assert not results[0]['qualified']
+    # An unverified claim never counts as confirmed: the field is unknown, so the posting is
+    # at most shown as unconfirmed (never priority); an unusable reply never passes.
+    if invalid=='duplicate_id':
+        assert not results[0]['qualified']
+    else:
+        assert results[0]['checks']['seniority']['status']=='unknown'
+        assert 'seniority' in [m['field'] for m in results[0]['near_misses']]
     # An unusable reply (duplicate identities) gets exactly one bounded retry; the
-    # cached unknown then prevents further calls.
-    assert not q.record_many(repo,tid,jobs)[0]['qualified'] and len(calls)==(2 if invalid=='duplicate_id' else 1)
+    # cached result then prevents further calls.
+    again=q.record_many(repo,tid,jobs)[0]
+    assert again['qualified']==results[0]['qualified'] and len(calls)==(2 if invalid=='duplicate_id' else 1)
 
 
 def test_steering_during_judgment_discards_result(career,monkeypatch):

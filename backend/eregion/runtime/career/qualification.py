@@ -92,18 +92,20 @@ def verified_conditions(decision,job):
 
 def result(state,job,checks,*,method='model_with_verified_quotes',conditions=()):
     unresolved=[k for k,v in checks.items() if v['status']=='unknown']
-    # A near miss on location or seniority goes on to scoring and is shown with the difference
-    # stated (to_confirm or stretch); role and vacancy must be met.
-    qualified=all(c['status'] in ({'met','not_requested','near'} if f in NEAR_FIELDS else {'met','not_requested'})
-                  for f,c in checks.items())
+    # Show by default (user, handoff 12.22: returning was too strict): only a clear mismatch
+    # (unmet) keeps a judged posting out. An unknown or near field goes on to scoring and is
+    # shown with that uncertainty stated, never as priority. A posting the model did not
+    # actually judge (not assessed, model unavailable) never passes.
+    qualified=(method=='model_with_verified_quotes'
+               and not any(c['status']=='unmet' for c in checks.values()))
     return {'url':job['url'],'revision':state.get('chat_revision',0),'body_hash':body_hash(job),
             'request_hash':request_hash(state),
             **({'application_id':job['application_id']} if job.get('application_id') else {}),
             'requested':request_fields(state),'checks':checks,'qualified':qualified,
             'status':'qualified' if qualified else 'needs_evidence',
             'candidate_conditions':list(conditions),
-            'near_misses':[{'field':f,'quote':c.get('quote',''),'reason':c.get('reason','')}
-                           for f,c in checks.items() if c['status']=='near'],
+            'near_misses':[{'field':f,'status':c['status'],'quote':c.get('quote',''),'reason':c.get('reason','')}
+                           for f,c in checks.items() if c['status'] in {'near','unknown'}],
             'review':{'method':method,'unresolved':unresolved,
                       'next':'Reuse this assessment for unchanged inputs. New source evidence or user corrections can resolve unknowns.'},
             'interpretation':'Search constraints only; scoring must still check personal eligibility.'}

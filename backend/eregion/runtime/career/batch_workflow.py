@@ -4,7 +4,7 @@ from eregion.runtime.tasks.loop import function, TEXT
 from eregion.runtime.core.engine import LoopStop
 from eregion.runtime.provider_usage import usage_scope, TaskProviderBudgetExceeded
 from .alerts import job_key
-from .qualification import record_many
+from .qualification import record_many,request_hash,body_hash
 from .linkedin_source import LinkedInSourceStopped
 
 TOOL=function('verify_and_score_jobs',
@@ -14,6 +14,21 @@ TOOL=function('verify_and_score_jobs',
     {'urls':{'type':'array','minItems':1,'maxItems':20,'uniqueItems':True,'items':TEXT}})
 
 
+def processed(state):
+    """Postings finished for the current request: judged a clear mismatch, scored, or dismissed."""
+    from .candidate_health import active_rejections
+    fingerprint=request_hash(state)
+    bodies={job_key(j['url']):j for j in state.get('retrieved_jobs',{}).values() if j.get('url')}
+    scored={job_key(e['url']) for e in (state.get('scored_job_evidence') or {}).values() if e.get('url')}
+    done={}
+    for key,row in state.get('candidate_qualifications',{}).items():
+        if row.get('request_hash')!=fingerprint or key not in bodies or row.get('body_hash')!=body_hash(bodies[key]):continue
+        if not row['qualified']:done[key]={'outcome':'not_shown','unmet':[f for f,c in row['checks'].items() if c['status']=='unmet']}
+        elif key in scored:done[key]={'outcome':'scored'}
+    for r in active_rejections(state):done[job_key(r['url'])]={'outcome':'dismissed'}
+    return done
+
+
 def run(harness,task_id,args,call_id):
     repo=harness.repository;initial=repo.get(task_id);revision=initial['chat_revision']
     urls=args['urls'];identities=[job_key(u) for u in urls]
@@ -21,6 +36,16 @@ def run(harness,task_id,args,call_id):
     observed={job_key(j['url']) for kind in ('search_candidates','observed_job_candidates','retrieved_jobs')
               for j in initial.get(kind,{}).values() if j.get('url')}
     if any(key not in observed for key in identities):raise ValueError('Use URLs from observed search results or saved retrieved postings.')
+    # Postings already finished for this request are skipped and reported, not redone: a thin
+    # market used to end at the no-progress guard after the model resubmitted them (live-set-02).
+    done=processed(initial)
+    skipped=[{'url':u,**done[job_key(u)]} for u in urls if job_key(u) in done]
+    if skipped:
+        urls=[u for u in urls if job_key(u) not in done];identities=[job_key(u) for u in urls]
+    if not urls:
+        return {'jobs':[],'candidates':[],'qualified_count':0,'already_processed':skipped,'no_new_evidence':True,
+                'next':'All of these postings were already processed for this request; do not resubmit them. '
+                       'Process candidate_queue.next_unread, search for different postings, or finish with the saved results.'}
     key=harness.key(initial,'verify_and_score_jobs',{'urls':sorted(identities)})
     journal=dict(initial.get('batch_verifications',{}).get(key,{}));items=[];apps=[];changed=False;sequence=0
     def check():
@@ -87,6 +112,7 @@ def run(harness,task_id,args,call_id):
                 if not result.get('no_new_evidence'):changed=True
             save(pending=None,completed=True,failure=None)
             return {'jobs':scored,'candidates':items,'qualified_count':len(apps),
+                    **({'already_processed':skipped} if skipped else {}),
                     'no_new_evidence':not changed,
                     'next':'Decide each scored job. Deferred jobs are not quota matches; discover different postings when no qualified pending candidates remain.'}
     except TaskProviderBudgetExceeded:

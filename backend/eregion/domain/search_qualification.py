@@ -44,7 +44,9 @@ trained or leading others. No fixed title phrase or years cutoff is required or 
 years figure is read in that context. Met needs positive support in this posting for the requested
 level; the mere absence of signals for some other level is not that support. Contradicting
 mandatory experience or responsibility is unmet even if a title says otherwise. Insufficient or
-conflicting evidence stays unknown.
+conflicting evidence stays unknown. Unmet is only for a clear mismatch the user would not want to see
+(a different occupation, a level far from the request, a location the request rules out, a closed opening);
+anything less certain is near or unknown, and the user decides with the difference stated.
 Do not count a related but different occupation as the same role.
 Near (location and seniority only): the opening sits just outside what the user asked for, in a way a
 reasonable applicant would still want to see and decide on themselves, for example an opening at the
