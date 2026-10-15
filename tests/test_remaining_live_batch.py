@@ -110,7 +110,9 @@ def test_eight_job_production_cold_resolver_and_persistent_warm(career,tmp_path,
         started=time.perf_counter()
         with usage_scope(ledger=UsageLedger(repository.sessions),task_id=task['task_id'],purpose='score_jobs'):
             warm=harness.execute(task['task_id'],'score_jobs',{'application_ids':ids},call_id=str(uuid4()))
-        evidence.update(warm=warm,warm_wall_seconds=time.perf_counter()-started,warm_results=captures[-1],calls=calls,
+        # Persisted scores are reused, so a warm pass may not reach the fit service at all.
+        warm_capture=captures[1] if len(captures)>1 else {}
+        evidence.update(warm=warm,warm_wall_seconds=time.perf_counter()-started,warm_results=warm_capture,calls=calls,
             cold_resolver_calls=cold_resolver_calls,warm_new_resolver_calls=len(calls)-cold_resolver_calls,
             warm_usage=UsageLedger(repository.sessions).summary(task_id=task['task_id']),
             restart='new DB connection, repositories, ApplicationLoop, CareerHarness and FitAnalysisService')
@@ -124,7 +126,7 @@ def test_eight_job_production_cold_resolver_and_persistent_warm(career,tmp_path,
             'cold_ledger_complete':evidence['cold_usage']['usage_complete'] and evidence['cold_usage']['pending']==0 and evidence['cold_usage']['unknown_usage_calls']==0,
             'cold_ledger_accounts_for_resolver':sum(g['calls'] for g in evidence['cold_usage']['groups'] if g['purpose'].split(':',1)[0]=='jev_fit_resolver')==cold_resolver_calls,
             'cold_ledger_accounts_for_jev':sum(g['calls'] for g in evidence['cold_usage']['groups'] if g['purpose'].startswith('jev:'))==len({call['call_id'] for result in captures[0].values() for routing in result['routing'] if routing['purpose']=='jev_fit' for call in routing.get('calls',[])}),
-            'warm_zero_new_provider_calls':all(r['main_model_calls']==r['fast_model_calls']==0 for r in captures[-1].values()) and len(calls)==cold_resolver_calls,
+            'warm_zero_new_provider_calls':all(r['main_model_calls']==r['fast_model_calls']==0 for r in warm_capture.values()) and len(calls)==cold_resolver_calls,
             'warm_equal_scores':[j['match_score'] for j in cold['jobs']]==[j['match_score'] for j in warm['jobs']],
             'warm_zero_usage':evidence['warm_usage']['calls']==0,
             'no_warm_cache_before_cold':not evidence['cold_cache_existed_before']}

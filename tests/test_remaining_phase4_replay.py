@@ -182,8 +182,10 @@ def test_saved_target_body_import_is_local_even_when_remote_source_later_blocked
         execute(c,'import_job',url='https://www.indeed.com/viewjob?jk=uncached')
     with pytest.raises(ValueError,match='Source blocked'):
         execute(c,'read_job',url=job['url'])
-    # Cached acquisition is not a waiver of posting qualification/rejection.
-    invalid={**job,'description':'Register to join our talent network for future opportunities. We place graduates into roles with leading employers.'}
+    # Cached acquisition is not a waiver of posting validation. Whether a talent network is a
+    # real opening is now the model's qualification judgment (a37f6e4); the structural check
+    # (a captured title) still applies to cached bodies.
+    invalid={**job,'title':''}
     c.repository.change(tid,retrieved_jobs={job['url']:invalid})
     with pytest.raises(PostingRejected):execute(c,'import_job',url=job['url'])
     assert len(c.repository.get(tid)['jobs'])==1 and not calls

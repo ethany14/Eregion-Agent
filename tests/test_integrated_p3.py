@@ -185,8 +185,12 @@ def test_candidate_view_bounds_detail_and_reports_target(career, monkeypatch):
     monkeypatch.setenv('JOB_AGENT_OPT_CANDIDATE_BATCHES', '1')
     c = career
     prepare(c)
-    candidates = {f'k{i}': {'url': f'https://boards.greenhouse.io/acme/jobs/{100 + i}', 'title': f'Data Analyst {i}'}
-                  for i in range(12)}
-    c.repository.change(c.state['task_id'], search_candidates=candidates)
-    view = c.harness.observe(c.repository.get(c.state['task_id']))['candidate_queue']
-    assert len(view['next_unread']) == 5 and view['deferred_unread'] >= 3 and not view['target_reached']
+    from eregion.runtime.career.candidate_queue import DETAIL_LIMIT
+    for count in (12, 30):
+        candidates = {f'k{i}': {'url': f'https://boards.greenhouse.io/acme/jobs/{100 + i}', 'title': f'Data Analyst {i}'}
+                      for i in range(count)}
+        c.repository.change(c.state['task_id'], search_candidates=candidates)
+        view = c.harness.observe(c.repository.get(c.state['task_id']))['candidate_queue']
+        # Bounded detail, and every candidate beyond it is reported as deferred, never dropped.
+        assert len(view['next_unread']) == min(count, DETAIL_LIMIT) and not view['target_reached']
+        assert view['deferred_unread'] == count - min(count, DETAIL_LIMIT)

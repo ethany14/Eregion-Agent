@@ -14,8 +14,9 @@ def test_provider_filters_and_unknowns():
     assert search_body('crawl4ai','data analyst',**filters,limit=20)=={'query':'data analyst','posted':'week','limit':20}
     jobs=[{'title':t,'url':str(i)} for i,t in enumerate(['Senior Data Analyst','Junior Data Analyst','Data Analyst','Graduate Data Analyst'])]
     kept,info=filter_cards(jobs,state)
-    assert len(kept)==3 and info['excluded_count']==1
-    assert filter_cards(jobs,{'goal':'Find data analyst jobs'})[0]==jobs
+    # Cards are only ordered; the model rejects a level mismatch after reading the posting.
+    assert sorted(j['url'] for j in kept)==sorted(j['url'] for j in jobs) and info['excluded_count']==0
+    assert sorted(j['url'] for j in filter_cards(jobs,{'goal':'Find data analyst jobs'})[0])==sorted(j['url'] for j in jobs)
 
 def test_linkedin_only_filters_cache_and_candidates(career,monkeypatch):
     treg_env(monkeypatch,JOB_AGENT_TREG_SEARCH_PROVIDER='anyapi')

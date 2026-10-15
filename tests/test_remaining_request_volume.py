@@ -7,7 +7,7 @@ from uuid import uuid4
 
 import pytest
 
-from eregion.runtime.career.candidate_health import validate_and_record
+from eregion.runtime.career.candidate_health import dismiss, validate_and_record
 from eregion.runtime.career.posting_qualification import PostingRejected
 from eregion.runtime.core.context import ConversationWindow
 from eregion.runtime.request_context import ContextArchive, encoded, prepare_request
@@ -23,10 +23,14 @@ def replay_input():
 
 
 def rejection():
+    # The recruiting-placement posting is excluded by the model's source-quoted decision
+    # (dismiss_candidate); a37f6e4 moved that judgment out of deterministic validation.
     job=json.loads((FIXTURES/'remaining_candidate_recovery.json').read_text(encoding='utf-8'))['jobs'][0]
-    state={'chat_revision':0}
+    state={'chat_revision':0,'retrieved_jobs':{job['url']:job}}
     def change(_,update):state.update(update(state))
-    with pytest.raises(PostingRejected):validate_and_record(SimpleNamespace(change=change),'offline',job)
+    dismiss(SimpleNamespace(get=lambda _:state,change=change),'offline',{'url':job['url'],
+        'quote':"Gain America's Early Careers program places new and recent graduates",
+        'reason':'A placement program run by a recruiting firm, not a direct opening at the employer.'})
     return next(iter(state['candidate_rejections'].values()))
 
 

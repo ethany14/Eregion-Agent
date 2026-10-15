@@ -66,12 +66,14 @@ class ExtractClient:
         return {k:{'type':'noul','noul':.99 if k.startswith('e') else .01} for k in questions},[]
 
 
-def test_agency_instruction_remains_in_ledger_but_cannot_be_candidate_required():
+def test_agency_instruction_reaches_the_model_and_page_noise_does_not_change_inputs():
+    # Since a37f6e4 the model classifies every span; no local rule relabels it. With this
+    # adversarial classifier the agency line is therefore "required"; the real model decides.
     client=ExtractClient()
     requirements,ledger,errors=JevFit(client).extract(read(page())['description'])
     assert not errors
-    assert any(r['text']=='No Agencies Please' and r['classification']=='context' for r in ledger)
-    assert not any('Agencies' in r['text'] or 'Fusionbox' in r['text'] for r in requirements)
+    assert any(r['text']=='No Agencies Please' and r['classification']=='required' for r in ledger)
+    assert not any('Fusionbox' in r['text'] for r in requirements)
     other=ExtractClient()
     assert JevFit(other).extract(read(page('An unrelated company requires ten years of Rust'))['description'])[0]==requirements
     assert client.calls==other.calls  # Identical source, questions and therefore scoring inputs.

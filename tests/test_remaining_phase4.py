@@ -51,8 +51,25 @@ def staff_job(c):
     c.harness.discovery=Posting()
     execute(c,'read_job',url='https://jobs.lever.co/synthetic/staff-one')
     job=execute(c,'import_job',url='https://jobs.lever.co/synthetic/staff-one')
-    execute(c,'score_job',application_id=job['application_id'])
+    c.scored=execute(c,'score_job',application_id=job['application_id'])
     return job['application_id']
+
+
+# Since a37f6e4 the model's qualification judges level; a clearly different level (Staff for a
+# Senior request) is unmet, so the job is neither scored nor recommendable (handoff 12.25).
+RECOMMEND=dict(tier='priority',reason='Strong fit',evidence=['Staff Backend Engineer'],gaps=[],to_confirm=[],
+               next_steps=['Apply.'],caveats='')
+
+
+def refused(c,identifier,harness=None):
+    assert c.scored.get('error_code')=='qualification_needed'
+    with pytest.raises(ValueError,match='Score this job'):
+        if harness:harness.execute(c.state['task_id'],'recommend_job',{'application_id':identifier,**RECOMMEND},call_id=str(uuid4()))
+        else:execute(c,'recommend_job',application_id=identifier,**RECOMMEND)
+    state=c.repository.get(c.state['task_id'])
+    assert not state.get('recommendations')
+    (row,)=state['candidate_qualifications'].values()
+    assert row['checks']['seniority']['status']=='unmet' and not row['qualified']
 
 
 @pytest.mark.parametrize('search_text',[
@@ -64,9 +81,7 @@ def test_senior_only_rejects_staff_at_actual_recommend_entry_with_sqlite(career,
     c=career
     c.repository.append(c.state['task_id'],role='user',text=search_text)
     identifier=staff_job(c)
-    with pytest.raises(ValueError,match='[Ss]eniority|[Ss]enior.only'):
-        execute(c,'recommend_job',application_id=identifier,reason='Strong fit',caveats='')
-    assert not c.repository.get(c.state['task_id']).get('recommendations')
+    refused(c,identifier)
 
 
 def test_seniority_survives_restart_window_and_only_user_can_change_it(career):
@@ -76,24 +91,25 @@ def test_seniority_survives_restart_window_and_only_user_can_change_it(career):
     for _ in range(151):c.repository.append(c.state['task_id'],role='assistant',text='Progress saved.')
     fresh=CareerHarness(c.runtime,c.applications,TaskRepository(c.runtime.database.session_factory),
         fit_service=c.harness.analysis._fit_service)
-    with pytest.raises(ValueError,match='Seniority'):
-        fresh.execute(c.state['task_id'],'recommend_job',{'application_id':identifier,'reason':'Strong fit','caveats':'Staff role.'},call_id=str(uuid4()))
+    refused(c,identifier,fresh)
     assert c.repository.get(c.state['task_id'])['search_constraints']['levels']==['senior']
+    # Only the user widens the level; the new request is judged afresh.
     c.repository.append(c.state['task_id'],role='user',text='Also include Staff roles.')
-    result=fresh.execute(c.state['task_id'],'recommend_job',{'application_id':identifier,'reason':'Strong fit','caveats':''},call_id=str(uuid4()))
+    assert 'staff' in c.repository.get(c.state['task_id'])['search_constraints']['levels']
+    assert fresh.execute(c.state['task_id'],'score_job',{'application_id':identifier},call_id=str(uuid4())).get('match_score') is not None
+    result=fresh.execute(c.state['task_id'],'recommend_job',{'application_id':identifier,**RECOMMEND,
+        'tier':'to_confirm','to_confirm':['Role scope fits the request.']},call_id=str(uuid4()))
     assert result['recommended']
     assert c.repository.get(c.state['task_id'])['recommendations'][0]['title']=='Staff Backend Engineer'
 
 
-def test_nonexclusive_search_persists_real_mismatch_caveat(career):
+def test_nonexclusive_senior_search_also_excludes_an_explicit_staff_level(career):
+    # User decision (handoff 12.25): an explicitly different named level is a clear mismatch
+    # even without "only"; it is no longer shown with a caveat.
     c=career
     c.repository.append(c.state['task_id'],role='user',text='Find Senior backend engineer jobs.')
     identifier=staff_job(c)
-    result=execute(c,'recommend_job',application_id=identifier,reason='Strong fit',caveats='Skill gaps disclosed.')
-    recommendation=c.repository.get(c.state['task_id'])['recommendations'][0]
-    assert result['recommended'] and recommendation['seniority_warning']['actual']=='staff'
-    assert 'requested senior' in recommendation['caveats'] and 'posting is staff' in recommendation['caveats']
-    assert 'Skill gaps disclosed' in recommendation['caveats']
+    refused(c,identifier)
 
 
 def test_board_exclusions_apply_by_tenant_not_shared_api_host():
@@ -132,9 +148,7 @@ def test_user_negation_and_posting_questions_do_not_relax_senior_only(career,tex
     c.repository.append(c.state['task_id'],role='user',text=text)
     policy=c.repository.get(c.state['task_id'])['search_constraints']
     assert policy['levels']==['senior'] and policy['strict']
-    with pytest.raises(ValueError,match='Seniority'):
-        execute(c,'recommend_job',application_id=identifier,reason='Strong fit',caveats='')
-    assert not c.repository.get(c.state['task_id']).get('recommendations')
+    refused(c,identifier)
 
 
 @pytest.mark.parametrize('platform',['ashby','workday'])

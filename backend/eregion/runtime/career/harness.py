@@ -1154,14 +1154,18 @@ class CareerHarness:
                 raise ValueError('A message ID alone does not identify job text. Use read_job for the posting URL, or provide job_text quoting the pasted JD; never import the task instruction.')
             else:
                 job = self.discovery.job(args['url'])
-            from .candidate_health import validate_and_record
-            validate_and_record(self.repository,task_id,job,self._browsing.inspect(task_id) if self._browsing else None)
             if job.get('source')=='rendered_browser':
-                # Metadata must be present in the captured panel as well.
+                # Metadata must be present in the captured panel as well. Applied before the
+                # title check, so a captured page without title metadata can be imported.
                 normalize=lambda value:re.sub(r'\s+',' ',str(value)).strip().casefold()
                 evidence=normalize(job['description'])
                 job={**job,**{key:args[key] for key in ('title','company','location')
                     if args.get(key) and normalize(args[key]) in evidence}}
+            if job.get('source') in {'rendered_browser','user_job_quote'} and not str(job.get('title') or '').strip():
+                # A missing title in text the user or page supplied is not a reason to reject the posting.
+                raise ValueError('Give the posting title: pass title exactly as it appears in the job text.')
+            from .candidate_health import validate_and_record
+            validate_and_record(self.repository,task_id,job,self._browsing.inspect(task_id) if self._browsing else None)
             if not job.get('description'):raise ValueError('Read or supply the job description first.')
             resolved = rt.workspace.save_workspace(cleaned_job_description=job['description'],source_url=job['url'],
                 title=job.get('title'),company=job.get('company'),location=job.get('location'),

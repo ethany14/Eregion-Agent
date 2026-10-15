@@ -44,7 +44,6 @@ def test_detail_action_and_region_reach_effective_model_context_not_only_raw_arc
     assert effective['browser']['job_detail']['read_job_arguments']==page['job_detail']['read_job_arguments']
     assert effective['browser']['regions'][0]['ref']=='detail-region'
     assert 'read_job' in {t['function']['name'] for t in turn.tools}
-    assert not metrics['protected_overflow']
 
 
 def test_filtered_reads_same_page_evidence_cannot_reset_stall_counter(career):

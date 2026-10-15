@@ -611,8 +611,11 @@ def test_import_uses_observed_posting_instead_of_task_instruction(career):
     messages=[*c.state['messages'],{'id':'pasted-jd','role':'user','text':'Please analyze this JD:\n'+body+'\nThank you.'}]
     c.repository.change(c.state['task_id'],messages=messages)
     with patch('eregion.runtime.semantics.SemanticDecisions.pasted_job_text',return_value=True):
-        pasted=execute(c,'import_job',url='https://jobs.lever.co/example/pasted',message_id='pasted-jd',job_text=body)
-    assert pasted['description']==body
+        with pytest.raises(ValueError,match='posting title'):  # asked for, not recorded as a rejection
+            execute(c,'import_job',url='https://jobs.lever.co/example/pasted',message_id='pasted-jd',job_text=body)
+        pasted=execute(c,'import_job',url='https://jobs.lever.co/example/pasted',message_id='pasted-jd',job_text=body,
+                       title='Example Python Engineer')
+    assert pasted['description']==body and not c.repository.get(c.state['task_id']).get('candidate_rejections')
     with pytest.raises(ValueError,match='literal'):
         execute(c,'import_job',url=url,message_id='pasted-jd',job_text=body+' fabricated requirement')
 
@@ -624,8 +627,8 @@ def test_job_quote_cannot_override_observed_web_even_when_verbatim(career):
     c.repository.change(c.state['task_id'],messages=[{'id':'task','role':'user','text':goal}],
         retrieved_jobs={url:{'url':url,'description':body,'source':'rendered_browser'}})
     with patch('eregion.runtime.semantics.SemanticDecisions.pasted_job_text',side_effect=AssertionError('No extra classification needed for a captured page')):
-        result=execute(c,'import_job',url=url,message_id='task',job_text=goal)
-    assert result['description']==body
+        result=execute(c,'import_job',url=url,message_id='task',job_text=goal,title='Data Workflow Engineer')
+    assert result['description']==body and result['title']=='Data Workflow Engineer'  # title verified in the page text
     c.repository.change(c.state['task_id'],retrieved_jobs={})
     with patch('eregion.runtime.semantics.SemanticDecisions.pasted_job_text',return_value=False) as judge:
         for _ in range(2):
@@ -635,7 +638,7 @@ def test_job_quote_cannot_override_observed_web_even_when_verbatim(career):
     short='招聘数据工程师，需掌握 Python、SQL。'
     c.repository.change(c.state['task_id'],messages=[{'id':'short','role':'user','text':'分析这个职位：'+short}])
     with patch('eregion.runtime.semantics.SemanticDecisions.pasted_job_text',return_value=True):
-        result=execute(c,'import_job',url='https://harbor.qa.example.com/short',message_id='short',job_text=short)
+        result=execute(c,'import_job',url='https://harbor.qa.example.com/short',message_id='short',job_text=short,title='数据工程师')
     assert result['description']==short
 
 

@@ -94,7 +94,9 @@ def view(state, recovery):
             **({'stalled': stuck[:DETAIL_LIMIT], 'stalled_note': 'Attempted this turn without progress; not '
                 'retried automatically. Retry only if something changed, dismiss with source evidence, or report it.'}
                if stuck else {}),
-            'deferred_unread': max(0, len(unread) - DETAIL_LIMIT),
+            # Count every unread candidate: the recovery list itself is capped, and a capped
+            # count told the model nothing was waiting (30 candidates reported 0 deferred).
+            'deferred_unread': max(0, recovery.get('pending_count', len(unread)) - len(batch[:DETAIL_LIMIT])),
             'instruction': ('Target reached: finish with the saved results.' if reached else
                             'Finish in_progress items first, then process next_unread URLs with verify_and_score_jobs in a bounded batch. '
                             'Search again only when nothing actionable remains; deferred candidates are kept.')}

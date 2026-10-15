@@ -99,11 +99,15 @@ def test_production_job_summary_and_recommendation_keep_the_persisted_interval(c
     assert summary['analysis_status']=='needs_review'
     final=f'Read and scored, not recommended: {URL} Score range 20-60/100; unresolved qualifications remain.'
     c.harness.validate_completion(c.repository.get(c.state['task_id']),final)
-    result=execute(c,'recommend_job',application_id=identifier,reason='Potential fit pending review.',caveats='Qualifications remain unresolved.')
+    result=execute(c,'recommend_job',application_id=identifier,tier='to_confirm',reason='Potential fit pending review.',
+                   evidence=[summary['title']],gaps=[],to_confirm=['Unresolved qualifications in the posting.'],
+                   next_steps=['Review the unresolved requirements.'],caveats='Qualifications remain unresolved.')
     saved=result['recommendation']
     assert saved['match_score'] is None and saved['score_range']==[20,60]
-    assert 'Unresolved qualifications' in saved['caveats']
-    c.harness.validate_completion(c.repository.get(c.state['task_id']),final.replace('not recommended','recommended with caveats'))
+    # The interval is explained by the tier contract's score meaning, not appended caveat text.
+    assert 'interval' in saved['score_meaning'] and saved['to_confirm']
+    c.harness.validate_completion(c.repository.get(c.state['task_id']),
+        f'Needs your confirmation (1)\n- {URL} Score range 20-60/100; unresolved qualifications remain to confirm.')
     for score in ['Score 40/100','Score range 20-61/100','Salary: 20-60 thousand USD']:
         with pytest.raises(ValueError,match='score|interval'):
             c.harness.validate_completion(c.repository.get(c.state['task_id']),URL+' '+score)
