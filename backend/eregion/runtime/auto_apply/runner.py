@@ -18,6 +18,9 @@ from .prompt import SYSTEM
 # actions on a field (reset by each user message), optional fields are left empty and
 # required ones go back to the user.
 FIELD_ATTEMPT_LIMIT = 4
+# Adobe Workday spent 523 model calls, most on one page, because the step budget resets on
+# every message. One page gets this many calls per user message, then the user is asked.
+PAGE_MODEL_CALL_LIMIT = 30
 NON_FIELD_ACTIONS = {'observe', 'view_browser', 'say', 'ask_user', 'request_input', 'read_context', 'record_answers',
     'update_plan', 'computer_wait', 'draft_answer'}
 
@@ -229,8 +232,17 @@ class ApplicationHost:
         return self._scan()
 
     def invoke(self, messages, tools, turn):
+        page = self.session.page_context or {}
+        page_id = [page.get('url'), page.get('heading'), turn.revision]
+        record = self.session.state.get('page_calls') or {}
+        if record.get('page') != page_id:
+            record = {'page': page_id, 'count': 0}
+        if record['count'] >= PAGE_MODEL_CALL_LIMIT:
+            raise LoopStop('page_budget')
         if not self.reserve('model'):
             raise LoopStop('agent_limit')
+        record['count'] += 1
+        self.session.state['page_calls'] = self.pending['page_calls'] = record
         started = time.monotonic()
         try:
             result = self.requests.call(lambda: self.model.invoke_turn(messages, tools, turn.snapshot) if hasattr(self.model, 'invoke_turn') else self.model.invoke(messages, tools),

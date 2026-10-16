@@ -14,12 +14,19 @@ def desired_answer(field, state):
 
 
 def _desired_answer(field, state):
+    from .education import binding, bound_value
     decision = active_decision(field, state)
+    bound = binding(field, state)
+    # A field tied to one education record keeps that record's facts. Adobe: the second
+    # school's Degree kept a decision sourced from the profile's latest degree (M.Eng. ->
+    # "Masters") although it was bound to the B.A. record.
+    if decision and bound and not any(ref == bound['source_ref'] or ref.startswith(('answer:', 'message:'))
+                                      for ref in decision.get('sources', {})):
+        decision = None
     if decision: return decision["value"]
     if field['key'] in state['answers']:return state['answers'][field['key']]
     if field['kind'] != 'file' and 'cover letter' in field['label'].casefold() and state.get('cover_letter'):
         return state['cover_letter']
-    from .education import bound_value
     education=bound_value(field,state)
     if education is not None:return education
     answer = candidate_answer(field, state["profile"], state["answers"])

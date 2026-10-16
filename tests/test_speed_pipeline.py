@@ -462,3 +462,43 @@ def test_set_aside_optional_education_field_does_not_hold_the_step():
     assert gaps(state,[field],None)==['Field of Study']
     state['abandoned_fields']=['study']
     assert gaps(state,[field],None)==[]
+
+
+def test_education_binding_beats_a_decision_from_the_profiles_latest_degree():
+    # Adobe pilot: the second school's Degree (bound to the B.A. record) kept refilling as
+    # "Masters" from a decision sourced from profile:degree (M.Eng.).
+    from eregion.runtime.auto_apply.autofill import desired_answer
+    field={'key':'combobox:degree:2','dom_id':'education-148--degree','label':'Degree*','group':'From','kind':'combobox','value':'','options':[]}
+    signature={k:field.get(k) for k in ('key','dom_id','label','group')}
+    state={'profile':{'degree':'M.Eng.','education':[{'id':'uw','school':'University of Wisconsin-Madison','degree':'B.A.'}]},'answers':{},
+           'education_bindings':{field['key']:{'education_id':'uw','component':'degree','source_ref':'education:uw:degree','field':signature}},
+           'field_decisions':{field['key']:{'field':{k:field[k] for k in ('key','label','kind','group')},'value':'Masters','mode':'equivalent',
+                                            'sources':{'profile:degree':'M.Eng.'},'original_answer':None,'reason':'x'}}}
+    assert desired_answer(field,state)=='B.A.'
+    state['field_decisions'][field['key']]['sources']={'education:uw:degree':'B.A.'}
+    state['field_decisions'][field['key']]['value']='Bachelors'
+    assert desired_answer(field,state)=='Bachelors'
+
+
+def test_one_page_gets_a_bounded_number_of_model_calls_per_user_message(monkeypatch):
+    # Adobe pilot: 523 model calls, mostly on one Workday page, because the step budget
+    # reset on every message. A page now stops at PAGE_MODEL_CALL_LIMIT and asks the user.
+    from test_auto_apply import FakeBrowser, field
+    from eregion.runtime.auto_apply.agent import AgentTools
+    from eregion.runtime.auto_apply.runner import ApplicationHost, PAGE_MODEL_CALL_LIMIT
+    from eregion.runtime.core.engine import Turn, LoopStop
+    monkeypatch.setenv('TYPESAFE_ENABLED','false')
+    browser=FakeBrowser('');browser.fields=[field('note',required=False)]
+    session=AgentTools(browser,{'profile':{},'answers':{}},autofill=lambda:{},active=lambda:True)
+    session.observe();session.page_context={'url':'https://example.test/apply','heading':'My Experience','controls':[]}
+    class Model:
+        timeout=5
+        def invoke(self,messages,tools):return 'ok'
+    host=ApplicationHost(session,Model(),active=lambda:True,reserve=lambda _:True,report=lambda *args:None)
+    host.deadline=10**12
+    turn=Turn('',{},[])
+    for _ in range(PAGE_MODEL_CALL_LIMIT):host.invoke([],[],turn)
+    with pytest.raises(LoopStop) as stop:host.invoke([],[],turn)
+    assert stop.value.result['reason']=='page_budget'
+    session.page_context={**session.page_context,'heading':'Application Questions'}
+    host.invoke([],[],turn)  # a new page starts a new budget

@@ -941,6 +941,7 @@ class ApplicationLoop:
                     "invalid_model_response": "The configured model did not return a valid tool call. Use a model supporting tool calls.",
                     "model_timeout": "The model response timed out. Completed fields are saved; continue to retry.",
                     "agent_limit": "The agent reached its bounded call limit. Completed fields are saved.",
+                    "page_budget": "This page used its model-call budget without finishing. Completed fields are saved; check the highlighted fields, answer or fix them, then continue.",
                     "no_progress": "The agent stopped repeating an unsuccessful action. Check the highlighted control."}
                 messages["navigation_required"] = "This application has another step. Enable Agent + autofill, or continue in the browser and then send continue here."
                 messages['document_upload_required']='The selected resume or cover letter still needs uploading. Inspect the attachment control before reviewing this application.'
@@ -952,7 +953,7 @@ class ApplicationLoop:
                         self._submit(run_id, self._drive, run_id, None)
                         return
                     chat_messages = state.get("messages", [])
-                    if missing and reason not in {'no_progress','agent_limit','model_payment_required'}:
+                    if missing and reason not in {'no_progress','agent_limit','page_budget','model_payment_required'}:
                         unknown = [f for f in missing if desired_answer(f, state) is None]
                         failed = [f for f in missing if desired_answer(f, state) is not None]
                         text, question_keys = input_prompt(unknown, failed, {f["key"]: desired_answer(f, state) for f in failed})
